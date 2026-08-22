@@ -1,0 +1,9 @@
+[project]
+name = "lifhop"
+version = "0.1.0"
+description = "Personal knowledge and life memory platform"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+]
