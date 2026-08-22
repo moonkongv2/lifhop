@@ -1,0 +1,14 @@
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: lifhop
+      POSTGRES_USER: lifhop
+      POSTGRES_PASSWORD: lifhop
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
