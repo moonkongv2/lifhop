@@ -68,7 +68,7 @@ def test_login_user(client: TestClient) -> None:
 
     assert body["access_token"]
     assert body["token_type"] == "bearer"
-
+    assert body["refresh_token"]
 
 def test_login_with_wrong_password_returns_401(
     client: TestClient,
@@ -315,3 +315,77 @@ def test_user_cannot_delete_another_users_entry(
     )
 
     assert response.status_code == 404
+
+
+def test_refresh_access_token(
+    client: TestClient,
+) -> None:
+    email = "refresh@example.com"
+    password = "test-password"
+
+    client.post(
+        "/auth/register",
+        json={
+            "email": email,
+            "password": password,
+        },
+    )
+
+    login_response = client.post(
+        "/auth/login",
+        data={
+            "username": email,
+            "password": password,
+        },
+    )
+
+    refresh_token = login_response.json()["refresh_token"]
+
+    response = client.post(
+        "/auth/refresh",
+        json={
+            "refresh_token": refresh_token,
+        },
+    )
+
+    assert response.status_code == 200
+
+    body = response.json()
+
+    assert body["access_token"]
+    assert body["refresh_token"]
+    assert body["token_type"] == "bearer"
+
+
+def test_access_token_cannot_be_used_as_refresh_token(
+    client: TestClient,
+) -> None:
+    email = "wrong-token-type@example.com"
+    password = "test-password"
+
+    client.post(
+        "/auth/register",
+        json={
+            "email": email,
+            "password": password,
+        },
+    )
+
+    login_response = client.post(
+        "/auth/login",
+        data={
+            "username": email,
+            "password": password,
+        },
+    )
+
+    access_token = login_response.json()["access_token"]
+
+    response = client.post(
+        "/auth/refresh",
+        json={
+            "refresh_token": access_token,
+        },
+    )
+
+    assert response.status_code == 401
