@@ -42,11 +42,13 @@ def create_entry(
 @router.get("", response_model=list[EntryResponse])
 def list_entries(
     db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
     limit: Annotated[int, Query(ge=1, le=100)] = 20,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> list[Entry]:
     statement = (
         select(Entry)
+        .where(Entry.user_id == current_user.id)
         .order_by(Entry.created_at.desc())
         .offset(offset)
         .limit(limit)
@@ -59,8 +61,14 @@ def list_entries(
 def get_entry(
     entry_id: int,
     db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> Entry:
-    entry = db.get(Entry, entry_id)
+    entry = db.scalar(
+        select(Entry).where(
+            Entry.id == entry_id,
+            Entry.user_id == current_user.id,
+        )
+    )
 
     if entry is None:
         raise HTTPException(
@@ -76,8 +84,14 @@ def update_entry(
     entry_id: int,
     data: EntryUpdate,
     db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> Entry:
-    entry = db.get(Entry, entry_id)
+    entry = db.scalar(
+        select(Entry).where(
+            Entry.id == entry_id,
+            Entry.user_id == current_user.id,
+        )
+    )
 
     if entry is None:
         raise HTTPException(
@@ -95,6 +109,7 @@ def update_entry(
 
     return entry
 
+
 @router.delete(
     "/{entry_id}",
     status_code=status.HTTP_204_NO_CONTENT,
@@ -102,8 +117,14 @@ def update_entry(
 def delete_entry(
     entry_id: int,
     db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> None:
-    entry = db.get(Entry, entry_id)
+    entry = db.scalar(
+        select(Entry).where(
+            Entry.id == entry_id,
+            Entry.user_id == current_user.id,
+        )
+    )
 
     if entry is None:
         raise HTTPException(
