@@ -1,8 +1,15 @@
 from datetime import datetime
 from enum import StrEnum
-from sqlalchemy import DateTime, Enum, String, Text, func
+from sqlalchemy import DateTime, Enum, ForeignKey, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 from app.models.base import Base
+
+from typing import TYPE_CHECKING
+
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+if TYPE_CHECKING:
+    from app.models.user import User
 
 class EntryType(StrEnum):
     LOG = "LOG"
@@ -15,7 +22,11 @@ class Entry(Base):
     __tablename__ = "entries"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
     type: Mapped[EntryType] = mapped_column(Enum(EntryType), nullable=False)
+    user: Mapped["User"] = relationship(
+        back_populates="entries",
+    )
 
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     content: Mapped[str | None] = mapped_column(Text, nullable=True)

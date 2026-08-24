@@ -7,8 +7,8 @@ from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app.main import app
+from app.models import Entry, User
 from app.models.base import Base
-
 
 TEST_DATABASE_URL = (
     "postgresql+psycopg://lifhop:lifhop@localhost:5433/lifhop_test"
@@ -54,3 +54,36 @@ def client(
         yield test_client
 
     app.dependency_overrides.clear()
+
+@pytest.fixture()
+def auth_headers(
+    client: TestClient,
+) -> dict[str, str]:
+    email = "test@example.com"
+    password = "test-password"
+
+    register_response = client.post(
+        "/auth/register",
+        json={
+            "email": email,
+            "password": password,
+        },
+    )
+
+    assert register_response.status_code == 201
+
+    login_response = client.post(
+        "/auth/login",
+        data={
+            "username": email,
+            "password": password,
+        },
+    )
+
+    assert login_response.status_code == 200
+
+    access_token = login_response.json()["access_token"]
+
+    return {
+        "Authorization": f"Bearer {access_token}"
+    }

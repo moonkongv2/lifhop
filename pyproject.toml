@@ -9,6 +9,9 @@ dependencies = [
     "sqlalchemy>=2.0,<3.0",
     "psycopg[binary]",
     "pydantic-settings",
+    "pwdlib[argon2]",
+    "pyjwt",
+    "python-multipart",
 ]
 
 [project.optional-dependencies]
@@ -17,6 +20,9 @@ dev = [
     "httpx",
     "alembic",
 ]
+
+[tool.setuptools.packages.find]
+include = ["app*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

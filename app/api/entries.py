@@ -4,7 +4,9 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 from app.db import get_db
 from app.models.entry import Entry
+from app.models.user import User
 from app.schemas.entry import EntryCreate, EntryResponse, EntryUpdate
+from app.auth import get_current_user
 
 router = APIRouter(prefix="/entries", tags=["entries"])
 
@@ -13,11 +15,17 @@ router = APIRouter(prefix="/entries", tags=["entries"])
     response_model=EntryResponse,
     status_code=status.HTTP_201_CREATED,
 )
+
 def create_entry(
     data: EntryCreate,
     db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[
+        User,
+        Depends(get_current_user),
+    ],
 ) -> Entry:
     entry = Entry(
+        user_id=current_user.id,
         type=data.type,
         title=data.title,
         content=data.content,

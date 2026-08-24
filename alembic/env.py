@@ -22,8 +22,8 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
+from app.models import Entry, User
 from app.models.base import Base
-from app.models.entry import Entry  # noqa: F401
 
 target_metadata = Base.metadata
 
