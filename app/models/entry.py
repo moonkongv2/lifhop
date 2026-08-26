@@ -10,6 +10,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 if TYPE_CHECKING:
     from app.models.user import User
+    from app.models.attachment import Attachment
 
 class EntryType(StrEnum):
     LOG = "LOG"
@@ -47,4 +48,8 @@ class Entry(Base):
         server_default=func.now(),
         onupdate=func.now(),
         nullable=False,
+    )
+
+    attachments: Mapped[list["Attachment"]] = relationship(
+        back_populates="entry",
     )
