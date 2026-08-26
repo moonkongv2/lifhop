@@ -1,4 +1,9 @@
-def test_create_attachment(client, auth_headers):
+def test_create_attachment(client, auth_headers, monkeypatch):
+    monkeypatch.setattr(
+        "app.api.attachments.generate_presigned_upload_url",
+        lambda s3_key, mime_type: "https://example.com/upload",
+    )
+
     entry_response = client.post(
         "/entries",
         headers=auth_headers,
@@ -24,12 +29,15 @@ def test_create_attachment(client, auth_headers):
     assert response.status_code == 201
 
     body = response.json()
+    attachment = body["attachment"]
 
-    assert body["entry_id"] == entry_id
-    assert body["filename"] == "report.pdf"
-    assert body["mime_type"] == "application/pdf"
-    assert body["size"] == 1234
-    assert body["status"] == "PENDING"
+    assert attachment["entry_id"] == entry_id
+    assert attachment["filename"] == "report.pdf"
+    assert attachment["mime_type"] == "application/pdf"
+    assert attachment["size"] == 1234
+    assert attachment["status"] == "PENDING"
+
+    assert body["upload_url"] == "https://example.com/upload"
 
 
 # 인증 오류 테스트

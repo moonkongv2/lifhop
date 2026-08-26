@@ -12,6 +12,7 @@ dependencies = [
     "pwdlib[argon2]",
     "pyjwt",
     "python-multipart",
+    "boto3",
 ]
 
 [project.optional-dependencies]

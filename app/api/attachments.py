@@ -9,8 +9,11 @@ from app.db import get_db
 from app.models.attachment import Attachment, AttachmentStatus
 from app.models.entry import Entry
 from app.models.user import User
-from app.schemas.attachment import AttachmentCreate, AttachmentResponse
-
+from app.schemas.attachment import (
+    AttachmentCreate,
+    AttachmentUploadResponse,
+)
+from app.s3 import generate_presigned_upload_url
 
 router = APIRouter(
     prefix="/entries/{entry_id}/attachments",
@@ -20,7 +23,7 @@ router = APIRouter(
 
 @router.post(
     "",
-    response_model=AttachmentResponse,
+    response_model=AttachmentUploadResponse,
     status_code=status.HTTP_201_CREATED,
 )
 def create_attachment(
@@ -28,7 +31,7 @@ def create_attachment(
     payload: AttachmentCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
-) -> Attachment:
+) -> AttachmentUploadResponse:
     entry = db.scalar(
         select(Entry).where(
             Entry.id == entry_id,
@@ -61,4 +64,12 @@ def create_attachment(
     db.commit()
     db.refresh(attachment)
 
-    return attachment
+    upload_url = generate_presigned_upload_url(
+        s3_key=attachment.s3_key,
+        mime_type=attachment.mime_type,
+    )
+
+    return AttachmentUploadResponse(
+        attachment=attachment,
+        upload_url=upload_url,
+    )
