@@ -312,6 +312,10 @@ Update:
 
 Keep this document short.
 
+`CURRENT.md` must reflect the actual repository state. Never mark work as complete before the corresponding implementation and verification are complete.
+
+Write it so that another developer or AI agent can resume the project from the repository alone, without relying on previous conversation context.
+
 Example:
 
 ```text
