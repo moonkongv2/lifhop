@@ -13,9 +13,11 @@ from app.schemas.attachment import (
     AttachmentCreate,
     AttachmentResponse,
     AttachmentUploadResponse,
+    AttachmentDownloadResponse,
 )
 from app.s3 import (
     generate_presigned_upload_url,
+    generate_presigned_download_url,
     object_exists,
 )
 
@@ -116,3 +118,44 @@ def complete_attachment(
     db.refresh(attachment)
 
     return attachment
+
+
+@router.get(
+    "/{attachment_id}/download",
+    response_model=AttachmentDownloadResponse,
+)
+def download_attachment(
+    entry_id: int,
+    attachment_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> AttachmentDownloadResponse:
+    attachment = db.scalar(
+        select(Attachment)
+        .join(Entry)
+        .where(
+            Attachment.id == attachment_id,
+            Attachment.entry_id == entry_id,
+            Entry.user_id == current_user.id,
+        )
+    )
+
+    if attachment is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Attachment not found",
+        )
+
+    if attachment.status != AttachmentStatus.UPLOADED:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Attachment upload is not complete",
+        )
+
+    download_url = generate_presigned_download_url(
+        attachment.s3_key,
+    )
+
+    return AttachmentDownloadResponse(
+        download_url=download_url,
+    )

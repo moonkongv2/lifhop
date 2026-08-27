@@ -276,3 +276,200 @@ def test_complete_attachment_rejects_missing_s3_object(
 
     assert response.status_code == 409
     assert response.json()["detail"] == "Attachment upload is not complete"
+
+
+def test_download_attachment(
+    client,
+    auth_headers,
+    monkeypatch,
+):
+    monkeypatch.setattr(
+        "app.api.attachments.generate_presigned_upload_url",
+        lambda s3_key, mime_type: "https://example.com/upload",
+    )
+
+    monkeypatch.setattr(
+        "app.api.attachments.object_exists",
+        lambda s3_key: True,
+    )
+
+    monkeypatch.setattr(
+        "app.api.attachments.generate_presigned_download_url",
+        lambda s3_key: "https://example.com/download",
+    )
+
+    entry_response = client.post(
+        "/entries",
+        headers=auth_headers,
+        json={
+            "type": "NOTE",
+            "title": "Download test",
+            "content": "test",
+        },
+    )
+    entry_id = entry_response.json()["id"]
+
+    attachment_response = client.post(
+        f"/entries/{entry_id}/attachments",
+        headers=auth_headers,
+        json={
+            "filename": "report.pdf",
+            "mime_type": "application/pdf",
+            "size": 1234,
+        },
+    )
+
+    attachment_id = attachment_response.json()["attachment"]["id"]
+
+    complete_response = client.post(
+        f"/entries/{entry_id}/attachments/{attachment_id}/complete",
+        headers=auth_headers,
+    )
+
+    assert complete_response.status_code == 200
+
+    response = client.get(
+        f"/entries/{entry_id}/attachments/{attachment_id}/download",
+        headers=auth_headers,
+    )
+
+    assert response.status_code == 200
+    assert response.json()["download_url"] == "https://example.com/download"
+
+
+def test_download_pending_attachment_returns_409(
+    client,
+    auth_headers,
+    monkeypatch,
+):
+    monkeypatch.setattr(
+        "app.api.attachments.generate_presigned_upload_url",
+        lambda s3_key, mime_type: "https://example.com/upload",
+    )
+
+    entry_response = client.post(
+        "/entries",
+        headers=auth_headers,
+        json={
+            "type": "NOTE",
+            "title": "Pending download test",
+            "content": "test",
+        },
+    )
+    entry_id = entry_response.json()["id"]
+
+    attachment_response = client.post(
+        f"/entries/{entry_id}/attachments",
+        headers=auth_headers,
+        json={
+            "filename": "report.pdf",
+            "mime_type": "application/pdf",
+            "size": 1234,
+        },
+    )
+
+    attachment_id = attachment_response.json()["attachment"]["id"]
+
+    response = client.get(
+        f"/entries/{entry_id}/attachments/{attachment_id}/download",
+        headers=auth_headers,
+    )
+
+    assert response.status_code == 409
+    assert response.json()["detail"] == "Attachment upload is not complete"
+
+
+def test_user_cannot_download_another_users_attachment(
+    client,
+    monkeypatch,
+):
+    monkeypatch.setattr(
+        "app.api.attachments.generate_presigned_upload_url",
+        lambda s3_key, mime_type: "https://example.com/upload",
+    )
+
+    monkeypatch.setattr(
+        "app.api.attachments.object_exists",
+        lambda s3_key: True,
+    )
+
+    user_a_email = "download-user-a@example.com"
+    user_b_email = "download-user-b@example.com"
+    password = "test-password"
+
+    client.post(
+        "/auth/register",
+        json={
+            "email": user_a_email,
+            "password": password,
+        },
+    )
+
+    login_a = client.post(
+        "/auth/login",
+        data={
+            "username": user_a_email,
+            "password": password,
+        },
+    )
+
+    headers_a = {
+        "Authorization": f"Bearer {login_a.json()['access_token']}"
+    }
+
+    client.post(
+        "/auth/register",
+        json={
+            "email": user_b_email,
+            "password": password,
+        },
+    )
+
+    login_b = client.post(
+        "/auth/login",
+        data={
+            "username": user_b_email,
+            "password": password,
+        },
+    )
+
+    headers_b = {
+        "Authorization": f"Bearer {login_b.json()['access_token']}"
+    }
+
+    entry_response = client.post(
+        "/entries",
+        headers=headers_a,
+        json={
+            "type": "NOTE",
+            "title": "Private attachment",
+            "content": "test",
+        },
+    )
+    entry_id = entry_response.json()["id"]
+
+    attachment_response = client.post(
+        f"/entries/{entry_id}/attachments",
+        headers=headers_a,
+        json={
+            "filename": "private.pdf",
+            "mime_type": "application/pdf",
+            "size": 1234,
+        },
+    )
+
+    attachment_id = attachment_response.json()["attachment"]["id"]
+
+    complete_response = client.post(
+        f"/entries/{entry_id}/attachments/{attachment_id}/complete",
+        headers=headers_a,
+    )
+
+    assert complete_response.status_code == 200
+
+    response = client.get(
+        f"/entries/{entry_id}/attachments/{attachment_id}/download",
+        headers=headers_b,
+    )
+
+    assert response.status_code == 404

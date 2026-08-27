@@ -26,3 +26,6 @@ class AttachmentResponse(BaseModel):
 class AttachmentUploadResponse(BaseModel):
     attachment: AttachmentResponse
     upload_url: str
+
+class AttachmentDownloadResponse(BaseModel):
+    download_url: str
