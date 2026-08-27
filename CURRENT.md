@@ -2,11 +2,11 @@
 
 ## Current milestone
 
-Step 3 — Attachments and S3
+Step 4 — Import Framework
 
-Status: In Progress
+Status: Ready to Start
 
-Previous milestone: Step 2 — Authentication and Authorization — Complete
+Previous milestone: Step 3 — Attachments and S3 — Complete
 
 ## Completed work
 
@@ -40,36 +40,68 @@ Previous milestone: Step 2 — Authentication and Authorization — Complete
 - Authenticated Entry creation with ownership assigned from `current_user.id`
 - Entry authorization rules restricting list/read/update/delete to the authenticated user's own Entries
 - Cross-user access protection returning 404 for resources not owned by the current user
-- Initial `Attachment` ORM model
+- `Attachment` ORM model and migration
   - Attachment belongs to an Entry through `entry_id`
   - Entry ↔ Attachment ORM relationship
   - S3 object key metadata via `s3_key`
   - filename, MIME type, and optional size metadata
   - upload status using `PENDING` and `UPLOADED`
-- Alembic migration for the `attachments` table
-  - revision `72ee7e9fc709`
 - Attachment Pydantic schemas
   - `AttachmentCreate`
   - `AttachmentResponse`
   - `AttachmentUploadResponse`
-- Initial Attachment creation API
+  - `AttachmentDownloadResponse`
+- S3 integration with boto3
+  - local development uses the `lifhop-dev` AWS CLI profile
+  - bucket and region are provided through application settings
+  - no AWS access keys are stored in the repository
+- Attachment upload flow
   - `POST /entries/{entry_id}/attachments`
   - authenticated Entry ownership check
   - server-generated unique `s3_key`
   - creates Attachment with `PENDING` status
-  - returns Attachment metadata only for now
-- Initial Attachment API test
-  - creates an Entry
-  - creates `report.pdf` metadata for that Entry
-  - verifies HTTP 201 and returned metadata
+  - generates a temporary presigned S3 PUT URL
+  - client uploads file contents directly to S3
+- Attachment completion flow
+  - `POST /entries/{entry_id}/attachments/{attachment_id}/complete`
+  - validates ownership through Attachment -> Entry -> User
+  - checks S3 object existence with `HeadObject`
+  - returns 409 when the expected S3 object does not exist
+  - changes status from `PENDING` to `UPLOADED` only after object existence is confirmed
+- Secure attachment download flow
+  - `GET /entries/{entry_id}/attachments/{attachment_id}/download`
+  - validates ownership before issuing access
+  - rejects `PENDING` attachments
+  - generates a temporary presigned S3 GET URL
+  - actual file contents are downloaded directly from S3
+- Attachment tests cover successful and failure paths without requiring real AWS calls
+  - presigned URL generation is mocked in normal tests
+  - unauthenticated access
+  - nonexistent Entry
+  - cross-user access
+  - invalid negative size
+  - upload completion success
+  - missing S3 object on completion
+  - secure download success
+  - download rejected while `PENDING`
+  - cross-user download protection
+- Full pytest suite confirmed passing locally after Step 3 implementation
+- Manual S3 integration verified successfully
+  - presigned PUT upload to S3
+  - `HeadObject`-based completion path
+  - presigned GET download through the API
+  - downloaded file contents verified
 
 ## Current architecture
 
 ```text
 Client
   |
-  v
-FastAPI
+  +------------------------------+
+  |                              |
+  | API requests                 | presigned PUT / GET
+  v                              v
+FastAPI                         S3
   |
   +--> Authentication dependencies
   |      |
@@ -79,11 +111,12 @@ FastAPI
   |      v
   |    Current User
   |
-  v
-Pydantic validation
+  +--> Attachment ownership checks
   |
-  v
-API router
+  +--> boto3
+  |      |
+  |      +--> Presigned URLs
+  |      +--> HeadObject
   |
   v
 SQLAlchemy Session
@@ -117,27 +150,51 @@ Entry
 User
 ```
 
-Target attachment upload flow:
+Completed attachment lifecycle:
 
 ```text
 Client
   |
-  | 1. request attachment upload metadata
+  | 1. POST attachment metadata
   v
 lifhop API
   |
   | 2. verify Entry ownership
   | 3. create Attachment(status=PENDING)
-  | 4. generate presigned upload URL
+  | 4. generate presigned PUT URL
   v
 Client
   |
   | 5. upload file directly
   v
 S3
-```
 
-The current implementation stops after step 3. Presigned S3 upload URL generation has not yet been implemented.
+Client
+  |
+  | 6. POST complete
+  v
+lifhop API
+  |
+  | 7. HeadObject verifies object exists
+  | 8. status -> UPLOADED
+  v
+PostgreSQL
+
+Client
+  |
+  | 9. request download
+  v
+lifhop API
+  |
+  | 10. verify ownership and UPLOADED status
+  | 11. generate presigned GET URL
+  v
+Client
+  |
+  | 12. download directly
+  v
+S3
+```
 
 ## Important implementation notes
 
@@ -149,15 +206,16 @@ The current implementation stops after step 3. Presigned S3 upload URL generatio
 - `attachments.entry_id` references `entries.id` and is non-nullable.
 - Attachment does not contain a separate `user_id`; ownership is derived from its Entry.
 - SQLAlchemy `relationship()` provides Python-side object navigation, while database foreign keys enforce persistent relational constraints.
-- Actual attachment file contents are not stored in PostgreSQL.
-- PostgreSQL stores attachment metadata; S3 will store the actual file contents.
+- PostgreSQL stores attachment metadata only; actual attachment file contents are stored in S3.
 - `Attachment.status` currently supports `PENDING` and `UPLOADED`.
 - `Attachment.size` is nullable and validated as non-negative when provided by the client.
 - `s3_key` is generated server-side and uniquely identifies the intended S3 object.
-- `s3_key` is not exposed in the current public Attachment response schema.
-- `upload_url` is modeled in `AttachmentUploadResponse` but is not yet produced by the API.
-- Presigned upload URLs should be temporary values and should not be stored as Attachment database columns.
+- `s3_key` does not include the bucket name, allowing storage configuration to change without rewriting database keys.
+- `s3_key` is not exposed in the public Attachment response schema.
+- Presigned upload/download URLs are temporary values and are not stored in PostgreSQL.
 - Current `s3_key` format includes user id, entry id, a random UUID, and the original filename to avoid object-key collisions.
+- Local AWS authentication uses credentials stored by AWS CLI outside the repository and selected through the `lifhop-dev` profile.
+- Normal pytest runs mock AWS-facing functions so tests do not depend on network access, credentials, or the real S3 bucket.
 - `event_at` represents when the source event occurred.
 - `created_at` represents when an Entry was stored in lifhop.
 - Passwords are never stored directly; only password hashes are stored.
@@ -167,13 +225,9 @@ The current implementation stops after step 3. Presigned S3 upload URL generatio
 
 ## Current tests
 
-20 tests were confirmed passing at the completion of Step 2.
+The full pytest suite was confirmed passing locally at Step 3 completion.
 
-A new Attachment creation test now exists in `tests/test_attachments.py`.
-
-The repository state confirms the test implementation exists, but the latest full `pytest` execution result is not recorded in the repository and should be verified locally before treating Step 3 API work as complete.
-
-Existing coverage includes:
+Coverage includes:
 
 - Health endpoint
 - Entry create/read/list/update/delete
@@ -191,36 +245,46 @@ Existing coverage includes:
 - Cross-user delete protection
 - Refresh token issuing and refresh flow
 - Access token rejected when used as a refresh token
-- Basic Attachment creation metadata behavior
+- Attachment creation and metadata validation
+- Attachment authentication and ownership protection
+- Presigned upload response behavior
+- Attachment completion with S3 object existence validation
+- Rejection of completion when the S3 object is missing
+- Secure presigned download behavior
+- Rejection of downloads for `PENDING` attachments
+- Cross-user attachment download protection
 
-## Current Step 3 progress
+## Step 3 completion summary
 
-### Completed in code
+Step 3 — Attachments and S3 is complete.
 
-1. Define the initial `Attachment` data model
-2. Associate Attachments with Entries through `entry_id`
-3. Add Entry ↔ Attachment ORM relationships
-4. Add the Attachment Alembic migration
-5. Add Attachment request/response schemas
-6. Add the initial authenticated Attachment creation endpoint
-7. Generate unique server-side `s3_key` values
-8. Add the first Attachment creation test
+The completed implementation demonstrates:
 
-### Next
+1. S3 object storage and object keys
+2. IAM-based AWS access for local development
+3. boto3 and the AWS credential/profile chain
+4. Presigned PUT URLs for direct client uploads
+5. Attachment metadata stored separately in PostgreSQL
+6. `PENDING` -> `UPLOADED` lifecycle management
+7. S3 `HeadObject` validation before marking an upload complete
+8. Presigned GET URLs for secure downloads
+9. Resource ownership checks before issuing storage access
+10. Mocking AWS dependencies in automated tests
 
-1. Verify the latest migration state and run the full test suite locally
-2. Add Attachment ownership/failure tests
-   - unauthenticated request -> 401
-   - nonexistent Entry -> 404
-   - another user's Entry -> 404
-   - invalid negative size -> 422
-3. Introduce S3 and presigned URL concepts without changing unrelated architecture
-4. Add the minimal AWS SDK dependency/configuration safely
-5. Generate a presigned upload URL for the created Attachment
-6. Change `POST /entries/{entry_id}/attachments` to return `AttachmentUploadResponse`
-7. Add tests around presigned URL behavior without requiring real AWS calls in normal tests
-8. Define how an upload becomes `UPLOADED`
-9. Implement secure attachment retrieval/download
+## Next — Step 4: Import Framework
+
+Start the generic external-data ingestion architecture defined in `ROADMAP.md`.
+
+Initial direction:
+
+1. Revisit the common Entry representation needed by importers
+2. Define the importer abstraction and normalization boundary
+3. Start with a simple Markdown importer
+4. Convert imported content into normal lifhop Entries
+5. Keep provider-specific parsing outside the core Entry model
+6. Add tests before moving to ChatGPT-specific import behavior
+
+Do not introduce queues or background workers yet; those are intentionally deferred to later roadmap steps.
 
 ## Known issues / deferred decisions
 
@@ -233,11 +297,11 @@ Existing coverage includes:
 - Password reset and email verification
 - Production authentication provider choice, including whether to keep direct authentication or later adopt a managed service such as Cognito
 - Attachment deletion behavior in PostgreSQL vs S3
-- How an upload is marked `UPLOADED`
 - File size and MIME type validation policy
 - Maximum attachment size
 - Presigned URL expiration duration
+- Cleanup policy for abandoned `PENDING` Attachments and orphaned S3 objects
 
 ## Last update
 
-2026-08-26
+2026-08-27
