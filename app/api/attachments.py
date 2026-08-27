@@ -11,9 +11,13 @@ from app.models.entry import Entry
 from app.models.user import User
 from app.schemas.attachment import (
     AttachmentCreate,
+    AttachmentResponse,
     AttachmentUploadResponse,
 )
-from app.s3 import generate_presigned_upload_url
+from app.s3 import (
+    generate_presigned_upload_url,
+    object_exists,
+)
 
 router = APIRouter(
     prefix="/entries/{entry_id}/attachments",
@@ -73,3 +77,42 @@ def create_attachment(
         attachment=attachment,
         upload_url=upload_url,
     )
+
+@router.post(
+    "/{attachment_id}/complete",
+    response_model=AttachmentResponse,
+)
+def complete_attachment(
+    entry_id: int,
+    attachment_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> Attachment:
+    attachment = db.scalar(
+        select(Attachment)
+        .join(Entry)
+        .where(
+            Attachment.id == attachment_id,
+            Attachment.entry_id == entry_id,
+            Entry.user_id == current_user.id,
+        )
+    )
+
+    if attachment is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Attachment not found",
+        )
+
+    if not object_exists(attachment.s3_key):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Attachment upload is not complete",
+        )
+
+    attachment.status = AttachmentStatus.UPLOADED
+
+    db.commit()
+    db.refresh(attachment)
+
+    return attachment

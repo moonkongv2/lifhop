@@ -181,3 +181,98 @@ def test_user_cannot_create_attachment_for_another_users_entry(
     )
 
     assert response.status_code == 404
+
+def test_complete_attachment(client, auth_headers, monkeypatch):
+    monkeypatch.setattr(
+        "app.api.attachments.generate_presigned_upload_url",
+        lambda s3_key, mime_type: "https://example.com/upload",
+    )
+    monkeypatch.setattr(
+    "app.api.attachments.object_exists",
+    lambda s3_key: True,
+    )
+    
+    entry_response = client.post(
+        "/entries",
+        headers=auth_headers,
+        json={
+            "type": "NOTE",
+            "title": "Attachment complete test",
+            "content": "test",
+        },
+    )
+    entry_id = entry_response.json()["id"]
+
+    attachment_response = client.post(
+        f"/entries/{entry_id}/attachments",
+        headers=auth_headers,
+        json={
+            "filename": "report.pdf",
+            "mime_type": "application/pdf",
+            "size": 1234,
+        },
+    )
+
+    attachment = attachment_response.json()["attachment"]
+
+    assert attachment["status"] == "PENDING"
+
+    complete_response = client.post(
+        f"/entries/{entry_id}/attachments/{attachment['id']}/complete",
+        headers=auth_headers,
+    )
+
+    assert complete_response.status_code == 200
+
+    body = complete_response.json()
+
+    assert body["id"] == attachment["id"]
+    assert body["entry_id"] == entry_id
+    assert body["status"] == "UPLOADED"
+
+
+def test_complete_attachment_rejects_missing_s3_object(
+    client,
+    auth_headers,
+    monkeypatch,
+):
+    monkeypatch.setattr(
+        "app.api.attachments.generate_presigned_upload_url",
+        lambda s3_key, mime_type: "https://example.com/upload",
+    )
+
+    monkeypatch.setattr(
+        "app.api.attachments.object_exists",
+        lambda s3_key: False,
+    )
+
+    entry_response = client.post(
+        "/entries",
+        headers=auth_headers,
+        json={
+            "type": "NOTE",
+            "title": "Missing upload test",
+            "content": "test",
+        },
+    )
+    entry_id = entry_response.json()["id"]
+
+    attachment_response = client.post(
+        f"/entries/{entry_id}/attachments",
+        headers=auth_headers,
+        json={
+            "filename": "report.pdf",
+            "mime_type": "application/pdf",
+            "size": 1234,
+        },
+    )
+
+    attachment_id = attachment_response.json()["attachment"]["id"]
+
+    response = client.post(
+        f"/entries/{entry_id}/attachments/{attachment_id}/complete",
+        headers=auth_headers,
+    )
+
+    assert response.status_code == 409
+    assert response.json()["detail"] == "Attachment upload is not complete"

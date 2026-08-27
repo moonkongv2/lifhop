@@ -1,7 +1,7 @@
 import boto3
 
+from botocore.exceptions import ClientError
 from app.config import settings
-
 
 def get_s3_client():
     session = boto3.Session(
@@ -10,6 +10,25 @@ def get_s3_client():
     )
 
     return session.client("s3")
+
+
+def object_exists(s3_key: str) -> bool:
+    s3 = get_s3_client()
+
+    try:
+        s3.head_object(
+            Bucket=settings.s3_bucket_name,
+            Key=s3_key,
+        )
+        return True
+
+    except ClientError as exc:
+        error_code = exc.response["Error"]["Code"]
+
+        if error_code in ("404", "NoSuchKey", "NotFound"):
+            return False
+
+        raise
 
 
 def generate_presigned_upload_url(
