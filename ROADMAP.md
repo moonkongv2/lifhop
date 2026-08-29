@@ -306,7 +306,7 @@ Entry Attachment
 Raw Import Artifact
 - the original input used to perform an import
 - examples: Markdown file, ChatGPT export ZIP, Notion export ZIP, Gemini Takeout archive
-- retained so the import can be inspected or reprocessed later
+- retained so the import can be inspected, reprocessed, or downloaded later
 ```
 
 These may share S3 infrastructure, but they serve different lifecycle and ownership purposes. A raw import archive should not be forced into the Entry Attachment model merely because both are files.
@@ -637,9 +637,40 @@ re-import with a newer parser
 bug investigation
 recovery from normalization mistakes
 auditing what input produced stored Entries
+user download of the preserved original
 ```
 
-A dedicated `ImportArtifact` model may be introduced later when import jobs require persistent artifact metadata. Do not force this model into Step 4 unless the implementation needs it.
+Because original-file download is now an explicit user-facing requirement, Step 4 introduces minimal persistent metadata for raw artifacts rather than storing an S3 object whose key is immediately lost.
+
+Initial model:
+
+```text
+ImportArtifact
+- id
+- user_id
+- s3_key
+- filename
+- mime_type
+- size
+- created_at
+```
+
+`ImportArtifact` is owned directly by the user in Step 4. A relationship to `ImportJob` is intentionally deferred until Step 5, where batch/archive imports make job lifecycle semantics concrete.
+
+The initial secure retrieval flow should mirror the ownership and presigned-download principles already learned for Entry attachments:
+
+```text
+User requests original
+        |
+        v
+Load ImportArtifact owned by user
+        |
+        v
+Generate presigned S3 GET URL
+        |
+        v
+User downloads original file
+```
 
 ## Initial Implementation
 
@@ -676,13 +707,19 @@ PlainTextImporter + MarkdownImporter
 Unit tests
         |
         v
-Original Markdown file preservation in S3
-        |
-        v
 Entry normalizer
         |
         v
 Entry persistence
+        |
+        v
+4-6A: raw S3 upload helper + Markdown endpoint integration + S3 call test
+        |
+        v
+4-6B: minimal ImportArtifact model + migration + persistence
+        |
+        v
+4-6C: secure original-file download with presigned GET URL
         |
         v
 API integration test
@@ -712,7 +749,10 @@ Expected Step 4 implementation scope:
 ```text
 PlainTextImporter
 MarkdownImporter
-Markdown original-file preservation
+Entry normalization and persistence
+Markdown original-file preservation in S3
+Minimal ImportArtifact persistence
+Secure original-file download
 ```
 
 Expected Step 4 architecture-only compatibility:
@@ -741,6 +781,7 @@ The remaining importers are design constraints and will be introduced in later s
 - Structured vs flattened representations
 - File storage vs content ingestion
 - Raw artifact preservation and reprocessing
+- Raw artifact ownership and secure download
 - Strategy / ABC refactoring driven by observed complexity
 - Version-tolerant parsing
 - Unit testing importer behavior
@@ -765,7 +806,7 @@ Entry Normalizer
 lifhop Entry
 ```
 
-When Markdown is supplied as a file, the original `.md` file can be preserved in S3 independently of the normalized Entry representation.
+When Markdown is supplied as a file, the original `.md` file is preserved in S3 independently of the normalized Entry representation, its metadata is persisted as an `ImportArtifact`, and the owning user can securely request a presigned download URL for the original.
 
 The importer framework must keep source-specific parsing outside the core Entry model and persistence logic.
 
@@ -796,7 +837,7 @@ Import ChatGPT conversation history from exported account data.
 ```text
 ChatGPT Export ZIP
         |
-        +--> Preserve original ZIP in S3
+        +--> Preserve original ZIP in S3 + ImportArtifact
         |
         v
 Extract
@@ -816,7 +857,7 @@ Entries
 
 ChatGPT import should validate that the abstraction created in Step 4 works with structured conversation data rather than only simple documents.
 
-The original export archive should be retained as a raw import artifact so the same source can be inspected or reprocessed later without asking the user to export and upload it again.
+The original export archive should be retained as a raw import artifact so the same source can be inspected, downloaded, or reprocessed later without asking the user to export and upload it again.
 
 The same principle should later apply to file-based exports such as Notion archives and Gemini Takeout archives.
 
@@ -848,13 +889,13 @@ FAILED
 PARTIAL
 ```
 
-A future artifact model may become:
+Step 5 extends the Step 4 `ImportArtifact` model with job association when batch/archive lifecycle requires it:
 
 ```text
 ImportArtifact
 - id
 - user_id
-- import_job_id
+- import_job_id?
 - s3_key
 - filename
 - mime_type
@@ -862,7 +903,7 @@ ImportArtifact
 - created_at
 ```
 
-The exact persistence model should be introduced only when the first real archive import makes the lifecycle requirements concrete.
+The exact relationship and deletion semantics should be driven by the first real archive import rather than guessed earlier.
 
 ## Key Design Problems
 
@@ -901,7 +942,7 @@ How are duplicate archive uploads detected?
 
 A ChatGPT export can be uploaded, its original archive is retained securely in S3, and conversations appear in the lifhop timeline without duplication.
 
-The preserved archive can be used as the source for a future re-import or parser migration without requiring the user to upload the export again.
+The preserved archive can be downloaded or used as the source for a future re-import or parser migration without requiring the user to upload the export again.
 
 The conversation normalizer implementation has also been reviewed to decide whether the single-normalizer design remains appropriately simple or should be split into payload-specific strategies.
 
