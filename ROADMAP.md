@@ -238,7 +238,35 @@ A user can attach a PDF or image to an Entry and retrieve it securely.
 
 ## Goal
 
-Create a generic architecture for external data ingestion.
+Create a generic and extensible architecture for importing data from multiple external sources with different formats.
+
+The framework should separate provider-specific parsing from lifhop's internal data representation so that new providers can be added without changing the core Entry model or persistence logic.
+
+## Source Survey
+
+Initial source formats to consider:
+
+```text
+Documents
+├── Markdown
+└── Notion exports
+
+AI Conversations
+├── ChatGPT
+├── Claude
+└── Gemini
+
+Coding Agent Sessions
+├── Codex CLI
+└── Claude Code
+
+Development Systems
+└── GitHub
+```
+
+The goal of this survey is not to fully implement every source during Step 4.
+
+Instead, representative source formats should be reviewed before finalizing the common import model so that the abstraction is not designed only around the simplest source.
 
 ## Conceptual Flow
 
@@ -246,26 +274,104 @@ Create a generic architecture for external data ingestion.
 External Source
       |
       v
-Importer Adapter
+Provider Parser / Adapter
       |
       v
-Normalizer
+Canonical Item
+      |
+      v
+Entry Normalizer
       |
       v
 Common Entry Model
 ```
 
-Potential importers:
+Responsibilities:
 
 ```text
-MarkdownImporter
-ChatGPTImporter
-GeminiImporter
-NotionImporter
-GitHubImporter
+Provider Parser / Adapter
+- Understand provider-specific raw formats
+- Extract stable identifiers and timestamps
+- Convert provider-specific structures into lifhop canonical structures
+
+Canonical Item
+- Represent imported information using lifhop's internal standard vocabulary
+- Preserve important source information without exposing provider-specific schemas to the rest of the application
+
+Entry Normalizer
+- Convert canonical structures into searchable lifhop Entries
+- Decide how structured information such as conversations or development sessions is represented in Entry.title, Entry.content, and Entry.event_at
 ```
 
-## Initial Source Model
+## Canonical Item Categories
+
+Initial canonical categories to evaluate:
+
+```text
+Document
+Conversation
+DevSession
+```
+
+A future category may include:
+
+```text
+ProjectEvent
+```
+
+Possible provider mapping:
+
+```text
+Markdown     -> Document
+Notion       -> Document
+
+ChatGPT      -> Conversation
+Claude       -> Conversation
+Gemini       -> Conversation
+
+Codex CLI    -> DevSession
+Claude Code  -> DevSession
+
+GitHub       -> ProjectEvent
+```
+
+The canonical model should avoid becoming either:
+
+1. too generic, where all structured information is lost, or
+2. provider-specific, where each provider effectively has its own internal model.
+
+A likely direction is a common envelope combined with typed payloads:
+
+```text
+CanonicalItem
+- provider
+- external_id
+- kind
+- title
+- event_at
+- external_created_at
+- external_updated_at
+- metadata
+- attachments
+- payload
+```
+
+Possible payload types:
+
+```text
+DocumentPayload
+ConversationPayload
+DevSessionPayload
+ProjectEventPayload
+```
+
+The exact fields should be finalized only after reviewing representative raw formats.
+
+## Source Tracking
+
+External imports need stable source identity to support later synchronization and duplicate prevention.
+
+Initial Source model direction:
 
 ```text
 Source
@@ -285,23 +391,126 @@ source_id
 external_id
 ```
 
+Do not introduce all persistence fields immediately unless they are required by the first implementation.
+
+Start with the smallest useful model, observe limitations, and add persistence or constraints when their need becomes clear.
+
+## Attachments
+
+Imported sources may contain or reference files.
+
+Examples:
+
+```text
+ChatGPT uploaded files
+Gemini uploads or generated media
+Notion exported files
+```
+
+Imported attachments should eventually reuse the Attachment and S3 architecture introduced in Step 3 rather than introducing provider-specific file storage.
+
+## Initial Implementation
+
+Use Markdown as the first importer because its raw format is simple and stable.
+
+Suggested progression:
+
+```text
+Source format survey
+        |
+        v
+Canonical model design
+        |
+        v
+Importer interface
+        |
+        v
+Entry normalizer
+        |
+        v
+Markdown parser
+        |
+        v
+Unit tests
+        |
+        v
+Entry persistence
+        |
+        v
+API integration test
+```
+
+Markdown is the first implementation target but should not be the sole basis for designing the canonical model.
+
+## Potential Importers
+
+```text
+MarkdownImporter
+ChatGPTImporter
+ClaudeImporter
+GeminiImporter
+NotionImporter
+CodexImporter
+ClaudeCodeImporter
+GitHubImporter
+```
+
+Only MarkdownImporter is expected to be implemented in Step 4.
+
+The remaining importers are used as design constraints and will be introduced in later steps.
+
 ## Learning Topics
 
 - Adapter pattern
+- Parser boundaries
+- Canonical data models
 - Data normalization
+- Provider-specific vs domain-specific models
 - External identifiers
 - Source tracking
 - Extensible application architecture
+- Structured vs flattened representations
+- Version-tolerant parsing
+- Unit testing importer behavior
 
 ## Completion Criteria
 
-A Markdown file can be imported through the common importer framework and converted into an Entry.
+A Markdown file can be:
+
+```text
+Markdown file
+     |
+     v
+Markdown provider parser
+     |
+     v
+Canonical Item
+     |
+     v
+Entry Normalizer
+     |
+     v
+lifhop Entry
+```
+
+The importer framework must keep Markdown-specific parsing outside the core Entry model and persistence logic.
+
+The resulting architecture should also be reasonably capable of representing at least:
+
+```text
+AI conversation data
+Coding-agent session data
+```
+
+without requiring provider-specific fields in the Entry model.
 
 ---
 
 # Step 5 — ChatGPT Export Import
 
 ## Goal
+
+Use the import framework from Step 4 with the first complex real-world provider.
 
 Import ChatGPT conversation history from exported account data.
 
@@ -317,14 +526,19 @@ Upload
 Extract
         |
         v
-Parse
+ChatGPT Parser
         |
         v
-Normalize
+Canonical Conversation
+        |
+        v
+Entry Normalizer
         |
         v
 Entries
 ```
+
+ChatGPT import should validate that the abstraction created in Step 4 works with structured conversation data rather than only simple documents.
 
 ## Import Job Model
 
@@ -352,18 +566,25 @@ FAILED
 PARTIAL
 ```
 
-## Key Design Problem
+## Key Design Problems
 
-Uploading the same export twice must not duplicate every conversation. Provider-specific external identifiers and database constraints should support idempotent imports.
+Uploading the same export twice must not duplicate every conversation.
+
+Provider-specific external identifiers and database constraints should support idempotent imports.
+
+The importer should also preserve enough conversation structure to support future search and RAG while producing a useful textual Entry representation.
 
 ## Learning Topics
 
 - Batch processing
 - Archive parsing
+- Structured conversation parsing
 - Import progress
 - Idempotency
 - Duplicate detection
+- External identifiers
 - Error handling
+- Imported attachment handling
 
 ## Completion Criteria
 
@@ -606,12 +827,18 @@ Hybrid retrieval performs measurably better than vector search alone on a small 
 
 ## Goal
 
-Move from uploaded exports to connected integrations.
+Move from uploaded exports and local files to connected integrations.
 
 Initial candidates:
 
-- Notion
-- GitHub
+```text
+Notion
+GitHub
+```
+
+Step 4 defines how external data is normalized.
+
+Step 10 focuses on how external systems are connected, authenticated, and synchronized over time.
 
 ## Notion
 
@@ -631,13 +858,25 @@ SQS
 Notion Worker
  |
  v
-Changed Pages
+Notion Adapter
  |
  v
-Entry Upsert
+Canonical Items
+ |
+ v
+Entry Normalizer
+ |
+ v
+Entries
 ```
 
-Support incremental synchronization using fields such as `last_synced_at` and `external_updated_at`.
+Support incremental synchronization using fields such as:
+
+```text
+last_synced_at
+external_updated_at
+external_id
+```
 
 ## GitHub
 
@@ -645,7 +884,7 @@ Support incremental synchronization using fields such as `last_synced_at` and `e
 GitHub Event
  |
  v
-Webhook
+Webhook / API
  |
  v
 lifhop API
@@ -654,10 +893,16 @@ lifhop API
 Queue
  |
  v
-Event Processor
+GitHub Adapter
  |
  v
-Project Event Entry
+Canonical Project Events
+ |
+ v
+Entry Normalizer
+ |
+ v
+Entries
 ```
 
 ## Learning Topics
@@ -669,39 +914,113 @@ Project Event Entry
 - Rate limits
 - Incremental sync
 - Event-driven systems
+- Reusing importer normalization for connected sources
 
 ## Completion Criteria
 
-Changes from at least one connected external source automatically appear in lifhop.
+Changes from at least one connected external source automatically appear in lifhop using the same canonical normalization boundary introduced in Step 4.
 
 ---
 
-# Step 11 — Gemini Import
+# Step 11 — Importer Expansion and Abstraction Validation
 
 ## Goal
 
-Add another conversation provider and validate the importer abstraction.
+Add multiple providers with substantially different raw formats and validate whether the importer abstraction created in Step 4 is genuinely extensible.
+
+Initial candidates:
 
 ```text
-Gemini Export
-     |
-     v
-GeminiImporter
-     |
-     v
-Normalizer
-     |
-     v
-Entry
+Claude
+Gemini
+Codex CLI
+Claude Code
 ```
 
-## Learning Goal
+These providers intentionally cover two different categories:
 
-Evaluate whether the importer abstraction created in Step 4 is actually extensible.
+```text
+AI Conversations
+├── Claude
+└── Gemini
+
+Coding Agent Sessions
+├── Codex CLI
+└── Claude Code
+```
+
+## Validation Goal
+
+Adding a new provider should primarily require:
+
+```text
+New provider parser / adapter
+        |
+        v
+Existing canonical model
+        |
+        v
+Existing Entry normalization
+        |
+        v
+Existing persistence pipeline
+```
+
+Adding a provider should not normally require modifying:
+
+```text
+Entry ORM model
+Entry CRUD behavior
+Core persistence logic
+Other provider parsers
+```
+
+If substantial changes are required, revisit the abstraction rather than adding provider-specific exceptions throughout the codebase.
+
+## Coding Agent Sessions
+
+Codex CLI and Claude Code are useful architecture tests because their data contains more than ordinary messages.
+
+Potential information includes:
+
+```text
+session metadata
+project path
+repository context
+user prompts
+agent responses
+tool calls
+shell commands
+timestamps
+model information
+```
+
+Their raw session formats may evolve and should be treated as provider-specific implementation details.
+
+The importer layer should tolerate format evolution without leaking unstable provider schemas into the rest of lifhop.
+
+## Learning Topics
+
+- Extensibility testing
+- Version-tolerant parsing
+- Conversation vs development-session modeling
+- Provider schema evolution
+- Adapter isolation
+- Regression testing across importers
 
 ## Completion Criteria
 
-Gemini conversations can be imported using the same general pipeline as ChatGPT.
+At least:
+
+```text
+one additional AI conversation provider
++
+one coding-agent provider
+```
+
+can be imported through the Step 4 framework without introducing provider-specific fields into the Entry model or duplicating the core persistence pipeline.
+
+The results should be used to evaluate and, if necessary, revise the canonical model and importer interfaces.
 
 ---
 
