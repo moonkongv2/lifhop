@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 
 class SourceProvider(StrEnum):
     MARKDOWN = "markdown"
+    PLAIN_TEXT = "plain_text"
     CHATGPT = "chatgpt"
     CLAUDE = "claude"
     GEMINI = "gemini"
