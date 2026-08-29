@@ -382,6 +382,85 @@ Entry Normalizer
 - Decide how structured information such as conversations or development sessions is represented in Entry.title, Entry.content, and Entry.event_at
 ```
 
+## Normalizer Evolution Strategy
+
+Importer and Normalizer both vary by input type, but they currently use different implementation strategies because they change along different axes.
+
+Importers vary by external source or format:
+
+```text
+PlainTextImporter
+MarkdownImporter
+ChatGPTImporter
+NotionImporter
+CodexImporter
+...
+```
+
+These sources have substantially different raw schemas and parsing behavior. The importer boundary therefore starts with an explicit ABC / generic interface so each source-specific implementation is isolated from the beginning.
+
+Entry normalization varies by the much smaller set of lifhop canonical payload kinds:
+
+```text
+DocumentPayload
+ConversationPayload
+DevSessionPayload
+ProjectEventPayload (future)
+```
+
+At the beginning of Step 4, normalization rules are intentionally small. Start with one `EntryNormalizer` that dispatches on canonical payload type rather than introducing a class hierarchy before the complexity exists.
+
+```text
+CanonicalItem
+    |
+    v
+EntryNormalizer
+    |
+    +--> DocumentPayload      -> DOCUMENT Entry
+    +--> ConversationPayload  -> CONVERSATION Entry
+    +--> DevSessionPayload    -> appropriate Entry representation
+```
+
+This is a deliberate learning sequence, not a permanent commitment to `isinstance` branching.
+
+Revisit the design and consider Strategy / ABC-based normalizers when one or more of these signals appear:
+
+```text
+normalizer branches continue to grow
+individual branches become substantial or hard to test independently
+payload kinds need different collaborators or dependencies
+conversation flattening becomes materially different from document normalization
+development-session normalization gains tool-call, command, or repository-specific rules
+adding a canonical kind repeatedly requires editing a large central normalizer
+```
+
+A possible later structure is:
+
+```text
+Normalizer
+├── DocumentNormalizer
+├── ConversationNormalizer
+├── DevSessionNormalizer
+└── ProjectEventNormalizer
+```
+
+Step 5 (ChatGPT import) is an explicit checkpoint for this decision because it introduces the first non-document normalization logic. If conversation normalization makes the single normalizer meaningfully more complex, refactor then rather than predicting the complexity in advance.
+
+Learning goal:
+
+```text
+Start simple
+    |
+    v
+Observe branching complexity
+    |
+    v
+Identify the reason to apply polymorphism
+    |
+    v
+Refactor to Strategy / ABC when the abstraction earns its cost
+```
+
 ## Canonical Item Categories
 
 Initial canonical categories:
@@ -662,6 +741,7 @@ The remaining importers are design constraints and will be introduced in later s
 - Structured vs flattened representations
 - File storage vs content ingestion
 - Raw artifact preservation and reprocessing
+- Strategy / ABC refactoring driven by observed complexity
 - Version-tolerant parsing
 - Unit testing importer behavior
 
@@ -740,6 +820,8 @@ The original export archive should be retained as a raw import artifact so the s
 
 The same principle should later apply to file-based exports such as Notion archives and Gemini Takeout archives.
 
+Step 5 is also the first explicit normalizer design checkpoint. After implementing conversation-to-Entry normalization, evaluate whether the simple central `EntryNormalizer` remains clear. If conversation-specific rules make it meaningfully more complex, introduce separate normalizer strategies / ABC implementations at that point rather than accumulating source-independent branching in one class.
+
 ## Import Job Model
 
 ```text
@@ -813,12 +895,15 @@ How are duplicate archive uploads detected?
 - External identifiers
 - Error handling
 - Imported attachment handling
+- Recognizing when conditional dispatch should evolve into Strategy / ABC polymorphism
 
 ## Completion Criteria
 
 A ChatGPT export can be uploaded, its original archive is retained securely in S3, and conversations appear in the lifhop timeline without duplication.
 
 The preserved archive can be used as the source for a future re-import or parser migration without requiring the user to upload the export again.
+
+The conversation normalizer implementation has also been reviewed to decide whether the single-normalizer design remains appropriately simple or should be split into payload-specific strategies.
 
 ---
 
