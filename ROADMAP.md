@@ -288,7 +288,7 @@ File storage and knowledge ingestion are separate responsibilities.
 ```text
 Storage
 - preserve original files
-- use Attachment + S3
+- use S3-backed storage
 
 Ingestion
 - understand source contents
@@ -296,12 +296,37 @@ Ingestion
 - normalize them into searchable Entries
 ```
 
-For example, a future PDF flow may become:
+Two different classes of stored files should be distinguished conceptually:
+
+```text
+Entry Attachment
+- a file that belongs to a user-visible Entry
+- examples: uploaded PDF, image, Markdown file, imported conversation attachment
+
+Raw Import Artifact
+- the original input used to perform an import
+- examples: Markdown file, ChatGPT export ZIP, Notion export ZIP, Gemini Takeout archive
+- retained so the import can be inspected or reprocessed later
+```
+
+These may share S3 infrastructure, but they serve different lifecycle and ownership purposes. A raw import archive should not be forced into the Entry Attachment model merely because both are files.
+
+Original user-provided files should be preserved whenever a file exists. For example, importing a Markdown file should retain the original `.md` object in S3 in addition to producing normalized Entry content.
+
+```text
+Markdown File Upload
+   |
+   +--> Original .md --> S3 raw/original file
+   |
+   +--> Markdown Parser --> DocumentPayload --> Entry
+```
+
+A future PDF flow may become:
 
 ```text
 PDF Upload
    |
-   +--> Original PDF --> Attachment --> S3
+   +--> Original PDF --> Attachment / original object --> S3
    |
    +--> Text Extraction --> DocumentPayload --> Entry
 ```
@@ -311,17 +336,21 @@ A future image flow may become:
 ```text
 Image Upload
    |
-   +--> Original Image --> Attachment --> S3
+   +--> Original Image --> Attachment / original object --> S3
    |
    +--> OCR / Vision --> DocumentPayload --> Entry
 ```
 
-Step 3 already provides the storage side. Later document-processing work should reuse that storage architecture rather than introduce a separate file system.
+Step 3 already provides the main S3 storage mechanics. Later import and document-processing work should reuse that infrastructure rather than introduce a separate file system.
+
+Raw import artifact retention, deletion, privacy, storage cost, and expiration policies are intentionally deferred until real import jobs are implemented.
 
 ## Conceptual Flow
 
 ```text
 Source
+  |
+  +--> Preserve original file/archive in S3 when applicable
   |
   v
 Provider / Format Parser or Adapter
@@ -466,6 +495,7 @@ MarkdownSource
 - content
 - filename?
 - title?
+- original object reference?
 
 PdfSource
 - original file / object reference
@@ -486,7 +516,10 @@ For example:
 HTTP Upload / S3 / Local File
           |
           v
-Application layer resolves file contents or object reference
+Application layer preserves original file when applicable
+          |
+          v
+Application layer resolves contents or object reference
           |
           v
 Source-specific parser
@@ -494,20 +527,40 @@ Source-specific parser
 
 This keeps file transport, storage, and parsing as separate concerns.
 
-## Attachments
+## Attachments and Raw Import Artifacts
 
 Imported sources may contain or reference files.
 
 Examples:
 
 ```text
-User-uploaded PDF or image
+User-uploaded Markdown, PDF, or image
 ChatGPT uploaded files
 Gemini uploads or generated media
 Notion exported files
 ```
 
-Imported files should reuse the Attachment and S3 architecture introduced in Step 3 rather than introducing source-specific file storage.
+Entry-level files should reuse the Attachment and S3 architecture introduced in Step 3 rather than introducing source-specific file storage.
+
+The original import input should also be preserved in S3 when it is a file or archive. Examples include:
+
+```text
+notes.md
+chatgpt-export.zip
+notion-export.zip
+gemini-takeout.zip
+```
+
+Raw import artifacts exist to support:
+
+```text
+re-import with a newer parser
+bug investigation
+recovery from normalization mistakes
+auditing what input produced stored Entries
+```
+
+A dedicated `ImportArtifact` model may be introduced later when import jobs require persistent artifact metadata. Do not force this model into Step 4 unless the implementation needs it.
 
 ## Initial Implementation
 
@@ -521,7 +574,7 @@ PlainTextImporter ---\
 MarkdownImporter ----/
 ```
 
-This allows the project to verify that two different source formats can converge on the same canonical representation before adding more complex providers.
+For file-based Markdown import, preserve the original `.md` file in S3 while parsing its text into a Canonical Document.
 
 Suggested progression:
 
@@ -542,6 +595,9 @@ PlainTextImporter + MarkdownImporter
         |
         v
 Unit tests
+        |
+        v
+Original Markdown file preservation in S3
         |
         v
 Entry normalizer
@@ -577,6 +633,7 @@ Expected Step 4 implementation scope:
 ```text
 PlainTextImporter
 MarkdownImporter
+Markdown original-file preservation
 ```
 
 Expected Step 4 architecture-only compatibility:
@@ -586,6 +643,7 @@ PdfImporter
 ImageImporter
 AI conversation providers
 Coding-agent session providers
+Raw archive preservation for later provider imports
 ```
 
 The remaining importers are design constraints and will be introduced in later steps.
@@ -603,6 +661,7 @@ The remaining importers are design constraints and will be introduced in later s
 - Extensible application architecture
 - Structured vs flattened representations
 - File storage vs content ingestion
+- Raw artifact preservation and reprocessing
 - Version-tolerant parsing
 - Unit testing importer behavior
 
@@ -625,6 +684,8 @@ Entry Normalizer
         v
 lifhop Entry
 ```
+
+When Markdown is supplied as a file, the original `.md` file can be preserved in S3 independently of the normalized Entry representation.
 
 The importer framework must keep source-specific parsing outside the core Entry model and persistence logic.
 
@@ -655,8 +716,7 @@ Import ChatGPT conversation history from exported account data.
 ```text
 ChatGPT Export ZIP
         |
-        v
-Upload
+        +--> Preserve original ZIP in S3
         |
         v
 Extract
@@ -675,6 +735,10 @@ Entries
 ```
 
 ChatGPT import should validate that the abstraction created in Step 4 works with structured conversation data rather than only simple documents.
+
+The original export archive should be retained as a raw import artifact so the same source can be inspected or reprocessed later without asking the user to export and upload it again.
+
+The same principle should later apply to file-based exports such as Notion archives and Gemini Takeout archives.
 
 ## Import Job Model
 
@@ -702,6 +766,22 @@ FAILED
 PARTIAL
 ```
 
+A future artifact model may become:
+
+```text
+ImportArtifact
+- id
+- user_id
+- import_job_id
+- s3_key
+- filename
+- mime_type
+- size
+- created_at
+```
+
+The exact persistence model should be introduced only when the first real archive import makes the lifecycle requirements concrete.
+
 ## Key Design Problems
 
 Uploading the same export twice must not duplicate every conversation.
@@ -710,10 +790,22 @@ Provider-specific external identifiers and database constraints should support i
 
 The importer should also preserve enough conversation structure to support future search and RAG while producing a useful textual Entry representation.
 
+Raw artifact handling should answer, when implementation begins:
+
+```text
+How long are original archives retained?
+Can users delete them independently of imported Entries?
+What happens to Entries when the raw artifact is deleted?
+How are sensitive exports protected?
+How are duplicate archive uploads detected?
+```
+
 ## Learning Topics
 
 - Batch processing
 - Archive parsing
+- Raw import artifact storage in S3
+- Reprocessing from preserved source data
 - Structured conversation parsing
 - Import progress
 - Idempotency
@@ -724,7 +816,9 @@ The importer should also preserve enough conversation structure to support futur
 
 ## Completion Criteria
 
-A ChatGPT export can be uploaded and conversations appear in the lifhop timeline without duplication.
+A ChatGPT export can be uploaded, its original archive is retained securely in S3, and conversations appear in the lifhop timeline without duplication.
+
+The preserved archive can be used as the source for a future re-import or parser migration without requiring the user to upload the export again.
 
 ---
 
