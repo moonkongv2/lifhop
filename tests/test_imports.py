@@ -1,4 +1,4 @@
-def test_import_markdown_returns_canonical_item(
+def test_import_markdown_persists_entry(
     client,
     auth_headers,
 ):
@@ -20,51 +20,47 @@ def test_import_markdown_returns_canonical_item(
 
     assert len(data) == 1
 
-    item = data[0]
+    entry = data[0]
 
-    assert item["provider"] == "markdown"
-    assert item["external_id"] is None
-    assert item["title"] == "Python Decorator"
-
-    assert item["payload"]["kind"] == "document"
-    assert item["payload"]["content"] == (
+    assert entry["id"] is not None
+    assert entry["type"] == "DOCUMENT"
+    assert entry["title"] == "Python Decorator"
+    assert entry["content"] == (
         "# Python Decorator\n\nDecorator notes."
     )
 
 
-def test_import_markdown_accepts_explicit_title(
+def test_imported_markdown_can_be_retrieved_as_entry(
     client,
     auth_headers,
 ):
-    response = client.post(
+    import_response = client.post(
         "/imports/markdown",
         headers=auth_headers,
         files={
             "file": (
                 "study.md",
-                b"# Original Title\n\nBody",
-                "text/markdown",
-            )
-        },
-        data={
-            "title": "My Study Note",
-        },
-    )
-
-    assert response.status_code == 200
-    assert response.json()[0]["title"] == "My Study Note"
-
-
-def test_import_markdown_requires_authentication(client):
-    response = client.post(
-        "/imports/markdown",
-        files={
-            "file": (
-                "study.md",
-                b"# Study",
+                b"# Python Decorator\n\nDecorator notes.",
                 "text/markdown",
             )
         },
     )
 
-    assert response.status_code == 401
+    assert import_response.status_code == 200
+
+    entry_id = import_response.json()[0]["id"]
+
+    get_response = client.get(
+        f"/entries/{entry_id}",
+        headers=auth_headers,
+    )
+
+    assert get_response.status_code == 200
+
+    entry = get_response.json()
+
+    assert entry["type"] == "DOCUMENT"
+    assert entry["title"] == "Python Decorator"
+    assert entry["content"] == (
+        "# Python Decorator\n\nDecorator notes."
+    )
