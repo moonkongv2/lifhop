@@ -1267,3 +1267,47 @@ Improve
 ```
 
 The learning process is part of the deliverable.
+
+
+## Learning-Oriented Tests
+
+Some tests may be added primarily to make a framework behavior, language feature, or architectural concept explicit during the learning process.
+
+Examples may include:
+
+```text
+- verifying that an abstract base class cannot be instantiated
+- demonstrating discriminated-union validation behavior
+- testing framework behavior that is already guaranteed by Python or a mature library
+```
+
+These tests are useful while the concept is being introduced because they make assumptions visible and provide fast feedback during development.
+
+However, they should not automatically become permanent regression tests.
+
+As the project matures, review learning-oriented tests and remove tests that:
+
+```text
+- primarily verify Python or framework behavior rather than lifhop behavior
+- no longer protect a meaningful application contract
+- duplicate stronger integration or implementation-level tests
+- add maintenance cost without meaningful regression protection
+```
+
+Permanent tests should primarily protect lifhop-specific behavior, boundaries, failure cases, and user-visible requirements.
+
+The goal is:
+
+```text
+Learn with explicit tests
+        |
+        v
+Understand the behavior
+        |
+        v
+Replace or remove framework-demonstration tests
+        |
+        v
+Keep tests that protect real application contracts
+```
+
