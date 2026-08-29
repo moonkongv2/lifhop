@@ -17,6 +17,7 @@ Target capabilities:
 ```text
 Manual Entry
 File Attachment
+User-provided Document Import
 ChatGPT Import
 Keyword Search
 ```
@@ -26,6 +27,7 @@ Keyword Search
 Target capabilities:
 
 ```text
+Document Content Extraction
 Semantic Search
 Hybrid Search
 RAG
@@ -189,6 +191,8 @@ A user can only access their own Entries.
 
 Support files such as PDF, images, Markdown, and text files.
 
+Step 3 focuses on secure file storage and retrieval. It does not yet imply that the contents of a PDF or image are searchable knowledge.
+
 ## Initial Model
 
 ```text
@@ -238,17 +242,22 @@ A user can attach a PDF or image to an Entry and retrieve it securely.
 
 ## Goal
 
-Create a generic and extensible architecture for importing data from multiple external sources with different formats.
+Create a generic and extensible architecture for importing user-provided content and data from external systems with different formats.
 
-The framework should separate provider-specific parsing from lifhop's internal data representation so that new providers can be added without changing the core Entry model or persistence logic.
+The framework should separate source-specific parsing from lifhop's internal data representation so that new sources can be added without changing the core Entry model or persistence logic.
 
 ## Source Survey
 
 Initial source formats to consider:
 
 ```text
-Documents
+User-provided Documents
+├── Plain Text
 ├── Markdown
+├── PDF
+└── Image
+
+External Documents
 └── Notion exports
 
 AI Conversations
@@ -266,37 +275,78 @@ Development Systems
 
 The goal of this survey is not to fully implement every source during Step 4.
 
-Instead, representative source formats should be reviewed before finalizing the common import model so that the abstraction is not designed only around the simplest source.
+Representative source formats should be reviewed before finalizing the common import model so that the abstraction is not designed only around the simplest source.
+
+Plain Text and Markdown are the first implementation targets.
+
+PDF and Image are required long-term user-facing source types, but Step 4 only needs to ensure that the architecture can accommodate them. PDF text extraction, OCR, and vision-based image understanding are intentionally deferred until their processing requirements are introduced explicitly.
+
+## Storage vs Ingestion
+
+File storage and knowledge ingestion are separate responsibilities.
+
+```text
+Storage
+- preserve original files
+- use Attachment + S3
+
+Ingestion
+- understand source contents
+- convert contents into Canonical Items
+- normalize them into searchable Entries
+```
+
+For example, a future PDF flow may become:
+
+```text
+PDF Upload
+   |
+   +--> Original PDF --> Attachment --> S3
+   |
+   +--> Text Extraction --> DocumentPayload --> Entry
+```
+
+A future image flow may become:
+
+```text
+Image Upload
+   |
+   +--> Original Image --> Attachment --> S3
+   |
+   +--> OCR / Vision --> DocumentPayload --> Entry
+```
+
+Step 3 already provides the storage side. Later document-processing work should reuse that storage architecture rather than introduce a separate file system.
 
 ## Conceptual Flow
 
 ```text
-External Source
-      |
-      v
-Provider Parser / Adapter
-      |
-      v
+Source
+  |
+  v
+Provider / Format Parser or Adapter
+  |
+  v
 Canonical Item
-      |
-      v
+  |
+  v
 Entry Normalizer
-      |
-      v
+  |
+  v
 Common Entry Model
 ```
 
 Responsibilities:
 
 ```text
-Provider Parser / Adapter
-- Understand provider-specific raw formats
-- Extract stable identifiers and timestamps
-- Convert provider-specific structures into lifhop canonical structures
+Provider / Format Parser or Adapter
+- Understand source-specific raw formats
+- Extract stable identifiers and timestamps when available
+- Convert source-specific structures into lifhop canonical structures
 
 Canonical Item
 - Represent imported information using lifhop's internal standard vocabulary
-- Preserve important source information without exposing provider-specific schemas to the rest of the application
+- Preserve important source information without exposing source-specific schemas to the rest of the application
 
 Entry Normalizer
 - Convert canonical structures into searchable lifhop Entries
@@ -305,7 +355,7 @@ Entry Normalizer
 
 ## Canonical Item Categories
 
-Initial canonical categories to evaluate:
+Initial canonical categories:
 
 ```text
 Document
@@ -319,53 +369,59 @@ A future category may include:
 ProjectEvent
 ```
 
-Possible provider mapping:
+Possible source mapping:
 
 ```text
-Markdown     -> Document
-Notion       -> Document
+Plain Text    -> Document
+Markdown      -> Document
+PDF           -> Document
+Image         -> Document
+Notion        -> Document
 
-ChatGPT      -> Conversation
-Claude       -> Conversation
-Gemini       -> Conversation
+ChatGPT       -> Conversation
+Claude        -> Conversation
+Gemini        -> Conversation
 
-Codex CLI    -> DevSession
-Claude Code  -> DevSession
+Codex CLI     -> DevSession
+Claude Code   -> DevSession
 
-GitHub       -> ProjectEvent
+GitHub        -> ProjectEvent
 ```
 
 The canonical model should avoid becoming either:
 
 1. too generic, where all structured information is lost, or
-2. provider-specific, where each provider effectively has its own internal model.
+2. source-specific, where each source effectively has its own internal model.
 
-A likely direction is a common envelope combined with typed payloads:
+The current direction is a common envelope combined with typed payloads.
 
 ```text
 CanonicalItem
 - provider
 - external_id
-- kind
 - title
 - event_at
-- external_created_at
-- external_updated_at
-- metadata
-- attachments
 - payload
 ```
 
-Possible payload types:
+Initial payload types:
 
 ```text
 DocumentPayload
 ConversationPayload
 DevSessionPayload
-ProjectEventPayload
 ```
 
-The exact fields should be finalized only after reviewing representative raw formats.
+Potential future fields include:
+
+```text
+external_created_at
+external_updated_at
+metadata
+attachments
+```
+
+They should be added only when concrete source implementations demonstrate the need.
 
 ## Source Tracking
 
@@ -395,6 +451,49 @@ Do not introduce all persistence fields immediately unless they are required by 
 
 Start with the smallest useful model, observe limitations, and add persistence or constraints when their need becomes clear.
 
+## User-provided Document Sources
+
+User-provided content should support both direct text entry and file-based input.
+
+Potential source models may evolve toward source-specific input types such as:
+
+```text
+PlainTextSource
+- content
+- title?
+
+MarkdownSource
+- content
+- filename?
+- title?
+
+PdfSource
+- original file / object reference
+- filename
+- title?
+
+ImageSource
+- original file / object reference
+- filename
+- title?
+```
+
+The parser should not be responsible for how uploaded files were transported or stored.
+
+For example:
+
+```text
+HTTP Upload / S3 / Local File
+          |
+          v
+Application layer resolves file contents or object reference
+          |
+          v
+Source-specific parser
+```
+
+This keeps file transport, storage, and parsing as separate concerns.
+
 ## Attachments
 
 Imported sources may contain or reference files.
@@ -402,16 +501,27 @@ Imported sources may contain or reference files.
 Examples:
 
 ```text
+User-uploaded PDF or image
 ChatGPT uploaded files
 Gemini uploads or generated media
 Notion exported files
 ```
 
-Imported attachments should eventually reuse the Attachment and S3 architecture introduced in Step 3 rather than introducing provider-specific file storage.
+Imported files should reuse the Attachment and S3 architecture introduced in Step 3 rather than introducing source-specific file storage.
 
 ## Initial Implementation
 
-Use Markdown as the first importer because its raw format is simple and stable.
+Use Plain Text and Markdown as the first two document importers.
+
+They are intentionally simple but demonstrate an important normalization property:
+
+```text
+PlainTextImporter ---\
+                     +--> DocumentPayload --> CanonicalItem
+MarkdownImporter ----/
+```
+
+This allows the project to verify that two different source formats can converge on the same canonical representation before adding more complex providers.
 
 Suggested progression:
 
@@ -425,13 +535,16 @@ Canonical model design
 Importer interface
         |
         v
-Entry normalizer
+Plain Text + Markdown source models
         |
         v
-Markdown parser
+PlainTextImporter + MarkdownImporter
         |
         v
 Unit tests
+        |
+        v
+Entry normalizer
         |
         v
 Entry persistence
@@ -440,12 +553,16 @@ Entry persistence
 API integration test
 ```
 
-Markdown is the first implementation target but should not be the sole basis for designing the canonical model.
+Plain Text and Markdown are first implementation targets but should not be the sole basis for designing the canonical model.
 
 ## Potential Importers
 
 ```text
+PlainTextImporter
 MarkdownImporter
+PdfImporter
+ImageImporter
+
 ChatGPTImporter
 ClaudeImporter
 GeminiImporter
@@ -455,54 +572,73 @@ ClaudeCodeImporter
 GitHubImporter
 ```
 
-Only MarkdownImporter is expected to be implemented in Step 4.
+Expected Step 4 implementation scope:
 
-The remaining importers are used as design constraints and will be introduced in later steps.
+```text
+PlainTextImporter
+MarkdownImporter
+```
+
+Expected Step 4 architecture-only compatibility:
+
+```text
+PdfImporter
+ImageImporter
+AI conversation providers
+Coding-agent session providers
+```
+
+The remaining importers are design constraints and will be introduced in later steps.
 
 ## Learning Topics
 
 - Adapter pattern
 - Parser boundaries
+- Generic importer interfaces
 - Canonical data models
 - Data normalization
-- Provider-specific vs domain-specific models
+- Source-specific vs domain-specific models
 - External identifiers
 - Source tracking
 - Extensible application architecture
 - Structured vs flattened representations
+- File storage vs content ingestion
 - Version-tolerant parsing
 - Unit testing importer behavior
 
 ## Completion Criteria
 
-A Markdown file can be:
+Plain Text and Markdown can both be converted through the common importer framework:
 
 ```text
-Markdown file
-     |
-     v
-Markdown provider parser
-     |
-     v
-Canonical Item
-     |
-     v
+Plain Text / Markdown
+        |
+        v
+Source-specific parser
+        |
+        v
+Canonical Document Item
+        |
+        v
 Entry Normalizer
-     |
-     v
+        |
+        v
 lifhop Entry
 ```
 
-The importer framework must keep Markdown-specific parsing outside the core Entry model and persistence logic.
+The importer framework must keep source-specific parsing outside the core Entry model and persistence logic.
 
-The resulting architecture should also be reasonably capable of representing at least:
+The resulting architecture should also be reasonably capable of representing:
 
 ```text
+PDF and image documents
 AI conversation data
 Coding-agent session data
 ```
 
-without requiring provider-specific fields in the Entry model.
+without requiring source-specific fields in the Entry model.
+
+PDF text extraction, OCR, and vision processing are not required for Step 4 completion.
 
 ---
 
@@ -701,6 +837,22 @@ Thousands of Entries can be searched efficiently using keywords and filters.
 
 Allow retrieval based on meaning rather than exact words.
 
+Before semantic indexing, source content must exist in searchable textual form.
+
+For ordinary text, Markdown, and conversation sources this happens during import. For binary documents such as PDFs and images, introduce content extraction when needed.
+
+Potential document-processing capabilities:
+
+```text
+PDF text extraction
+Image OCR
+Vision-based image description / understanding
+Extracted text normalization
+Attachment -> searchable Entry content
+```
+
+These capabilities may be implemented immediately before or during Step 8 depending on which real user documents are being indexed. If their scope grows substantially, promote them into a dedicated roadmap step rather than hiding them inside the RAG implementation.
+
 ## Initial Chunk Model
 
 ```text
@@ -756,6 +908,8 @@ Generated answers must retain references to the Entries used as evidence.
 
 ## Learning Topics
 
+- Document content extraction
+- OCR / vision boundaries
 - Embeddings
 - Vector similarity
 - Chunking
@@ -1215,7 +1369,7 @@ Long-term development and learning sequence.
 
 ## CURRENT.md
 
-Created when development begins. Keep concise:
+Keep concise:
 
 ```text
 Current milestone
@@ -1238,6 +1392,48 @@ Examples:
 - SQS vs Redis-based queue
 - ECS vs Lambda
 - direct authentication vs Cognito
+
+---
+
+# Learning-Oriented Tests
+
+Some tests may be added primarily to make a framework behavior, language feature, or architectural concept explicit during the learning process.
+
+Examples may include:
+
+```text
+verifying that an abstract base class cannot be instantiated
+demonstrating discriminated-union validation behavior
+testing framework behavior already guaranteed by Python or a mature library
+```
+
+These tests are useful while a concept is being introduced because they make assumptions visible and provide fast feedback.
+
+They should not automatically become permanent regression tests.
+
+As the project matures, review learning-oriented tests and remove tests that:
+
+```text
+primarily verify Python or framework behavior rather than lifhop behavior
+no longer protect a meaningful application contract
+duplicate stronger integration or implementation-level tests
+add maintenance cost without meaningful regression protection
+```
+
+Permanent tests should primarily protect lifhop-specific behavior, boundaries, failure cases, and user-visible requirements.
+
+```text
+Learn with explicit tests
+        |
+        v
+Understand the behavior
+        |
+        v
+Replace or remove framework-demonstration tests
+        |
+        v
+Keep tests that protect real application contracts
+```
 
 ---
 
@@ -1267,47 +1463,3 @@ Improve
 ```
 
 The learning process is part of the deliverable.
-
-
-## Learning-Oriented Tests
-
-Some tests may be added primarily to make a framework behavior, language feature, or architectural concept explicit during the learning process.
-
-Examples may include:
-
-```text
-- verifying that an abstract base class cannot be instantiated
-- demonstrating discriminated-union validation behavior
-- testing framework behavior that is already guaranteed by Python or a mature library
-```
-
-These tests are useful while the concept is being introduced because they make assumptions visible and provide fast feedback during development.
-
-However, they should not automatically become permanent regression tests.
-
-As the project matures, review learning-oriented tests and remove tests that:
-
-```text
-- primarily verify Python or framework behavior rather than lifhop behavior
-- no longer protect a meaningful application contract
-- duplicate stronger integration or implementation-level tests
-- add maintenance cost without meaningful regression protection
-```
-
-Permanent tests should primarily protect lifhop-specific behavior, boundaries, failure cases, and user-visible requirements.
-
-The goal is:
-
-```text
-Learn with explicit tests
-        |
-        v
-Understand the behavior
-        |
-        v
-Replace or remove framework-demonstration tests
-        |
-        v
-Keep tests that protect real application contracts
-```
-
