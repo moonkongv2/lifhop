@@ -4,39 +4,36 @@
 
 Step 4 — Import Framework
 
-Status: In Progress
+Status: Complete
 
-Previous milestone: Step 3 — Attachments and S3 — Complete
+Next milestone: Step 5 — ChatGPT Export Import
 
 ## Completed work
 
-- FastAPI application bootstrap
-- `GET /health`
+- FastAPI application bootstrap and `GET /health`
 - PostgreSQL 17 via Docker Compose
-- SQLAlchemy 2.x and psycopg setup
-- Environment configuration with Pydantic Settings
-- Alembic migration setup
-- Entry CRUD API with pagination and Pydantic schemas
-- pytest-based API integration tests with isolated test PostgreSQL database
-- User model, registration, login, JWT access/refresh tokens, and authorization
-- Entry ownership enforcement and cross-user protection
-- Attachment ORM model, schemas, ownership checks, and S3 integration
-- Presigned PUT upload flow
-- Attachment completion flow with S3 `HeadObject`
-- Secure presigned GET download flow
-- Attachment tests with mocked AWS-facing behavior
+- SQLAlchemy 2.x, psycopg, Alembic, and Pydantic Settings
+- Entry CRUD API with pagination
+- pytest integration tests with isolated test PostgreSQL transactions
+- User registration, login, JWT access/refresh tokens, and ownership authorization
+- Attachment model and S3 integration
+- Presigned PUT upload, S3 completion check, and secure presigned GET download
 - Manual S3 integration verification
-- Full pytest suite confirmed passing after Step 3
 
-## Step 4 progress
+## Step 4 — Import Framework completed
 
-### Step 4-0 — Source Format Survey
+### Source survey and architecture
 
 Reviewed representative source categories:
 
 ```text
-Documents
+User-provided Documents
+├── Plain Text
 ├── Markdown
+├── PDF
+└── Image
+
+External Documents
 └── Notion
 
 AI Conversations
@@ -52,39 +49,34 @@ Development Systems
 └── GitHub
 ```
 
-Key architecture conclusion:
+Core import architecture:
 
 ```text
-External Source
-      |
-      v
-Provider Parser / Adapter
-      |
-      v
+Source
+  |
+  +--> Preserve original file/archive in S3 when applicable
+  |
+  v
+Provider / Format Parser
+  |
+  v
 Canonical Item
-      |
-      v
+  |
+  v
 Entry Normalizer
-      |
-      v
+  |
+  v
 Entry
+  |
+  v
+PostgreSQL
 ```
 
-Provider-specific raw formats should not leak into the core Entry model.
+Provider-specific raw formats are kept outside the core Entry model.
 
-`ROADMAP.md` was updated to reflect the canonical-item architecture, expanded source set, and Step 11 abstraction-validation goals.
+### Canonical model
 
-### Step 4-1 — Canonical Model
-
-Canonical import models were introduced under:
-
-```text
-app/importers/
-├── __init__.py
-└── canonical.py
-```
-
-Initial provider-neutral types include:
+Implemented provider-neutral canonical models under `app/importers/`:
 
 ```text
 SourceProvider
@@ -96,98 +88,212 @@ DevSessionPayload
 CanonicalItem
 ```
 
-Current canonical categories:
+`CanonicalItem.payload` uses a Pydantic discriminated union with `payload.kind` as the discriminator.
 
-```text
-DOCUMENT
-CONVERSATION
-DEV_SESSION
-```
-
-Provider and content kind are intentionally separated:
+Provider and content kind are intentionally separate:
 
 ```text
 provider = where the data came from
 kind     = what kind of information it represents
 ```
 
-Examples:
+### Importer interface
+
+Implemented an explicit generic ABC importer boundary.
 
 ```text
-ChatGPT     -> CONVERSATION
-Claude      -> CONVERSATION
-Markdown    -> DOCUMENT
-Codex CLI   -> DEV_SESSION
-Claude Code -> DEV_SESSION
+Importer[SourceT]
+    |
+    v
+list[CanonicalItem]
 ```
 
-Structured conversation/session data is preserved until Entry normalization rather than being flattened immediately into a string.
+This keeps source-specific parsing isolated while preserving implementation-specific input types.
 
-Canonical payloads use a Pydantic discriminated union with `payload.kind` as the discriminator. The outer `CanonicalItem` does not duplicate `kind`, keeping `payload.kind` as the single source of truth.
+### Initial document importers
 
-Pydantic's default extra-field behavior is currently retained. `extra="forbid"` was considered but intentionally deferred while the canonical schema is still evolving and before several real providers have been implemented.
-
-## Step 4 tests
-
-Canonical import tests currently cover:
-
-- `DocumentPayload` creation
-- `ConversationPayload` message structure preservation
-- `CanonicalItem` with conversation payload
-- discriminated-union validation
-- rejection of payloads whose declared `kind` does not match their structure
-
-All Step 4-1 canonical model tests are passing.
-
-## Current architecture
+Implemented:
 
 ```text
-External Source
+PlainTextSource
+MarkdownSource
+PlainTextImporter
+MarkdownImporter
+```
+
+Both Plain Text and Markdown normalize into the same canonical `DocumentPayload` representation.
+
+Markdown title resolution priority:
+
+```text
+explicit title
+→ first H1
+→ filename stem
+→ Untitled
+```
+
+### Entry normalization
+
+Implemented `EntryNormalizer` and `NormalizedEntry`.
+
+Current document flow:
+
+```text
+DocumentPayload
       |
       v
-Provider Parser / Adapter
+EntryNormalizer
       |
       v
-Canonical Model
-      |
-      v
-Entry Normalizer
-      |
-      v
-Entry ORM
-      |
-      v
+EntryType.DOCUMENT
+```
+
+The normalizer intentionally starts with simple payload-type dispatch. Step 5 is the explicit checkpoint for deciding whether normalization should evolve into payload-specific Strategy / ABC implementations.
+
+### Markdown import API and Entry persistence
+
+Implemented authenticated Markdown import:
+
+```text
+POST /imports/markdown
+```
+
+Flow:
+
+```text
+UploadFile
+   |
+   v
+MarkdownSource
+   |
+   v
+MarkdownImporter
+   |
+   v
+CanonicalItem
+   |
+   v
+EntryNormalizer
+   |
+   v
+Entry
+   |
+   v
 PostgreSQL
 ```
 
-Canonical models are application-layer transfer models. They are intentionally separate from raw provider formats, API request schemas, and database ORM models.
+Imported Markdown content is persisted as a normal lifhop `DOCUMENT` Entry and can be retrieved through the existing Entry API.
+
+### Raw Import Artifact preservation
+
+Step 4 now distinguishes:
+
+```text
+Entry Attachment
+- a user-visible file belonging to an Entry
+
+ImportArtifact
+- the original source file/archive used to perform an import
+```
+
+Implemented minimal `ImportArtifact` persistence:
+
+```text
+ImportArtifact
+- id
+- user_id
+- s3_key
+- filename
+- mime_type
+- size
+- created_at
+```
+
+Original Markdown files are uploaded to S3 using a dedicated raw-import namespace:
+
+```text
+users/{user_id}/imports/raw/{uuid}/{filename}
+```
+
+The raw source and normalized Entry are stored independently so future parser versions can reprocess the original source.
+
+### Original source download
+
+Implemented secure original-artifact retrieval:
+
+```text
+GET /import-artifacts/{artifact_id}/download
+```
+
+The API verifies artifact ownership and returns a presigned S3 GET URL. Cross-user access returns 404.
+
+### Database migration
+
+Added Alembic migration:
+
+```text
+02057caff6ce_add_import_artifacts.py
+```
+
+### Step 4 tests
+
+Tests now cover the important lifhop contracts, including:
+
+- canonical document/conversation payload behavior
+- importer interface behavior
+- Plain Text and Markdown normalization
+- Markdown source decoding
+- Entry normalization
+- Markdown import persistence
+- retrieving an imported Markdown Entry through `/entries/{id}`
+- original Markdown S3 upload behavior
+- ImportArtifact download URL generation
+- cross-user ImportArtifact access protection
+
+The Step 4 test suite is passing.
+
+## Current data ownership/storage model
+
+```text
+PostgreSQL
+├── User
+├── Entry
+├── Attachment metadata
+└── ImportArtifact metadata
+
+S3
+├── Entry attachment bytes
+└── Original import files / archives
+```
+
+PostgreSQL stores references and metadata; S3 stores file contents.
 
 ## Important implementation notes
 
 - PostgreSQL host port is `5433`; Docker maps host `5433` to container port `5432`.
 - SQLAlchemy `Session` is injected through FastAPI `Depends(get_db)`.
-- Tests replace `get_db` using `app.dependency_overrides`.
-- PostgreSQL stores attachment metadata only; attachment bytes live in S3.
-- `event_at` represents when the source event occurred; `created_at` represents when an Entry was stored in lifhop.
-- Canonical models are implemented with Pydantic and are not persisted directly to PostgreSQL.
-- `CanonicalItem.external_id` is optional because some sources such as standalone Markdown files may not provide a stable external identifier.
-- Provider-specific schemas must remain outside the core Entry model.
-- Strict canonical extra-field validation may be revisited after several real importers are implemented.
+- Tests replace `get_db` using `app.dependency_overrides` and rollback each test transaction.
+- Canonical models are application-layer models and are not persisted directly.
+- `event_at` represents when the source event occurred; `created_at` represents when lifhop stored the record.
+- `CanonicalItem.external_id` remains optional because simple local documents may not have a stable external identifier.
+- Raw Import Artifacts are distinct from Entry Attachments even though both use S3.
+- `ImportJob` has intentionally not been introduced yet; it becomes concrete in Step 5 with batch ChatGPT export processing.
 
-## Next — Step 4-2: Importer Interface
+## Next — Step 5: ChatGPT Export Import
 
-Define the provider parser / importer abstraction.
+Use the Step 4 framework with the first complex real-world provider.
 
 Initial goals:
 
-1. Define what input an importer receives
-2. Define what an importer returns
-3. Make `CanonicalItem` the output boundary
-4. Keep provider-specific parsing isolated
-5. Start with a minimal Markdown importer
-6. Add importer tests before persistence or API integration
+1. Inspect the actual ChatGPT export ZIP structure
+2. Preserve the original ZIP as an `ImportArtifact`
+3. Parse exported conversations into canonical `ConversationPayload` items
+4. Normalize conversations into lifhop Entries
+5. Introduce an `ImportJob` model for batch processing state
+6. Design idempotency so re-uploading the same export does not duplicate conversations
+7. Re-evaluate the `EntryNormalizer` design after the first non-document payload is implemented
 
-Do not introduce Source persistence, ImportJob, queues, workers, or ChatGPT-specific parsing yet.
+Do not introduce SQS or background workers yet. Step 5 should first implement the batch import synchronously so its limitations are visible before Step 6 introduces asynchronous processing.
 
 ## Known issues / deferred decisions
 
@@ -201,17 +307,20 @@ Do not introduce Source persistence, ImportJob, queues, workers, or ChatGPT-spec
 - Production authentication provider choice
 - Attachment deletion behavior in PostgreSQL vs S3
 - File size and MIME type validation policy
-- Maximum attachment size
+- Maximum attachment/import size
 - Presigned URL expiration duration
-- Cleanup policy for abandoned `PENDING` Attachments and orphaned S3 objects
+- Cleanup policy for abandoned Attachments and orphaned S3 objects
+- ImportArtifact retention, deletion, storage-cost, and expiration policy
+- What happens to Entries when their raw ImportArtifact is deleted
 - Canonical metadata representation
 - Canonical attachment representation
-- External source persistence model
+- External Source persistence model
 - `source_id` / `external_id` database constraints
+- Duplicate-import detection and idempotency strategy
 - Strict Pydantic canonical validation policy
 - Exact DevSession structure for Codex CLI and Claude Code
 - ProjectEvent canonical payload for GitHub
 
 ## Last update
 
-2026-08-29
+2026-08-31
