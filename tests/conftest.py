@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app.main import app
-from app.models import Entry, User
+from app.models import User
 from app.models.base import Base
 
 TEST_DATABASE_URL = (
@@ -87,3 +87,59 @@ def auth_headers(
     return {
         "Authorization": f"Bearer {access_token}"
     }
+
+
+@pytest.fixture()
+def another_user(
+    db_session: Session,
+) -> User:
+    user = User(
+        email="another-user@example.com",
+        password_hash="test-password-hash",
+    )
+
+    db_session.add(user)
+    db_session.flush()
+
+    return user
+
+
+@pytest.fixture()
+def authenticated_user(
+    client: TestClient,
+    db_session: Session,
+) -> tuple[User, dict[str, str]]:
+    email = "artifact-owner@example.com"
+    password = "test-password"
+
+    register_response = client.post(
+        "/auth/register",
+        json={
+            "email": email,
+            "password": password,
+        },
+    )
+
+    assert register_response.status_code == 201
+
+    login_response = client.post(
+        "/auth/login",
+        data={
+            "username": email,
+            "password": password,
+        },
+    )
+
+    assert login_response.status_code == 200
+
+    user = db_session.query(User).filter(
+        User.email == email
+    ).one()
+
+    access_token = login_response.json()["access_token"]
+
+    headers = {
+        "Authorization": f"Bearer {access_token}"
+    }
+
+    return user, headers

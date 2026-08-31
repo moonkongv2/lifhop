@@ -63,3 +63,17 @@ def generate_presigned_download_url(
         },
         ExpiresIn=expires_in,
     )
+
+
+def upload_object(
+    s3_key: str,
+    content: bytes,
+    mime_type: str,
+) -> None:
+    s3 = get_s3_client()
+    s3.put_object(
+        Bucket=settings.s3_bucket,
+        Key=s3_key,
+        Body=content,
+        ContentType=mime_type,
+    )

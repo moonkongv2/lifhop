@@ -64,3 +64,50 @@ def test_imported_markdown_can_be_retrieved_as_entry(
     assert entry["content"] == (
         "# Python Decorator\n\nDecorator notes."
     )
+
+
+def test_import_markdown_uploads_original_to_s3(
+    client,
+    auth_headers,
+    monkeypatch,
+):
+    uploaded = {}
+
+    def fake_upload_object(
+        s3_key: str,
+        content: bytes,
+        mime_type: str,
+    ) -> None:
+        uploaded["s3_key"] = s3_key
+        uploaded["content"] = content
+        uploaded["mime_type"] = mime_type
+
+    monkeypatch.setattr(
+        "app.api.imports.upload_object",
+        fake_upload_object,
+    )
+
+    response = client.post(
+        "/imports/markdown",
+        headers=auth_headers,
+        files={
+            "file": (
+                "study.md",
+                b"# Python Decorator\n\nDecorator notes.",
+                "text/markdown",
+            )
+        },
+    )
+
+    assert response.status_code == 200
+
+    assert uploaded["content"] == (
+        b"# Python Decorator\n\nDecorator notes."
+    )
+    assert uploaded["mime_type"] == "text/markdown"
+
+    assert uploaded["s3_key"].startswith(
+        "users/"
+    )
+    assert "/imports/raw/" in uploaded["s3_key"]
+    assert uploaded["s3_key"].endswith("/study.md")
