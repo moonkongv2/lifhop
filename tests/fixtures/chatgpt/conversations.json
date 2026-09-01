@@ -1,0 +1,278 @@
+[
+  {
+    "title": "Center a div",
+    "create_time": 1699900000.0,
+    "update_time": 1699900024.0,
+    "mapping": {
+      "a1b2c3d4-0001-root": {
+        "id": "a1b2c3d4-0001-root",
+        "message": null,
+        "parent": null,
+        "children": [
+          "a1b2c3d4-0001-sys"
+        ]
+      },
+      "a1b2c3d4-0001-sys": {
+        "id": "a1b2c3d4-0001-sys",
+        "message": {
+          "id": "a1b2c3d4-0001-sys",
+          "author": {
+            "role": "system",
+            "name": null,
+            "metadata": {}
+          },
+          "create_time": 1699900000.0,
+          "update_time": null,
+          "content": {
+            "content_type": "text",
+            "parts": [
+              ""
+            ]
+          },
+          "status": "finished_successfully",
+          "end_turn": true,
+          "weight": 1.0,
+          "metadata": {},
+          "recipient": "all"
+        },
+        "parent": "a1b2c3d4-0001-root",
+        "children": [
+          "a1b2c3d4-0001-u0"
+        ]
+      },
+      "a1b2c3d4-0001-u0": {
+        "id": "a1b2c3d4-0001-u0",
+        "message": {
+          "id": "a1b2c3d4-0001-u0",
+          "author": {
+            "role": "user",
+            "name": null,
+            "metadata": {}
+          },
+          "create_time": 1699900008.0,
+          "update_time": null,
+          "content": {
+            "content_type": "text",
+            "parts": [
+              "How do I center a div?"
+            ]
+          },
+          "status": "finished_successfully",
+          "end_turn": null,
+          "weight": 1.0,
+          "metadata": {},
+          "recipient": "all"
+        },
+        "parent": "a1b2c3d4-0001-sys",
+        "children": [
+          "a1b2c3d4-0001-a0"
+        ]
+      },
+      "a1b2c3d4-0001-a0": {
+        "id": "a1b2c3d4-0001-a0",
+        "message": {
+          "id": "a1b2c3d4-0001-a0",
+          "author": {
+            "role": "assistant",
+            "name": null,
+            "metadata": {}
+          },
+          "create_time": 1699900012.0,
+          "update_time": null,
+          "content": {
+            "content_type": "text",
+            "parts": [
+              "The cleanest way is flexbox on the parent:\n\n.parent { display: flex; justify-content: center; align-items: center; }"
+            ]
+          },
+          "status": "finished_successfully",
+          "end_turn": true,
+          "weight": 1.0,
+          "metadata": {
+            "model_slug": "gpt-4o"
+          },
+          "recipient": "all"
+        },
+        "parent": "a1b2c3d4-0001-u0",
+        "children": [
+          "a1b2c3d4-0001-u1"
+        ]
+      },
+      "a1b2c3d4-0001-u1": {
+        "id": "a1b2c3d4-0001-u1",
+        "message": {
+          "id": "a1b2c3d4-0001-u1",
+          "author": {
+            "role": "user",
+            "name": null,
+            "metadata": {}
+          },
+          "create_time": 1699900020.0,
+          "update_time": null,
+          "content": {
+            "content_type": "text",
+            "parts": [
+              "what if I only want horizontal?"
+            ]
+          },
+          "status": "finished_successfully",
+          "end_turn": null,
+          "weight": 1.0,
+          "metadata": {},
+          "recipient": "all"
+        },
+        "parent": "a1b2c3d4-0001-a0",
+        "children": [
+          "a1b2c3d4-0001-a1"
+        ]
+      },
+      "a1b2c3d4-0001-a1": {
+        "id": "a1b2c3d4-0001-a1",
+        "message": {
+          "id": "a1b2c3d4-0001-a1",
+          "author": {
+            "role": "assistant",
+            "name": null,
+            "metadata": {}
+          },
+          "create_time": 1699900024.0,
+          "update_time": null,
+          "content": {
+            "content_type": "text",
+            "parts": [
+              "Then just margin: 0 auto on the child (with a set width), or justify-content: center alone."
+            ]
+          },
+          "status": "finished_successfully",
+          "end_turn": true,
+          "weight": 1.0,
+          "metadata": {
+            "model_slug": "gpt-4o"
+          },
+          "recipient": "all"
+        },
+        "parent": "a1b2c3d4-0001-u1",
+        "children": []
+      }
+    },
+    "moderation_results": [],
+    "current_node": "a1b2c3d4-0001-a1",
+    "plugin_ids": null,
+    "conversation_id": "a1b2c3d4-0001",
+    "conversation_template_id": null,
+    "gizmo_id": null,
+    "is_archived": false,
+    "safe_urls": [],
+    "default_model_slug": "gpt-4o",
+    "id": "a1b2c3d4-0001"
+  },
+  {
+    "title": "Startup pitch feedback",
+    "create_time": 1700500000.0,
+    "update_time": 1700500012.0,
+    "mapping": {
+      "a1b2c3d4-0002-root": {
+        "id": "a1b2c3d4-0002-root",
+        "message": null,
+        "parent": null,
+        "children": [
+          "a1b2c3d4-0002-sys"
+        ]
+      },
+      "a1b2c3d4-0002-sys": {
+        "id": "a1b2c3d4-0002-sys",
+        "message": {
+          "id": "a1b2c3d4-0002-sys",
+          "author": {
+            "role": "system",
+            "name": null,
+            "metadata": {}
+          },
+          "create_time": 1700500000.0,
+          "update_time": null,
+          "content": {
+            "content_type": "text",
+            "parts": [
+              ""
+            ]
+          },
+          "status": "finished_successfully",
+          "end_turn": true,
+          "weight": 1.0,
+          "metadata": {},
+          "recipient": "all"
+        },
+        "parent": "a1b2c3d4-0002-root",
+        "children": [
+          "a1b2c3d4-0002-u0"
+        ]
+      },
+      "a1b2c3d4-0002-u0": {
+        "id": "a1b2c3d4-0002-u0",
+        "message": {
+          "id": "a1b2c3d4-0002-u0",
+          "author": {
+            "role": "user",
+            "name": null,
+            "metadata": {}
+          },
+          "create_time": 1700500008.0,
+          "update_time": null,
+          "content": {
+            "content_type": "text",
+            "parts": [
+              "Can you tighten this pitch line: 'We are building a platform that helps people'?"
+            ]
+          },
+          "status": "finished_successfully",
+          "end_turn": null,
+          "weight": 1.0,
+          "metadata": {},
+          "recipient": "all"
+        },
+        "parent": "a1b2c3d4-0002-sys",
+        "children": [
+          "a1b2c3d4-0002-a0"
+        ]
+      },
+      "a1b2c3d4-0002-a0": {
+        "id": "a1b2c3d4-0002-a0",
+        "message": {
+          "id": "a1b2c3d4-0002-a0",
+          "author": {
+            "role": "assistant",
+            "name": null,
+            "metadata": {}
+          },
+          "create_time": 1700500012.0,
+          "update_time": null,
+          "content": {
+            "content_type": "text",
+            "parts": [
+              "Try: 'We help people ship faster.' Lead with the outcome, drop the throat-clearing."
+            ]
+          },
+          "status": "finished_successfully",
+          "end_turn": true,
+          "weight": 1.0,
+          "metadata": {
+            "model_slug": "gpt-4o"
+          },
+          "recipient": "all"
+        },
+        "parent": "a1b2c3d4-0002-u0",
+        "children": []
+      }
+    },
+    "moderation_results": [],
+    "current_node": "a1b2c3d4-0002-a0",
+    "plugin_ids": null,
+    "conversation_id": "a1b2c3d4-0002",
+    "conversation_template_id": null,
+    "gizmo_id": null,
+    "is_archived": false,
+    "safe_urls": [],
+    "default_model_slug": "gpt-4o",
+    "id": "a1b2c3d4-0002"
+  }
+]

@@ -17,3 +17,7 @@ class MarkdownSource(BaseModel):
     content: str
     filename: str | None = None
     title: str | None = None
+
+
+class ChatGPTSource(BaseModel):
+    conversations: list[dict]
