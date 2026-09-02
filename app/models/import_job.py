@@ -2,8 +2,7 @@ from datetime import datetime
 from enum import StrEnum
 
 from sqlalchemy import DateTime, Enum, ForeignKey, Integer, Text, func
-from sqlalchemy.orm import Mapped, mapped_column
-
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.models.base import Base
 
 
@@ -27,6 +26,15 @@ class ImportJob(Base):
         nullable=False,
     )
 
+    artifact_id: Mapped[int] = mapped_column(
+        ForeignKey("import_artifacts.id"),
+        nullable=False,
+    )
+
+    artifact: Mapped["ImportArtifact"] = relationship(
+        back_populates="jobs",
+    )
+    
     status: Mapped[ImportJobStatus] = mapped_column(
         Enum(ImportJobStatus),
         nullable=False,
@@ -71,3 +79,4 @@ class ImportJob(Base):
         server_default=func.now(),
         nullable=False,
     )
+
