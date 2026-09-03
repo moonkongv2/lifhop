@@ -4,11 +4,14 @@ import zipfile
 from pathlib import Path
 from app.importers.canonical import SourceProvider
 
+import pytest
+
 from sqlalchemy import select
 
 from app.models.entry import Entry
 from app.models.import_artifact import ImportArtifact
 from app.models.import_job import ImportJob, ImportJobStatus
+from app.importers.chatgpt import ChatGPTImporter
 
 def test_import_markdown_persists_entry(
     client,
@@ -389,3 +392,157 @@ def test_import_chatgpt_updates_existing_conversation(
     ).all()
 
     assert len(artifacts) == 2
+
+
+def test_import_chatgpt_invalid_zip_marks_job_failed(
+    client,
+    auth_headers,
+    db_session,
+    monkeypatch,
+):
+    monkeypatch.setattr(
+        "app.api.imports.upload_object",
+        lambda **kwargs: None,
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="Invalid ZIP archive",
+    ):
+        client.post(
+            "/imports/chatgpt",
+            headers=auth_headers,
+            files={
+                "file": (
+                    "broken.zip",
+                    b"this is not a zip file",
+                    "application/zip",
+                )
+            },
+        )
+
+    artifact = db_session.scalar(
+        select(ImportArtifact).where(
+            ImportArtifact.filename == "broken.zip"
+        )
+    )
+
+    assert artifact is not None
+
+    job = db_session.scalar(
+        select(ImportJob).where(
+            ImportJob.artifact_id == artifact.id
+        )
+    )
+
+    assert job is not None
+    assert job.status == ImportJobStatus.FAILED
+    assert job.error == "Invalid ZIP archive"
+    assert job.completed_at is not None
+
+    entries = db_session.scalars(
+        select(Entry).where(
+            Entry.provider == SourceProvider.CHATGPT.value
+        )
+    ).all()
+
+    assert len(entries) == 0
+
+def test_import_chatgpt_partial_when_one_conversation_fails(
+    client,
+    auth_headers,
+    db_session,
+    monkeypatch,
+):
+    fixture_path = (
+        Path(__file__).parent
+        / "fixtures"
+        / "chatgpt"
+        / "conversations.json"
+    )
+
+    conversations = json.loads(
+        fixture_path.read_text()
+    )
+
+    zip_bytes = build_chatgpt_zip(
+        conversations
+    )
+
+    monkeypatch.setattr(
+        "app.api.imports.upload_object",
+        lambda **kwargs: None,
+    )
+
+    original_import_conversation = (
+        ChatGPTImporter.import_conversation
+    )
+
+    def fail_one_conversation(
+        self,
+        conversation,
+    ):
+        if (
+            conversation.get("conversation_id")
+            == "a1b2c3d4-0001"
+        ):
+            raise ValueError(
+                "broken conversation"
+            )
+
+        return original_import_conversation(
+            self,
+            conversation,
+        )
+
+    monkeypatch.setattr(
+        ChatGPTImporter,
+        "import_conversation",
+        fail_one_conversation,
+    )
+
+    response = client.post(
+        "/imports/chatgpt",
+        headers=auth_headers,
+        files={
+            "file": (
+                "partial-export.zip",
+                zip_bytes,
+                "application/zip",
+            )
+        },
+    )
+
+    assert response.status_code == 200
+
+    entries = db_session.scalars(
+        select(Entry).where(
+            Entry.provider
+            == SourceProvider.CHATGPT.value
+        )
+    ).all()
+
+    assert len(entries) == 1
+
+    job = db_session.scalar(
+        select(ImportJob)
+        .order_by(ImportJob.id.desc())
+    )
+
+    assert job is not None
+    assert job.status == ImportJobStatus.PARTIAL
+    assert job.total_items == 2
+    assert job.processed_items == 1
+    assert job.failed_items == 1
+    assert job.completed_at is not None
+
+    artifact = db_session.scalar(
+        select(ImportArtifact).where(
+            ImportArtifact.filename
+            == "partial-export.zip"
+        )
+    )
+
+    assert artifact is not None
+    assert job.artifact_id == artifact.id
+

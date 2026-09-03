@@ -144,70 +144,105 @@ async def import_chatgpt(
     db.add(artifact)
     db.flush()
 
-    source = create_chatgpt_source_from_zip(
-        content,
-    )
-
-    canonical_items = ChatGPTImporter().import_data(
-        source,
-    )
-
     job = ImportJob(
         user_id=current_user.id,
         artifact_id=artifact.id,
         status=ImportJobStatus.RUNNING,
-        total_items=len(canonical_items),
         started_at=datetime.now(timezone.utc),
     )
 
     db.add(job)
+    db.commit()
+    db.refresh(job)
 
-    normalizer = EntryNormalizer()
+    job_id = job.id
 
-    entries: list[Entry] = []
-
-    for item in canonical_items:
-        normalized = normalizer.normalize(item)
-
-        existing_entry = db.scalar(
-            select(Entry).where(
-                Entry.user_id == current_user.id,
-                Entry.provider == item.provider.value,
-                Entry.external_id == item.external_id,
-            )
+    try:
+        source = create_chatgpt_source_from_zip(
+            content,
         )
 
-        if existing_entry is not None:
-            existing_entry.type = normalized.type
-            existing_entry.title = normalized.title
-            existing_entry.content = normalized.content
-            existing_entry.event_at = normalized.event_at
+        importer = ChatGPTImporter()
+        normalizer = EntryNormalizer()
+        entries: list[Entry] = []
 
-            entry = existing_entry
+        processed_items = 0
+        failed_items = 0
 
+        job.total_items = len(
+            source.conversations
+        )
+        
+        for conversation in source.conversations:
+            try:
+                item = importer.import_conversation(
+                    conversation
+                )
+
+                normalized = normalizer.normalize(item)
+
+                existing_entry = db.scalar(
+                    select(Entry).where(
+                        Entry.user_id == current_user.id,
+                        Entry.provider == item.provider.value,
+                        Entry.external_id == item.external_id,
+                    )
+                )
+
+                if existing_entry is not None:
+                    existing_entry.type = normalized.type
+                    existing_entry.title = normalized.title
+                    existing_entry.content = normalized.content
+                    existing_entry.event_at = normalized.event_at
+
+                    entry = existing_entry
+
+                else:
+                    entry = Entry(
+                        user_id=current_user.id,
+                        provider=item.provider.value,
+                        external_id=item.external_id,
+                        type=normalized.type,
+                        title=normalized.title,
+                        content=normalized.content,
+                        event_at=normalized.event_at,
+                    )
+
+                    db.add(entry)
+
+                entries.append(entry)
+                processed_items += 1
+
+            except Exception:
+                failed_items += 1
+
+        job.processed_items = processed_items
+        job.failed_items = failed_items
+        if failed_items == 0:
+            job.status = ImportJobStatus.COMPLETED
         else:
-            entry = Entry(
-                user_id=current_user.id,
-                provider=item.provider.value,
-                external_id=item.external_id,
-                type=normalized.type,
-                title=normalized.title,
-                content=normalized.content,
-                event_at=normalized.event_at,
-            )
+            job.status = ImportJobStatus.PARTIAL
+        job.completed_at = datetime.now(timezone.utc)
 
-            db.add(entry)
+        db.commit()
+   
+        for entry in entries:
+            db.refresh(entry)
+    
+    except Exception as exc:
+        db.rollback()
 
-        entries.append(entry)
+        failed_job = db.get(
+            ImportJob,
+            job_id,
+        )
 
+        failed_job.status = ImportJobStatus.FAILED
+        failed_job.error = str(exc)
+        failed_job.completed_at = datetime.now(timezone.utc)
 
-    job.processed_items = len(entries)
-    job.status = ImportJobStatus.COMPLETED
-    job.completed_at = datetime.now(timezone.utc)
+        db.commit()
 
-    db.commit()
-
-    for entry in entries:
-        db.refresh(entry)
+        raise
 
     return entries

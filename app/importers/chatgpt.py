@@ -15,29 +15,30 @@ class ChatGPTImporter(Importer[ChatGPTSource]):
         self,
         source: ChatGPTSource,
     ) -> list[CanonicalItem]:
-        items: list[CanonicalItem] = []
+        return [
+            self.import_conversation(conversation)
+            for conversation in source.conversations
+        ]
 
-        for conversation in source.conversations:
-            messages = self._extract_active_branch(
-                conversation,
-            )
+    def import_conversation(
+        self,
+        conversation: dict,
+    ) -> CanonicalItem:
+        messages = self._extract_active_branch(
+            conversation,
+        )
 
-            item = CanonicalItem(
-                provider=SourceProvider.CHATGPT,
-                external_id=conversation.get("conversation_id"),
-                title=conversation.get("title") or "Untitled",
-                event_at=self._to_datetime(
-                    conversation.get("create_time")
-                ),
-                payload=ConversationPayload(
-                    messages=messages,
-                ),
-            )
-
-            items.append(item)
-
-        return items
-
+        return CanonicalItem(
+            provider=SourceProvider.CHATGPT,
+            external_id=conversation.get("conversation_id"),
+            title=conversation.get("title") or "Untitled",
+            event_at=self._to_datetime(
+                conversation.get("create_time")
+            ),
+            payload=ConversationPayload(
+                messages=messages,
+            ),
+        )
 
     def _extract_active_branch(
         self,
