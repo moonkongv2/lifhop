@@ -343,8 +343,6 @@ Image Upload
 
 Step 3 already provides the main S3 storage mechanics. Later import and document-processing work should reuse that infrastructure rather than introduce a separate file system.
 
-Raw import artifact retention, deletion, privacy, storage cost, and expiration policies are intentionally deferred until real import jobs are implemented.
-
 ## Conceptual Flow
 
 ```text
@@ -421,8 +419,6 @@ EntryNormalizer
     +--> DevSessionPayload    -> appropriate Entry representation
 ```
 
-This is a deliberate learning sequence, not a permanent commitment to `isinstance` branching.
-
 Revisit the design and consider Strategy / ABC-based normalizers when one or more of these signals appear:
 
 ```text
@@ -434,32 +430,7 @@ development-session normalization gains tool-call, command, or repository-specif
 adding a canonical kind repeatedly requires editing a large central normalizer
 ```
 
-A possible later structure is:
-
-```text
-Normalizer
-├── DocumentNormalizer
-├── ConversationNormalizer
-├── DevSessionNormalizer
-└── ProjectEventNormalizer
-```
-
-Step 5 (ChatGPT import) is an explicit checkpoint for this decision because it introduces the first non-document normalization logic. If conversation normalization makes the single normalizer meaningfully more complex, refactor then rather than predicting the complexity in advance.
-
-Learning goal:
-
-```text
-Start simple
-    |
-    v
-Observe branching complexity
-    |
-    v
-Identify the reason to apply polymorphism
-    |
-    v
-Refactor to Strategy / ABC when the abstraction earns its cost
-```
+Step 5 is an explicit checkpoint for this decision because it introduces the first non-document normalization logic. The Step 5 implementation showed that conversation normalization can still be handled clearly by the current central normalizer, so a Strategy / ABC split remains deferred until complexity actually justifies it.
 
 ## Canonical Item Categories
 
@@ -496,11 +467,6 @@ Claude Code   -> DevSession
 GitHub        -> ProjectEvent
 ```
 
-The canonical model should avoid becoming either:
-
-1. too generic, where all structured information is lost, or
-2. source-specific, where each source effectively has its own internal model.
-
 The current direction is a common envelope combined with typed payloads.
 
 ```text
@@ -531,11 +497,11 @@ attachments
 
 They should be added only when concrete source implementations demonstrate the need.
 
-## Source Tracking
+## Source Tracking and External Entry Identity
 
-External imports need stable source identity to support later synchronization and duplicate prevention.
+External imports need stable source identity to support synchronization and duplicate prevention.
 
-Initial Source model direction:
+A future persistent `Source` model may still evolve toward:
 
 ```text
 Source
@@ -548,16 +514,48 @@ Source
 - metadata
 ```
 
-Entries may later gain:
+Step 5 established a concrete Entry-level identity rule before a full Source model was necessary.
+
+When an external provider supplies a stable identifier for a mutable resource, persist normalized Entry identity using:
 
 ```text
-source_id
-external_id
+(user_id, provider, external_id)
 ```
 
-Do not introduce all persistence fields immediately unless they are required by the first implementation.
+The default persistence behavior for such resources is upsert:
 
-Start with the smallest useful model, observe limitations, and add persistence or constraints when their need becomes clear.
+```text
+matching identity not found
+→ INSERT
+
+matching identity found
+→ UPDATE with the latest normalized provider data
+```
+
+This allows repeated or incremental exports to refresh existing external resources while creating only newly discovered ones.
+
+Example:
+
+```text
+First export
+A, B, C
+
+Later export
+A(updated), B, C, D, E
+
+Result
+A -> UPDATE
+B -> UPDATE
+C -> UPDATE
+D -> INSERT
+E -> INSERT
+```
+
+This is a default for mutable external resources with stable IDs, not a universal rule for every future record type. Immutable events, append-only histories, or providers without stable identifiers may require a different persistence policy.
+
+Raw artifact preservation remains independent from normalized Entry identity. Multiple uploaded archives may therefore be retained even when they contain overlapping external resources.
+
+Durable details of this policy are recorded in `DECISIONS.md`.
 
 ## User-provided Document Sources
 
@@ -589,8 +587,6 @@ ImageSource
 
 The parser should not be responsible for how uploaded files were transported or stored.
 
-For example:
-
 ```text
 HTTP Upload / S3 / Local File
           |
@@ -604,24 +600,15 @@ Application layer resolves contents or object reference
 Source-specific parser
 ```
 
-This keeps file transport, storage, and parsing as separate concerns.
-
 ## Attachments and Raw Import Artifacts
 
 Imported sources may contain or reference files.
 
-Examples:
-
-```text
-User-uploaded Markdown, PDF, or image
-ChatGPT uploaded files
-Gemini uploads or generated media
-Notion exported files
-```
-
 Entry-level files should reuse the Attachment and S3 architecture introduced in Step 3 rather than introducing source-specific file storage.
 
-The original import input should also be preserved in S3 when it is a file or archive. Examples include:
+The original import input should also be preserved in S3 when it is a file or archive.
+
+Examples:
 
 ```text
 notes.md
@@ -640,8 +627,6 @@ auditing what input produced stored Entries
 user download of the preserved original
 ```
 
-Because original-file download is now an explicit user-facing requirement, Step 4 introduces minimal persistent metadata for raw artifacts rather than storing an S3 object whose key is immediately lost.
-
 Initial model:
 
 ```text
@@ -655,28 +640,11 @@ ImportArtifact
 - created_at
 ```
 
-`ImportArtifact` is owned directly by the user in Step 4. A relationship to `ImportJob` is intentionally deferred until Step 5, where batch/archive imports make job lifecycle semantics concrete.
-
-The initial secure retrieval flow should mirror the ownership and presigned-download principles already learned for Entry attachments:
-
-```text
-User requests original
-        |
-        v
-Load ImportArtifact owned by user
-        |
-        v
-Generate presigned S3 GET URL
-        |
-        v
-User downloads original file
-```
+The secure retrieval flow mirrors the ownership and presigned-download principles already learned for Entry attachments.
 
 ## Initial Implementation
 
 Use Plain Text and Markdown as the first two document importers.
-
-They are intentionally simple but demonstrate an important normalization property:
 
 ```text
 PlainTextImporter ---\
@@ -685,47 +653,6 @@ MarkdownImporter ----/
 ```
 
 For file-based Markdown import, preserve the original `.md` file in S3 while parsing its text into a Canonical Document.
-
-Suggested progression:
-
-```text
-Source format survey
-        |
-        v
-Canonical model design
-        |
-        v
-Importer interface
-        |
-        v
-Plain Text + Markdown source models
-        |
-        v
-PlainTextImporter + MarkdownImporter
-        |
-        v
-Unit tests
-        |
-        v
-Entry normalizer
-        |
-        v
-Entry persistence
-        |
-        v
-4-6A: raw S3 upload helper + Markdown endpoint integration + S3 call test
-        |
-        v
-4-6B: minimal ImportArtifact model + migration + persistence
-        |
-        v
-4-6C: secure original-file download with presigned GET URL
-        |
-        v
-API integration test
-```
-
-Plain Text and Markdown are first implementation targets but should not be the sole basis for designing the canonical model.
 
 ## Potential Importers
 
@@ -743,29 +670,6 @@ CodexImporter
 ClaudeCodeImporter
 GitHubImporter
 ```
-
-Expected Step 4 implementation scope:
-
-```text
-PlainTextImporter
-MarkdownImporter
-Entry normalization and persistence
-Markdown original-file preservation in S3
-Minimal ImportArtifact persistence
-Secure original-file download
-```
-
-Expected Step 4 architecture-only compatibility:
-
-```text
-PdfImporter
-ImageImporter
-AI conversation providers
-Coding-agent session providers
-Raw archive preservation for later provider imports
-```
-
-The remaining importers are design constraints and will be introduced in later steps.
 
 ## Learning Topics
 
@@ -808,78 +712,76 @@ lifhop Entry
 
 When Markdown is supplied as a file, the original `.md` file is preserved in S3 independently of the normalized Entry representation, its metadata is persisted as an `ImportArtifact`, and the owning user can securely request a presigned download URL for the original.
 
-The importer framework must keep source-specific parsing outside the core Entry model and persistence logic.
-
-The resulting architecture should also be reasonably capable of representing:
-
-```text
-PDF and image documents
-AI conversation data
-Coding-agent session data
-```
-
-without requiring source-specific fields in the Entry model.
-
-PDF text extraction, OCR, and vision processing are not required for Step 4 completion.
-
 ---
 
 # Step 5 — ChatGPT Export Import
+
+## Status
+
+Complete as of 2026-09-03.
 
 ## Goal
 
 Use the import framework from Step 4 with the first complex real-world provider.
 
-Import ChatGPT conversation history from exported account data.
+Import ChatGPT conversation history from exported account data while preserving raw source history and preventing duplicate normalized conversations.
 
-## Initial Pipeline
+## Implemented Pipeline
 
 ```text
 ChatGPT Export ZIP
         |
-        +--> Preserve original ZIP in S3 + ImportArtifact
+        +--> Preserve original ZIP in S3
+        |        |
+        |        v
+        |   ImportArtifact
+        |        |
+        |        v
+        |   ImportJob
         |
         v
-Extract
+Source Factory
         |
         v
-ChatGPT Parser
+ChatGPTSource
         |
         v
-Canonical Conversation
+ChatGPTImporter
+        |
+        v
+Canonical ConversationPayload
         |
         v
 Entry Normalizer
         |
         v
-Entries
+CONVERSATION Entries
 ```
 
-ChatGPT import should validate that the abstraction created in Step 4 works with structured conversation data rather than only simple documents.
+The source factory owns ZIP/container concerns. `ChatGPTImporter` owns ChatGPT-specific conversation structure.
 
-The original export archive should be retained as a raw import artifact so the same source can be inspected, downloaded, or reprocessed later without asking the user to export and upload it again.
+ChatGPT exports use a node-based mapping. The initial importer reconstructs the active branch by following `current_node` through parent links and then reversing that chain. User and assistant text messages on that branch are normalized into a `ConversationPayload`.
 
-The same principle should later apply to file-based exports such as Notion archives and Gemini Takeout archives.
+The raw export remains available even if parsing policy changes later.
 
-Step 5 is also the first explicit normalizer design checkpoint. After implementing conversation-to-Entry normalization, evaluate whether the simple central `EntryNormalizer` remains clear. If conversation-specific rules make it meaningfully more complex, introduce separate normalizer strategies / ABC implementations at that point rather than accumulating source-independent branching in one class.
+## ImportArtifact and ImportJob
 
-## Import Job Model
+Step 5 established separate source and processing concepts:
 
 ```text
+ImportArtifact
+- original uploaded source/archive
+- preserved independently from normalized Entries
+
 ImportJob
-- id
-- user_id
-- source_id
-- status
-- total_items
-- processed_items
-- failed_items
-- started_at
-- completed_at
-- error
+- one processing attempt for an artifact
+- status and counters
+- processing error information
 ```
 
-Possible states:
+The relationship allows one preserved artifact to support multiple processing attempts in the future.
+
+Current `ImportJob` states:
 
 ```text
 PENDING
@@ -889,62 +791,133 @@ FAILED
 PARTIAL
 ```
 
-Step 5 extends the Step 4 `ImportArtifact` model with job association when batch/archive lifecycle requires it:
+Current counters:
 
 ```text
-ImportArtifact
-- id
-- user_id
-- import_job_id?
-- s3_key
-- filename
-- mime_type
-- size
-- created_at
+total_items
+processed_items
+failed_items
 ```
 
-The exact relationship and deletion semantics should be driven by the first real archive import rather than guessed earlier.
+## External Identity and Idempotent Upsert
 
-## Key Design Problems
-
-Uploading the same export twice must not duplicate every conversation.
-
-Provider-specific external identifiers and database constraints should support idempotent imports.
-
-The importer should also preserve enough conversation structure to support future search and RAG while producing a useful textual Entry representation.
-
-Raw artifact handling should answer, when implementation begins:
+ChatGPT supplies a stable `conversation_id`, which is stored as the Entry's `external_id`.
 
 ```text
-How long are original archives retained?
-Can users delete them independently of imported Entries?
-What happens to Entries when the raw artifact is deleted?
-How are sensitive exports protected?
-How are duplicate archive uploads detected?
+provider    = chatgpt
+external_id = conversation_id
 ```
+
+The database protects normalized external identity using:
+
+```text
+UNIQUE(user_id, provider, external_id)
+```
+
+Repeated imports use upsert semantics rather than insert-only or skip-only semantics:
+
+```text
+conversation does not exist
+→ INSERT
+
+conversation already exists
+→ UPDATE title/content/event data from the newer normalized source
+```
+
+This matters because a later ChatGPT export can contain an existing conversation that has continued since the previous export.
+
+Example:
+
+```text
+Export #1
+A, B, C
+
+Export #2
+A(updated), B, C, D, E
+
+Normalized result
+A, B, C, D, E
+```
+
+Both raw ZIP uploads remain preserved as separate `ImportArtifact` records.
+
+Exact raw-file duplicate detection is intentionally a separate concern. A future SHA-256 checksum may be stored for diagnostics or exact-file detection, but ZIP equality is not used as the primary normalized conversation identity.
+
+## Failure Semantics
+
+Archive/job state is persisted before Entry processing so failures remain observable.
+
+```text
+S3 upload
+→ ImportArtifact
+→ ImportJob RUNNING
+→ commit
+→ parse/process Entries
+```
+
+Import-wide failure:
+
+```text
+invalid ZIP / archive-level failure
+→ rollback Entry-processing transaction
+→ ImportJob FAILED
+→ error recorded
+```
+
+Item-level failure:
+
+```text
+valid archive
+→ process conversations independently
+→ successful items remain
+→ failed_items increment
+→ ImportJob PARTIAL
+```
+
+All conversations successful:
+
+```text
+ImportJob COMPLETED
+```
+
+The test session infrastructure uses savepoints so these multiple application `commit()` / `rollback()` boundaries can be tested without leaking test data.
+
+## Normalizer Design Checkpoint
+
+Conversation normalization was added to the existing `EntryNormalizer`.
+
+The implementation remains small enough that introducing payload-specific Strategy / ABC normalizers would add more abstraction than value at this point.
+
+Keep the current central normalizer and revisit when additional canonical kinds or substantially more complex rules make the branching harder to maintain.
 
 ## Learning Topics
 
-- Batch processing
-- Archive parsing
+- Batch/archive processing
 - Raw import artifact storage in S3
 - Reprocessing from preserved source data
 - Structured conversation parsing
-- Import progress
+- External identity
+- Upsert semantics
 - Idempotency
-- Duplicate detection
-- External identifiers
-- Error handling
-- Imported attachment handling
+- Transaction boundaries
+- Import progress/state
+- Whole-job vs item-level failure handling
+- Savepoints in integration tests
 - Recognizing when conditional dispatch should evolve into Strategy / ABC polymorphism
 
 ## Completion Criteria
 
-A ChatGPT export can be uploaded, its original archive is retained securely in S3, and conversations appear in the lifhop timeline without duplication.
+A ChatGPT export can be uploaded and its original archive is retained securely in S3.
 
-The preserved archive can be downloaded or used as the source for a future re-import or parser migration without requiring the user to upload the export again.
+Its active conversations are parsed into canonical `ConversationPayload` values and normalized into `CONVERSATION` Entries.
 
-The conversation normalizer implementation has also been reviewed to decide whether the single-normalizer design remains appropriately simple or should be split into payload-specific strategies.
+Repeated exports do not duplicate conversations. Existing conversations are updated by stable external identity and newly discovered conversations are inserted.
+
+Raw uploaded archives remain preserved independently from normalized Entry deduplication.
+
+Import processing records `COMPLETED`, `PARTIAL`, or `FAILED` results with appropriate counters/error information, and the full regression suite passes.
+
+The normalizer design has been reviewed and remains intentionally simple for now.
 
 ---
 
@@ -952,7 +925,7 @@ The conversation normalizer implementation has also been reviewed to decide whet
 
 ## Goal
 
-Move expensive imports away from API request processing.
+Move expensive imports away from API request processing while preserving the synchronous Step 5 behavior as the contract to reproduce asynchronously.
 
 ## Before
 
@@ -972,6 +945,9 @@ Response
 API
  |
  v
+Preserve ImportArtifact
+ |
+ v
 Create ImportJob
  |
  v
@@ -981,7 +957,10 @@ SQS
 Worker
  |
  v
-Importer
+Load preserved artifact
+ |
+ v
+Importer / Normalizer / Upsert
 ```
 
 ## AWS
@@ -992,6 +971,22 @@ Introduce:
 - Dead Letter Queue
 
 Workers may initially continue running locally in Docker.
+
+## Required behavioral continuity
+
+Moving work to SQS must not change the external-data identity rules established in Step 5.
+
+The worker must retain:
+
+```text
+(user_id, provider, external_id) identity
+upsert behavior
+ImportArtifact preservation
+ImportJob lifecycle
+PARTIAL / FAILED semantics
+```
+
+At-least-once queue delivery means consumers must remain idempotent. Redelivering a job must not create duplicate Entries.
 
 ## Learning Topics
 
@@ -1252,6 +1247,8 @@ external_updated_at
 external_id
 ```
 
+Connected mutable resources with stable IDs should reuse the external-identity/upsert policy established in Step 5 unless the provider's semantics require a different strategy.
+
 ## GitHub
 
 ```text
@@ -1278,6 +1275,8 @@ Entry Normalizer
  v
 Entries
 ```
+
+GitHub also provides a useful counterexample to blindly applying upsert to every external record: immutable event-like records may use append-only persistence rather than mutable-resource upsert. Provider semantics should determine the policy.
 
 ## Learning Topics
 
@@ -1348,6 +1347,8 @@ Entry CRUD behavior
 Core persistence logic
 Other provider parsers
 ```
+
+External providers with stable mutable-resource IDs should normally reuse the Step 5 upsert persistence boundary instead of implementing provider-specific duplicate logic.
 
 If substantial changes are required, revisit the abstraction rather than adding provider-specific exceptions throughout the codebase.
 
@@ -1602,16 +1603,17 @@ Last update
 
 ## DECISIONS.md
 
-Create when meaningful design decisions begin to accumulate. Record the decision, rationale, alternatives when relevant, and conditions under which it should be revisited.
+Record durable design decisions, rationale, alternatives when relevant, and conditions under which they should be revisited.
 
-Examples:
+Current import-related decisions include:
 
-- UUID vs integer IDs
-- RDS vs DynamoDB
-- pgvector vs OpenSearch
-- SQS vs Redis-based queue
-- ECS vs Lambda
-- direct authentication vs Cognito
+```text
+raw ImportArtifact preservation vs normalized Entry identity
+stable external resource identity and upsert
+ImportArtifact vs ImportJob lifecycle
+processing transaction boundaries
+FAILED vs PARTIAL semantics
+```
 
 ---
 
@@ -1641,19 +1643,6 @@ add maintenance cost without meaningful regression protection
 ```
 
 Permanent tests should primarily protect lifhop-specific behavior, boundaries, failure cases, and user-visible requirements.
-
-```text
-Learn with explicit tests
-        |
-        v
-Understand the behavior
-        |
-        v
-Replace or remove framework-demonstration tests
-        |
-        v
-Keep tests that protect real application contracts
-```
 
 ---
 
