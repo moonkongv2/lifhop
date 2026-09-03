@@ -1,9 +1,8 @@
 from datetime import datetime
 from enum import StrEnum
-from sqlalchemy import DateTime, Enum, ForeignKey, String, Text, func
+from sqlalchemy import DateTime, Enum, ForeignKey, String, Text, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column
 from app.models.base import Base
-
 from typing import TYPE_CHECKING
 
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -52,4 +51,23 @@ class Entry(Base):
 
     attachments: Mapped[list["Attachment"]] = relationship(
         back_populates="entry",
+    )
+
+    provider: Mapped[str | None] = mapped_column(
+    String(50),
+    nullable=True,
+    )
+
+    external_id: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "user_id",
+            "provider",
+            "external_id",
+            name="uq_entries_user_provider_external_id",
+        ),
     )

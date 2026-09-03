@@ -1,3 +1,15 @@
+import io
+import json
+import zipfile
+from pathlib import Path
+from app.importers.canonical import SourceProvider
+
+from sqlalchemy import select
+
+from app.models.entry import Entry
+from app.models.import_artifact import ImportArtifact
+from app.models.import_job import ImportJob, ImportJobStatus
+
 def test_import_markdown_persists_entry(
     client,
     auth_headers,
@@ -111,3 +123,269 @@ def test_import_markdown_uploads_original_to_s3(
     )
     assert "/imports/raw/" in uploaded["s3_key"]
     assert uploaded["s3_key"].endswith("/study.md")
+
+
+def build_chatgpt_zip(
+    conversations: list[dict],
+) -> bytes:
+    buffer = io.BytesIO()
+
+    with zipfile.ZipFile(
+        buffer,
+        mode="w",
+    ) as archive:
+        archive.writestr(
+            "conversations.json",
+            json.dumps(conversations),
+        )
+
+    return buffer.getvalue()
+
+
+def test_import_chatgpt_zip_persists_conversations(
+    client,
+    auth_headers,
+    monkeypatch,
+):
+    fixture_path = (
+        Path(__file__).parent
+        / "fixtures"
+        / "chatgpt"
+        / "conversations.json"
+    )
+
+    monkeypatch.setattr(
+        "app.api.imports.upload_object",
+        lambda **kwargs: None,
+    )
+
+    zip_bytes = build_chatgpt_zip(
+        json.loads(
+            fixture_path.read_text()
+        )
+    )
+
+    response = client.post(
+        "/imports/chatgpt",
+        headers=auth_headers,
+        files={
+            "file": (
+                "chatgpt-export.zip",
+                zip_bytes,
+                "application/zip",
+            )
+        },
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert len(data) == 2
+
+    assert data[0]["type"] == "CONVERSATION"
+    assert data[0]["title"] == "Center a div"
+
+
+
+def test_import_chatgpt_creates_artifact_and_completed_job(
+    client,
+    auth_headers,
+    db_session,
+    monkeypatch,
+):
+    fixture_path = (
+        Path(__file__).parent
+        / "fixtures"
+        / "chatgpt"
+        / "conversations.json"
+    )
+
+    monkeypatch.setattr(
+        "app.api.imports.upload_object",
+        lambda **kwargs: None,
+    )
+
+    zip_bytes = build_chatgpt_zip(
+        json.loads(
+            fixture_path.read_text()
+        )
+    )
+
+    response = client.post(
+        "/imports/chatgpt",
+        headers=auth_headers,
+        files={
+            "file": (
+                "chatgpt-export.zip",
+                zip_bytes,
+                "application/zip",
+            )
+        },
+    )
+
+    assert response.status_code == 200
+
+    artifact = db_session.scalar(
+        select(ImportArtifact)
+        .where(
+            ImportArtifact.filename
+            == "chatgpt-export.zip"
+        )
+    )
+
+    assert artifact is not None
+    assert artifact.mime_type == "application/zip"
+
+    job = db_session.scalar(
+        select(ImportJob)
+        .where(
+            ImportJob.artifact_id == artifact.id
+        )
+    )
+
+    assert job is not None
+    assert job.status == ImportJobStatus.COMPLETED
+    assert job.total_items == 2
+    assert job.processed_items == 2
+    assert job.failed_items == 0
+
+
+def test_import_chatgpt_is_idempotent(
+    client,
+    auth_headers,
+    db_session,
+    monkeypatch,
+):
+    fixture_path = (
+        Path(__file__).parent
+        / "fixtures"
+        / "chatgpt"
+        / "conversations.json"
+    )
+
+    conversations = json.loads(
+        fixture_path.read_text()
+    )
+
+    zip_bytes = build_chatgpt_zip(
+        conversations
+    )
+
+    monkeypatch.setattr(
+        "app.api.imports.upload_object",
+        lambda **kwargs: None,
+    )
+
+    first_response = client.post(
+        "/imports/chatgpt",
+        headers=auth_headers,
+        files={
+            "file": (
+                "first-export.zip",
+                zip_bytes,
+                "application/zip",
+            )
+        },
+    )
+
+    assert first_response.status_code == 200
+
+    second_response = client.post(
+        "/imports/chatgpt",
+        headers=auth_headers,
+        files={
+            "file": (
+                "second-export.zip",
+                zip_bytes,
+                "application/zip",
+            )
+        },
+    )
+
+    assert second_response.status_code == 200
+
+    entries = db_session.scalars(
+        select(Entry).where(
+            Entry.provider == SourceProvider.CHATGPT.value
+        )
+    ).all()
+
+    assert len(entries) == 2
+
+
+def test_import_chatgpt_updates_existing_conversation(
+    client,
+    auth_headers,
+    db_session,
+    monkeypatch,
+):
+    fixture_path = (
+        Path(__file__).parent
+        / "fixtures"
+        / "chatgpt"
+        / "conversations.json"
+    )
+
+    conversations = json.loads(
+        fixture_path.read_text()
+    )
+
+    monkeypatch.setattr(
+        "app.api.imports.upload_object",
+        lambda **kwargs: None,
+    )
+
+    first_response = client.post(
+        "/imports/chatgpt",
+        headers=auth_headers,
+        files={
+            "file": (
+                "first-export.zip",
+                build_chatgpt_zip(conversations),
+                "application/zip",
+            )
+        },
+    )
+
+    assert first_response.status_code == 200
+
+    conversations[0]["title"] = "Updated title"
+
+    second_response = client.post(
+        "/imports/chatgpt",
+        headers=auth_headers,
+        files={
+            "file": (
+                "second-export.zip",
+                build_chatgpt_zip(conversations),
+                "application/zip",
+            )
+        },
+    )
+
+    assert second_response.status_code == 200
+
+    entry = db_session.scalar(
+        select(Entry).where(
+            Entry.provider == SourceProvider.CHATGPT.value,
+            Entry.external_id == "a1b2c3d4-0001",
+        )
+    )
+
+    assert entry is not None
+    assert entry.title == "Updated title"
+
+    entries = db_session.scalars(
+        select(Entry).where(
+            Entry.provider == SourceProvider.CHATGPT.value
+        )
+    ).all()
+
+    assert len(entries) == 2
+
+    artifacts = db_session.scalars(
+        select(ImportArtifact)
+    ).all()
+
+    assert len(artifacts) == 2
