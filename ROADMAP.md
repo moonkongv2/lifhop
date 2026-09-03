@@ -1009,6 +1009,293 @@ Imports continue correctly even when API and worker processes restart independen
 
 ---
 
+# Frontend Learning Interlude — F0–F3
+
+## Goal
+
+Learn only enough frontend development to understand how a browser client consumes the lifhop backend, review AI-generated frontend code, and recognize when a frontend problem actually requires a backend/API change.
+
+Frontend development is not a primary learning track for this project. Visual design, CSS detail, and deep frontend architecture should not delay the backend roadmap.
+
+The intended ownership model after this interlude is:
+
+```text
+Backend architecture and APIs
+        |
+        v
+Primary learning / manual implementation
+
+Frontend application
+        |
+        v
+Primarily implemented by Codex / Claude
+
+FastAPI OpenAPI schema
+        |
+        v
+Contract between the two
+```
+
+The frontend should normally follow the backend by roughly half a step to one step rather than blocking backend progress.
+
+## F0 — Browser, HTTP, JSON, and TypeScript Basics
+
+Understand the client/server data path:
+
+```text
+Browser
+   |
+   v
+HTTP request
+   |
+   v
+FastAPI
+   |
+   v
+JSON response
+   |
+   v
+Frontend state
+   |
+   v
+Rendered UI
+```
+
+Learn only the TypeScript/JavaScript concepts needed to read simple application code:
+
+- `const` / `let`
+- functions
+- objects and arrays
+- `map()`
+- `async` / `await`
+- `type` / `interface`
+- optional fields
+- basic union types
+
+The goal is not deep JavaScript language study.
+
+## F1 — Minimal React Mental Model
+
+Learn the minimum React concepts needed to understand application flow:
+
+```text
+Component
+Props
+State
+Effect
+```
+
+Build a deliberately simple, possibly single-file page that:
+
+```text
+GET /entries
+    |
+    v
+store response in React state
+    |
+    v
+render Entry titles
+```
+
+Understand the key React mental model:
+
+```text
+State changes
+     |
+     v
+React recalculates the UI
+```
+
+Do not optimize architecture at this stage. A small, direct implementation is preferable to starting with generated hooks, abstractions, or a large component hierarchy.
+
+## F2 — Real lifhop Client Flow
+
+Connect the simple React application to real lifhop authentication and Entry APIs.
+
+Implement or trace this flow manually:
+
+```text
+Login form
+   |
+   v
+POST /auth/login
+   |
+   v
+Access token
+   |
+   v
+Authorization header
+   |
+   v
+GET /entries
+   |
+   v
+Entry list / detail
+```
+
+Learn the practical boundary between browser and backend, including:
+
+- `fetch` or an equivalent HTTP client
+- loading / success / error states
+- JWT usage from the client
+- CORS and why browser requests can fail when curl or pytest succeeds
+- basic form state
+- Entry list and Entry detail rendering
+
+Also trace the existing S3 presigned-upload architecture from the browser perspective:
+
+```text
+Browser
+   |
+   v
+FastAPI requests / returns presigned URL
+   |
+   v
+Browser uploads directly to S3
+```
+
+The important lesson is that the actual file payload does not need to pass through the FastAPI application server.
+
+## F3 — Modern Frontend Boundaries
+
+After the direct implementation is understood, briefly introduce the tools that an AI-maintained frontend is expected to use.
+
+Suggested stack:
+
+```text
+React
+TypeScript
+Vite
+React Router
+TanStack Query
+OpenAPI-generated TypeScript client
+```
+
+Learn the concepts rather than the libraries in depth.
+
+### Routing
+
+Understand how application URLs map to screens, for example:
+
+```text
+/login
+/entries
+/entries/:id
+/imports
+/search
+```
+
+### Local State vs Server State
+
+Recognize the distinction:
+
+```text
+Local UI state
+- input value
+- selected tab
+- modal open/closed
+
+Server state
+- Entries
+- current user
+- search results
+- ImportJob status
+```
+
+TanStack Query or an equivalent library should normally manage server-state concerns such as loading, errors, caching, refetching, and polling instead of repeatedly rebuilding those behaviors with `useEffect` and `useState`.
+
+Step 6 provides a concrete polling example:
+
+```text
+Upload import
+    |
+    v
+job_id
+    |
+    v
+PENDING
+    |
+    v
+RUNNING
+    |
+    v
+COMPLETED / PARTIAL / FAILED
+```
+
+### OpenAPI as the Contract
+
+Avoid manually duplicating backend DTO definitions where practical.
+
+Prefer:
+
+```text
+Pydantic schemas
+      |
+      v
+FastAPI OpenAPI
+      |
+      v
+Generated TypeScript types / API client
+      |
+      v
+Frontend
+```
+
+A backend schema change should therefore become visible through regenerated frontend types and compile/type-check failures rather than silently drifting between two manually maintained models.
+
+## Frontend Implementation Policy After F3
+
+After the learning interlude, routine frontend implementation should normally be delegated to Codex or Claude so frontend work does not become a second full learning track.
+
+The frontend agent should follow these boundaries:
+
+```text
+Backend API is the source of truth.
+OpenAPI is the preferred frontend/backend contract.
+Do not modify backend behavior merely to simplify frontend code.
+If the API is insufficient, report the required backend change.
+Keep the frontend architecture simple unless real complexity requires otherwise.
+```
+
+The developer should mainly review:
+
+```text
+Does the frontend build and run?
+Does it use the real backend contract?
+Does the intended user flow work end-to-end?
+Did the frontend task introduce an unexpected backend change?
+```
+
+From Step 7 onward, backend milestones may be followed by corresponding frontend tasks while backend learning continues without waiting for visual polish.
+
+## Intentionally Out of Scope
+
+Do not spend significant roadmap time on:
+
+- CSS or Tailwind details
+- animation
+- advanced responsive design
+- React reconciler / Virtual DOM internals
+- bundler internals
+- Next.js SSR / Server Components unless a concrete need appears
+- Redux or other global-state frameworks without demonstrated need
+- large-scale frontend architecture patterns
+
+## Completion Criteria
+
+The developer can:
+
+- explain how a browser request reaches FastAPI and becomes rendered state
+- read basic TypeScript and React component/state code
+- manually connect login, JWT authentication, and Entry retrieval once
+- explain CORS at a practical level
+- explain the browser-to-S3 presigned upload flow
+- distinguish local UI state from server state
+- understand why OpenAPI-generated client types help keep frontend and backend synchronized
+- review AI-generated frontend work without needing to become the primary frontend implementer
+
+---
+
 # Step 7 — Keyword Search
 
 ## Goal
