@@ -2,11 +2,11 @@
 
 ## Current milestone
 
-Step 4 — Import Framework
+Step 5 — ChatGPT Export Import
 
 Status: Complete
 
-Next milestone: Step 5 — ChatGPT Export Import
+Next milestone: Step 6 — Async Processing with SQS
 
 ## Completed work
 
@@ -14,243 +14,191 @@ Next milestone: Step 5 — ChatGPT Export Import
 - PostgreSQL 17 via Docker Compose
 - SQLAlchemy 2.x, psycopg, Alembic, and Pydantic Settings
 - Entry CRUD API with pagination
-- pytest integration tests with isolated test PostgreSQL transactions
+- pytest integration tests with isolated PostgreSQL transactions
 - User registration, login, JWT access/refresh tokens, and ownership authorization
 - Attachment model and S3 integration
 - Presigned PUT upload, S3 completion check, and secure presigned GET download
-- Manual S3 integration verification
+- Import framework with provider-neutral Canonical Items and Entry normalization
+- Plain Text and Markdown import
+- Raw ImportArtifact preservation and secure original-file download
+- ChatGPT export ZIP import with conversation-aware parsing, idempotent upsert, and ImportJob status tracking
 
-## Step 4 — Import Framework completed
+## Step 5 — ChatGPT Export Import completed
 
-### Source survey and architecture
+### ChatGPT export parsing
 
-Reviewed representative source categories:
+Implemented ChatGPT export ingestion from ZIP archives containing `conversations.json`.
 
-```text
-User-provided Documents
-├── Plain Text
-├── Markdown
-├── PDF
-└── Image
-
-External Documents
-└── Notion
-
-AI Conversations
-├── ChatGPT
-├── Claude
-└── Gemini
-
-Coding Agent Sessions
-├── Codex CLI
-└── Claude Code
-
-Development Systems
-└── GitHub
-```
-
-Core import architecture:
+The source factory handles the archive/container format while `ChatGPTImporter` handles provider-specific conversation structure:
 
 ```text
-Source
-  |
-  +--> Preserve original file/archive in S3 when applicable
-  |
-  v
-Provider / Format Parser
-  |
-  v
-Canonical Item
-  |
-  v
-Entry Normalizer
-  |
-  v
-Entry
-  |
-  v
-PostgreSQL
-```
-
-Provider-specific raw formats are kept outside the core Entry model.
-
-### Canonical model
-
-Implemented provider-neutral canonical models under `app/importers/`:
-
-```text
-SourceProvider
-CanonicalKind
-CanonicalMessage
-DocumentPayload
-ConversationPayload
-DevSessionPayload
-CanonicalItem
-```
-
-`CanonicalItem.payload` uses a Pydantic discriminated union with `payload.kind` as the discriminator.
-
-Provider and content kind are intentionally separate:
-
-```text
-provider = where the data came from
-kind     = what kind of information it represents
-```
-
-### Importer interface
-
-Implemented an explicit generic ABC importer boundary.
-
-```text
-Importer[SourceT]
+ChatGPT ZIP
     |
     v
-list[CanonicalItem]
+Source Factory
+    |
+    v
+ChatGPTSource
+    |
+    v
+ChatGPTImporter
+    |
+    v
+ConversationPayload
+    |
+    v
+EntryNormalizer
+    |
+    v
+CONVERSATION Entry
 ```
 
-This keeps source-specific parsing isolated while preserving implementation-specific input types.
+ChatGPT exports are treated as node-based conversation trees. The currently selected branch is reconstructed by following `current_node` through parent links and reversing the result. The initial implementation normalizes user and assistant text messages on that active branch.
 
-### Initial document importers
+The original export ZIP is preserved independently, so future parser versions can reprocess the raw source if branch or message-selection policy changes.
 
-Implemented:
+### Conversation normalization
 
-```text
-PlainTextSource
-MarkdownSource
-PlainTextImporter
-MarkdownImporter
-```
+`EntryNormalizer` now supports both document and conversation payloads.
 
-Both Plain Text and Markdown normalize into the same canonical `DocumentPayload` representation.
-
-Markdown title resolution priority:
+Current conversation representation:
 
 ```text
-explicit title
-→ first H1
-→ filename stem
-→ Untitled
-```
-
-### Entry normalization
-
-Implemented `EntryNormalizer` and `NormalizedEntry`.
-
-Current document flow:
-
-```text
-DocumentPayload
+ConversationPayload
       |
       v
 EntryNormalizer
       |
       v
-EntryType.DOCUMENT
+EntryType.CONVERSATION
 ```
 
-The normalizer intentionally starts with simple payload-type dispatch. Step 5 is the explicit checkpoint for deciding whether normalization should evolve into payload-specific Strategy / ABC implementations.
+Conversation messages are flattened into searchable Entry content while the provider-specific raw structure remains outside the Entry model.
 
-### Markdown import API and Entry persistence
+After the Step 5 checkpoint, the central `EntryNormalizer` remains sufficiently small and clear. A Strategy / ABC split is deferred until additional canonical payload kinds or materially more complex normalization rules justify it.
 
-Implemented authenticated Markdown import:
+### ImportArtifact and ImportJob
 
-```text
-POST /imports/markdown
-```
-
-Flow:
-
-```text
-UploadFile
-   |
-   v
-MarkdownSource
-   |
-   v
-MarkdownImporter
-   |
-   v
-CanonicalItem
-   |
-   v
-EntryNormalizer
-   |
-   v
-Entry
-   |
-   v
-PostgreSQL
-```
-
-Imported Markdown content is persisted as a normal lifhop `DOCUMENT` Entry and can be retrieved through the existing Entry API.
-
-### Raw Import Artifact preservation
-
-Step 4 now distinguishes:
-
-```text
-Entry Attachment
-- a user-visible file belonging to an Entry
-
-ImportArtifact
-- the original source file/archive used to perform an import
-```
-
-Implemented minimal `ImportArtifact` persistence:
+Batch/archive imports now distinguish the original source from processing history:
 
 ```text
 ImportArtifact
-- id
-- user_id
-- s3_key
-- filename
-- mime_type
-- size
-- created_at
+- what raw file/archive was uploaded
+
+ImportJob
+- what happened while processing that artifact
 ```
 
-Original Markdown files are uploaded to S3 using a dedicated raw-import namespace:
+One `ImportArtifact` can have multiple `ImportJob` records so the same preserved source can later be retried or reprocessed with newer parser logic.
+
+Current `ImportJob` states:
 
 ```text
-users/{user_id}/imports/raw/{uuid}/{filename}
+PENDING
+RUNNING
+COMPLETED
+FAILED
+PARTIAL
 ```
 
-The raw source and normalized Entry are stored independently so future parser versions can reprocess the original source.
+The ChatGPT endpoint creates an artifact and processing job, records item counts, and tracks completion or failure state.
 
-### Original source download
+### External identity and upsert
 
-Implemented secure original-artifact retrieval:
+Entries imported from external systems can now persist:
 
 ```text
-GET /import-artifacts/{artifact_id}/download
+provider
+external_id
 ```
 
-The API verifies artifact ownership and returns a presigned S3 GET URL. Cross-user access returns 404.
-
-### Database migration
-
-Added Alembic migration:
+The database protects stable external identity with:
 
 ```text
-02057caff6ce_add_import_artifacts.py
+(user_id, provider, external_id)
 ```
 
-### Step 4 tests
+as a unique constraint.
 
-Tests now cover the important lifhop contracts, including:
+For sources that provide a stable external identifier, the default import policy is upsert rather than insert-only:
 
-- canonical document/conversation payload behavior
-- importer interface behavior
-- Plain Text and Markdown normalization
-- Markdown source decoding
-- Entry normalization
-- Markdown import persistence
-- retrieving an imported Markdown Entry through `/entries/{id}`
-- original Markdown S3 upload behavior
-- ImportArtifact download URL generation
-- cross-user ImportArtifact access protection
+```text
+matching external identity not found
+→ INSERT
 
-The Step 4 test suite is passing.
+matching external identity found
+→ UPDATE with the latest normalized source data
+```
+
+For ChatGPT:
+
+```text
+provider    = chatgpt
+external_id = conversation_id
+```
+
+This allows a later ChatGPT export to contain both old and new conversations without duplicating existing Entries. Existing conversations are refreshed from the newer export, while newly discovered conversation IDs create new Entries.
+
+Raw artifacts are handled separately from normalized Entry identity. Each uploaded export remains preserved as its own `ImportArtifact` even when its conversations overlap with earlier exports.
+
+### Failure and partial-result handling
+
+ChatGPT import processing now separates source/job persistence from Entry processing transaction boundaries.
+
+High-level flow:
+
+```text
+S3 upload
+→ ImportArtifact + RUNNING ImportJob commit
+→ parse/process conversations
+```
+
+If the archive itself cannot be parsed or another import-wide failure occurs:
+
+```text
+Entry transaction rollback
+→ ImportJob = FAILED
+→ error recorded
+```
+
+The preserved raw artifact and failed job remain available for inspection.
+
+Conversation processing can also isolate item-level failures. If only some conversations fail:
+
+```text
+total_items     = all conversations in source
+processed_items = successful conversations
+failed_items    = failed conversations
+status          = PARTIAL
+```
+
+Successful conversations are retained rather than rolling back the whole archive.
+
+### Test transaction support
+
+The pytest database fixture now uses SQLAlchemy savepoint-aware transaction joining so application code can exercise multiple `commit()` / `rollback()` boundaries while each test still rolls back its outer transaction afterward.
+
+This supports realistic testing of ImportJob lifecycle and prepares the test infrastructure for later queue/retry work.
+
+### Step 5 tests
+
+Tests now cover the important ChatGPT import contracts, including:
+
+- ChatGPT ZIP source creation
+- invalid ZIP rejection
+- active conversation branch parsing
+- conversation normalization
+- authenticated `/imports/chatgpt` integration
+- original ZIP `ImportArtifact` persistence
+- completed `ImportJob` persistence and counters
+- idempotent repeated imports
+- updating an existing conversation when the same `conversation_id` appears with newer data
+- preserving multiple raw artifacts while normalized Entries remain deduplicated
+- whole-import `FAILED` behavior
+- conversation-level `PARTIAL` behavior
+- regression coverage for the existing application
+
+The full test suite is passing at the end of Step 5.
 
 ## Current data ownership/storage model
 
@@ -258,42 +206,48 @@ The Step 4 test suite is passing.
 PostgreSQL
 ├── User
 ├── Entry
+│   ├── provider
+│   └── external_id
 ├── Attachment metadata
-└── ImportArtifact metadata
+├── ImportArtifact metadata
+└── ImportJob state/history
 
 S3
 ├── Entry attachment bytes
 └── Original import files / archives
 ```
 
-PostgreSQL stores references and metadata; S3 stores file contents.
+PostgreSQL stores normalized data, references, metadata, external identity, and processing state. S3 stores original file contents.
 
 ## Important implementation notes
 
 - PostgreSQL host port is `5433`; Docker maps host `5433` to container port `5432`.
 - SQLAlchemy `Session` is injected through FastAPI `Depends(get_db)`.
-- Tests replace `get_db` using `app.dependency_overrides` and rollback each test transaction.
+- Tests replace `get_db` using `app.dependency_overrides` and isolate tests with an outer transaction plus savepoints.
 - Canonical models are application-layer models and are not persisted directly.
 - `event_at` represents when the source event occurred; `created_at` represents when lifhop stored the record.
 - `CanonicalItem.external_id` remains optional because simple local documents may not have a stable external identifier.
-- Raw Import Artifacts are distinct from Entry Attachments even though both use S3.
-- `ImportJob` has intentionally not been introduced yet; it becomes concrete in Step 5 with batch ChatGPT export processing.
+- Raw Import Artifacts remain distinct from Entry Attachments even though both use S3.
+- Raw artifact preservation and normalized Entry deduplication are intentionally separate concerns.
+- Stable external resources should generally use `(user_id, provider, external_id)` identity and upsert semantics.
+- The rule is not universal for every future source: immutable events or sources without stable IDs may need a different persistence policy.
+- ImportJob failure state is persisted independently from the Entry-processing transaction so failed imports remain observable.
 
-## Next — Step 5: ChatGPT Export Import
+## Next — Step 6: Async Processing with SQS
 
-Use the Step 4 framework with the first complex real-world provider.
+Move expensive imports away from the synchronous API request path.
 
 Initial goals:
 
-1. Inspect the actual ChatGPT export ZIP structure
-2. Preserve the original ZIP as an `ImportArtifact`
-3. Parse exported conversations into canonical `ConversationPayload` items
-4. Normalize conversations into lifhop Entries
-5. Introduce an `ImportJob` model for batch processing state
-6. Design idempotency so re-uploading the same export does not duplicate conversations
-7. Re-evaluate the `EntryNormalizer` design after the first non-document payload is implemented
+1. Reuse the existing `ImportJob` lifecycle rather than creating a second job concept
+2. Introduce SQS as the queue between API and worker
+3. Let the API preserve/create the raw artifact and job, then enqueue work
+4. Let a worker load the preserved artifact and perform provider import processing
+5. Preserve idempotent upsert behavior when messages are redelivered
+6. Add retry and failure exercises
+7. Introduce a Dead Letter Queue after the basic worker flow is understood
 
-Do not introduce SQS or background workers yet. Step 5 should first implement the batch import synchronously so its limitations are visible before Step 6 introduces asynchronous processing.
+The existing synchronous ChatGPT implementation is the behavioral baseline for Step 6.
 
 ## Known issues / deferred decisions
 
@@ -312,15 +266,16 @@ Do not introduce SQS or background workers yet. Step 5 should first implement th
 - Cleanup policy for abandoned Attachments and orphaned S3 objects
 - ImportArtifact retention, deletion, storage-cost, and expiration policy
 - What happens to Entries when their raw ImportArtifact is deleted
+- Artifact checksum / exact-file duplicate detection policy
+- Per-item import error persistence and diagnostics
 - Canonical metadata representation
 - Canonical attachment representation
-- External Source persistence model
-- `source_id` / `external_id` database constraints
-- Duplicate-import detection and idempotency strategy
+- External Source persistence model and `source_id`
 - Strict Pydantic canonical validation policy
 - Exact DevSession structure for Codex CLI and Claude Code
 - ProjectEvent canonical payload for GitHub
+- Source-specific exceptions to the default external-resource upsert policy
 
 ## Last update
 
-2026-08-31
+2026-09-03
