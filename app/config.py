@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     aws_profile: str
     aws_region: str
     s3_bucket_name: str
+    sqs_import_queue_url: str
 
     model_config = SettingsConfigDict(
         env_file=".env",
