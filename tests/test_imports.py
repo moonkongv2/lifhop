@@ -128,6 +128,36 @@ def test_import_markdown_uploads_original_to_s3(
     assert uploaded["s3_key"].endswith("/study.md")
 
 
+@pytest.fixture
+def fake_import_s3(
+    monkeypatch,
+):
+    objects: dict[str, bytes] = {}
+
+    def fake_upload_object(
+        s3_key: str,
+        content: bytes,
+        mime_type: str,
+    ) -> None:
+        objects[s3_key] = content
+
+    def fake_download_object(
+        s3_key: str,
+    ) -> bytes:
+        return objects[s3_key]
+
+    monkeypatch.setattr(
+        "app.api.imports.upload_object",
+        fake_upload_object,
+    )
+
+    monkeypatch.setattr(
+        "app.services.import_jobs.download_object",
+        fake_download_object,
+    )
+
+    return objects
+
 def build_chatgpt_zip(
     conversations: list[dict],
 ) -> bytes:
@@ -149,17 +179,13 @@ def test_import_chatgpt_zip_persists_conversations(
     client,
     auth_headers,
     monkeypatch,
+    fake_import_s3,
 ):
     fixture_path = (
         Path(__file__).parent
         / "fixtures"
         / "chatgpt"
         / "conversations.json"
-    )
-
-    monkeypatch.setattr(
-        "app.api.imports.upload_object",
-        lambda **kwargs: None,
     )
 
     zip_bytes = build_chatgpt_zip(
@@ -196,17 +222,13 @@ def test_import_chatgpt_creates_artifact_and_completed_job(
     auth_headers,
     db_session,
     monkeypatch,
+    fake_import_s3,
 ):
     fixture_path = (
         Path(__file__).parent
         / "fixtures"
         / "chatgpt"
         / "conversations.json"
-    )
-
-    monkeypatch.setattr(
-        "app.api.imports.upload_object",
-        lambda **kwargs: None,
     )
 
     zip_bytes = build_chatgpt_zip(
@@ -259,6 +281,7 @@ def test_import_chatgpt_is_idempotent(
     auth_headers,
     db_session,
     monkeypatch,
+    fake_import_s3,
 ):
     fixture_path = (
         Path(__file__).parent
@@ -273,11 +296,6 @@ def test_import_chatgpt_is_idempotent(
 
     zip_bytes = build_chatgpt_zip(
         conversations
-    )
-
-    monkeypatch.setattr(
-        "app.api.imports.upload_object",
-        lambda **kwargs: None,
     )
 
     first_response = client.post(
@@ -322,6 +340,7 @@ def test_import_chatgpt_updates_existing_conversation(
     auth_headers,
     db_session,
     monkeypatch,
+    fake_import_s3,
 ):
     fixture_path = (
         Path(__file__).parent
@@ -332,11 +351,6 @@ def test_import_chatgpt_updates_existing_conversation(
 
     conversations = json.loads(
         fixture_path.read_text()
-    )
-
-    monkeypatch.setattr(
-        "app.api.imports.upload_object",
-        lambda **kwargs: None,
     )
 
     first_response = client.post(
@@ -399,12 +413,8 @@ def test_import_chatgpt_invalid_zip_marks_job_failed(
     auth_headers,
     db_session,
     monkeypatch,
+    fake_import_s3,
 ):
-    monkeypatch.setattr(
-        "app.api.imports.upload_object",
-        lambda **kwargs: None,
-    )
-
     with pytest.raises(
         ValueError,
         match="Invalid ZIP archive",
@@ -453,6 +463,7 @@ def test_import_chatgpt_partial_when_one_conversation_fails(
     auth_headers,
     db_session,
     monkeypatch,
+    fake_import_s3,
 ):
     fixture_path = (
         Path(__file__).parent
@@ -467,11 +478,6 @@ def test_import_chatgpt_partial_when_one_conversation_fails(
 
     zip_bytes = build_chatgpt_zip(
         conversations
-    )
-
-    monkeypatch.setattr(
-        "app.api.imports.upload_object",
-        lambda **kwargs: None,
     )
 
     original_import_conversation = (

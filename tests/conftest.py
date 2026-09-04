@@ -145,3 +145,18 @@ def authenticated_user(
     }
 
     return user, headers
+
+
+@pytest.fixture()
+def user(
+    db_session: Session,
+) -> User:
+    user = User(
+        email="user@example.com",
+        password_hash="test-password-hash",
+    )
+
+    db_session.add(user)
+    db_session.flush()
+
+    return user

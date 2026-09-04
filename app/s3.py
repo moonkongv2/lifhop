@@ -77,3 +77,16 @@ def upload_object(
         Body=content,
         ContentType=mime_type,
     )
+
+
+def download_object(
+    s3_key: str,
+) -> bytes:
+    s3 = get_s3_client()
+
+    response = s3.get_object(
+        Bucket=settings.s3_bucket_name,
+        Key=s3_key,
+    )
+
+    return response["Body"].read()
