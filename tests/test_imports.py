@@ -1,17 +1,16 @@
 import io
 import json
 import zipfile
+import pytest
+
 from pathlib import Path
 from app.importers.canonical import SourceProvider
-
-import pytest
 
 from sqlalchemy import select
 
 from app.models.entry import Entry
 from app.models.import_artifact import ImportArtifact
 from app.models.import_job import ImportJob, ImportJobStatus
-from app.importers.chatgpt import ChatGPTImporter
 
 def test_import_markdown_persists_entry(
     client,
@@ -129,7 +128,7 @@ def test_import_markdown_uploads_original_to_s3(
 
 
 @pytest.fixture
-def fake_import_s3(
+def fake_import_upload(
     monkeypatch,
 ):
     objects: dict[str, bytes] = {}
@@ -141,19 +140,9 @@ def fake_import_s3(
     ) -> None:
         objects[s3_key] = content
 
-    def fake_download_object(
-        s3_key: str,
-    ) -> bytes:
-        return objects[s3_key]
-
     monkeypatch.setattr(
         "app.api.imports.upload_object",
         fake_upload_object,
-    )
-
-    monkeypatch.setattr(
-        "app.services.import_jobs.download_object",
-        fake_download_object,
     )
 
     return objects
@@ -175,54 +164,13 @@ def build_chatgpt_zip(
     return buffer.getvalue()
 
 
-def test_import_chatgpt_zip_persists_conversations(
-    client,
-    auth_headers,
-    monkeypatch,
-    fake_import_s3,
-):
-    fixture_path = (
-        Path(__file__).parent
-        / "fixtures"
-        / "chatgpt"
-        / "conversations.json"
-    )
 
-    zip_bytes = build_chatgpt_zip(
-        json.loads(
-            fixture_path.read_text()
-        )
-    )
-
-    response = client.post(
-        "/imports/chatgpt",
-        headers=auth_headers,
-        files={
-            "file": (
-                "chatgpt-export.zip",
-                zip_bytes,
-                "application/zip",
-            )
-        },
-    )
-
-    assert response.status_code == 200
-
-    data = response.json()
-
-    assert len(data) == 2
-
-    assert data[0]["type"] == "CONVERSATION"
-    assert data[0]["title"] == "Center a div"
-
-
-
-def test_import_chatgpt_creates_artifact_and_completed_job(
+def test_import_chatgpt_enqueues_job(
     client,
     auth_headers,
     db_session,
+    fake_import_upload,
     monkeypatch,
-    fake_import_s3,
 ):
     fixture_path = (
         Path(__file__).parent
@@ -237,6 +185,19 @@ def test_import_chatgpt_creates_artifact_and_completed_job(
         )
     )
 
+    enqueued = {}
+
+    def fake_enqueue_import_job(
+        job_id: int,
+    ) -> str:
+        enqueued["job_id"] = job_id
+        return "test-message-id"
+
+    monkeypatch.setattr(
+        "app.api.imports.enqueue_import_job",
+        fake_enqueue_import_job,
+    )
+
     response = client.post(
         "/imports/chatgpt",
         headers=auth_headers,
@@ -249,11 +210,15 @@ def test_import_chatgpt_creates_artifact_and_completed_job(
         },
     )
 
-    assert response.status_code == 200
+    assert response.status_code == 202
+
+    data = response.json()
+
+    assert data["job_id"] is not None
+    assert data["status"] == "PENDING"
 
     artifact = db_session.scalar(
-        select(ImportArtifact)
-        .where(
+        select(ImportArtifact).where(
             ImportArtifact.filename
             == "chatgpt-export.zip"
         )
@@ -262,264 +227,19 @@ def test_import_chatgpt_creates_artifact_and_completed_job(
     assert artifact is not None
     assert artifact.mime_type == "application/zip"
 
-    job = db_session.scalar(
-        select(ImportJob)
-        .where(
-            ImportJob.artifact_id == artifact.id
-        )
+    job = db_session.get(
+        ImportJob,
+        data["job_id"],
     )
 
     assert job is not None
-    assert job.status == ImportJobStatus.COMPLETED
-    assert job.total_items == 2
-    assert job.processed_items == 2
+    assert job.artifact_id == artifact.id
+    assert job.status == ImportJobStatus.PENDING
+    assert job.total_items == 0
+    assert job.processed_items == 0
     assert job.failed_items == 0
 
-
-def test_import_chatgpt_is_idempotent(
-    client,
-    auth_headers,
-    db_session,
-    monkeypatch,
-    fake_import_s3,
-):
-    fixture_path = (
-        Path(__file__).parent
-        / "fixtures"
-        / "chatgpt"
-        / "conversations.json"
-    )
-
-    conversations = json.loads(
-        fixture_path.read_text()
-    )
-
-    zip_bytes = build_chatgpt_zip(
-        conversations
-    )
-
-    first_response = client.post(
-        "/imports/chatgpt",
-        headers=auth_headers,
-        files={
-            "file": (
-                "first-export.zip",
-                zip_bytes,
-                "application/zip",
-            )
-        },
-    )
-
-    assert first_response.status_code == 200
-
-    second_response = client.post(
-        "/imports/chatgpt",
-        headers=auth_headers,
-        files={
-            "file": (
-                "second-export.zip",
-                zip_bytes,
-                "application/zip",
-            )
-        },
-    )
-
-    assert second_response.status_code == 200
-
-    entries = db_session.scalars(
-        select(Entry).where(
-            Entry.provider == SourceProvider.CHATGPT.value
-        )
-    ).all()
-
-    assert len(entries) == 2
-
-
-def test_import_chatgpt_updates_existing_conversation(
-    client,
-    auth_headers,
-    db_session,
-    monkeypatch,
-    fake_import_s3,
-):
-    fixture_path = (
-        Path(__file__).parent
-        / "fixtures"
-        / "chatgpt"
-        / "conversations.json"
-    )
-
-    conversations = json.loads(
-        fixture_path.read_text()
-    )
-
-    first_response = client.post(
-        "/imports/chatgpt",
-        headers=auth_headers,
-        files={
-            "file": (
-                "first-export.zip",
-                build_chatgpt_zip(conversations),
-                "application/zip",
-            )
-        },
-    )
-
-    assert first_response.status_code == 200
-
-    conversations[0]["title"] = "Updated title"
-
-    second_response = client.post(
-        "/imports/chatgpt",
-        headers=auth_headers,
-        files={
-            "file": (
-                "second-export.zip",
-                build_chatgpt_zip(conversations),
-                "application/zip",
-            )
-        },
-    )
-
-    assert second_response.status_code == 200
-
-    entry = db_session.scalar(
-        select(Entry).where(
-            Entry.provider == SourceProvider.CHATGPT.value,
-            Entry.external_id == "a1b2c3d4-0001",
-        )
-    )
-
-    assert entry is not None
-    assert entry.title == "Updated title"
-
-    entries = db_session.scalars(
-        select(Entry).where(
-            Entry.provider == SourceProvider.CHATGPT.value
-        )
-    ).all()
-
-    assert len(entries) == 2
-
-    artifacts = db_session.scalars(
-        select(ImportArtifact)
-    ).all()
-
-    assert len(artifacts) == 2
-
-
-def test_import_chatgpt_invalid_zip_marks_job_failed(
-    client,
-    auth_headers,
-    db_session,
-    monkeypatch,
-    fake_import_s3,
-):
-    with pytest.raises(
-        ValueError,
-        match="Invalid ZIP archive",
-    ):
-        client.post(
-            "/imports/chatgpt",
-            headers=auth_headers,
-            files={
-                "file": (
-                    "broken.zip",
-                    b"this is not a zip file",
-                    "application/zip",
-                )
-            },
-        )
-
-    artifact = db_session.scalar(
-        select(ImportArtifact).where(
-            ImportArtifact.filename == "broken.zip"
-        )
-    )
-
-    assert artifact is not None
-
-    job = db_session.scalar(
-        select(ImportJob).where(
-            ImportJob.artifact_id == artifact.id
-        )
-    )
-
-    assert job is not None
-    assert job.status == ImportJobStatus.FAILED
-    assert job.error == "Invalid ZIP archive"
-    assert job.completed_at is not None
-
-    entries = db_session.scalars(
-        select(Entry).where(
-            Entry.provider == SourceProvider.CHATGPT.value
-        )
-    ).all()
-
-    assert len(entries) == 0
-
-def test_import_chatgpt_partial_when_one_conversation_fails(
-    client,
-    auth_headers,
-    db_session,
-    monkeypatch,
-    fake_import_s3,
-):
-    fixture_path = (
-        Path(__file__).parent
-        / "fixtures"
-        / "chatgpt"
-        / "conversations.json"
-    )
-
-    conversations = json.loads(
-        fixture_path.read_text()
-    )
-
-    zip_bytes = build_chatgpt_zip(
-        conversations
-    )
-
-    original_import_conversation = (
-        ChatGPTImporter.import_conversation
-    )
-
-    def fail_one_conversation(
-        self,
-        conversation,
-    ):
-        if (
-            conversation.get("conversation_id")
-            == "a1b2c3d4-0001"
-        ):
-            raise ValueError(
-                "broken conversation"
-            )
-
-        return original_import_conversation(
-            self,
-            conversation,
-        )
-
-    monkeypatch.setattr(
-        ChatGPTImporter,
-        "import_conversation",
-        fail_one_conversation,
-    )
-
-    response = client.post(
-        "/imports/chatgpt",
-        headers=auth_headers,
-        files={
-            "file": (
-                "partial-export.zip",
-                zip_bytes,
-                "application/zip",
-            )
-        },
-    )
-
-    assert response.status_code == 200
+    assert enqueued["job_id"] == job.id
 
     entries = db_session.scalars(
         select(Entry).where(
@@ -528,27 +248,4 @@ def test_import_chatgpt_partial_when_one_conversation_fails(
         )
     ).all()
 
-    assert len(entries) == 1
-
-    job = db_session.scalar(
-        select(ImportJob)
-        .order_by(ImportJob.id.desc())
-    )
-
-    assert job is not None
-    assert job.status == ImportJobStatus.PARTIAL
-    assert job.total_items == 2
-    assert job.processed_items == 1
-    assert job.failed_items == 1
-    assert job.completed_at is not None
-
-    artifact = db_session.scalar(
-        select(ImportArtifact).where(
-            ImportArtifact.filename
-            == "partial-export.zip"
-        )
-    )
-
-    assert artifact is not None
-    assert job.artifact_id == artifact.id
-
+    assert len(entries) == 0

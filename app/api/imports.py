@@ -1,6 +1,13 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, File, Form, UploadFile
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    Form,
+    UploadFile,
+    status,
+)
 from sqlalchemy.orm import Session
 
 from uuid import uuid4
@@ -10,10 +17,11 @@ from app.db import get_db
 from app.importers.markdown import MarkdownImporter
 from app.importers.normalizer import EntryNormalizer
 from app.importers.source_factory import create_markdown_source
-from app.services.import_jobs import (
-    process_chatgpt_import_job,
+from app.schemas.import_job import (
+    ImportJobSubmissionResponse,
 )
 
+from app.sqs import enqueue_import_job
 from app.models.entry import Entry
 from app.models.user import User
 from app.models.import_artifact import ImportArtifact
@@ -104,7 +112,8 @@ async def import_markdown(
 
 @router.post(
     "/chatgpt",
-    response_model=list[EntryResponse],
+    response_model=ImportJobSubmissionResponse,
+    status_code=status.HTTP_202_ACCEPTED,
 )
 async def import_chatgpt(
     db: Annotated[Session, Depends(get_db)],
@@ -113,7 +122,7 @@ async def import_chatgpt(
         Depends(get_current_user),
     ],
     file: UploadFile = File(...),
-) -> list[Entry]:
+) -> ImportJobSubmissionResponse:
     content = await file.read()
 
     raw_s3_key = (
@@ -159,9 +168,11 @@ async def import_chatgpt(
     db.commit()
     db.refresh(job)
 
-    entries = process_chatgpt_import_job(
-        db=db,
+    enqueue_import_job(
         job_id=job.id,
     )
 
-    return entries
+    return ImportJobSubmissionResponse(
+        job_id=job.id,
+        status=job.status,
+    )
