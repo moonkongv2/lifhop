@@ -30,6 +30,11 @@ def process_chatgpt_import_job(
 
     job.status = ImportJobStatus.RUNNING
     job.started_at = datetime.now(timezone.utc)
+    job.completed_at = None
+    job.error = None
+    job.total_items = 0
+    job.processed_items = 0
+    job.failed_items = 0
 
     db.commit()
 

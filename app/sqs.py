@@ -31,3 +31,34 @@ def enqueue_import_job(
     )
 
     return response["MessageId"]
+
+
+def receive_import_job_message() -> dict | None:
+    sqs = get_sqs_client()
+
+    response = sqs.receive_message(
+        QueueUrl=settings.sqs_import_queue_url,
+        MaxNumberOfMessages=1,
+        WaitTimeSeconds=20,
+    )
+
+    messages = response.get(
+        "Messages",
+        [],
+    )
+
+    if not messages:
+        return None
+
+    return messages[0]
+
+
+def delete_import_job_message(
+    receipt_handle: str,
+) -> None:
+    sqs = get_sqs_client()
+
+    sqs.delete_message(
+        QueueUrl=settings.sqs_import_queue_url,
+        ReceiptHandle=receipt_handle,
+    )
