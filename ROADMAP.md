@@ -33,6 +33,9 @@ Hybrid Search
 RAG
 Question Answering
 Source Citations
+Hierarchical / Global Retrieval
+Long-term Record Analysis
+Source-grounded Synthesis
 ```
 
 # Level 3 — Connected
@@ -1479,7 +1482,207 @@ Hybrid retrieval performs measurably better than vector search alone on a small 
 
 ---
 
-# Step 10 — Connected Sources
+# Step 10 — Hierarchical and Global Retrieval
+
+## Goal
+
+Support questions that require analysis across a large portion of a user's accumulated history rather than retrieval of only a few locally relevant chunks.
+
+The goal is not to claim that the model permanently remembers or continuously understands every record. Instead, lifhop should build an efficient structure for analyzing a large archive, navigating toward relevant regions, and grounding synthesized conclusions in the user's original records.
+
+Examples of global questions include:
+
+```text
+How have my technical interests changed over the last three years?
+What kinds of problems do I repeatedly encounter while developing software?
+What were the major projects I worked on this year?
+How has my thinking about this topic changed over time?
+What patterns appear across my conversations, notes, and development history?
+```
+
+## Why Basic RAG Is Not Enough
+
+Basic RAG normally retrieves only a small top-k subset of the archive:
+
+```text
+Large personal archive
+        |
+        v
+Vector / Hybrid Retrieval
+        |
+        v
+Top-k Chunks
+        |
+        v
+LLM
+```
+
+This works well for local factual questions, but a top-k sample does not necessarily represent an entire multi-year archive. Global analysis therefore requires a separate retrieval and aggregation strategy.
+
+## Hierarchical Knowledge Structure
+
+Introduce summaries or derived representations at multiple useful levels as the archive grows.
+
+Possible hierarchy:
+
+```text
+Raw Entry / Chunk
+      |
+      v
+Conversation / Document Summary
+      |
+      v
+Project / Topic / Time-period Summary
+      |
+      v
+Higher-level Archive Summary
+```
+
+The exact hierarchy should emerge from real data rather than being fixed prematurely. Useful dimensions may include:
+
+- conversation or document
+- project
+- topic
+- day / month / year
+- source/provider
+
+## Retrieval Strategy
+
+Global retrieval should work as progressive navigation rather than loading all raw records into one LLM context.
+
+```text
+Question
+   |
+   v
+Identify relevant high-level regions
+   |
+   v
+Retrieve higher-level summaries / aggregate signals
+   |
+   v
+Drill down into relevant projects, periods, or topics
+   |
+   v
+Retrieve supporting raw Entries / Chunks
+   |
+   v
+Synthesize answer
+   |
+   v
+Answer + Traceable Sources
+```
+
+This allows a large archive to be analyzed without requiring every raw record to fit into a single model context window.
+
+## Summary Is a Map, Not the Source of Truth
+
+Derived summaries are lossy and may omit details that later become important.
+
+Therefore:
+
+```text
+Summary / aggregate representation
+→ use to navigate and identify patterns
+
+Raw Entry / Chunk
+→ use to verify important factual claims
+```
+
+A summary should not replace the preserved source record. When an answer makes a concrete claim that can be traced to original records, the system should prefer evidence from those original records rather than citing only a generated summary.
+
+## Analysis and Confidence
+
+Global questions often require more interpretation than factual retrieval.
+
+The system should distinguish conceptually between:
+
+```text
+Direct fact
+- explicitly supported by source records
+
+Synthesis
+- combines multiple source records
+
+Inferred pattern
+- interpretation derived from repeated or distributed evidence
+```
+
+For inferred patterns, lifhop should expose enough supporting evidence for the user to judge whether the conclusion is reasonable. The product should favor inspectable reasoning from records over an impression that the AI simply "knows" the user.
+
+## Product Principle
+
+lifhop's value is not unlimited AI memory.
+
+The intended value is:
+
+```text
+Preserve the user's records
+        +
+Retrieve the right evidence
+        +
+Analyze records across time and sources
+        +
+Connect related information
+        +
+Return traceable source evidence
+        =
+Higher-quality and more trustworthy answers
+```
+
+Source traceability is a core part of the user experience, not merely a debugging feature.
+
+## Possible Implementation Evolution
+
+Start simple and introduce additional structure only when archive size and evaluation results justify it.
+
+```text
+Basic RAG
+   |
+   v
+Hybrid Retrieval
+   |
+   v
+Entry / Conversation Summaries
+   |
+   v
+Project / Topic / Time Summaries
+   |
+   v
+Hierarchical Retrieval
+   |
+   v
+Global Analysis
+```
+
+Graph-based retrieval such as GraphRAG may be evaluated later if entity relationships or cross-record connections become difficult to represent with the simpler hierarchy. It is not a requirement for the initial implementation of this step.
+
+## Learning Topics
+
+- Hierarchical summarization
+- Map-reduce style synthesis
+- Multi-stage retrieval
+- Global vs local retrieval
+- Long-context limitations
+- Summary information loss
+- Evidence backtracking
+- Source-grounded synthesis
+- Temporal analysis
+- Pattern extraction
+- Retrieval evaluation for broad questions
+
+## Completion Criteria
+
+A user with a sufficiently large archive can ask both local and global questions.
+
+For global questions, lifhop can analyze information distributed across multiple Entries, time periods, or sources without attempting to place the complete raw archive into one LLM context.
+
+Generated conclusions provide traceable supporting records where practical, and concrete factual claims can be followed back to original Entries or Chunks rather than relying only on generated summaries.
+
+Evaluation should include broad questions where ordinary top-k RAG is known to provide incomplete or unrepresentative answers, and the hierarchical/global approach should demonstrate a meaningful improvement in coverage or answer quality.
+
+---
+
+# Step 11 — Connected Sources
 
 ## Goal
 
@@ -1494,7 +1697,7 @@ GitHub
 
 Step 4 defines how external data is normalized.
 
-Step 10 focuses on how external systems are connected, authenticated, and synchronized over time.
+Step 11 focuses on how external systems are connected, authenticated, and synchronized over time.
 
 ## Notion
 
@@ -1582,7 +1785,7 @@ Changes from at least one connected external source automatically appear in lifh
 
 ---
 
-# Step 11 — Importer Expansion and Abstraction Validation
+# Step 12 — Importer Expansion and Abstraction Validation
 
 ## Goal
 
@@ -1686,7 +1889,7 @@ The results should be used to evaluate and, if necessary, revise the canonical m
 
 ---
 
-# Step 12 — Production AWS Deployment
+# Step 13 — Production AWS Deployment
 
 ## Goal
 
@@ -1757,7 +1960,7 @@ The service can be accessed securely over HTTPS while backend infrastructure is 
 
 ---
 
-# Step 13 — Infrastructure as Code and CI/CD
+# Step 14 — Infrastructure as Code and CI/CD
 
 ## Goal
 
@@ -1820,7 +2023,7 @@ A push to the deployment branch can test, build, and deploy the backend automati
 
 ---
 
-# Step 14 — Production Operations
+# Step 15 — Production Operations
 
 ## Goal
 
