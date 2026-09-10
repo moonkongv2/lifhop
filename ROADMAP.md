@@ -8,6 +8,8 @@ The goal is not to build every feature as quickly as possible. The goal is to pr
 
 The roadmap is expected to evolve. Major direction changes should update this document, and durable architecture decisions should be recorded in `DECISIONS.md` when appropriate.
 
+Detailed acquisition/capture strategy, user-effort goals, and capture-specific risks are maintained in `CAPTURE.md`.
+
 ---
 
 # Level 1 — Useful
@@ -19,6 +21,7 @@ Manual Entry
 File Attachment
 User-provided Document Import
 ChatGPT Import
+ChatGPT Web Capture PoC
 Keyword Search
 ```
 
@@ -43,11 +46,14 @@ Source-grounded Synthesis
 Target capabilities:
 
 ```text
+Low-effort Capture
+Mobile Share Capture
 Notion
 GitHub
 Gemini
 Automatic Sync
 Incremental Import
+Native / Agent Capture
 ```
 
 ---
@@ -504,18 +510,22 @@ They should be added only when concrete source implementations demonstrate the n
 
 External imports need stable source identity to support synchronization and duplicate prevention.
 
-A future persistent `Source` model may still evolve toward:
+A future persistent `Source` / `SourceConnection` model may still evolve toward:
 
 ```text
-Source
+SourceConnection
 - id
 - user_id
 - provider
-- external_id
-- sync_mode
+- capture_mode
+- status
+- external_id / external_account_id
 - last_synced_at
+- sync_cursor
 - metadata
 ```
+
+The exact schema is intentionally deferred until ongoing capture workflows demonstrate the concrete lifecycle required. See `CAPTURE.md`.
 
 Step 5 established a concrete Entry-level identity rule before a full Source model was necessary.
 
@@ -926,6 +936,14 @@ The normalizer design has been reviewed and remains intentionally simple for now
 
 # Step 6 — Async Processing with SQS
 
+## Status
+
+Core async queue/worker implementation is present as of 2026-09-10.
+
+The ChatGPT import API now preserves the artifact and pending job, returns HTTP 202, enqueues `job_id` to SQS, and a separate worker loads and processes the job. Successful messages are deleted; failed processing leaves the message undeleted so SQS redelivery semantics can apply.
+
+Operational hardening such as explicit DLQ configuration/verification, crash/redelivery exercises, visibility-timeout tuning, and production worker deployment remains part of the broader learning path where not already verified.
+
 ## Goal
 
 Move expensive imports away from API request processing while preserving the synchronous Step 5 behavior as the contract to reproduce asynchronously.
@@ -1009,6 +1027,134 @@ Kill a worker during an import and verify that the message is redelivered and du
 ## Completion Criteria
 
 Imports continue correctly even when API and worker processes restart independently.
+
+---
+
+# Step 6.5 — ChatGPT Web Capture PoC
+
+## Goal
+
+Validate early whether a Chromium extension can reduce repeated user effort by capturing ChatGPT Web conversations without requiring export ZIPs for ongoing use.
+
+This is deliberately a **PoC and risk-removal step**, not full capture productization.
+
+The detailed strategy and risk register live in `CAPTURE.md`.
+
+## Why This Happens Before Search
+
+The project already understands that repeated export/download/upload is too cumbersome to be the long-term capture experience. The browser path has enough technical, UX, maintenance, and provider-policy uncertainty that it should be tested early rather than discovered after the search stack is complete.
+
+At the same time, capture development should not expand enough to delay validation of lifhop's main value: useful retrieval and analysis over accumulated records.
+
+## PoC Progression
+
+Start with explicit user action:
+
+```text
+ChatGPT Web
+    |
+    v
+[Save to lifhop]
+    |
+    v
+current conversation extraction
+    |
+    v
+lifhop capture/import boundary
+    |
+    v
+Canonical Conversation
+    |
+    v
+Entry upsert
+```
+
+Then test update detection:
+
+```text
+same conversation receives new messages
+        |
+        v
+extension detects change
+        |
+        v
+capture again
+        |
+        v
+same external identity is updated
+```
+
+Finally evaluate, rather than assume, opt-in continuous capture:
+
+```text
+Auto Capture enabled
+        |
+        v
+meaningful conversation change
+        |
+        v
+debounce / completion boundary
+        |
+        v
+automatic capture
+```
+
+## Required Boundaries
+
+- Provider-specific browser extraction stays isolated from canonical normalization.
+- Stable conversation identity should reuse `(user_id, provider, external_id)` where reliable.
+- The extension should request the minimum browser permissions necessary for the PoC.
+- Automatic capture must be explicit opt-in if it proceeds beyond the PoC.
+- Browser capture must not be described as mobile capture.
+- A technically successful PoC does not by itself establish that the acquisition method is acceptable for commercial use; provider terms/policies must be reviewed separately.
+
+## Risks to Evaluate
+
+- DOM/UI changes may break extraction.
+- Stable conversation identity may be difficult to obtain reliably.
+- ChatGPT usage from mobile apps is outside browser-extension coverage.
+- Chromium-only coverage leaves Safari/Firefox as separate work.
+- Continuous capture may over-collect sensitive content without clear controls.
+- Provider terms or platform policies may limit automated/programmatic extraction.
+- Supporting a provider-specific DOM integration creates ongoing maintenance cost.
+
+## Explicit Non-goals
+
+Do not expand this PoC into:
+
+- Chrome Web Store production release
+- polished extension UI
+- Safari / Firefox support
+- iOS / Android capture
+- multi-provider extension support
+- generalized `SourceConnection` schema before it is needed
+- production privacy/settings surface
+
+## Completion Criteria
+
+The PoC demonstrates whether:
+
+- the active ChatGPT Web conversation can be captured
+- user/assistant text needed by the current conversation model can be extracted
+- data can enter lifhop without a ChatGPT export ZIP
+- repeated capture updates the same Entry without duplication
+- new messages can be detected well enough to evaluate auto-capture
+- opt-in continuous capture is technically feasible enough to justify later productization
+
+The step ends with a documented decision:
+
+```text
+GO
+→ proceed toward later browser capture productization
+
+LIMITED GO
+→ keep explicit one-click capture but defer automatic capture
+
+NO-GO
+→ do not depend on the browser method; retain other acquisition paths
+```
+
+Then return to Step 7 search work.
 
 ---
 
@@ -1682,22 +1828,195 @@ Evaluation should include broad questions where ordinary top-k RAG is known to p
 
 ---
 
-# Step 11 — Connected Sources
+# Step 11 — Low-effort Capture Productization
 
 ## Goal
 
-Move from uploaded exports and local files to connected integrations.
+Turn the lessons from the Step 6.5 PoC into a user-facing capture model that minimizes repeated effort without assuming every provider can be fully automated.
+
+The product principle is:
+
+> Zero-effort where a stable and acceptable integration exists; otherwise the lowest practical explicit user action.
+
+Historical export import remains supported but becomes optional enrichment rather than the primary recurring workflow.
+
+Detailed requirements and risks are documented in `CAPTURE.md`.
+
+## Capture Model
+
+Acquisition should remain separate from downstream ingestion:
+
+```text
+Capture Client / Connector
+        |
+        v
+Provider raw data
+        |
+        v
+Provider Parser / Adapter
+        |
+        v
+Canonical Item
+        |
+        v
+Entry Normalizer
+        |
+        v
+Entry
+```
+
+Candidate capture modes:
+
+```text
+HISTORICAL_IMPORT
+BROWSER_CAPTURE
+MOBILE_SHARE
+CONNECTED_SYNC
+NATIVE_CAPTURE
+LOCAL_CAPTURE
+```
+
+Exact enum names and persistence details should be driven by real product flows rather than frozen prematurely.
+
+## Browser Capture
+
+If the Step 6.5 decision is GO or LIMITED GO:
+
+- stabilize the Chromium extension architecture
+- isolate ChatGPT-specific DOM/extraction logic
+- support explicit Save to lifhop
+- add opt-in automatic capture only if justified by the PoC
+- expose capture status/failure instead of silently losing data
+- request minimal permissions
+- add regression fixtures/tests for provider UI parsing where practical
+
+Safari and Firefox remain separate later targets based on demand.
+
+## Mobile Quick Capture
+
+Provide:
+
+```text
+iOS Share Extension
+Android Share Target
+```
+
+Desired user flow:
+
+```text
+source app
+   |
+   v
+Share
+   |
+   v
+lifhop
+```
+
+The receiving lifhop client can only process the text, URL, file, or other payload actually exposed by the source app.
+
+Do not assume that an AI app's Share action exposes the full conversation. In particular, if ChatGPT supplies only a shared link, reliable conversation acquisition from that link must remain a separately validated technical/policy path.
+
+## Capture Controls
+
+Continuous capture deals with sensitive personal information and should not be invisible.
+
+As productized, provide enough user control for:
+
+```text
+capture enabled / disabled
+pause / resume
+source status
+last successful capture/sync
+source disconnect
+record deletion
+```
+
+More granular exclusion rules should be added only when real usage demonstrates the need.
+
+## Coverage Awareness
+
+Browser and mobile limitations can create incomplete archives.
+
+Capture-state metadata should eventually make it possible to show:
+
+```text
+provider
+capture method
+capture enabled / disabled
+capture start
+last successful sync/capture
+known unsupported surfaces where relevant
+```
+
+Do not represent a partial capture surface as complete provider history.
+
+## Historical Import Repositioning
+
+Existing export import remains useful for:
+
+- older data from before continuous capture began
+- providers without history APIs
+- account migration
+- optional archive enrichment
+
+It should not block onboarding or first value.
+
+## Learning Topics
+
+- Browser extension architecture
+- Share Extensions / Share Targets
+- Permission minimization
+- Capture-state modeling
+- Privacy controls
+- Provider UI fragility
+- User-effort design
+- Acquisition vs ingestion boundaries
+
+## Completion Criteria
+
+At least one browser capture path and one mobile low-effort share path are demonstrated end-to-end with the common ingestion architecture, without requiring recurring export/download/upload as the main ongoing workflow.
+
+---
+
+# Step 12 — Connected Sources and Continuous Sync
+
+## Goal
+
+Move from user-initiated captures and uploaded exports to connected integrations where official provider mechanisms allow ongoing synchronization.
 
 Initial candidates:
 
 ```text
 Notion
 GitHub
+Google Drive
 ```
 
 Step 4 defines how external data is normalized.
 
-Step 11 focuses on how external systems are connected, authenticated, and synchronized over time.
+Step 12 focuses on how external systems are connected, authenticated, and synchronized over time with minimal repeated user effort.
+
+## SourceConnection
+
+Introduce a persistent connection model when real connected-source workflows make the lifecycle concrete.
+
+It may evolve toward:
+
+```text
+SourceConnection
+- id
+- user_id
+- provider
+- capture_mode
+- status
+- external_account_id
+- last_synced_at
+- sync_cursor
+- metadata
+```
+
+Avoid adding fields that exist only for hypothetical providers.
 
 ## Notion
 
@@ -1708,7 +2027,7 @@ Notion
 Authorization
  |
  v
-Sync Request
+Initial / Incremental Sync
  |
  v
 SQS
@@ -1735,6 +2054,7 @@ Support incremental synchronization using fields such as:
 last_synced_at
 external_updated_at
 external_id
+sync_cursor
 ```
 
 Connected mutable resources with stable IDs should reuse the external-identity/upsert policy established in Step 5 unless the provider's semantics require a different strategy.
@@ -1742,7 +2062,7 @@ Connected mutable resources with stable IDs should reuse the external-identity/u
 ## GitHub
 
 ```text
-GitHub Event
+GitHub Event / API Data
  |
  v
 Webhook / API
@@ -1768,6 +2088,20 @@ Entries
 
 GitHub also provides a useful counterexample to blindly applying upsert to every external record: immutable event-like records may use append-only persistence rather than mutable-resource upsert. Provider semantics should determine the policy.
 
+## Initial Sync vs Incremental Sync
+
+When official APIs allow existing history to be read, the first connection should acquire useful historical data automatically instead of requiring a separate export workflow.
+
+```text
+Connect once
+    |
+    v
+Initial Sync
+    |
+    v
+Incremental Sync / Webhook
+```
+
 ## Learning Topics
 
 - OAuth
@@ -1776,20 +2110,24 @@ GitHub also provides a useful counterexample to blindly applying upsert to every
 - External APIs
 - Rate limits
 - Incremental sync
+- Sync cursors
 - Event-driven systems
 - Reusing importer normalization for connected sources
+- Token/security lifecycle
 
 ## Completion Criteria
 
-Changes from at least one connected external source automatically appear in lifhop using the same canonical normalization boundary introduced in Step 4.
+Changes from at least one connected external source automatically appear in lifhop using the same canonical normalization boundary introduced in Step 4, and the user does not need to repeatedly export or upload provider data.
 
 ---
 
-# Step 12 — Importer Expansion and Abstraction Validation
+# Step 13 — Importer Expansion and Native Capture Validation
 
 ## Goal
 
 Add multiple providers with substantially different raw formats and validate whether the importer abstraction created in Step 4 is genuinely extensible.
+
+Where developer tools expose native hooks, plugins, MCP, or other supported event mechanisms, prefer validating low-effort native capture over recurring manual exports.
 
 Initial candidates:
 
@@ -1862,7 +2200,31 @@ model information
 
 Their raw session formats may evolve and should be treated as provider-specific implementation details.
 
+When supported by the tool, evaluate:
+
+```text
+MCP
+plugin
+session-completion hook
+CLI hook
+```
+
+as acquisition mechanisms so users do not need to export development sessions repeatedly.
+
 The importer layer should tolerate format evolution without leaking unstable provider schemas into the rest of lifhop.
+
+## Later Capture Expansion
+
+Evaluate only when justified by real demand:
+
+```text
+Safari / Firefox extension support
+local folder / Obsidian sync
+email forwarding / selective mail ingestion
+additional AI websites
+```
+
+These should not delay validation of the core archive/search value.
 
 ## Learning Topics
 
@@ -1872,6 +2234,7 @@ The importer layer should tolerate format evolution without leaking unstable pro
 - Provider schema evolution
 - Adapter isolation
 - Regression testing across importers
+- MCP / plugin / hook-based acquisition
 
 ## Completion Criteria
 
@@ -1883,13 +2246,13 @@ one additional AI conversation provider
 one coding-agent provider
 ```
 
-can be imported through the Step 4 framework without introducing provider-specific fields into the Entry model or duplicating the core persistence pipeline.
+can be imported or captured through the Step 4 framework without introducing provider-specific fields into the Entry model or duplicating the core persistence pipeline.
 
 The results should be used to evaluate and, if necessary, revise the canonical model and importer interfaces.
 
 ---
 
-# Step 13 — Production AWS Deployment
+# Step 14 — Production AWS Deployment
 
 ## Goal
 
@@ -1960,7 +2323,7 @@ The service can be accessed securely over HTTPS while backend infrastructure is 
 
 ---
 
-# Step 14 — Infrastructure as Code and CI/CD
+# Step 15 — Infrastructure as Code and CI/CD
 
 ## Goal
 
@@ -2023,7 +2386,7 @@ A push to the deployment branch can test, build, and deploy the backend automati
 
 ---
 
-# Step 15 — Production Operations
+# Step 16 — Production Operations
 
 ## Goal
 
@@ -2051,6 +2414,10 @@ Simulate timeout, rate limit, and malformed responses.
 
 Generate a large number of jobs and observe queue depth, throughput, and processing latency. Consider worker autoscaling only after observing the need.
 
+### Capture Failure
+
+Simulate provider/API/browser capture failures and verify they are observable rather than silently creating archive gaps.
+
 ## Monitoring
 
 Create useful CloudWatch metrics and alarms around:
@@ -2058,6 +2425,7 @@ Create useful CloudWatch metrics and alarms around:
 - API 5xx
 - queue depth
 - failed imports
+- failed captures/syncs
 - worker failures
 - RDS health
 - latency
@@ -2095,7 +2463,7 @@ Last update
 
 Record durable design decisions, rationale, alternatives when relevant, and conditions under which they should be revisited.
 
-Current import-related decisions include:
+Current decision areas include:
 
 ```text
 raw ImportArtifact preservation vs normalized Entry identity
@@ -2103,6 +2471,27 @@ stable external resource identity and upsert
 ImportArtifact vs ImportJob lifecycle
 processing transaction boundaries
 FAILED vs PARTIAL semantics
+capture/acquisition vs ingestion separation
+historical export import as optional enrichment
+provider-specific low-effort capture strategy
+ChatGPT Web capture PoC before product commitment
+```
+
+## CAPTURE.md
+
+Capture/acquisition product strategy and detailed risk register.
+
+Keep:
+
+```text
+capture methods and user-effort hierarchy
+browser/mobile/connected/native acquisition options
+ChatGPT Web PoC scope
+mobile share limitations
+historical import role
+coverage and privacy considerations
+provider-policy / DOM / maintenance risks
+implementation sequencing
 ```
 
 ---
