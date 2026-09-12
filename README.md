@@ -60,12 +60,22 @@ Entry
 - updated_at
 ```
 
-External sources will later add fields such as:
+External mutable resources can also carry stable source identity:
 
 ```text
-source_id
+provider
 external_id
 ```
+
+Current imported ChatGPT conversations use:
+
+```text
+UNIQUE(user_id, provider, external_id)
+```
+
+to support idempotent upsert and safe reprocessing.
+
+A broader persistent source/connection model may be added later when connected or continuous-capture workflows make its lifecycle concrete.
 
 ## Planned Data Sources
 
@@ -77,14 +87,16 @@ external_id
 - PDF
 - Images
 
-### Import sources
+### Import / capture sources
 
 - ChatGPT data export
+- ChatGPT Web capture PoC
 - Gemini / Google Takeout
 - Notion
 - GitHub
+- Codex / Claude Code session data
 
-Other sources may be added later through a common importer interface.
+Other sources may be added later through the common importer/canonical normalization boundary.
 
 ## High-Level Target Architecture
 
@@ -117,7 +129,7 @@ Other sources may be added later through a common importer interface.
        Answer + Source Entries
 ```
 
-AWS services will be introduced gradually, only when there is a clear problem or learning goal they solve.
+AWS services are introduced gradually, only when there is a clear problem or learning goal they solve.
 
 Potential production infrastructure:
 
@@ -136,7 +148,7 @@ Potential production infrastructure:
 
 ## Technology Direction
 
-Initial backend stack:
+Current backend stack includes:
 
 - Python
 - FastAPI
@@ -147,11 +159,12 @@ Initial backend stack:
 - pytest
 - Docker
 - Docker Compose
+- AWS S3
+- AWS SQS
+- boto3
 
 Later additions may include:
 
-- AWS S3
-- AWS SQS
 - PostgreSQL Full Text Search
 - pgvector
 - LLM APIs
@@ -159,6 +172,7 @@ Later additions may include:
 - RDS
 - Terraform
 - GitHub Actions
+- CloudWatch / production observability
 
 Technology choices may change as the project progresses. Significant architecture changes should be documented rather than silently introduced.
 
@@ -192,10 +206,10 @@ Learn background processing
 Introduce SQS + Worker
         |
         v
-Test worker crashes
+Test redelivery / duplicate processing
         |
         v
-Introduce idempotency / retries / DLQ
+Require idempotent consumers
 ```
 
 Avoid introducing infrastructure purely to make the architecture look sophisticated.
@@ -205,17 +219,28 @@ Avoid introducing infrastructure purely to make the architecture look sophistica
 - `README.md` — project purpose and architecture overview
 - `ROADMAP.md` — development milestones and learning sequence
 - `AGENTS.md` — working rules for AI coding agents
-- `CURRENT.md` — concise current status; created when development begins
-- `DECISIONS.md` — durable architecture decisions; created when needed
+- `CURRENT.md` — concise current status and next work
+- `DECISIONS.md` — durable architecture decisions
+- `CAPTURE.md` — capture/acquisition strategy and risk register
 
 The repository is the source of truth for the project. ChatGPT, Codex CLI, Antigravity CLI, and other coding agents should read the project documentation before making changes.
 
 ## Current Status
 
-Project initialization.
+Step 6 — **Async Processing with SQS** is complete.
 
-The first milestone is to build a local **FastAPI + PostgreSQL** backend and implement the core Entry CRUD API.
+Implemented and verified behavior includes:
 
-No AWS infrastructure is required for the first milestone.
+- ChatGPT ZIP upload preserved in S3 as an `ImportArtifact`
+- `PENDING` `ImportJob` persisted before queue submission
+- `POST /imports/chatgpt` returns HTTP 202 and enqueues `job_id` to SQS
+- a separate worker consumes the message and runs the import processor
+- `GET /import-jobs/{job_id}` exposes processing status with ownership protection
+- successful processing deletes the SQS message only after durable DB work completes
+- failed/undeleted messages can be redelivered after the visibility timeout
+- reprocessing the same ChatGPT job does not duplicate Entries because persistence is idempotent by stable external identity
+- the SQS redelivery/idempotency failure exercise was verified against the real development queue
 
-See `ROADMAP.md` for the full learning and development plan.
+The next milestone is **Step 6.5 — ChatGPT Web Capture PoC**, a small Chromium-extension experiment to validate lower-effort ongoing ChatGPT capture before the project returns to frontend learning and Step 7 keyword search.
+
+See `CURRENT.md` for the exact active milestone and `ROADMAP.md` for the full learning and development plan.
