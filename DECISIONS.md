@@ -512,3 +512,80 @@ Before commercial launch, consider a targeted freedom-to-operate / patent review
 ### Rationale
 
 Similar products already exist and future or unpublished patent claims cannot be ruled out merely because a broad concept is common. Early independent design plus focused review at the point where the commercial implementation is concrete is more useful than trying to freeze development around speculative IP risk now.
+
+---
+
+## ADR-012 — Treat SQS import delivery as at-least-once and require idempotent consumers
+
+**Status:** Accepted  
+**Date:** 2026-09-12
+
+### Decision
+
+SQS-backed import processing must assume that the same message and the same `ImportJob` may be processed more than once.
+
+The worker therefore follows this rule:
+
+```text
+receive message
+    |
+    v
+process job
+    |
+    v
+durable DB commit
+    |
+    v
+delete SQS message
+```
+
+If processing raises or the worker exits before `DeleteMessage`, the message must remain undeleted so SQS visibility-timeout/redelivery behavior can retry it.
+
+Consumers must not depend on exactly-once delivery for correctness. Reprocessing the same logical resource must converge on the same persisted result.
+
+For current ChatGPT imports, idempotency is provided primarily by the stable external identity rule from ADR-002:
+
+```text
+(user_id, provider, external_id)
+```
+
+Repeated processing updates the existing conversation Entry instead of creating another one.
+
+### Verification
+
+The Step 6 failure exercise was verified against the real development SQS queue:
+
+```text
+receive job
+→ process and commit successfully
+→ intentionally skip SQS deletion
+→ visibility timeout expires
+→ same message becomes visible again
+→ same job_id is processed again
+→ Entry count remains unchanged
+→ normal worker deletes the redelivered message
+```
+
+This demonstrates the intended at-least-once processing model rather than relying only on mocked queue tests.
+
+### Rationale
+
+Queue delivery and application persistence cannot be treated as one atomic operation. A worker can successfully commit database changes and then crash before deleting the queue message.
+
+If the processor were not idempotent, that ordinary failure window could create duplicate or corrupted data on redelivery.
+
+### Consequences
+
+- Future SQS consumers must define an idempotency strategy before being considered production-safe.
+- Message deletion is an acknowledgement of durable successful processing, not merely successful receipt.
+- Queue retries may re-enter an existing `ImportJob`; processor state must tolerate another run.
+- `PARTIAL` is currently a successful processing result from the queue perspective and is therefore deleted after the processor returns successfully.
+- Poison-message isolation and maximum retry handling remain a later DLQ/redrive concern.
+- API database commit followed by SQS-send failure remains a separate atomicity gap and may later justify an outbox-style pattern.
+
+### Revisit when
+
+- a future workload cannot be made naturally idempotent
+- a different queue technology changes delivery guarantees
+- per-item retries or compensating actions are introduced
+- an outbox/inbox or deduplication-key mechanism is needed beyond current Entry upsert semantics
