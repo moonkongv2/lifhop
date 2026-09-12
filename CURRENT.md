@@ -2,11 +2,9 @@
 
 ## Current milestone
 
-Step 6 — Async Processing with SQS
+Step 6.5 — ChatGPT Web Capture PoC
 
-Status: Core async implementation complete; operational hardening remains where not yet verified.
-
-Next milestone: **Step 6.5 — ChatGPT Web Capture PoC**
+Step 6 — Async Processing with SQS is complete as of 2026-09-12.
 
 After the capture PoC, return to the planned frontend learning interlude / Step 7 keyword search rather than expanding immediately into multi-provider capture productization.
 
@@ -27,20 +25,19 @@ After the capture PoC, return to the planned frontend learning interlude / Step 
 - ChatGPT external identity using `(user_id, provider, external_id)`
 - Idempotent ChatGPT upsert for repeated/newer exports
 - `ImportJob` lifecycle with `PENDING`, `RUNNING`, `COMPLETED`, `PARTIAL`, and `FAILED`
-- SQS producer/consumer path for ChatGPT imports
-- Separate import worker process
-- Worker success deletes the SQS message
-- Worker processing failure leaves the SQS message undeleted for queue redelivery behavior
-- Tests for queue-oriented import submission and worker behavior
-- Full test suite reported passing after the Step 6 implementation work
+- Asynchronous ChatGPT import submission: raw artifact + `PENDING` job + SQS enqueue + HTTP 202
+- Separate long-running SQS import worker
+- `GET /import-jobs/{job_id}` status API with ownership protection
+- Worker success deletes the SQS message only after durable processing completes
+- Worker processing failure leaves the message undeleted for SQS redelivery
+- Unit/integration coverage for async submission, worker behavior, processor lifecycle, idempotent upsert, and ImportJob status retrieval
+- Full pytest suite passing after the Step 6 status API work
 
 ---
 
-# Step 6 — Current implementation
+# Step 6 — Verified async import behavior
 
-The ChatGPT import request no longer performs the expensive conversation processing in the API request path.
-
-Current flow:
+Current request flow:
 
 ```text
 POST /imports/chatgpt
@@ -78,6 +75,8 @@ open DB Session
  v
 process_chatgpt_import_job(job_id)
  |
+ +--> RUNNING
+ |
  +--> download preserved artifact from S3
  |
  +--> ChatGPT importer
@@ -90,88 +89,72 @@ process_chatgpt_import_job(job_id)
  |
  v
 COMPLETED / PARTIAL / FAILED
+ |
+ v
+successful processing -> delete SQS message
 ```
 
-On successful worker processing, the SQS message is deleted.
-
-If worker processing raises an exception, the current worker does not delete the message. This allows SQS visibility timeout/redelivery behavior to retry the message.
-
-## Step 6 implementation files
-
-Important current files include:
+Import status can be read through:
 
 ```text
-app/api/imports.py
-- creates raw artifact + PENDING job
-- enqueues job_id
-- returns HTTP 202
-
-app/sqs.py
-- SQS client
-- send message
-- receive message
-- delete message
-
-app/workers/import_worker.py
-- long-running queue consumer
-- processes one ImportJob at a time
-- deletes only successful messages
-
-app/services/import_jobs.py
-- RUNNING / COMPLETED / PARTIAL / FAILED lifecycle
-- artifact download
-- importer / normalizer / Entry upsert
+GET /import-jobs/{job_id}
 ```
 
-## Step 6 operational items still worth exercising/documenting
+The API exposes job state, counters, timestamps, artifact identity, and top-level error information without exposing another user's job.
 
-Where not already completed and recorded, continue to verify:
+## SQS redelivery / idempotency verification
 
-- worker crash during processing and SQS redelivery
-- duplicate delivery does not duplicate Entries
-- visibility timeout behavior
-- retry behavior
-- DLQ creation/redrive behavior
-- poison-message behavior
-- logging beyond current simple `print()` output
-- API-commit vs queue-send failure window
+The Step 6 failure exercise was completed against the real development SQS queue.
 
-These do not block the short Step 6.5 capture PoC, but they remain part of the queue/production learning path.
+Verified sequence:
+
+```text
+receive SQS message
+        |
+        v
+process ImportJob successfully
+        |
+        v
+commit ImportJob / Entries
+        |
+        v
+intentionally do NOT delete SQS message
+        |
+        v
+visibility timeout expires
+        |
+        v
+same message becomes visible again
+        |
+        v
+same job_id is processed again
+        |
+        v
+existing ChatGPT Entries are updated by stable identity
+        |
+        v
+no duplicate Entries are created
+        |
+        v
+normal worker deletes the redelivered message
+```
+
+This confirms the intended at-least-once processing model: queue delivery may repeat, so correctness depends on idempotent application behavior rather than assuming exactly-once delivery.
 
 ---
 
-# Capture strategy update — 2026-09-10
+# Step 6 operational hardening deferred for later
 
-A product-level risk review identified that recurring user export/download/upload is too cumbersome to be lifhop's long-term acquisition experience, especially as the number of supported providers grows.
+The learning objective for Step 6 is complete. The following remain production/operations follow-up rather than blockers for Step 6.5:
 
-The agreed product direction is:
+- explicit DLQ creation and redrive verification
+- poison-message exercise
+- visibility-timeout tuning for realistic import duration
+- structured logging/observability beyond current simple `print()` output
+- API DB commit followed by SQS-send failure handling / possible outbox pattern
+- production worker deployment and process supervision
 
-> Use zero-effort capture where a stable and acceptable integration exists, and the lowest practical user effort where it does not.
-
-Historical exports remain useful, but their role changes to **optional historical enrichment / migration**, not required ongoing capture or required onboarding.
-
-Capture/acquisition should remain separate from downstream ingestion:
-
-```text
-Capture / Acquisition
-        |
-        v
-Provider raw data
-        |
-        v
-Provider Parser / Adapter
-        |
-        v
-Canonical Item
-        |
-        v
-Entry Normalizer
-        |
-        v
-Entry
-```
-
-Detailed strategy and risks are now documented in `CAPTURE.md`.
+These should be revisited during production AWS / operations steps unless an earlier real requirement makes them necessary.
 
 ---
 
@@ -179,13 +162,11 @@ Detailed strategy and risks are now documented in `CAPTURE.md`.
 
 ## Goal
 
-Validate whether a Chromium extension can provide low-effort ChatGPT Web capture early, before lifhop spends significant time productizing capture across many providers.
+Validate whether a Chromium extension can provide low-effort ChatGPT Web capture before lifhop spends significant time productizing capture across many providers.
 
 This is a small PoC, not the production extension.
 
-## Initial progression
-
-### PoC v0 — one-click capture
+Initial progression:
 
 ```text
 ChatGPT Web
@@ -200,7 +181,7 @@ read active conversation
 send to lifhop
     |
     v
-reuse Conversation normalization/upsert
+reuse Conversation normalization / stable identity / upsert
 ```
 
 Verify:
@@ -210,30 +191,9 @@ Verify:
 - stable conversation identity can be obtained reliably enough
 - first capture inserts the Entry
 - repeat capture of the same conversation updates it
+- new-message detection is feasible enough to evaluate optional auto-capture
 
-### PoC v0.x — update detection
-
-Verify that the extension can detect that new messages were added to the active conversation without continuously resending identical content.
-
-### PoC auto-capture experiment
-
-If v0 works, test opt-in automatic capture with a reasonable debounce/completion boundary.
-
-Do not assume this will become a production feature merely because it is technically possible.
-
-## PoC risk checklist
-
-The result must explicitly document:
-
-- DOM/UI fragility
-- conversation identity reliability
-- Chromium/browser dependency
-- Safari/Firefox non-coverage
-- ChatGPT mobile-app non-coverage
-- privacy and over-capture implications
-- minimum browser permissions
-- provider terms/policy questions around automated/programmatic extraction
-- ongoing maintenance burden
+The PoC must explicitly evaluate DOM fragility, browser coverage, privacy/over-capture, minimum permissions, provider-policy questions, and ongoing maintenance burden.
 
 Finish with one of:
 
@@ -243,40 +203,7 @@ LIMITED GO
 NO-GO
 ```
 
-Then return to the main retrieval roadmap.
-
----
-
-# Planned acquisition direction after retrieval validation
-
-Do not implement all of this now. The agreed later direction is:
-
-```text
-Browser
-→ Chromium extension
-→ one-click / opt-in continuous capture
-
-Mobile
-→ iOS Share Extension / Android Share Target
-→ explicit Share -> lifhop
-→ lifhop only receives what the source app actually shares
-
-Official provider integration
-→ OAuth / API / webhook
-→ initial + incremental sync
-→ Notion / GitHub / Google Drive candidates
-
-Developer tools
-→ MCP / plugin / CLI hook where supported
-→ Codex / Claude Code / similar tools
-
-Later candidates
-→ Safari / Firefox
-→ local folder / Obsidian sync
-→ email forwarding / selective mail capture
-```
-
-ChatGPT mobile remains a known limitation: a lifhop app cannot automatically read the private contents of the ChatGPT mobile app. If ChatGPT sharing exposes only a shared URL rather than transcript text, reliable conversation extraction from that URL is a separate feasibility/policy question and must not be assumed.
+Detailed capture strategy and risks remain in `CAPTURE.md`.
 
 ---
 
@@ -311,6 +238,7 @@ PostgreSQL stores normalized data, references, external identity, and processing
 - Raw Import Artifacts remain distinct from Entry Attachments even though both use S3.
 - Raw artifact preservation and normalized Entry deduplication are separate concerns.
 - Mutable external resources with stable IDs generally use `(user_id, provider, external_id)` and upsert semantics.
+- SQS import delivery is treated as at-least-once; consumers must remain idempotent and messages are deleted only after durable successful processing.
 - Provider acquisition/capture is separate from provider parsing/canonical normalization.
 - Historical export import is an optional enrichment path, not the intended primary recurring capture workflow.
 - Capture mechanism should vary by provider/platform instead of forcing a universal method.
@@ -354,6 +282,7 @@ See `DECISIONS.md` and `CAPTURE.md`.
 
 - DLQ/redrive production configuration
 - visibility timeout tuning
+- poison-message handling
 - worker logging/observability
 - API DB commit followed by SQS-send failure handling / possible outbox pattern
 - worker deployment/process supervision
@@ -380,4 +309,4 @@ See `DECISIONS.md` and `CAPTURE.md`.
 
 # Last update
 
-2026-09-10
+2026-09-12
