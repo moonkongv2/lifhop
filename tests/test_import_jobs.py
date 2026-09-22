@@ -400,3 +400,63 @@ def test_process_chatgpt_import_job_partial_when_one_conversation_fails(
     assert job.failed_items == 1
     assert job.completed_at is not None
 
+
+def test_process_chatgpt_import_job_redelivery_is_idempotent(
+    db_session,
+    user,
+    fake_processor_s3,
+):
+    fixture_path = (
+        Path(__file__).parent
+        / "fixtures"
+        / "chatgpt"
+        / "conversations.json"
+    )
+
+    conversations = json.loads(
+        fixture_path.read_text()
+    )
+
+    zip_bytes = build_chatgpt_zip(
+        conversations
+    )
+
+    job = create_import_job(
+        db_session,
+        user,
+        filename="redelivery-export.zip",
+        content=zip_bytes,
+    )
+
+    fake_processor_s3[
+        job.artifact.s3_key
+    ] = zip_bytes
+
+    # First delivery
+    process_chatgpt_import_job(
+        db=db_session,
+        job_id=job.id,
+    )
+
+    # Same SQS message delivered again
+    process_chatgpt_import_job(
+        db=db_session,
+        job_id=job.id,
+    )
+
+    entries = db_session.scalars(
+        select(Entry).where(
+            Entry.user_id == user.id,
+            Entry.provider
+            == SourceProvider.CHATGPT.value,
+        )
+    ).all()
+
+    assert len(entries) == 2
+
+    db_session.refresh(job)
+
+    assert job.status == ImportJobStatus.COMPLETED
+    assert job.total_items == 2
+    assert job.processed_items == 2
+    assert job.failed_items == 0

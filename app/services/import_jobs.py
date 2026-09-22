@@ -1,10 +1,11 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.services.external_entries import (
+    upsert_external_entry,
+)
 from app.importers.chatgpt import ChatGPTImporter
-from app.importers.normalizer import EntryNormalizer
 from app.importers.source_factory import create_chatgpt_source_from_zip
 from app.models.entry import Entry
 from app.models.import_job import ImportJob, ImportJobStatus
@@ -48,7 +49,6 @@ def process_chatgpt_import_job(
         )
 
         importer = ChatGPTImporter()
-        normalizer = EntryNormalizer()
 
         entries: list[Entry] = []
 
@@ -65,48 +65,11 @@ def process_chatgpt_import_job(
                     conversation
                 )
 
-                normalized = normalizer.normalize(
-                    item
+                entry = upsert_external_entry(
+                    db,
+                    user_id=user_id,
+                    item=item,
                 )
-
-                existing_entry = db.scalar(
-                    select(Entry).where(
-                        Entry.user_id == user_id,
-                        Entry.provider
-                        == item.provider.value,
-                        Entry.external_id
-                        == item.external_id,
-                    )
-                )
-
-                if existing_entry is not None:
-                    existing_entry.type = (
-                        normalized.type
-                    )
-                    existing_entry.title = (
-                        normalized.title
-                    )
-                    existing_entry.content = (
-                        normalized.content
-                    )
-                    existing_entry.event_at = (
-                        normalized.event_at
-                    )
-
-                    entry = existing_entry
-
-                else:
-                    entry = Entry(
-                        user_id=user_id,
-                        provider=item.provider.value,
-                        external_id=item.external_id,
-                        type=normalized.type,
-                        title=normalized.title,
-                        content=normalized.content,
-                        event_at=normalized.event_at,
-                    )
-
-                    db.add(entry)
 
                 entries.append(entry)
                 processed_items += 1
