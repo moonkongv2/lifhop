@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "lifhop Capture PoC",
+  "version": "0.1.0",
+  "description": "Capture the current ChatGPT conversation into lifhop.",
+  "permissions": [
+    "activeTab",
+    "scripting"
+  ],
+  "action": {
+    "default_title": "lifhop Capture",
+    "default_popup": "popup.html"
+  }
+}
