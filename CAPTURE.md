@@ -718,11 +718,11 @@ The Step 6.5 PoC is successful if it can demonstrate all of the following in a d
 - repeated capture of the same conversation updates the existing Entry rather than duplicating it
 - newly added messages can be detected reliably enough to evaluate auto-capture
 - an opt-in automatic capture path can be demonstrated or conclusively rejected
-
-Current status (2026-09-25): manual extraction, API persistence, stable-identity upsert, and button-triggered fingerprint-based change detection have been verified. Background DOM observation and automatic capture feasibility remain open; do not select a final GO / LIMITED GO / NO-GO outcome until those risks have been evaluated.
 - provider-specific extraction code is isolated from canonical normalization
 - browser-only coverage and mobile gaps are documented
 - DOM fragility and provider-policy/legal questions are documented before any production commitment
+
+Current status (2026-09-25): manual extraction, API persistence, stable-identity upsert, and button-triggered fingerprint-based change detection have been verified. Background DOM observation and automatic capture feasibility remain open; do not select a final GO / LIMITED GO / NO-GO outcome until those risks have been evaluated.
 
 The PoC should finish with a deliberate decision:
 
