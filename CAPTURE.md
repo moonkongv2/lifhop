@@ -174,6 +174,49 @@ capture after debounce / completion boundary
 
 The first PoC should remain intentionally small. It does not need Chrome Web Store publication, polished UI, multi-provider support, or a production-grade connection model.
 
+## Verified manual PoC — 2026-09-25
+
+The manual ChatGPT Web flow has been implemented and verified locally:
+
+```text
+User clicks Save to lifhop
+    |
+    v
+Extension scrolls through the active conversation,
+collects user/assistant turns, and reconstructs Markdown
+    |
+    v
+Capture diagnostics check the scan's endpoints and count
+    |
+    v
+JWT-authenticated POST /captures/chatgpt
+    |
+    v
+ConversationPayload -> EntryNormalizer
+    |
+    v
+upsert_external_entry() -> PostgreSQL
+```
+
+The ZIP import worker and Capture API reuse the same external Entry upsert service. The service does not commit; the caller owns the transaction. A second capture of the same ChatGPT conversation updates the same Entry instead of creating a duplicate.
+
+Manual change detection is also verified. The extension computes a SHA-256 fingerprint over conversation title, message IDs, roles, and content; the previous successful fingerprint, count, Entry ID, and save time live in `chrome.storage.local`, scoped by API URL, user ID, and conversation ID. An unchanged manual capture skips the API request. The local cache stores no duplicate conversation transcript and is not authoritative server state. A server-side update or ZIP import can make it stale.
+
+Current safeguards: request validation checks the top/bottom scroll flags, reported message count, and first-message role. These checks catch some obvious failures but cannot prove complete capture under DOM virtualization. The current full-replacement upsert does not protect a fuller Entry from a later incomplete or stale snapshot.
+
+Observed extractor limitations include citation UI text in some answers, excess blank lines, incomplete code-language metadata, and no structured persistence yet for per-message IDs or source URLs. Browser coverage does not include mobile-app conversations. This PoC does not settle production terms/policy acceptability.
+
+## Next experiment — opt-in change observation
+
+The next Step 6.5 experiment is deliberately **notification-only**:
+
+- A content script observes DOM changes with `MutationObserver` only after explicit opt-in.
+- After a quiet/debounce window, it notifies an extension service worker even when the popup is closed.
+- Verify that scrolling/virtualization, navigation, response streaming, and the capture function itself do not create misleading change signals.
+- Do not equate a quiet window with completed assistant output, and do not automatically submit conversations or overwrite Entries during this first experiment.
+
+As of 2026-09-25, the remote `main` branch contains manual capture and fingerprint-based request skipping; `observer.js` and `service-worker.js` have not been added. Auto-capture remains unverified.
+
 ## Identity
 
 Where a trustworthy stable conversation identifier can be obtained, repeated capture should reuse the existing external identity rule:
@@ -675,6 +718,8 @@ The Step 6.5 PoC is successful if it can demonstrate all of the following in a d
 - repeated capture of the same conversation updates the existing Entry rather than duplicating it
 - newly added messages can be detected reliably enough to evaluate auto-capture
 - an opt-in automatic capture path can be demonstrated or conclusively rejected
+
+Current status (2026-09-25): manual extraction, API persistence, stable-identity upsert, and button-triggered fingerprint-based change detection have been verified. Background DOM observation and automatic capture feasibility remain open; do not select a final GO / LIMITED GO / NO-GO outcome until those risks have been evaluated.
 - provider-specific extraction code is isolated from canonical normalization
 - browser-only coverage and mobile gaps are documented
 - DOM fragility and provider-policy/legal questions are documented before any production commitment
