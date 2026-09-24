@@ -1,12 +1,27 @@
 const captureButton = document.getElementById("capture");
 const output = document.getElementById("output");
+const tokenInput = document.getElementById("access-token");
+
+const API_URL = "http://127.0.0.1:8000";
 
 console.log("lifhop extension v0.2 loaded");
 
 captureButton.addEventListener("click", async () => {
-  output.textContent = "Reading conversation...";
+  const token = tokenInput.value
+    .trim()
+    .replace(/^Bearer\s+/i, "");
+
+  if (!token) {
+    output.textContent = "Access Token을 입력해줘.";
+    return;
+  }
+
+  captureButton.disabled = true;
 
   try {
+    output.textContent = "Capturing conversation...";
+
+    // 1. 현재 ChatGPT 탭 찾기
     const [tab] = await chrome.tabs.query({
       active: true,
       currentWindow: true,
@@ -16,6 +31,7 @@ captureButton.addEventListener("click", async () => {
       throw new Error("Active tab not found");
     }
 
+    // 2. 기존 대화 수집 함수 실행
     const results = await chrome.scripting.executeScript({
       target: {
         tabId: tab.id,
@@ -23,15 +39,98 @@ captureButton.addEventListener("click", async () => {
       func: collectChatGPTConversation,
     });
 
-    const result = results[0]?.result;
+    const capture = results[0]?.result;
+
+    if (
+      !capture?.ok ||
+      !capture.external_id ||
+      !capture.diagnostics?.reached_top ||
+      !capture.diagnostics?.reached_bottom ||
+      capture.messages.length !==
+        capture.diagnostics.message_count ||
+      capture.messages[0]?.role !== "user"
+    ) {
+      throw new Error("대화 수집 결과가 불완전합니다.");
+    }
+
+    // 사용자별, 대화별로 저장 상태 구분
+    const userId = getTokenUserId(token);
+    const cacheKey =
+      `lifhop:capture:${API_URL}:${userId}:${capture.external_id}`;
+
+    const fingerprint =
+      await getCaptureFingerprint(capture);
+
+    const stored = await chrome.storage.local.get(cacheKey);
+    const previous = stored[cacheKey];
+
+    // 이전에 성공적으로 저장했던 내용과 완전히 동일
+    if (previous?.fingerprint === fingerprint) {
+      output.textContent =
+        "변경된 내용이 없습니다.\n" +
+        `메시지: ${capture.messages.length}개\n` +
+        `기존 Entry ID: ${previous.entry_id}`;
+      return;
+    }
+
+    output.textContent =
+      `${capture.messages.length}개 메시지 수집 완료.\n` +
+      "lifhop에 저장하는 중...";
+
+    const response = await fetch(
+      `${API_URL}/captures/chatgpt`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(capture),
+      }
+    );
+
+    const body = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        `API ${response.status}: ` +
+        JSON.stringify(body.detail ?? body)
+      );
+    }
+
+    // API 저장 성공 후에만 마지막 저장 상태를 기록
+    const savedAt = new Date().toISOString();
+
+    await chrome.storage.local.set({
+      [cacheKey]: {
+        fingerprint,
+        message_count: capture.messages.length,
+        entry_id: body.id,
+        saved_at: savedAt,
+      },
+    });
+
+    const previousCount = previous?.message_count ?? 0;
 
     output.textContent = JSON.stringify(
-      result,
+      {
+        status: "saved",
+        entry_id: body.id,
+        message_count: capture.messages.length,
+        message_count_change:
+          previous
+            ? capture.messages.length - previousCount
+            : null,
+        last_saved_at: savedAt,
+      },
       null,
-      2,
+      2
     );
+
   } catch (error) {
     output.textContent = `Error: ${error.message}`;
+  } finally {
+    captureButton.disabled = false;
   }
 });
 
@@ -354,4 +453,59 @@ async function collectChatGPTConversation() {
       first_message_role: messages[0]?.role ?? null,
     },
   };
+}
+
+
+async function getCaptureFingerprint(capture) {
+  // 수집 시각이나 diagnostics가 달라졌다는 이유로
+  // 변경된 대화라고 판단하지 않도록 제외한다.
+  const comparable = {
+    title: capture.title,
+    messages: capture.messages.map((message) => ({
+      message_id: message.message_id,
+      role: message.role,
+      content: message.content,
+    })),
+  };
+
+  const bytes = new TextEncoder().encode(
+    JSON.stringify(comparable)
+  );
+
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    bytes
+  );
+
+  return [...new Uint8Array(digest)]
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+
+// 저장 기록을 lifhop 사용자별로 분리하기 위한 용도.
+// 실제 사용자 인증은 여전히 FastAPI가 JWT를 검증한다.
+function getTokenUserId(token) {
+  const encoded = token.split(".")[1];
+
+  if (!encoded) {
+    throw new Error("Invalid Access Token");
+  }
+
+  const base64 = encoded
+    .replace(/-/g, "+")
+    .replace(/_/g, "/");
+
+  const padded = base64.padEnd(
+    Math.ceil(base64.length / 4) * 4,
+    "="
+  );
+
+  const payload = JSON.parse(atob(padded));
+
+  if (!payload.sub) {
+    throw new Error("Access Token에 user ID가 없습니다.");
+  }
+
+  return String(payload.sub);
 }

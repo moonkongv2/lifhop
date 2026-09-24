@@ -8,6 +8,7 @@ from app.api.import_artifacts import router as import_artifacts_router
 from app.api.import_jobs import (
     router as import_jobs_router,
 )
+from app.api.captures import router as captures_router
 
 app = FastAPI(title="Lifhop")
 
@@ -17,6 +18,7 @@ app.include_router(attachments_router)
 app.include_router(imports_router)
 app.include_router(import_artifacts_router)
 app.include_router(import_jobs_router)
+app.include_router(captures_router)
 
 @app.get("/health")
 def health() -> dict[str, str]:
