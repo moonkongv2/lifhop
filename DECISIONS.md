@@ -123,6 +123,12 @@ This is a default policy for **mutable external resources with stable IDs**, not
 
 Future immutable events, append-only histories, or providers without trustworthy stable identifiers may require a different persistence strategy.
 
+### Implementation note — 2026-09-25
+
+ChatGPT ZIP import and the authenticated browser Capture API both use `upsert_external_entry()`. This service normalizes the canonical item and performs the stable-identity INSERT/UPDATE without calling `db.commit()`; each caller owns its transaction.
+
+The browser extension's SHA-256 fingerprint is only a client-side optimization to skip unchanged manual POST requests. It is not a replacement for the database uniqueness constraint, not proof of complete capture, and not authoritative synchronization state. The fingerprint may become stale after a ZIP import or update from another client. The current upsert replaces Entry content; protecting a fuller Entry against an incomplete or older snapshot remains deferred.
+
 ### Revisit when
 
 - a provider's external IDs are unstable or reused
@@ -326,6 +332,10 @@ For example, the same ChatGPT conversation concept might eventually arrive throu
 
 The current ChatGPT ZIP importer remains useful but is no longer treated as the architectural model for all future capture.
 
+### Implementation note — 2026-09-25
+
+The first browser capture path now uses the same canonical `ConversationPayload`, `EntryNormalizer`, and shared upsert service as ChatGPT ZIP import. The synchronous Capture API accepts an authenticated JSON conversation without requiring an S3 artifact, SQS job, or duplicate persistence implementation. Archive imports retain their S3/SQS pipeline. The capture request may include message IDs, source URL, and collection diagnostics, but these are not yet stored as structured Entry fields.
+
 ### Revisit when
 
 - a provider's capture form materially changes the canonical semantics
@@ -453,6 +463,10 @@ NO-GO
 ```
 
 and document the reasons in `CAPTURE.md` / `CURRENT.md` before later productization.
+
+### Progress note — 2026-09-25
+
+The Chromium extension has demonstrated manual full-conversation collection in tested conversations, authenticated end-to-end storage, stable-identity updates, and fingerprint-based detection of changes between explicit saves. Automatic/background DOM observation and auto-save remain unverified. The PoC outcome has not been selected.
 
 ### Non-decision
 
