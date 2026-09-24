@@ -2,7 +2,7 @@
 
 ## Current milestone
 
-Step 6.5 — ChatGPT Web Capture PoC
+Step 6.5 — Opt-in automatic-capture feasibility (manual capture and fingerprint-based change detection verified).
 
 Step 6 — Async Processing with SQS is complete as of 2026-09-12.
 
@@ -32,6 +32,62 @@ After the capture PoC, return to the planned frontend learning interlude / Step 
 - Worker processing failure leaves the message undeleted for SQS redelivery
 - Unit/integration coverage for async submission, worker behavior, processor lifecycle, idempotent upsert, and ImportJob status retrieval
 - Full pytest suite passing after the Step 6 status API work
+- Shared external Entry upsert service reused by ChatGPT ZIP import and browser capture
+- Chromium extension: scroll-and-collect of the active conversation with message-ID deduplication
+- Assistant Markdown and code-block extraction (language metadata and citation cleanup still incomplete)
+- Authenticated `POST /captures/chatgpt` with capture diagnostics and canonical ConversationPayload normalization
+- Browser capture E2E verified: first capture inserts an Entry; later capture of the same conversation updates the same Entry
+- Capture API tests and full local pytest suite reported passing
+- SHA-256 manual-capture fingerprint comparison; unchanged conversations skip repeat POST requests
+- Successful fingerprints cached in `chrome.storage.local` by API URL, user ID, and conversation ID
+
+---
+
+# Step 6.5 — Verified manual capture and change detection (2026-09-25)
+
+The user verified the following in the local development environment:
+
+```text
+ChatGPT Web
+    |
+    v
+Chromium extension: capture the active conversation
+    |
+    v
+POST /captures/chatgpt + JWT
+    |
+    v
+CanonicalItem / ConversationPayload
+    |
+    v
+upsert_external_entry() (shared with ZIP worker)
+    |
+    v
+PostgreSQL Entry INSERT or UPDATE
+```
+
+- Scrolling from either end of a tested conversation recovered the expected user/assistant message sequence.
+- Markdown/code-block extraction preserved readable structure; some citation UI noise, excess whitespace, and code-language metadata remain.
+- Saving an updated conversation returned the same Entry ID; `GET /entries/{entry_id}` showed the collected turns.
+- Repeating a manual capture without changing title or messages skips the API request using a SHA-256 fingerprint in extension-local storage.
+- When the capture changes, the extension POSTs again and updates its local fingerprint only after API success.
+- `CaptureDiagnostics` rejects obvious incomplete scans, mismatched message counts, and captures not starting with a user message. These checks do not prove that every intermediate turn was collected.
+- The local extension cache is a request-avoidance optimization, not authoritative synchronization or server-side identity.
+
+## Next experiment — Step 6.5-G
+
+Test opt-in DOM change detection with `MutationObserver` in a ChatGPT content script and notifications to an extension service worker, including after the popup closes. Begin with notifications only (no automatic network submission or database write). Evaluate false positives from scrolling, virtualized messages, and response streaming; then decide whether an opt-in automatic-save path can be made sufficiently reliable.
+
+As of this update, the pushed `main` branch does **not** contain `extension/observer.js` or `extension/service-worker.js`. Auto-capture is not yet implemented or verified.
+
+## Known capture limitations
+
+- `reached_top` and `reached_bottom` do not guarantee complete capture of a virtualized conversation.
+- The current full-replacement upsert can overwrite a more complete existing Entry if a later capture is incomplete or older; server-side safeguards / merge policy are deferred.
+- `message_id`, `source_url`, and diagnostics are accepted by the capture request but not persisted as structured Entry fields.
+- Local fingerprints can become stale if another client, ZIP import, or server-side process modifies the same Entry.
+- Browser capture does not cover ChatGPT mobile; provider-policy acceptability and DOM resilience require separate evaluation.
+- Local API and manually pasted access token remain development-only UX; do not store tokens or credentials in the repository.
 
 ---
 
@@ -158,52 +214,15 @@ These should be revisited during production AWS / operations steps unless an ear
 
 ---
 
-# Next — Step 6.5: ChatGPT Web Capture PoC
+# Next — Step 6.5-G: Opt-in DOM change-detection experiment
 
-## Goal
+Manual ChatGPT Web capture, authenticated persistence, stable-identity upsert, and fingerprint-based manual change detection are verified.
 
-Validate whether a Chromium extension can provide low-effort ChatGPT Web capture before lifhop spends significant time productizing capture across many providers.
+Next, validate whether a content script can observe new or changed conversation content after the popup closes. Start with an explicitly enabled `MutationObserver` and service-worker notifications; do not automatically POST captured data until response-completion detection, complete-conversation collection, and overwrite protection are understood.
 
-This is a small PoC, not the production extension.
+Then finish the browser-capture PoC with a documented GO / LIMITED GO / NO-GO outcome informed by DOM fragility, maintenance effort, browser-only coverage, privacy, and provider-policy review.
 
-Initial progression:
-
-```text
-ChatGPT Web
-    |
-    v
-[Save to lifhop]
-    |
-    v
-read active conversation
-    |
-    v
-send to lifhop
-    |
-    v
-reuse Conversation normalization / stable identity / upsert
-```
-
-Verify:
-
-- active conversation can be identified
-- required user/assistant message text can be extracted
-- stable conversation identity can be obtained reliably enough
-- first capture inserts the Entry
-- repeat capture of the same conversation updates it
-- new-message detection is feasible enough to evaluate optional auto-capture
-
-The PoC must explicitly evaluate DOM fragility, browser coverage, privacy/over-capture, minimum permissions, provider-policy questions, and ongoing maintenance burden.
-
-Finish with one of:
-
-```text
-GO
-LIMITED GO
-NO-GO
-```
-
-Detailed capture strategy and risks remain in `CAPTURE.md`.
+After the PoC, return to the planned frontend learning interlude / Step 7 keyword search rather than expanding into multi-provider capture productization.
 
 ---
 
@@ -244,6 +263,8 @@ PostgreSQL stores normalized data, references, external identity, and processing
 - Capture mechanism should vary by provider/platform instead of forcing a universal method.
 - ChatGPT Web extension capture must be validated as a PoC before product commitment.
 - Partial capture must not later be presented as complete user history.
+- Client-side fingerprints only skip redundant manual requests; server-side identity remains `(user_id, provider, external_id)`.
+- The caller (ZIP worker or Capture API) owns the DB transaction; `upsert_external_entry()` does not commit.
 - Exact future `SourceConnection` / continuous raw-capture schema is intentionally deferred until real workflows demonstrate the lifecycle needed.
 
 See `DECISIONS.md` and `CAPTURE.md`.
@@ -289,6 +310,10 @@ See `DECISIONS.md` and `CAPTURE.md`.
 
 ## Capture decisions
 
+- Server-side incomplete/stale capture overwrite prevention and future merge semantics
+- Reliable streaming-answer completion detection and false-positive handling for `MutationObserver`
+- Client fingerprint/cache reconciliation after updates from ZIP import or another device
+- Structured persistence for source URL, per-message IDs, and capture provenance
 - ChatGPT Web PoC outcome: GO / LIMITED GO / NO-GO
 - exact provider-policy/legal acceptability of production browser auto-capture
 - stable ChatGPT Web conversation identity strategy
@@ -309,4 +334,4 @@ See `DECISIONS.md` and `CAPTURE.md`.
 
 # Last update
 
-2026-09-12
+2026-09-25
