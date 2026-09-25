@@ -1040,6 +1040,14 @@ This is deliberately a **PoC and risk-removal step**, not full capture productiz
 
 The detailed strategy and risk register live in `CAPTURE.md`.
 
+## Closeout status — LIMITED GO (2026-09-26)
+
+Step 6.5 is **closed as a feasibility/risk-discovery PoC**, rather than completed against every originally planned criterion. Tested one-click ChatGPT capture, authenticated ingestion, shared stable-identity upsert, and fingerprint-based change detection succeeded locally. A later real capture failed because the collector could not find message DOM elements, confirming a maintenance/reliability risk; the precise cause and any provider intent are unverified. The current extension must not be represented as a reliable ongoing capture feature.
+
+The optional opt-in background observer, automatic save, and generic DOM-resilience engine were **not implemented or validated**. They are deferred, not rejected as technically impossible. Preserve existing failure-before-POST/incomplete-capture checks and the independent ChatGPT ZIP importer. Before future auto-save, add verified coverage and server-side partial/stale overwrite protection.
+
+Proceed to the **Frontend Learning Interlude (F0–F3)**, then **Step 7 — Keyword Search** using existing Entries and ZIP-imported data. Revisit capture reliability and provider-specific strategies during Step 11 only if retrieval value and demand justify the maintenance effort. The detailed outcome and limitations are recorded in `CURRENT.md`, `CAPTURE.md`, and ADR-009.
+
 ## Why This Happens Before Search
 
 The project already understands that repeated export/download/upload is too cumbersome to be the long-term capture experience. The browser path has enough technical, UX, maintenance, and provider-policy uncertainty that it should be tested early rather than discovered after the search stack is complete.
@@ -1130,9 +1138,11 @@ Do not expand this PoC into:
 - generalized `SourceConnection` schema before it is needed
 - production privacy/settings surface
 
-## Completion Criteria
+## Original completion criteria
 
-The PoC demonstrates whether:
+The criteria below describe the originally planned validation scope. The LIMITED GO closeout above records which were demonstrated and which were deliberately left unverified:
+
+The PoC was intended to demonstrate whether:
 
 - the active ChatGPT Web conversation can be captured
 - user/assistant text needed by the current conversation model can be extracted
@@ -1154,7 +1164,7 @@ NO-GO
 → do not depend on the browser method; retain other acquisition paths
 ```
 
-Then return to Step 7 search work.
+After the planned frontend learning interlude, continue to Step 7 search work. No additional Step 6.5 automatic-capture work is a prerequisite.
 
 ---
 
