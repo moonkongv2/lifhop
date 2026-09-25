@@ -466,7 +466,19 @@ and document the reasons in `CAPTURE.md` / `CURRENT.md` before later productizat
 
 ### Progress note — 2026-09-25
 
-The Chromium extension has demonstrated manual full-conversation collection in tested conversations, authenticated end-to-end storage, stable-identity updates, and fingerprint-based detection of changes between explicit saves. Automatic/background DOM observation and auto-save remain unverified. The PoC outcome has not been selected.
+The Chromium extension demonstrated manual full-conversation collection in tested conversations, authenticated end-to-end storage, stable-identity updates, and fingerprint-based detection of changes between explicit saves. At that point automatic/background DOM observation and auto-save remained unverified, and the PoC outcome was still pending (see closeout note).
+
+### Closeout decision — LIMITED GO (2026-09-26)
+
+The Step 6.5 learning/risk-discovery objective is closed. Early local tests confirmed one-click ChatGPT Web extraction, the authenticated Capture API, common canonical normalization and idempotent Entry upsert, and client-side SHA-256 detection of changed explicit captures. Subsequently, the DOM collector failed in an actual capture attempt with `메시지 DOM을 찾지 못했습니다` before submitting to the API. No cause attributable to deliberate provider behavior has been established.
+
+**Scope of LIMITED GO:** retain the manual extension as research-only code and the reusable server-side capture/ingestion path. The manual extension is not considered presently reliable on the affected page. Do not commit to production browser capture, automatic/background capture, or generalized DOM fallback infrastructure on the basis of the initial successful demo. Automatic capture was not implemented or evaluated, rather than conclusively judged infeasible.
+
+**Sequencing:** end Step 6.5 here, move to the Frontend Learning Interlude (F0–F3) and Step 7 keyword search, and defer capture productization to Step 11 after Steps 7–10 can establish retrieval value. The ChatGPT ZIP importer and manual Entries provide a non-DOM-dependent development dataset.
+
+**Security/data integrity:** keep collector/extension and API fail-closed checks for visibly incomplete captures. A missing message DOM must stop before POST. These guards do not prove complete collection; existing full-replacement upsert could still overwrite fuller data with an incomplete/stale capture that passes basic diagnostics. Server-side completeness, source freshness/merge rules, and explicit opt-in would be prerequisites for later auto-save. Provider-policy/legal acceptance remains a separate launch gate.
+
+**Revisit when:** retrieval-driven user demand justifies capture maintenance, a stable official acquisition method becomes available, or Step 11 provides evidence for a tested provider-specific DOM adapter, regression suite, privacy controls, and overwrite protection.
 
 ### Non-decision
 
@@ -505,6 +517,10 @@ Archive-wide analysis becomes misleading if lifhop silently presents a partial s
 Capture coverage/provenance is a product-trust requirement, not only an operations/debugging concern.
 
 The exact persistent coverage model should be introduced when Step 11 productization makes the required fields concrete.
+
+### Step 6.5 safety finding — 2026-09-26
+
+The current Capture API rejects several obvious incomplete requests, and the manual extractor stops before POST when it cannot locate message nodes. These are failure-containment measures, not proof of full coverage. Because the current upsert replaces Entry content, a partial snapshot that passes the diagnostic flags can still overwrite a more complete previous snapshot. Automatic capture and claims of complete history remain out of scope until provenance and server-side completeness/staleness safeguards are designed and tested.
 
 ---
 
