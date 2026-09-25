@@ -206,16 +206,33 @@ Current safeguards: request validation checks the top/bottom scroll flags, repor
 
 Observed extractor limitations include citation UI text in some answers, excess blank lines, incomplete code-language metadata, and no structured persistence yet for per-message IDs or source URLs. Browser coverage does not include mobile-app conversations. This PoC does not settle production terms/policy acceptability.
 
-## Next experiment — opt-in change observation
+## Step 6.5 closeout — LIMITED GO (2026-09-26)
 
-The next Step 6.5 experiment is deliberately **notification-only**:
+**Decision:** close Step 6.5 as a feasibility and risk-discovery PoC. Retain the explicit one-click capture code and the reusable authenticated Capture API, but treat the current extension as experimental and currently unreliable rather than as a functioning production acquisition channel. Do not build generalized DOM-resilience infrastructure or automatic capture before demonstrating the value of searching the collected data.
 
-- A content script observes DOM changes with `MutationObserver` only after explicit opt-in.
-- After a quiet/debounce window, it notifies an extension service worker even when the popup is closed.
-- Verify that scrolling/virtualization, navigation, response streaming, and the capture function itself do not create misleading change signals.
-- Do not equate a quiet window with completed assistant output, and do not automatically submit conversations or overwrite Entries during this first experiment.
+**Verified in earlier local tests**
+- A Chromium extension extracted the tested ChatGPT conversation, including user/assistant turns and basic Markdown/code blocks.
+- `POST /captures/chatgpt` accepted a complete tested payload, used the same canonical normalization and shared upsert as ZIP import, and wrote the Entry to PostgreSQL.
+- Repeated saves of a changed conversation retained its Entry ID; `GET /entries/{entry_id}` showed the stored conversation.
+- The extension's SHA-256 fingerprint prevented a redundant POST when explicit repeated capture produced the same title and messages.
 
-As of 2026-09-25, the remote `main` branch contains manual capture and fingerprint-based request skipping; `observer.js` and `service-worker.js` have not been added. Auto-capture remains unverified.
+**Observed regression and its limit**
+- After earlier success, the browser extractor failed on a real ChatGPT page with `Error: 메시지 DOM을 찾지 못했습니다.` (message DOM not found), before calling the API.
+- The pushed selector remains based on `data-message-author-role` and lacks a verified fallback. A DOM change or a rendering/timing difference could explain the failure; there is no evidence establishing that the provider intentionally changed its DOM to block collection.
+- The initial success demonstrated technical feasibility on tested pages, **not** reliable ongoing operation. The one-click implementation may remain unusable on the affected page until repaired.
+
+**Deliberately not completed**
+- `MutationObserver` / service-worker observation after the popup closes; automatic save and response-completion detection.
+- Structural selector fallbacks, remote rule updates, systematic DOM fixtures and maintenance-cost measurements.
+- Reliable complete-conversation evidence across virtualization/navigation, structured capture provenance, and server-side protection against incomplete/stale replacement.
+- Browser-only/mobile coverage gaps and provider-policy/legal acceptance for commercial release.
+
+**Safety/operating decision**
+- Keep the fail-closed path: when no message nodes are found, extraction throws and no POST occurs; the extension and API also reject several obvious incomplete captures. Do not weaken those checks merely to get a successful response.
+- These checks are necessary but not sufficient: `reached_top` and `reached_bottom` can both be true despite missing intermediate content. The full-replacement upsert has no server-side merge/version guard, so automatic saving must not be enabled on the current code.
+- Continue using the ChatGPT ZIP export importer and manually created Entries as development/test inputs for the search roadmap. A browser extension is not required to proceed.
+
+**When to revisit:** Step 11 capture productization, after the frontend learning interlude and Step 7–10 retrieval work, if user demand and a technically/policy-acceptable acquisition method justify further investment. Prefer official APIs where available; if DOM capture remains necessary, consider provider-specific adapters, validated fallback rules, regression fixtures, explicit user opt-in, coverage/provenance, and stale/partial overwrite protection.
 
 ## Identity
 
@@ -710,7 +727,7 @@ The key sequencing rule is:
 
 # ChatGPT Web PoC — Success Criteria
 
-The Step 6.5 PoC is successful if it can demonstrate all of the following in a development environment:
+The original Step 6.5 plan proposed the following success criteria; the 2026-09-26 LIMITED GO closeout deliberately leaves some unmet:
 
 - a Chromium extension can identify the active ChatGPT conversation
 - user and assistant text required by the initial conversation model can be extracted
@@ -722,9 +739,9 @@ The Step 6.5 PoC is successful if it can demonstrate all of the following in a d
 - browser-only coverage and mobile gaps are documented
 - DOM fragility and provider-policy/legal questions are documented before any production commitment
 
-Current status (2026-09-25): manual extraction, API persistence, stable-identity upsert, and button-triggered fingerprint-based change detection have been verified. Background DOM observation and automatic capture feasibility remain open; do not select a final GO / LIMITED GO / NO-GO outcome until those risks have been evaluated.
+**Closeout status (2026-09-26): LIMITED GO.** Earlier manual extraction, API persistence, stable-identity upsert, and button-triggered fingerprint change detection were verified. The collector subsequently failed to locate message DOM on a tested page. Background observation and automatic capture remain unverified, so the originally proposed automatic-capture criterion was not met. Preserve the working backend and research code without delaying retrieval development.
 
-The PoC should finish with a deliberate decision:
+The PoC decision is recorded above. The options from the original plan were:
 
 ```text
 GO
