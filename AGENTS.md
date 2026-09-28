@@ -31,41 +31,44 @@ If repository documentation and the user's current explicit instruction disagree
 
 ---
 
-# Current Milestone Rule
+# Current Product Slice
 
-Work primarily within the current milestone defined in `CURRENT.md`.
+Work primarily within the current product slice defined in `CURRENT.md`
+and the user-verifiable sequence in `ROADMAP.md`.
 
-If `CURRENT.md` does not yet exist, use the earliest incomplete milestone in `ROADMAP.md`.
+If `CURRENT.md` does not yet exist, use the earliest incomplete slice in
+`ROADMAP.md`.
 
-Do not implement later roadmap features merely because they may eventually be useful.
+Do not implement later features merely because they may eventually be useful.
 
 Examples:
 
 - Do not add Redis before a real requirement exists.
-- Do not introduce SQS before asynchronous processing is being learned.
 - Do not introduce Kubernetes.
 - Do not introduce OpenSearch while PostgreSQL search is sufficient.
 - Do not introduce microservices without a concrete reason.
 
-Prefer the simplest architecture that satisfies the current milestone.
+Prefer the simplest architecture that satisfies the current product slice.
 
 ---
 
-# Learning-First Development
+# Product Delivery in a Learning Project
 
-This is a learning project.
+This remains a learning project. The early learning sequence ended at
+`learning-complete-f3`; subsequent work is organized around product results
+that the user can verify directly.
 
-When introducing a significant concept or technology, make the reason understandable.
+When introducing a significant concept or technology, explain the concrete
+requirement it solves and keep the implementation understandable.
 
 Preferred sequence:
 
 ```text
-1. Identify the current limitation or requirement.
-2. Explain the relevant concept.
-3. Implement the smallest useful solution.
-4. Add tests.
-5. Demonstrate or test failure behavior where relevant.
-6. Document important conclusions.
+1. Define one observable user flow and its completion criteria.
+2. Implement the smallest end-to-end solution.
+3. Verify behavior, ownership, and relevant failures.
+4. Show the result to the user.
+5. Update current status and durable decisions when appropriate.
 ```
 
 Avoid hiding important behavior behind excessive abstraction.
@@ -180,15 +183,18 @@ When asynchronous processing is introduced:
 - avoid acknowledging successful processing before durable state is written;
 - make failures observable.
 
-Do not introduce asynchronous infrastructure before the roadmap reaches the relevant milestone unless explicitly requested.
+Extend the existing SQS infrastructure only when the product flow needs
+background processing.
 
 ---
 
 # AWS
 
-AWS services should be introduced to solve concrete requirements and support learning goals.
+AWS services should be introduced to solve concrete product or operational
+requirements.
 
-Prefer understanding a service before automating it completely.
+Prefer reproducible, inspectable deployment over manual setup when preparing
+the private daily-use release.
 
 Use IAM roles instead of embedding long-lived AWS credentials in application code.
 
@@ -288,7 +294,7 @@ Suggested commit style:
 feat: add entry creation API
 fix: prevent duplicate imported conversations
 test: add entry repository tests
-docs: update current milestone status
+docs: update current product status
 refactor: extract importer normalization
 ```
 
@@ -298,17 +304,16 @@ Commits should describe meaningful units of work.
 
 # Documentation Updates
 
-At the end of a meaningful development session:
+At the end of a meaningful product slice:
 
 ## CURRENT.md
 
 Update:
 
-- current milestone;
-- completed items;
-- work in progress;
-- next tasks;
-- known issues.
+- current product slice;
+- working capabilities;
+- next slice;
+- known limitations.
 
 Keep this document short.
 
@@ -321,27 +326,18 @@ Example:
 ```text
 # Current Status
 
-## Current Milestone
-Step 1 - Entry CRUD
+## Current Product Slice
+Browser import flow
 
-## Completed
-- FastAPI initialized
-- PostgreSQL Docker Compose added
-- SQLAlchemy configured
-- Entry model created
-
-## In Progress
-- POST /entries
+## What Works Now
+- Authenticated Entry creation and browsing
 
 ## Next
-1. GET /entries
-2. GET /entries/{id}
-3. PATCH /entries/{id}
-4. DELETE /entries/{id}
-5. CRUD tests
+1. Upload a ChatGPT ZIP in the browser
+2. Show ImportJob status and result
 
-## Known Issues
-None
+## Known Limitations
+- Search is not available yet
 ```
 
 ## DECISIONS.md
@@ -365,7 +361,7 @@ Update it when:
 Before reporting completion:
 
 1. Review the diff.
-2. Run relevant tests.
+2. Run relevant tests and frontend checks when applicable.
 3. Check Git status.
 4. Update `CURRENT.md` when appropriate.
 5. Update `DECISIONS.md` if a durable decision was made.
@@ -374,38 +370,3 @@ Before reporting completion:
 8. State unresolved issues or follow-up work.
 
 Never hide unfinished work.
-
----
-
-# First Development Session
-
-If this repository only contains the initial documentation, begin with **Step 0 — Project Bootstrap** from `ROADMAP.md`.
-
-Expected first development sequence:
-
-```text
-Python project initialization
-        |
-        v
-FastAPI application
-        |
-        v
-GET /health
-        |
-        v
-PostgreSQL with Docker Compose
-        |
-        v
-SQLAlchemy connection
-        |
-        v
-Alembic initialization
-        |
-        v
-Basic tests
-        |
-        v
-Create CURRENT.md
-```
-
-Do not implement authentication, AWS infrastructure, imports, or search during the initial milestone unless explicitly instructed by the user.

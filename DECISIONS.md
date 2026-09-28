@@ -5,6 +5,9 @@ This document records durable design decisions that are expected to affect multi
 The intent is not to freeze the architecture permanently. Each decision should be revisited when new source types or operational constraints provide evidence that the current rule no longer fits.
 
 Capture/acquisition details and the risk register are maintained in `CAPTURE.md`.
+References to numbered Steps in older decisions describe the learning plan
+at the time of those decisions. `ROADMAP.md` is the active delivery order
+after the `learning-complete-f3` baseline.
 
 ---
 

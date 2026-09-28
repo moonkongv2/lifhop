@@ -232,7 +232,13 @@ Observed extractor limitations include citation UI text in some answers, excess 
 - These checks are necessary but not sufficient: `reached_top` and `reached_bottom` can both be true despite missing intermediate content. The full-replacement upsert has no server-side merge/version guard, so automatic saving must not be enabled on the current code.
 - Continue using the ChatGPT ZIP export importer and manually created Entries as development/test inputs for the search roadmap. A browser extension is not required to proceed.
 
-**When to revisit:** Step 11 capture productization, after the frontend learning interlude and Step 7–10 retrieval work, if user demand and a technically/policy-acceptable acquisition method justify further investment. Prefer official APIs where available; if DOM capture remains necessary, consider provider-specific adapters, validated fallback rules, regression fixtures, explicit user opt-in, coverage/provenance, and stale/partial overwrite protection.
+**When to revisit:** The active product roadmap revisits recurring acquisition
+after a useful archive and source-grounded answers are demonstrated, if user
+demand and a technically/policy-acceptable method justify further investment.
+Prefer official APIs where available; if DOM capture remains necessary,
+consider provider-specific adapters, validated fallback rules, regression
+fixtures, explicit user opt-in, coverage/provenance, and stale/partial
+overwrite protection.
 
 ## Identity
 
@@ -676,52 +682,31 @@ capture status indicator
 
 # Implementation Sequence
 
-The agreed sequence is intentionally split between **early risk validation** and **later productization**.
+The early ChatGPT Web risk-validation PoC is complete. The active sequence is
+defined by product outcomes in `ROADMAP.md`:
 
 ```text
-Step 6
-Async Processing with SQS
+Usable archive and search using existing import paths
         |
         v
-Step 6.5
-ChatGPT Web Capture PoC
-- prove active-conversation extraction
-- prove stable identity / upsert
-- test update detection
-- test opt-in auto-capture feasibility
-- document browser/DOM/policy limitations
+Source-grounded answers from stored records
         |
         v
-Steps 7-10
-Search / RAG / Hybrid / Global Retrieval
-- prove that collected records produce useful answers
+Compare actual recurring sources and supported acquisition methods
         |
         v
-Low-effort Capture Productization
-- SourceConnection as required by real flows
-- Chromium extension stabilization
-- mobile Share Extension / Share Target
-- capture controls and source state
-- historical import repositioned as optional enrichment
+Build one dependable low-effort capture or sync flow
         |
         v
-Connected Sources
-- OAuth / API / webhook
-- initial + incremental sync
-- Notion / GitHub / Drive candidates
-        |
-        v
-Capture Expansion
-- native MCP / hooks / plugins
-- additional AI providers
-- Safari / Firefox if justified
-- local folder sync
-- email forwarding
+Expand providers and platforms based on use and reliability
 ```
 
-The key sequencing rule is:
+The key selection rule is:
 
-> Validate ChatGPT Web continuous capture early, but do not let capture productization delay validation of lifhop's search and record-analysis value.
+> Choose the first ongoing source by useful data, supported access,
+> reliability, maintenance, and provider policy. A browser extension, mobile
+> share target, and connected provider are alternatives to evaluate, not
+> simultaneous prerequisites.
 
 ---
 

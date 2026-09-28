@@ -129,7 +129,8 @@ Other sources may be added later through the common importer/canonical normaliza
        Answer + Source Entries
 ```
 
-AWS services are introduced gradually, only when there is a clear problem or learning goal they solve.
+AWS services are introduced when a concrete product or operational need
+justifies their cost and complexity.
 
 Potential production infrastructure:
 
@@ -178,38 +179,19 @@ Technology choices may change as the project progresses. Significant architectur
 
 ## Development Philosophy
 
-This project is intended for learning, so implementation should progress incrementally.
+This remains a learning project. Through the frontend learning interlude, the
+implementation followed an incremental learning sequence. From the
+`learning-complete-f3` baseline onward, development is organized into small,
+user-verifiable product results described in `ROADMAP.md`.
 
 Preferred process:
 
 ```text
-1. Build the simplest working implementation
-2. Observe its limitations
-3. Understand the underlying problem
-4. Introduce the technology that solves the problem
-5. Test failure scenarios
-6. Improve the design
-```
-
-Example:
-
-```text
-Import inside API request
-        |
-        v
-Large import causes slow requests
-        |
-        v
-Learn background processing
-        |
-        v
-Introduce SQS + Worker
-        |
-        v
-Test redelivery / duplicate processing
-        |
-        v
-Require idempotent consumers
+1. Define a useful user flow
+2. Build the smallest complete implementation
+3. Verify behavior and relevant failures
+4. Show the result
+5. Improve it using actual use and evaluation
 ```
 
 Avoid introducing infrastructure purely to make the architecture look sophisticated.
@@ -217,9 +199,9 @@ Avoid introducing infrastructure purely to make the architecture look sophistica
 ## Project Documentation
 
 - `README.md` — project purpose and architecture overview
-- `ROADMAP.md` — development milestones and learning sequence
+- `ROADMAP.md` — active product delivery sequence and user-visible checks
 - `AGENTS.md` — working rules for AI coding agents
-- `CURRENT.md` — concise current status and next work
+- `CURRENT.md` — concise working status and next product slice
 - `DECISIONS.md` — durable architecture decisions
 - `CAPTURE.md` — capture/acquisition strategy and risk register
 
@@ -227,7 +209,10 @@ The repository is the source of truth for the project. ChatGPT, Codex CLI, Antig
 
 ## Current Status
 
-The **Frontend Learning Interlude (F0–F3)** is complete as of 2026-09-28.
+The learning-through-F3 baseline is marked by Git tag
+`learning-complete-f3`; F0–F3 was completed on 2026-09-28. The project
+still serves a learning purpose, while the active roadmap now prioritizes a
+usable product.
 
 The repository now includes a minimal React + TypeScript + Vite frontend that demonstrates the real browser-to-FastAPI flow:
 
@@ -237,8 +222,14 @@ The repository now includes a minimal React + TypeScript + Vite frontend that de
 - a Vite development proxy for local `/api/*` requests
 - generated TypeScript API types from FastAPI OpenAPI using `openapi-typescript`
 
-Step 6 — **Async Processing with SQS** remains complete, and Step 6.5 — **ChatGPT Web Capture PoC** is closed as **LIMITED GO** because the current DOM extractor is not reliable enough to treat as a production capture path.
+The backend already supports authenticated Entry CRUD, Markdown import,
+ChatGPT ZIP import with asynchronous processing, and S3-backed file storage.
+The ChatGPT Web Capture PoC is **LIMITED GO**: its current DOM extractor is
+unreliable, so it is not a dependable product capture path.
 
-The next milestone is **Step 7 — Keyword Search**, beginning with user-scoped `ILIKE` search over existing Entries and then evolving toward PostgreSQL Full Text Search, indexing, filters, and pagination.
+The next user-visible result is creating and managing a text Entry through the
+browser. Import, search, source-grounded answers, recurring capture, and
+private daily-use deployment follow in `ROADMAP.md`.
 
-See `CURRENT.md` for the exact active milestone and `ROADMAP.md` for the full learning and development plan.
+See `CURRENT.md` for the active product slice and `ROADMAP.md` for its
+completion criteria.
