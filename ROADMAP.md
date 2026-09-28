@@ -1170,6 +1170,8 @@ After the planned frontend learning interlude, continue to Step 7 search work. N
 
 # Frontend Learning Interlude — F0–F3
 
+**Status: Completed 2026-09-28**
+
 ## Goal
 
 Learn only enough frontend development to understand how a browser client consumes the lifhop backend, review AI-generated frontend code, and recognize when a frontend problem actually requires a backend/API change.
