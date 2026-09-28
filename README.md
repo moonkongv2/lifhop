@@ -227,20 +227,18 @@ The repository is the source of truth for the project. ChatGPT, Codex CLI, Antig
 
 ## Current Status
 
-Step 6 — **Async Processing with SQS** is complete.
+The **Frontend Learning Interlude (F0–F3)** is complete as of 2026-09-28.
 
-Implemented and verified behavior includes:
+The repository now includes a minimal React + TypeScript + Vite frontend that demonstrates the real browser-to-FastAPI flow:
 
-- ChatGPT ZIP upload preserved in S3 as an `ImportArtifact`
-- `PENDING` `ImportJob` persisted before queue submission
-- `POST /imports/chatgpt` returns HTTP 202 and enqueues `job_id` to SQS
-- a separate worker consumes the message and runs the import processor
-- `GET /import-jobs/{job_id}` exposes processing status with ownership protection
-- successful processing deletes the SQS message only after durable DB work completes
-- failed/undeleted messages can be redelivered after the visibility timeout
-- reprocessing the same ChatGPT job does not duplicate Entries because persistence is idempotent by stable external identity
-- the SQS redelivery/idempotency failure exercise was verified against the real development queue
+- React Router routes for login, Entry list, and Entry detail
+- authenticated calls to the existing FastAPI login and Entry APIs
+- TanStack Query for Entry server-state handling
+- a Vite development proxy for local `/api/*` requests
+- generated TypeScript API types from FastAPI OpenAPI using `openapi-typescript`
 
-The next milestone is **Step 6.5 — ChatGPT Web Capture PoC**, a small Chromium-extension experiment to validate lower-effort ongoing ChatGPT capture before the project returns to frontend learning and Step 7 keyword search.
+Step 6 — **Async Processing with SQS** remains complete, and Step 6.5 — **ChatGPT Web Capture PoC** is closed as **LIMITED GO** because the current DOM extractor is not reliable enough to treat as a production capture path.
+
+The next milestone is **Step 7 — Keyword Search**, beginning with user-scoped `ILIKE` search over existing Entries and then evolving toward PostgreSQL Full Text Search, indexing, filters, and pagination.
 
 See `CURRENT.md` for the exact active milestone and `ROADMAP.md` for the full learning and development plan.
