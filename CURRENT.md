@@ -2,11 +2,13 @@
 
 ## Current milestone
 
+Frontend Learning Interlude (F0–F3) — COMPLETE as of 2026-09-28.
+
 Step 6.5 — CLOSED: LIMITED GO (2026-09-26). Manual capture and fingerprint-based change detection were verified in development; the browser extractor is currently unreliable and automatic capture remains unverified.
 
 Step 6 — Async Processing with SQS is complete as of 2026-09-12.
 
-Next: the planned Frontend Learning Interlude (F0–F3), followed by Step 7 keyword search. Browser capture productization is deferred to Step 11; do not expand Step 6.5 into a generic DOM-resilience engine.
+Next: **Step 7 — Keyword Search**. Begin with user-scoped `ILIKE` search over existing Entries, then evolve to PostgreSQL Full Text Search, indexing, filters, and pagination. Browser capture productization remains deferred to Step 11.
 
 ## Completed work
 
@@ -40,6 +42,15 @@ Next: the planned Frontend Learning Interlude (F0–F3), followed by Step 7 keyw
 - Capture API tests and full local pytest suite reported passing
 - SHA-256 manual-capture fingerprint comparison; unchanged conversations skip repeat POST requests
 - Successful fingerprints cached in `chrome.storage.local` by API URL, user ID, and conversation ID
+- React + TypeScript + Vite frontend scaffold under `frontend/`
+- Vite development proxy routes `/api/*` browser requests to local FastAPI
+- React Router routes for `/login`, `/entries`, and `/entries/:id`
+- Login form calls the real `POST /auth/login` endpoint and stores the development access token in browser local storage
+- Entry list and detail pages call the real authenticated FastAPI APIs
+- TanStack Query manages Entry server state, loading/error state, cache identity, and query execution
+- FastAPI OpenAPI schema is converted into generated TypeScript types with `openapi-typescript`
+- Frontend Entry types use generated `EntryResponse` instead of manually duplicated DTO definitions
+- `npm run generate:api`, `npm run build`, and `npm run lint` were verified after the F0–F3 implementation
 
 ---
 
@@ -223,16 +234,74 @@ These should be revisited during production AWS / operations steps unless an ear
 
 ---
 
-# Next — Frontend Learning Interlude (F0–F3), then Step 7 Keyword Search
+# Frontend Learning Interlude — Completed (2026-09-28)
 
-Step 6.5 is closed as LIMITED GO. Do not block the search roadmap on repairing the current ChatGPT DOM extractor, implementing automatic capture, or building generalized provider selector fallbacks.
+The F0–F3 learning goal is complete. The frontend now demonstrates the browser-to-FastAPI path using real lifhop APIs rather than mock-only data.
 
-**Frontend interlude:** learn the minimal TypeScript/React/browser-to-FastAPI flow; manually trace login/JWT and `GET /entries` once. Routine frontend implementation may then be delegated to an AI coding agent following the OpenAPI contract.
+Verified learning path:
 
-**Step 7:** build user-scoped keyword search over existing Entries, beginning with `ILIKE`, followed by PostgreSQL Full Text Search, indexing, filters, and pagination. Existing manual Entries and ZIP-imported ChatGPT conversations can supply test data without relying on the extension.
+```text
+Browser / React
+      |
+      v
+Vite /api development proxy
+      |
+      v
+FastAPI login + Entry APIs
+      |
+      v
+JWT-authenticated JSON responses
+      |
+      v
+TanStack Query server state
+      |
+      v
+React Router list/detail screens
+```
 
-**Later Step 11:** reopen browser capture only when retrieval value and demand justify the maintenance cost. Prioritize stable/official provider acquisition methods where available. Any resumed browser auto-capture requires explicit opt-in, accurate completion/coverage diagnostics, privacy controls, and server-side stale/partial overwrite protection.
+The frontend contract path is:
 
+```text
+Pydantic schemas
+      |
+      v
+FastAPI OpenAPI
+      |
+      v
+openapi-typescript
+      |
+      v
+generated TypeScript schema
+      |
+      v
+React pages
+```
+
+Current frontend implementation is intentionally minimal and learning-oriented. The development access token is stored in `localStorage`; this is not a final production authentication/storage decision. Visual polish, advanced frontend architecture, and production hosting configuration remain out of scope for this interlude.
+
+Routine frontend implementation may now be delegated to an AI coding agent while keeping the backend API/OpenAPI contract as the source of truth.
+
+---
+
+# Next — Step 7 Keyword Search
+
+Build user-scoped keyword search over existing Entries without an LLM.
+
+Planned progression:
+
+```text
+ILIKE
+  |
+  v
+PostgreSQL Full Text Search
+  |
+  v
+Indexing + ranking + filters + pagination
+```
+
+Existing manual Entries and ZIP-imported ChatGPT conversations can provide search test data without depending on the browser extension.
+
+Browser capture productization remains deferred to Step 11. Do not block Step 7 on repairing the current ChatGPT DOM extractor.
 ---
 
 # Current data ownership/storage model
@@ -343,4 +412,4 @@ See `DECISIONS.md` and `CAPTURE.md`.
 
 # Last update
 
-2026-09-26
+2026-09-28
