@@ -17,6 +17,18 @@ TEST_DATABASE_URL = (
 test_engine = create_engine(TEST_DATABASE_URL)
 
 
+@pytest.fixture(autouse=True)
+def block_unexpected_aws_clients(monkeypatch) -> None:
+    def blocked(*args, **kwargs):
+        raise RuntimeError(
+            "Tests must mock AWS clients instead of contacting AWS"
+        )
+
+    monkeypatch.setattr("boto3.Session", blocked)
+    monkeypatch.setattr("boto3.client", blocked)
+    monkeypatch.setattr("boto3.resource", blocked)
+
+
 @pytest.fixture(scope="session", autouse=True)
 def setup_database() -> Generator[None, None, None]:
     Base.metadata.create_all(bind=test_engine)

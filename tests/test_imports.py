@@ -15,6 +15,7 @@ from app.models.import_job import ImportJob, ImportJobStatus
 def test_import_markdown_persists_entry(
     client,
     auth_headers,
+    fake_import_upload,
 ):
     response = client.post(
         "/imports/markdown",
@@ -47,6 +48,7 @@ def test_import_markdown_persists_entry(
 def test_imported_markdown_can_be_retrieved_as_entry(
     client,
     auth_headers,
+    fake_import_upload,
 ):
     import_response = client.post(
         "/imports/markdown",

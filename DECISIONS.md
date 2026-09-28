@@ -622,3 +622,43 @@ If the processor were not idempotent, that ordinary failure window could create 
 - a different queue technology changes delivery guarantees
 - per-item retries or compensating actions are introduced
 - an outbox/inbox or deduplication-key mechanism is needed beyond current Entry upsert semantics
+
+---
+
+## ADR-013 — Keep ordinary development and tests off AWS S3
+
+**Status:** Accepted
+**Date:** 2026-09-29
+
+### Decision
+
+Use a local S3-compatible SeaweedFS service as the default object store for
+development. Keep the existing boto3 storage interface and explicitly select
+real AWS S3 with `S3_MODE=aws` only when that integration needs validation.
+Local mode uses separate local credentials and bucket and rejects non-loopback
+endpoints. Tests block unexpected boto3 client creation and mock storage and
+queue operations at their boundaries.
+
+### Rationale
+
+The previous local environment could target a real AWS bucket. Two Markdown
+API tests also invoked the real upload function. Repeated imports use new
+object keys, so accidental development uploads could accumulate stored
+objects and incur charges. The local service preserves the S3 API and
+presigned-URL behavior needed for development without contacting AWS S3.
+
+### Consequences
+
+- Real AWS S3 integration is an explicit test/deployment choice.
+- The local SeaweedFS service is development infrastructure, not a production
+  storage dependency.
+- This does not change SQS. A local queue path is needed before ChatGPT ZIP
+  imports can be demonstrated with no AWS requests.
+- Remote bucket lifecycle and current billing are separate operational
+  checks; local mode does not alter existing remote objects.
+
+### Revisit when
+
+- deployment configuration or container networking changes local endpoints
+- SeaweedFS no longer provides a suitable local development image
+- storage behavior requires verification against real AWS S3

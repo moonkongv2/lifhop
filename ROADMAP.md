@@ -57,7 +57,9 @@ delete it, and see the list update.
 Add Markdown and ChatGPT ZIP upload flows using the existing APIs. For ZIPs,
 show the ImportJob state and final counts/errors; allow the user to open
 imported Entries. Keep the imported raw artifact accessible through its
-existing protected download endpoint.
+existing protected download endpoint. Use the local S3-compatible store.
+Provide a local queue path before demonstrating ZIP processing so ordinary
+development does not require AWS SQS.
 
 **User check:** Upload a file, observe processing or a useful failure, and
 open a resulting Entry without calling the API manually.

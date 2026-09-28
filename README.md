@@ -177,6 +177,30 @@ Later additions may include:
 
 Technology choices may change as the project progresses. Significant architecture changes should be documented rather than silently introduced.
 
+## Local object storage
+
+Local development uses SeaweedFS's S3-compatible endpoint instead of AWS S3
+by default. Start it with:
+
+```bash
+docker compose up -d seaweedfs
+```
+
+The service creates the `lifhop-local` bucket and keeps objects in a Docker
+volume. Run the FastAPI app on the host so that its default
+`LOCAL_S3_ENDPOINT=http://127.0.0.1:8333` is reachable. The credentials in
+`compose.yaml` are development-only.
+
+`S3_MODE=local` is the default even when an existing `.env` contains an AWS
+profile and bucket. Local mode accepts only a loopback HTTP endpoint. To
+connect to real AWS S3 intentionally, set `S3_MODE=aws` and configure
+`S3_BUCKET_NAME` and AWS credentials. The test suite blocks unexpected
+boto3 client creation.
+
+This setting affects S3 only. ChatGPT ZIP submission and the import worker
+still use the configured SQS queue; do not run that flow expecting zero AWS
+requests until local queue support is added.
+
 ## Development Philosophy
 
 This remains a learning project. Through the frontend learning interlude, the

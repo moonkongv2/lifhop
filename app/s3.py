@@ -1,9 +1,44 @@
 import boto3
 
+from urllib.parse import urlparse
+from botocore.config import Config
 from botocore.exceptions import ClientError
 from app.config import settings
 
+
+def get_s3_bucket_name() -> str:
+    if settings.s3_mode == "local":
+        return settings.local_s3_bucket_name
+
+    if not settings.s3_bucket_name:
+        raise ValueError("S3_BUCKET_NAME is required when S3_MODE=aws")
+
+    return settings.s3_bucket_name
+
+
 def get_s3_client():
+    if settings.s3_mode == "local":
+        endpoint = urlparse(settings.local_s3_endpoint)
+        if endpoint.scheme != "http" or endpoint.hostname not in {
+            "localhost", "127.0.0.1", "::1"
+        }:
+            raise ValueError("LOCAL_S3_ENDPOINT must be a local HTTP address")
+
+        session = boto3.Session(
+            aws_access_key_id=settings.local_s3_access_key,
+            aws_secret_access_key=settings.local_s3_secret_key,
+            region_name="us-east-1",
+        )
+        return session.client(
+            "s3",
+            endpoint_url=settings.local_s3_endpoint,
+            config=Config(
+                signature_version="s3v4",
+                s3={"addressing_style": "path"},
+            ),
+        )
+
+    get_s3_bucket_name()
     session = boto3.Session(
         profile_name=settings.aws_profile,
         region_name=settings.aws_region,
@@ -17,7 +52,7 @@ def object_exists(s3_key: str) -> bool:
 
     try:
         s3.head_object(
-            Bucket=settings.s3_bucket_name,
+            Bucket=get_s3_bucket_name(),
             Key=s3_key,
         )
         return True
@@ -41,7 +76,7 @@ def generate_presigned_upload_url(
     return s3.generate_presigned_url(
         ClientMethod="put_object",
         Params={
-            "Bucket": settings.s3_bucket_name,
+            "Bucket": get_s3_bucket_name(),
             "Key": s3_key,
             "ContentType": mime_type,
         },
@@ -58,7 +93,7 @@ def generate_presigned_download_url(
     return s3.generate_presigned_url(
         ClientMethod="get_object",
         Params={
-            "Bucket": settings.s3_bucket_name,
+            "Bucket": get_s3_bucket_name(),
             "Key": s3_key,
         },
         ExpiresIn=expires_in,
@@ -72,7 +107,7 @@ def upload_object(
 ) -> None:
     s3 = get_s3_client()
     s3.put_object(
-        Bucket=settings.s3_bucket_name,
+        Bucket=get_s3_bucket_name(),
         Key=s3_key,
         Body=content,
         ContentType=mime_type,
@@ -85,7 +120,7 @@ def download_object(
     s3 = get_s3_client()
 
     response = s3.get_object(
-        Bucket=settings.s3_bucket_name,
+        Bucket=get_s3_bucket_name(),
         Key=s3_key,
     )
 

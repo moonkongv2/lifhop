@@ -10,5 +10,17 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  seaweedfs:
+    image: chrislusf/seaweedfs:4.47
+    environment:
+      AWS_ACCESS_KEY_ID: lifhoplocal
+      AWS_SECRET_ACCESS_KEY: lifhoplocal123
+      S3_BUCKET: lifhop-local
+    ports:
+      - "127.0.0.1:8333:8333"
+    volumes:
+      - seaweedfs_data:/data
+
 volumes:
   postgres_data:
+  seaweedfs_data:

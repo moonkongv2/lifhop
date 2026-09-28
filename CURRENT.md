@@ -13,6 +13,8 @@ Implementation has not started.
 - Markdown import; ChatGPT ZIP import through S3, ImportJob, SQS, and a worker.
 - Original import artifact preservation and protected download.
 - S3-backed Entry attachments.
+- Local S3-compatible storage is the default for development; tests block
+  unexpected AWS client creation.
 - React login, Entry list, and Entry detail with generated API types.
 - Existing backend tests and frontend build/lint commands.
 
@@ -39,6 +41,8 @@ user-verifiable product slices in `ROADMAP.md`.
   review production authentication before internet deployment.
 - Queue redrive/DLQ, commit-to-SQS failure handling, production worker
   supervision, and broader observability remain operational follow-up.
+- SQS still points to the configured AWS queue. Local ZIP processing needs a
+  local queue path before Phase 1.2 can be demonstrated without AWS requests.
 
 See `DECISIONS.md` and `CAPTURE.md` for enduring architecture and capture
 constraints. Historical step-by-step status is available at the learning
