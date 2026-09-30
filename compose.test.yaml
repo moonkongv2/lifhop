@@ -1,0 +1,16 @@
+services:
+  test-db:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: lifhop_test
+      POSTGRES_USER: lifhop
+      POSTGRES_PASSWORD: lifhop
+    ports:
+      - "127.0.0.1:55433:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lifhop -d lifhop_test"]
+      interval: 2s
+      timeout: 5s
+      retries: 15

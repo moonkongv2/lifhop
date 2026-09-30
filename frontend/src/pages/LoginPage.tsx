@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { useNavigate } from "react-router";
@@ -10,6 +11,7 @@ type TokenResponse = {
 
 function LoginPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -38,6 +40,7 @@ function LoginPage() {
 
       const data: TokenResponse = await response.json();
 
+      queryClient.clear();
       localStorage.setItem("access_token", data.access_token);
 
       navigate("/entries");

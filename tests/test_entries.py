@@ -1,3 +1,4 @@
+import pytest
 from fastapi.testclient import TestClient
 
 def test_create_entry(
@@ -220,3 +221,56 @@ def test_user_cannot_access_another_users_entry(
     )
 
     assert response.status_code == 404
+
+
+@pytest.mark.parametrize("title", ["", "   ", "x" * 256])
+def test_entry_title_validation(client, auth_headers, title):
+    assert client.post("/entries", json={"type": "NOTE", "title": title}, headers=auth_headers).status_code == 422
+    created = client.post("/entries", json={"type": "NOTE", "title": "Valid"}, headers=auth_headers)
+    entry_id = created.json()["id"]
+    assert client.patch(f"/entries/{entry_id}", json={"title": title}, headers=auth_headers).status_code == 422
+    assert client.get(f"/entries/{entry_id}", headers=auth_headers).json()["title"] == "Valid"
+
+
+@pytest.mark.parametrize("field", ["title", "type"])
+def test_update_rejects_null_required_fields(client, auth_headers, field):
+    created = client.post("/entries", json={"type": "NOTE", "title": "Valid"}, headers=auth_headers)
+    assert client.patch(f"/entries/{created.json()['id']}", json={field: None}, headers=auth_headers).status_code == 422
+
+
+def test_other_owner_cannot_list_update_or_delete(client, auth_headers, another_user, db_session):
+    from app.models.entry import Entry, EntryType
+
+    entry = Entry(user_id=another_user.id, type=EntryType.NOTE, title="Private", content="Secret")
+    db_session.add(entry)
+    db_session.flush()
+    assert client.get("/entries", headers=auth_headers).json() == []
+    assert client.patch(f"/entries/{entry.id}", json={"title": "Changed"}, headers=auth_headers).status_code == 404
+    assert client.delete(f"/entries/{entry.id}", headers=auth_headers).status_code == 404
+    db_session.refresh(entry)
+    assert entry.title == "Private"
+
+
+def test_note_lifecycle(client, auth_headers):
+    created = client.post("/entries", json={"type": "NOTE", "title": " 여행 메모 ", "content": "첫 줄\n둘째 줄"}, headers=auth_headers)
+    assert created.status_code == 201
+    entry_id = created.json()["id"]
+    assert created.json()["title"] == "여행 메모"
+    assert client.get("/entries", headers=auth_headers).json()[0] == created.json()
+    updated = client.patch(f"/entries/{entry_id}", json={"title": "수정한 메모", "content": ""}, headers=auth_headers)
+    assert updated.status_code == 200
+    assert client.get(f"/entries/{entry_id}", headers=auth_headers).json() == updated.json()
+    assert updated.json()["content"] == ""
+    assert client.delete(f"/entries/{entry_id}", headers=auth_headers).status_code == 204
+    assert client.get("/entries", headers=auth_headers).json() == []
+
+
+@pytest.mark.parametrize("method,path,body", [
+    ("get", "/entries", None),
+    ("get", "/entries/1", None),
+    ("post", "/entries", {"type": "NOTE", "title": "Unauthenticated"}),
+    ("patch", "/entries/1", {"title": "Changed"}),
+    ("delete", "/entries/1", None),
+])
+def test_entry_operations_require_authentication(client, method, path, body):
+    assert client.request(method, path, json=body).status_code == 401

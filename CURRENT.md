@@ -1,11 +1,12 @@
 # lifhop Current Status
 
-Last updated: 2026-09-30
+Last updated: 2026-10-01
 
 ## Current product slice
 
 Phase 1.1 in `ROADMAP.md` — create and manage a text Entry in the browser.
-Implementation has not started.
+Implementation, local automated checks, and owner browser verification
+are complete. See `frontend/README.md` for setup and the user check.
 
 ## Personal-release target
 
@@ -30,8 +31,15 @@ exclusions are planned requirements, not implemented capabilities.
 - S3-backed Entry attachments.
 - Local S3-compatible storage is the default for development; tests block
   unexpected AWS client creation.
-- React login, Entry list, and Entry detail with generated API types.
-- Existing backend tests and frontend build/lint commands.
+- React login, Entry list/detail, and note creation/editing/deletion using
+  authenticated Entry APIs and server-result cache updates.
+- Empty/loading/error states, draft-preserving save errors, title validation,
+  deletion confirmation, and account-switch cache clearing.
+- Disposable PostgreSQL test service; backend ownership/validation/lifecycle
+  tests and frontend page tests. Local checks: 94 backend tests and 10 frontend
+  tests pass; frontend lint/build pass.
+- GitHub Actions checks for migrations, backend/frontend tests, generated API
+  types, and frontend lint/build (remote workflow execution pending).
 
 The learning-through-F3 baseline is marked by Git tag
 `learning-complete-f3` at `187b651f9422e901059f238c334d0e5fa885b4f4`.
@@ -40,18 +48,18 @@ user-verifiable product slices in `ROADMAP.md`.
 
 ## Next
 
-1. Implement Phase 1.1: create, edit, and delete a text Entry in the browser.
-2. Show the completed browser flow and verify relevant API behavior,
-   frontend build/lint, and tests.
-3. Continue with Phase 1.2 browser imports after Phase 1.1 is reviewed.
-4. Follow the revised sequence: archive/search → Codex/GitHub history →
-   evidence-based answers/retrospectives → both scheduled collectors → private
-   AWS release. See `ROADMAP.md` for defaults and completion checks.
+1. Implement Phase 1.2: browser Markdown/ChatGPT ZIP imports, job results,
+   protected original downloads, and a local queue path.
+2. Verify limits, failures, retry, and repeated delivery before owner review.
+3. Follow the sequence: archive/search → Codex/GitHub history → evidence-based
+   answers/retrospectives → scheduled collectors → private AWS release.
 
 ## Known limitations
 
-- The frontend cannot yet create, edit, delete, import, search, or ask
-  questions about Entries.
+- Owner confirmed the browser flow. Remote CI execution remains pending;
+  frontend automated tests use an isolated in-memory API stub.
+- The frontend cannot yet import, search, or ask questions about Entries.
+  The list displays only the latest 20 records; pagination is Phase 1.3.
 - Codex/GitHub adapters, retained Entry versions, deletion tombstones, and
   external-AI policies are not implemented. Source access/history size and
   deployment cost still require verification; enum values are not integrations.

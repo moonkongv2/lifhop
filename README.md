@@ -259,8 +259,8 @@ usable product.
 
 The repository now includes a minimal React + TypeScript + Vite frontend that demonstrates the real browser-to-FastAPI flow:
 
-- React Router routes for login, Entry list, and Entry detail
-- authenticated calls to the existing FastAPI login and Entry APIs
+- React Router routes for login, Entry list/detail, and note creation
+- authenticated calls to the existing FastAPI login and Entry CRUD APIs
 - TanStack Query for Entry server-state handling
 - a Vite development proxy for local `/api/*` requests
 - generated TypeScript API types from FastAPI OpenAPI using `openapi-typescript`
@@ -270,8 +270,10 @@ ChatGPT ZIP import with asynchronous processing, and S3-backed file storage.
 The ChatGPT Web Capture PoC is **LIMITED GO**: its current DOM extractor is
 unreliable, so it is not a dependable product capture path.
 
-The next user-visible result is creating and managing a text Entry through the
-browser. Import and search are followed by Codex/GitHub historical collection,
+Phase 1.1 now supports creating and managing a text Entry through the browser,
+with local automated checks complete and owner browser verification confirmed. See
+`frontend/README.md` for setup, user checks, and isolated test commands.
+Import and search are followed by Codex/GitHub historical collection,
 source-grounded answers and period retrospectives, scheduled collection from
 both new sources, and private daily-use deployment in `ROADMAP.md`.
 

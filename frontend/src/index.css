@@ -109,3 +109,60 @@ code {
   padding: 4px 8px;
   background: var(--code-bg);
 }
+
+main {
+  padding: 0 24px 32px;
+  text-align: left;
+}
+
+nav, .actions {
+  display: flex;
+  gap: 12px;
+  margin-block: 16px;
+}
+
+article {
+  border-bottom: 1px solid var(--border);
+  padding-block: 16px;
+}
+
+fieldset {
+  border: 0;
+  padding: 0;
+  margin-block: 16px;
+}
+
+label {
+  display: block;
+  margin-top: 12px;
+}
+
+input, textarea {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 720px;
+  padding: 8px;
+  font: inherit;
+}
+
+button {
+  padding: 8px 16px;
+  cursor: pointer;
+  font: inherit;
+}
+
+button:disabled {
+  cursor: wait;
+}
+
+.entry-content {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  margin-block: 12px;
+}
+
+[role="alert"] {
+  color: #c33;
+  margin-block: 12px;
+}

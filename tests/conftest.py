@@ -1,7 +1,10 @@
 from collections.abc import Generator
 
+import os
+
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy.engine import make_url
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
@@ -10,9 +13,12 @@ from app.main import app
 from app.models import User
 from app.models.base import Base
 
-TEST_DATABASE_URL = (
-    "postgresql+psycopg://lifhop:lifhop@localhost:5433/lifhop_test"
+TEST_DATABASE_URL = os.environ.get(
+    "TEST_DATABASE_URL",
+    "postgresql+psycopg://lifhop:lifhop@localhost:5433/lifhop_test",
 )
+if not (make_url(TEST_DATABASE_URL).database or "").endswith("_test"):
+    raise ValueError("TEST_DATABASE_URL must name a disposable database ending in _test")
 
 test_engine = create_engine(TEST_DATABASE_URL)
 
