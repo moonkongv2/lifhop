@@ -662,3 +662,156 @@ presigned-URL behavior needed for development without contacting AWS S3.
 - deployment configuration or container networking changes local endpoints
 - SeaweedFS no longer provides a suitable local development image
 - storage behavior requires verification against real AWS S3
+
+---
+
+## ADR-014 — Finish a private multi-source release before commercial work
+
+**Status:** Accepted direction; implementation pending
+
+**Date:** 2026-09-30
+
+### Decision
+
+Prioritize recovery of past solutions and decision reasons, then period
+retrospectives, then project resumption. Support ordinary life records without
+requiring a project. Add Codex CLI on the owner's single Mac and selected
+personal/organization GitHub repositories to the personal-release requirements,
+alongside existing ChatGPT/Markdown/manual inputs.
+
+Both new sources require accessible historical backfill, scheduled collection,
+and collect-now controls. GitHub prioritizes direct commits, relevant diffs,
+and key documents; PRs/reviews/issues/comments remain required. Exclude
+whole-codebase indexing and other provider integrations from this release.
+Verify both sources before building cross-source answers; implement scheduling
+after the shared ingestion/history behavior is tested.
+
+### Rationale and consequences
+
+The owner's useful context spans several services. A ChatGPT-only archive
+cannot establish the intended retrieval value. Full-period collection means
+all accessible records within an explicit source/branch/content scope; missing
+historical data must be reported, not invented. Codex source format/access and
+GitHub repository inventory still need verification.
+
+`ROADMAP.md` now defines the sequence. This refines ADR-007/008: low recurring
+effort is required for Codex and GitHub, while manual ChatGPT ZIP imports remain
+the planning default. ADR-009's experimental DOM status is unchanged.
+Commercial onboarding, billing, and broad provider expansion follow private
+release acceptance rather than blocking it.
+
+---
+
+## ADR-015 — Preserve collected history and distinguish two kinds of deletion
+
+**Status:** Accepted direction; implementation pending
+
+**Date:** 2026-09-30
+
+### Decision
+
+Retain changed collected versions under a stable logical Entry identity and
+identify the current version explicitly. Unchanged replay creates no new
+version. An older or incomplete snapshot must not replace a newer, more
+complete current record merely because it arrived later. Preserve source
+identity, time, provenance, and completeness information; unknown freshness
+requires reconciliation rather than blind replacement.
+
+Confirmed source deletion retains collected content with a deletion marker.
+Authorization loss, collection failure, and absence from a partial listing do
+not establish source deletion. An explicit lifhop deletion immediately hides
+all associated content/versions from retrieval and answers and schedules content
+purge; minimal owner/source identity tombstones prevent automatic resurrection.
+The suppression check applies to backfill, retries, in-flight jobs, and restore.
+Only an explicit owner action may allow reimport.
+
+Define raw-artifact/shared-ZIP handling and backup expiry with the deletion
+implementation. Preserve unaffected records without continuing to expose or
+indefinitely retain explicitly deleted content in a downloadable archive.
+
+### Rationale and consequences
+
+Historical questions need inspectable past evidence. Current full-replacement
+upsert cannot provide this, and source deletion has a different intent from an
+owner asking lifhop to forget a record. This refines ADR-001/002: raw preservation
+is subject to explicit deletion, and upsert selects a current version without
+discarding collected history. It does not reconstruct edits never collected.
+
+Introduce migrations and behavioral tests in Phase 2.2. Existing Entries can
+become initial observed versions. Keep imported source content read-only and
+personal annotations separate from source updates; manual Entries stay editable.
+Retention/cost conflicts must be surfaced rather than silently pruning history.
+
+---
+
+## ADR-016 — Separate collection permission from external-AI permission
+
+**Status:** Accepted direction; implementation pending
+
+**Date:** 2026-09-30
+
+### Decision
+
+Support repository/source and individual-record exclusions from external AI.
+Permission to retain a record in lifhop's AWS deployment is separate from
+permission to transmit it to a model provider. Collection exclusions operate
+before upload; secrets and excluded local payloads must not enter the archive.
+
+Start new sources with external AI disabled until the owner enables it. A
+repository/record denial wins over broader permission, survives reimport, and
+applies to remote embeddings, reranking, summaries, answer context, and logging/
+telemetry that would transmit content. Derived records inherit all contributing
+sources' restrictions. Recheck policy before outbound requests; invalidate
+queued work and cached derivatives when policy changes. Previously transmitted
+content cannot be recalled by changing local policy.
+
+### Rationale and consequences
+
+The owner permits external AI for selected personal data while requiring
+exclusions for particular repositories/records. Filtering only the final answer
+prompt would still leak content through indexing or intermediate summaries.
+Excluded records remain available through owner-scoped keyword search and direct
+viewing. Local semantic inference is an optional later optimization within the
+budget, not a prerequisite for private records to be useful.
+
+Policies and deletion state must be restored with the data. Test prohibited
+egress at every external-AI boundary using synthetic sensitive markers. Actual
+repository policies are selected during setup; no private corpus has been
+uploaded or authorized for AI processing by this documentation change.
+
+---
+
+## ADR-017 — Bound the private deployment by a combined monthly budget
+
+**Status:** Accepted constraint; hosting choice pending
+
+**Date:** 2026-09-30
+
+### Decision
+
+Provide authenticated access from external networks and other devices, prefer
+AWS, and fit lifhop's combined hosting/storage/backups/AI usage within USD 20
+per month. Account for applicable taxes, network, queues, logs, and any new
+DNS/domain costs. Initial historical indexing is part of the budget as well.
+Do not rely on trial credits or assume model APIs are covered by subscriptions.
+
+Evaluate a small single-host deployment before multi-service infrastructure.
+The README's potential ECS/RDS/ALB architecture is not a required resource list.
+Choose host, region, credential strategy, and model only after corpus sizing,
+memory/load checks, and a total cost estimate. Preserve role-based AWS access
+where supported and document any required alternative; do not silently introduce
+permanent embedded credentials. No hosting service is selected by this ADR.
+
+### Rationale and consequences
+
+The private release serves one owner and must remain affordable. Source history
+and model work are variable costs, so enforce bounded imports, storage growth,
+paid-job concurrency, and model spend with headroom. Pause optional paid work
+when its allowance is exhausted while preserving stored records and keyword
+search. Billing alerts supplement these controls; they are not a hard spending
+cap. Fixed infrastructure continues to accrue costs when jobs pause.
+
+Do not silently increase the budget or discard agreed source coverage to fit.
+If measurements cannot satisfy the constraints, present the concrete tradeoff
+and revise the plan. Revisit deployment architecture for commercial demand or
+measured personal-release capacity limits.

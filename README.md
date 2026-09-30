@@ -23,6 +23,11 @@ Personal data is scattered across many services and formats:
 
 lifhop aims to normalize these sources into a common internal model so that they can be searched and queried together.
 
+Personal-release priorities are finding past solutions and decision reasons,
+reviewing a period, and resuming projects, in that order. Ordinary life records
+such as travel planning belong alongside development records. Complete this
+private release before planning a commercial service.
+
 Example questions:
 
 - What decisions did I make about the battery design for my bike project?
@@ -30,6 +35,7 @@ Example questions:
 - What did I investigate about App Store registration?
 - Summarize my work on a project during August 2026.
 - Why did I choose pgvector instead of OpenSearch?
+- Which rental car company did I use in Okinawa in April 2026, and why?
 
 Answers should be grounded in stored records and provide references back to the original sources.
 
@@ -77,28 +83,41 @@ to support idempotent upsert and safe reprocessing.
 
 A broader persistent source/connection model may be added later when connected or continuous-capture workflows make its lifecycle concrete.
 
-## Planned Data Sources
+## Data Sources and Release Scope
 
 ### Manual sources
 
 - Text logs
 - Notes
 - Markdown
-- PDF
-- Images
+- PDF and images as attachments; searchable extraction/OCR is deferred
 
 ### Import / capture sources
 
-- ChatGPT data export
-- ChatGPT Web capture PoC
-- Gemini / Google Takeout
-- Notion
-- GitHub
-- Codex / Claude Code session data
+- ChatGPT data export (implemented backend; browser import planned)
+- Codex CLI on one Mac: available past sessions and scheduled collection of
+  new messages, commands/results, and recorded code changes (planned)
+- Selected personal/organization GitHub repositories: full accessible periods,
+  commits, relevant diffs/documents, PRs/reviews, and issues/comments (planned)
 
-Other sources may be added later through the common importer/canonical normalization boundary.
+Codex and GitHub are both required for the private release, with scheduled and
+on-demand collection. The ChatGPT Web capture PoC remains experimental.
+Gemini, Notion, Claude Code, and other sources are later candidates through the
+common importer/canonical normalization boundary.
 
-## High-Level Target Architecture
+The private release must retain collected versions, prevent deleted records
+from being reimported, and support repository/record-level exclusions from
+external AI, including embeddings. These are planned requirements; current
+upsert replaces Entry content. See `ROADMAP.md` for the agreed scope and checks.
+
+## Long-Term Architecture Direction
+
+The private release targets access from other devices and external networks,
+preferably on AWS, within USD 20/month including storage/backups and AI usage.
+Evaluate a small single-host deployment first. The diagram and service list
+below describe a possible longer-term architecture, not required private-release
+resources. Host, region, identity setup, workload fit, and total cost remain to
+be verified before provisioning.
 
 ```text
                     Clients
@@ -252,8 +271,9 @@ The ChatGPT Web Capture PoC is **LIMITED GO**: its current DOM extractor is
 unreliable, so it is not a dependable product capture path.
 
 The next user-visible result is creating and managing a text Entry through the
-browser. Import, search, source-grounded answers, recurring capture, and
-private daily-use deployment follow in `ROADMAP.md`.
+browser. Import and search are followed by Codex/GitHub historical collection,
+source-grounded answers and period retrospectives, scheduled collection from
+both new sources, and private daily-use deployment in `ROADMAP.md`.
 
 See `CURRENT.md` for the active product slice and `ROADMAP.md` for its
 completion criteria.

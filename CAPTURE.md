@@ -6,6 +6,32 @@ It complements `ROADMAP.md` and `DECISIONS.md`.
 
 The capture strategy is intentionally provider-aware. Different external services expose different APIs, browser surfaces, mobile sharing behavior, export mechanisms, and policy constraints. lifhop should not force every provider through one acquisition mechanism.
 
+## Personal-release scope — 2026-09-30
+
+The selected additional sources are **Codex CLI on one Mac and GitHub**.
+Both accessible historical collection and scheduled/on-demand updates are
+required. Codex includes questions/answers, command/test results, and recorded
+code changes, with secrets, binaries, and oversized outputs excluded before
+upload. GitHub covers selected personal/organization public/private repositories;
+commits, relevant diffs, and key documents come first, followed by PRs/reviews
+and issues/comments. Whole-codebase indexing is deferred.
+
+Verify source access, available history, branch/content scope, and data volume
+before implementing the adapters. Prefer documented Codex stored-history reads;
+any local-format fallback needs version checks and fixtures. Never execute
+captured commands or modify source history. Codex collection pauses while the
+Mac is asleep/offline; existing uploaded records remain accessible in the cloud.
+
+Keep acquisition exclusions separate from permission to use external AI.
+Preserve collected versions and confirmed source-deletion markers; explicit
+lifhop deletions suppress reimport. Apply the rules in ADR-015 and ADR-016 to
+all capture/import paths. These capabilities are planned, not yet implemented.
+
+ChatGPT ZIP import remains available. Manual ZIP collection is the planning
+default for ChatGPT in this release; repairing/automating the DOM extension is
+not a release prerequisite. Other provider/platform sections below describe
+later options or historical PoC work. `ROADMAP.md` defines the active scope.
+
 ---
 
 # Product Principle
@@ -689,24 +715,29 @@ defined by product outcomes in `ROADMAP.md`:
 Usable archive and search using existing import paths
         |
         v
-Source-grounded answers from stored records
+Verify Codex CLI and GitHub acquisition and coverage
         |
         v
-Compare actual recurring sources and supported acquisition methods
+Add provenance, versions, deletion/AI policy, and historical collection
         |
         v
-Build one dependable low-effort capture or sync flow
+Source-grounded answers and period retrospectives across sources
         |
         v
-Expand providers and platforms based on use and reliability
+Scheduled and on-demand collection from both Codex and GitHub
+        |
+        v
+Private AWS daily use within the combined USD 20/month budget
+        |
+        v
+Commercial service planning and evidence-driven expansion
 ```
 
-The key selection rule is:
+The acquisition-method selection rule is:
 
-> Choose the first ongoing source by useful data, supported access,
-> reliability, maintenance, and provider policy. A browser extension, mobile
-> share target, and connected provider are alternatives to evaluate, not
-> simultaneous prerequisites.
+> Codex CLI and GitHub are selected. Choose their acquisition methods by
+> supported access, coverage, reliability, and maintenance. Reuse the common
+> ingestion boundary; keep browser/mobile experiments out of the critical path.
 
 ---
 

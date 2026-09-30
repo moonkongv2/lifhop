@@ -300,6 +300,17 @@ refactor: extract importer normalization
 
 Commits should describe meaningful units of work.
 
+## Commit Checkpoints
+
+Recommend commit timing proactively at coherent, reviewable boundaries.
+A product slice may contain multiple commits when changes have independent
+purposes, such as schema changes, API behavior, and UI.
+
+State whether to commit now or after user verification, explain why, and
+suggest a commit message. Avoid combining unrelated work or committing
+knowingly broken states. Create commits when authorized; existing user
+authorization remains valid within its stated scope.
+
 ---
 
 # Documentation Updates
@@ -370,3 +381,22 @@ Before reporting completion:
 8. State unresolved issues or follow-up work.
 
 Never hide unfinished work.
+
+## Implementation Handoff
+
+After every implementation task, provide:
+
+1. What changed and why.
+2. Checks actually executed and their results, including failures.
+3. User verification steps: required setup or commands, access URL when
+   applicable, actions to perform, and expected results.
+4. Limitations, unverified behavior, and unresolved follow-up work.
+5. A commit checkpoint recommendation and suggested message, or the commit
+   ID and summary if a commit was already authorized and created.
+
+Clearly separate checks performed by the agent from checks left to the user.
+Scale the guide to the change; for documentation-only work, identify the
+sections to review rather than requiring application tests.
+
+Present the completed slice for user verification and address feedback before
+starting the next slice, unless the user explicitly directs otherwise.
