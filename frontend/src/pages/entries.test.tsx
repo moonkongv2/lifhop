@@ -9,7 +9,7 @@ import LoginPage from "./LoginPage";
 import type { Entry } from "../api/entries";
 
 const note: Entry = {
-  id: 1, type: "NOTE", title: "여행 메모", content: "첫 줄\n둘째 줄",
+  id: 1, source: "manual", type: "NOTE", title: "여행 메모", content: "첫 줄\n둘째 줄",
   event_at: null, created_at: "2026-10-01T00:00:00Z", updated_at: "2026-10-01T00:00:00Z",
 };
 let records: Entry[];
@@ -39,11 +39,16 @@ beforeEach(() => {
       return Response.json(records[0]);
     }
     if (method === "DELETE") {
-      records = [];
+      records = records.filter((entry) => entry.id !== Number(path.split("/").at(-1)));
       return new Response(null, { status: 204 });
     }
-    if (path === "/api/entries") return Response.json(records);
-    return records[0] ? Response.json(records[0]) : new Response(null, { status: 404 });
+    if (path.startsWith("/api/entries/search?")) {
+      const params = new URL(path, "http://localhost").searchParams;
+      const offset = Number(params.get("offset") ?? 0);
+      return Response.json({ items: records.slice(offset, offset + 20), total: records.length, limit: 20, offset, timezone: "Asia/Seoul" });
+    }
+    const record = records.find((entry) => entry.id === Number(path.split("/").at(-1)));
+    return record ? Response.json(record) : new Response(null, { status: 404 });
   }));
 });
 
@@ -123,7 +128,7 @@ describe("Entry browser flow", () => {
     failedMethod = "PATCH";
     failureStatus = 422;
     click("저장");
-    await screen.findByText(/입력값을 확인/);
+    await screen.findByText(/입력값/);
     expect(records[0].title).toBe(note.title);
     expect((screen.getByLabelText("제목") as HTMLInputElement).value).toBe("초안 수정");
     click("취소");
@@ -172,7 +177,7 @@ describe("Entry browser flow", () => {
     queryClient.setQueryData(["entry", "1"], note);
     vi.stubGlobal("fetch", vi.fn(async (path: string) => {
       if (path === "/api/auth/login") return Response.json({ access_token: "new-account-token" });
-      return Response.json([]);
+      return Response.json({ items: [], total: 0, limit: 20, offset: 0, timezone: "Asia/Seoul" });
     }));
     mount("/login", queryClient);
     fireEvent.change(screen.getByLabelText("Email"), { target: { value: "new@example.com" } });
@@ -197,5 +202,74 @@ describe("Entry browser flow", () => {
     click("저장");
     await waitFor(() => expect((screen.getByLabelText("제목") as HTMLInputElement).disabled || screen.getByLabelText("제목").closest("fieldset")?.disabled).toBe(true));
     expect(screen.getByText("저장 중...")).toBeTruthy();
+  });
+});
+
+
+describe("Entry search and pagination", () => {
+  it("restores URL filters and preserves them through detail navigation", async () => {
+    records = [note];
+    mount("/entries?q=여행&source=manual&type=NOTE&date_field=event_at&date_from=2026-10-01&date_to=2026-10-02");
+    await screen.findByRole("heading", { name: note.title });
+    expect((screen.getByLabelText("검색어") as HTMLInputElement).value).toBe("여행");
+    expect((screen.getByLabelText("출처") as HTMLSelectElement).value).toBe("manual");
+    expect((screen.getByLabelText("날짜 기준") as HTMLSelectElement).value).toBe("event_at");
+    const firstPath = requests[0].path;
+    expect(new URL(firstPath, "http://localhost").searchParams.get("date_to")).toBe("2026-10-02");
+    click(note.title);
+    await screen.findByText(/원본\/사건 날짜: 알 수 없음/);
+    click("← 목록으로");
+    await screen.findByRole("heading", { name: note.title });
+    expect((screen.getByLabelText("검색어") as HTMLInputElement).value).toBe("여행");
+    expect(requests.at(-1)?.path).toBe(firstPath);
+  });
+
+  it("paginates without losing a query and resets the page on a new filter", async () => {
+    records = Array.from({ length: 21 }, (_, i) => ({ ...note, id: i + 1, title: `메모 ${i + 1}` }));
+    mount("/entries?q=메모");
+    await screen.findByText("총 21개 · 1페이지");
+    expect((screen.getByText("이전 페이지") as HTMLButtonElement).disabled).toBe(true);
+    click("다음 페이지");
+    await screen.findByText("총 21개 · 2페이지");
+    expect(screen.queryByRole("heading", { name: "메모 1" })).toBeNull();
+    expect((screen.getByText("다음 페이지") as HTMLButtonElement).disabled).toBe(true);
+    const params = new URL(requests.at(-1)!.path, "http://localhost").searchParams;
+    expect(params.get("q")).toBe("메모");
+    expect(params.get("offset")).toBe("20");
+    fireEvent.change(screen.getByLabelText("출처"), { target: { value: "manual" } });
+    click("검색");
+    await screen.findByText("총 21개 · 1페이지");
+    expect(new URL(requests.at(-1)!.path, "http://localhost").searchParams.get("source")).toBe("manual");
+    expect(new URL(requests.at(-1)!.path, "http://localhost").searchParams.has("offset")).toBe(false);
+    click("초기화");
+    await waitFor(() => expect(requests.at(-1)?.path).toBe("/api/entries/search?limit=20"));
+  });
+
+  it("validates calendar ranges before applying and shows filtered empty results", async () => {
+    mount("/entries?q=없는기록");
+    await screen.findByText("검색 조건에 맞는 기록이 없어.");
+    const count = requests.length;
+    fireEvent.change(screen.getByLabelText("시작일"), { target: { value: "2026-10-02" } });
+    fireEvent.change(screen.getByLabelText("종료일"), { target: { value: "2026-10-01" } });
+    click("검색");
+    await screen.findByText("시작일은 종료일보다 늦을 수 없어.");
+    expect(requests).toHaveLength(count);
+  });
+
+  it("moves back to the last existing page after deletion", async () => {
+    records = Array.from({ length: 21 }, (_, i) => ({ ...note, id: i + 1, title: `기록 ${i + 1}` }));
+    mount("/entries?q=기록&offset=20");
+    await screen.findByRole("heading", { name: "기록 21" });
+    click("기록 21");
+    await screen.findByText("수정");
+    click("삭제"); click("삭제 확인");
+    await screen.findByText("총 20개 · 1페이지");
+    await waitFor(() => expect(requests.at(-1)?.path).toBe("/api/entries/search?q=%EA%B8%B0%EB%A1%9D&limit=20"));
+  });
+
+  it("shows dates in Seoul even when the browser uses a different zone", async () => {
+    records = [{ ...note, created_at: "2026-09-30T16:00:00Z" }];
+    mount();
+    await screen.findByText(/등록일: 2026. 10. 1. 오전 1:00/);
   });
 });

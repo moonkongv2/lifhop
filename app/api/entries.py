@@ -1,11 +1,13 @@
+from datetime import date, timedelta
 from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from app.db import get_db
-from app.models.entry import Entry
+from app.models.entry import Entry, EntrySource, EntryType
 from app.models.user import User
-from app.schemas.entry import EntryCreate, EntryResponse, EntryUpdate
+from app.schemas.entry import EntryCreate, EntryResponse, EntrySearchResponse, EntryUpdate
+from app.services.entry_search import DateField, date_boundary, search_entries
 from app.auth import get_current_user
 
 router = APIRouter(prefix="/entries", tags=["entries"])
@@ -26,6 +28,7 @@ def create_entry(
 ) -> Entry:
     entry = Entry(
         user_id=current_user.id,
+        provider="manual",
         type=data.type,
         title=data.title,
         content=data.content,
@@ -49,12 +52,40 @@ def list_entries(
     statement = (
         select(Entry)
         .where(Entry.user_id == current_user.id)
-        .order_by(Entry.created_at.desc())
+        .order_by(Entry.created_at.desc(), Entry.id.desc())
         .offset(offset)
         .limit(limit)
     )
 
     return list(db.scalars(statement).all())
+
+
+@router.get("/search", response_model=EntrySearchResponse)
+def search_entry_list(
+    db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
+    q: Annotated[str, Query(max_length=256)] = "",
+    source: EntrySource | None = None,
+    type: EntryType | None = None,
+    date_field: DateField = "created_at",
+    date_from: date | None = None,
+    date_to: date | None = None,
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    offset: Annotated[int, Query(ge=0)] = 0,
+) -> EntrySearchResponse:
+    if date_from and date_to and date_from > date_to:
+        raise HTTPException(422, "Start date must be on or before end date")
+    try:
+        if date_from:
+            date_boundary(date_from)
+        if date_to:
+            date_boundary(date_to + timedelta(days=1))
+    except (OverflowError, ValueError):
+        raise HTTPException(422, "Date range is outside supported timestamp bounds") from None
+    return search_entries(
+        db, user_id=current_user.id, q=q, source=source, entry_type=type,
+        date_field=date_field, date_from=date_from, date_to=date_to, limit=limit, offset=offset,
+    )
 
 
 @router.get("/{entry_id}", response_model=EntryResponse)

@@ -1,13 +1,17 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, Navigate, useNavigate, useParams } from "react-router";
+import { Link, Navigate, useNavigate, useParams, useLocation } from "react-router";
 import { deleteEntry, fetchEntry, updateEntry } from "../api/entries";
 import type { EntryUpdate } from "../api/entries";
 import ArtifactDownload from "../components/ArtifactDownload";
+import { formatEntryDate, sourceLabels } from "../utils/entries";
 import EntryForm from "../components/EntryForm";
 
 function EntryDetailPage() {
   const { id } = useParams();
+  const location = useLocation();
+  const search = typeof location.state?.entryListSearch === "string" ? location.state.entryListSearch : "";
+  const listTarget = search ? `/entries?${search}` : "/entries";
   const token = localStorage.getItem("access_token");
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -31,19 +35,19 @@ function EntryDetailPage() {
     onSuccess: async () => {
       queryClient.removeQueries({ queryKey: ["entry", id], exact: true });
       await queryClient.invalidateQueries({ queryKey: ["entries"] });
-      navigate("/entries", { replace: true });
+      navigate(listTarget, { replace: true });
     },
   });
 
   if (!token) return <Navigate to="/login" replace />;
   if (!id) return <p>Entry ID가 없어.</p>;
   if (isLoading) return <p role="status">불러오는 중...</p>;
-  if (error) return <><p role="alert">{error.message}</p><button onClick={() => void refetch()}>다시 시도</button><Link to="/entries">목록으로</Link></>;
+  if (error) return <><p role="alert">{error.message}</p><button onClick={() => void refetch()}>다시 시도</button><Link to={listTarget}>목록으로</Link></>;
   if (!entry) return <p>Entry를 찾을 수 없어.</p>;
 
   return (
     <>
-      <Link to="/entries">← 목록으로</Link>
+      <Link to={listTarget}>← 목록으로</Link>
       {editing ? (
         <>
           <h2>Entry 수정</h2>
@@ -53,11 +57,11 @@ function EntryDetailPage() {
       ) : (
         <>
           <h2>{entry.title}</h2>
-          <p>Type: {entry.type}</p>
+          <p>{sourceLabels[entry.source ?? "unknown"]} · {entry.type}</p>
           <p className="entry-content">{entry.content ?? "내용 없음"}</p>
-          {entry.event_at && <p>Event at: {new Date(entry.event_at).toLocaleString()}</p>}
-          <p>Created: {new Date(entry.created_at).toLocaleString()}</p>
-          <p>Updated: {new Date(entry.updated_at).toLocaleString()}</p>
+          <p>원본/사건 날짜: {formatEntryDate(entry.event_at)} (Asia/Seoul)</p>
+          <p>등록일: {formatEntryDate(entry.created_at)} (Asia/Seoul)</p>
+          <p>수정일: {formatEntryDate(entry.updated_at)} (Asia/Seoul)</p>
           {entry.import_artifact_id && <ArtifactDownload key={entry.import_artifact_id} artifactId={entry.import_artifact_id} />}
           {confirmDelete ? (
             <div>

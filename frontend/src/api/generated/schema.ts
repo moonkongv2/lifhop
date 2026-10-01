@@ -22,6 +22,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/entries/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search Entry List */
+        get: operations["search_entry_list_entries_search_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/entries/{entry_id}": {
         parameters: {
             query?: never;
@@ -441,6 +458,8 @@ export interface components {
             id: number;
             /** Import Artifact Id */
             import_artifact_id?: number | null;
+            /** @default unknown */
+            source: components["schemas"]["EntrySource"];
             type: components["schemas"]["EntryType"];
             /** Title */
             title: string;
@@ -459,6 +478,27 @@ export interface components {
              */
             updated_at: string;
         };
+        /** EntrySearchResponse */
+        EntrySearchResponse: {
+            /** Items */
+            items: components["schemas"]["EntryResponse"][];
+            /** Total */
+            total: number;
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+            /**
+             * Timezone
+             * @default Asia/Seoul
+             */
+            timezone: string;
+        };
+        /**
+         * EntrySource
+         * @enum {string}
+         */
+        EntrySource: "manual" | "markdown" | "chatgpt" | "unknown";
         /**
          * EntryType
          * @enum {string}
@@ -647,6 +687,44 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["EntryResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_entry_list_entries_search_get: {
+        parameters: {
+            query?: {
+                q?: string;
+                source?: components["schemas"]["EntrySource"] | null;
+                type?: components["schemas"]["EntryType"] | null;
+                date_field?: "created_at" | "event_at";
+                date_from?: string | null;
+                date_to?: string | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EntrySearchResponse"];
                 };
             };
             /** @description Validation Error */

@@ -3,6 +3,7 @@
 React + TypeScript + Vite. The browser supports login, Entry list/detail, and
 creating, editing, and deleting notes through the authenticated API. It also
 supports Markdown/ChatGPT ZIP uploads, job results/retry, and protected originals.
+Entries support phrase search, source/type/date filters, and pagination.
 New records use type `NOTE`; editing preserves the existing type and event date.
 
 ## Run locally
@@ -89,6 +90,41 @@ http://localhost:8000/docs, then sign in through the browser.
 
 No actual AWS request is needed for these checks with both local modes selected.
 
+## Phase 1.3 user check
+
+Apply the new migration and restart the API using the local commands above.
+The migration adds a pagination index and labels old, artifact-linked Markdown
+records. It does not infer the source of older records without evidence.
+Search/note checks need PostgreSQL and the API; storage/worker are required only
+if importing additional samples.
+
+1. Open http://localhost:5173/entries and create a note titled `제주 여행` with
+   content `Alice Kim / 120 RPM / 3.5 km / use_state / 100%`.
+2. Search each phrase or code term, including `alice kim`. Expect the note to
+   appear. `%` and `_` are literal characters. Search covers title/content with
+   case-insensitive substring matching; it does not split words or infer synonyms.
+   Exact titles rank first, title substrings next, body matches next; ties use
+   newest registration and descending ID. No project/repository is required.
+3. Combine 출처=직접 작성 and 유형=노트. Markdown/ChatGPT records should disappear.
+   Switch to Markdown/문서 or ChatGPT/대화 to find the corresponding imports.
+   Unprovable older sources display 출처 미상, even when they look like a note.
+4. Select 날짜 기준=등록일 and today's date for both bounds. The note appears.
+   Switch to 원본/사건 날짜 with the same range: a note without `event_at` is
+   excluded. ChatGPT's source date is its conversation creation timestamp.
+   Markdown has no source date. A date written in text does not set `event_at`.
+   Date bounds use Asia/Seoul, include both selected days, and dates are displayed
+   in that timezone regardless of the browser's timezone.
+5. With more than 20 matching records, use 다음 페이지/이전 페이지. The total and
+   page change while filters remain selected. Reload or open the list URL in
+   another tab, open a detail then 목록으로, and confirm the filters/page survive.
+   New filters and 초기화 return to page one. Deleting the final record on the
+   last page moves back to the last remaining page.
+6. Search an absent phrase: expect 검색 조건에 맞는 기록이 없어. Reversed dates
+   show validation without applying. API failures show a retry button.
+
+Phase 1.3 owner browser verification is pending. Automated API tests use actual
+isolated PostgreSQL; frontend tests render pages with mocked API responses.
+
 ## Import limits and retry rules
 
 | Environment setting | Default |
@@ -121,7 +157,9 @@ at exactly the deadline. Progress is status-level; per-item counts are final.
 
 Frontend tests render the real pages with a separate in-memory API stub. They
 cover the note lifecycle, server-driven cache updates, validation, cancellation,
-loading/failures, retry, missing records, and unauthenticated navigation. Import
+loading/failures, retry, missing records, and unauthenticated navigation. Search
+tests cover URL filters, pagination/reset, detail return, deletion page recovery,
+calendar validation, empty results, and Seoul date display. Import
 page tests cover multipart upload, polling, item errors, cache refresh, original
 download preparation, and resuming jobs by URL.
 They do not establish a real browser-to-PostgreSQL integration result.
@@ -158,8 +196,11 @@ npm run generate:api
 
 ## Current limits
 
-The list displays the API's latest 20 records; pagination/search is Phase 1.3.
-Job history also shows the latest 20 jobs; each job's result Entries have
+Entry search/list and job-result Entries have pagination. Search has no fuzzy
+matching, stemming, or attachment content extraction. Ranked searches/counts
+still examine owned rows; real-corpus performance requires later measurement.
+Offset pages can shift during concurrent changes. Asia/Seoul is fixed initially.
+Job history shows the latest 20 jobs; each job's result Entries have
 pagination. Earlier Entries/jobs do not have reconstructed artifact/result
 links. Markdown reupload creates a new Entry. Tokens remain in localStorage
 for development;

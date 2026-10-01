@@ -4,9 +4,10 @@ Last updated: 2026-10-01
 
 ## Current product slice
 
-Phase 1.2 in `ROADMAP.md` — import and inspect Markdown/ChatGPT ZIP records.
-Implementation, local checks, and owner browser verification are complete.
-Phase 1.1 was also confirmed by the owner. Setup/checks: `frontend/README.md`.
+Phase 1.3 in `ROADMAP.md` — search, filter, and paginate owned records.
+Implementation and local automated checks are complete; owner browser verification
+is pending. Phases 1.1/1.2 were confirmed by the owner. Setup/checks:
+`frontend/README.md`.
 
 ## Personal-release target
 
@@ -26,6 +27,15 @@ exclusions are planned requirements, not implemented capabilities.
 ## What works now
 
 - FastAPI/PostgreSQL backend with authentication and user-owned Entry CRUD.
+- Owner-scoped literal phrase search in title/content, combined source/type/date
+  filters, total counts, and 20-record browser pagination. Search state lives in
+  the URL and survives detail/create navigation.
+- Title matches rank before body matches, then newest registration and ID. Dates
+  are displayed/filtered in Asia/Seoul; registration and source/event dates are
+  separate. Missing event dates are never inferred from text.
+- New notes/Markdown imports have explicit provenance. Only old Markdown rows
+  with matching owner/artifact MIME evidence are backfilled; other unproven
+  sources remain unknown. User/date/ID index supports ordered browsing.
 - Browser Markdown/ChatGPT ZIP upload, job polling/history, final counts,
   sanitized item errors, paginated result Entries, retry, and protected originals.
 - Local SeaweedFS storage and PostgreSQL ImportJob queue are defaults; explicit
@@ -42,7 +52,7 @@ exclusions are planned requirements, not implemented capabilities.
 - Empty/loading/error states, draft-preserving save errors, title validation,
   deletion confirmation, and account-switch cache clearing.
 - Disposable PostgreSQL tests use real migrations in fresh schemas. Local
-  checks: 117 backend tests and 19 frontend tests pass; frontend lint/build pass.
+  checks: 142 backend tests and 24 frontend tests pass; frontend lint/build pass.
 - Actual local S3 upload/download and local queue/worker checks passed with
   synthetic records in an isolated DB schema; synthetic objects were removed.
 - GitHub Actions checks for migrations, backend/frontend tests, generated API
@@ -55,18 +65,23 @@ user-verifiable product slices in `ROADMAP.md`.
 
 ## Next
 
-1. Implement Phase 1.3: owner-scoped keyword search, source/type/date filters,
-   and pagination.
-2. Verify Korean/English queries and date semantics before owner review.
-3. Follow the sequence: archive/search → Codex/GitHub history → evidence-based
-   answers/retrospectives → scheduled collectors → private AWS release.
+1. Owner verifies Phase 1.3 searches, combined filters, dates, and pagination
+   using `frontend/README.md`, then commit the slice.
+2. Phase 2.1: verify Codex/GitHub historical acquisition and define coverage with
+   small selected samples before building collectors.
+3. Follow the sequence: Codex/GitHub history → evidence-based answers/retrospectives
+   → scheduled collectors → private AWS release.
 
 ## Known limitations
 
 - Owner confirmed Phase 1.2 in the browser. Remote CI execution remains
   pending; frontend automated tests stub API.
-- Entry list and recent job history show the latest 20 records/jobs. Job results
-  have pagination. Archive-wide search/pagination and answers are not available.
+- Search is literal case-insensitive substring matching; no word stemming, fuzzy
+  matching, relevance model, attachment text extraction, or LLM answers. Large
+  real-corpus performance is unverified; ranked searches/counts scan owned rows.
+- Offset pages can shift when records change concurrently. Timezone is initially
+  fixed to Asia/Seoul; changing it in user settings is not available.
+- Recent job history shows the latest 20 jobs; Entry lists/job results paginate.
 - Counts/item errors are final results; RUNNING does not expose per-item progress.
 - Earlier imported Entries/jobs have no reconstructed artifact/result links.
   Markdown reupload creates another Entry; ChatGPT reupload uses stable IDs.

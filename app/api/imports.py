@@ -65,7 +65,7 @@ async def import_markdown(
     except ValueError:
         raise HTTPException(400, "Markdown must contain UTF-8 text and a non-empty title of at most 255 characters") from None
     artifact = store_artifact(db, current_user.id, filename, content, "text/markdown")
-    entries = [Entry(user_id=current_user.id, import_artifact_id=artifact.id,
+    entries = [Entry(user_id=current_user.id, provider="markdown", import_artifact_id=artifact.id,
                      **value.model_dump()) for value in values]
     db.add_all(entries)
     db.commit()

@@ -863,3 +863,54 @@ do not reconstruct result/original links for pre-existing imports. Versioning,
 freshness/completeness reconciliation, deletion suppression, and artifact purge
 remain Phase 2.2; new-job reimport still uses the existing content-replacement
 semantics. There are no new AWS resources or recurring costs in this slice.
+
+---
+
+## ADR-019 — Start archive search with literal phrases and explicit dates
+
+**Status:** Accepted
+**Date:** 2026-10-01
+
+### Decision
+
+Phase 1.3 searches owner-scoped Entry titles and content using PostgreSQL ILIKE
+with escaped wildcards. Trim the query's outer whitespace; preserve its internal
+spaces and punctuation. Rank case-insensitive exact titles, title substrings,
+then body-only matches, breaking ties by created_at DESC and id DESC. This
+supports Korean/English phrases, names, numbers, units, and code symbols without
+introducing a language tokenizer. GET /entries/search returns total/items and
+limit/offset; retain the existing array-returning GET /entries for compatibility.
+Browser pages use 20 items, preserving filters/page in the list URL.
+
+Use existing provider values for provenance: manual, markdown, and chatgpt.
+New manual/Markdown Entries set their provider explicitly. Backfill old Markdown
+only when the artifact owner matches and MIME is text/markdown. Other unproven
+or unrecognized providers display unknown; do not guess from type or content.
+
+created_at means registration in lifhop, while event_at means the known source/
+event timestamp (ChatGPT conversation creation for current imports). Display and
+filter dates in Asia/Seoul initially. Inclusive date ranges become local midnight
+through the next midnight, converted to UTC. Event-date filters exclude NULL;
+neither registration time nor dates mentioned in text fill missing event_at.
+Require an offset on API event_at input. Keep timezone-aware PostgreSQL columns.
+
+### Query-plan evidence and limits
+
+An isolated PostgreSQL 17 temporary table used 100,000 synthetic records across
+20 owners, including Korean titles and numeric/code content, with the existing
+user/provider/external-ID index. EXPLAIN ANALYZE of one owner's newest 20 rows
+changed from Bitmap Heap Scan of 5,000 owned rows plus top-N Sort to Index Scan
+with early LIMIT using (user_id, created_at DESC, id DESC). In one run the list
+query took about 2.40 ms before and 0.03 ms after; these are illustrative local
+synthetic timings, not a real-corpus latency guarantee. Add that B-tree index.
+
+The actual title-ranked phrase query retained a Bitmap Heap Scan plus Sort
+before/after; this index does not accelerate arbitrary substring ranking or
+exact total counts. Do not claim full-text-search performance from the list
+measurement. Synthetic relevance tests cover Korean/English phrases, exact
+names, numbers/units, literal %, _, backslash and code punctuation, title ranking,
+owner isolation, tied timestamps, and Seoul calendar boundaries. Validate real
+corpus relevance/volume before selecting pg_trgm or language-aware full-text
+indexes. There is no fuzzy matching, stemming, synonym expansion, attachment
+extraction, new service, or added dependency. Offset pages may shift during
+concurrent writes; cursor/snapshot pagination remains a later measured need.

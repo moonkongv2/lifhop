@@ -166,3 +166,16 @@ button:disabled {
   color: #c33;
   margin-block: 12px;
 }
+
+.search-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+select {
+  display: block;
+  padding: 8px;
+  font: inherit;
+}

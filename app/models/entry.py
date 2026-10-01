@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import StrEnum
-from sqlalchemy import DateTime, Enum, ForeignKey, String, Text, UniqueConstraint, func
+from sqlalchemy import DateTime, Enum, ForeignKey, Index, String, Text, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column
 from app.models.base import Base
 from typing import TYPE_CHECKING
@@ -10,6 +10,13 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 if TYPE_CHECKING:
     from app.models.user import User
     from app.models.attachment import Attachment
+
+class EntrySource(StrEnum):
+    MANUAL = "manual"
+    MARKDOWN = "markdown"
+    CHATGPT = "chatgpt"
+    UNKNOWN = "unknown"
+
 
 class EntryType(StrEnum):
     LOG = "LOG"
@@ -68,7 +75,15 @@ class Entry(Base):
         nullable=True,
     )
 
+    @property
+    def source(self) -> EntrySource:
+        try:
+            return EntrySource(self.provider) if self.provider else EntrySource.UNKNOWN
+        except ValueError:
+            return EntrySource.UNKNOWN
+
     __table_args__ = (
+        Index("ix_entries_user_created_id", user_id, created_at.desc(), id.desc()),
         UniqueConstraint(
             "user_id",
             "provider",

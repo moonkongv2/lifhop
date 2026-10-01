@@ -38,6 +38,9 @@ def test_import_markdown_persists_entry(
     entry = data[0]
 
     assert entry["id"] is not None
+    assert entry["source"] == "markdown"
+    assert entry["event_at"] is None
+    assert client.get("/entries/search", params={"source": "markdown", "q": "Decorator"}, headers=auth_headers).json()["total"] == 1
     assert entry["type"] == "DOCUMENT"
     assert entry["title"] == "Python Decorator"
     assert entry["content"] == (
