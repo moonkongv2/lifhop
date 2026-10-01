@@ -5,6 +5,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import "./index.css";
 
+import ImportsPage from "./pages/ImportsPage";
+import ImportJobPage from "./pages/ImportJobPage";
 import App from "./App";
 import LoginPage from "./pages/LoginPage";
 import EntryListPage from "./pages/EntryListPage";
@@ -18,6 +20,8 @@ const router = createBrowserRouter([
     path: "/",
     element: <App />,
     children: [
+      { path: "imports", element: <ImportsPage /> },
+      { path: "import-jobs/:id", element: <ImportJobPage /> },
       {
         path: "login",
         element: <LoginPage />,

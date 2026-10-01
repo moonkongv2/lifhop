@@ -815,3 +815,51 @@ Do not silently increase the budget or discard agreed source coverage to fit.
 If measurements cannot satisfy the constraints, present the concrete tradeoff
 and revise the plan. Revisit deployment architecture for commercial demand or
 measured personal-release capacity limits.
+
+---
+
+## ADR-018 — Use durable ImportJob polling for the local import queue
+
+**Status:** Accepted
+**Date:** 2026-10-01
+
+### Decision
+
+Default `QUEUE_MODE=local` uses existing PostgreSQL ImportJob rows as the durable
+work queue, alongside default local SeaweedFS storage. The separate worker polls
+PENDING jobs and recoverable stale RUNNING jobs. `QUEUE_MODE=aws` explicitly
+selects the existing SQS interface; S3 and queue selection remain independent.
+
+### Rationale and alternatives
+
+Phase 1.2 needs ZIP uploads to work locally without contacting AWS. In-memory
+queues lose work across restarts and cannot connect separate API/worker
+processes. An additional SQS-compatible service adds development infrastructure.
+For the current single-owner archive, polling the already-persisted ImportJob
+is sufficient and requires no new service or package. This is a local delivery
+path, not a change to the private-release hosting/queue decision.
+
+### Processing and failure behavior
+
+Job claims use row locks; processing retains a row lock through the durable
+result commit and an owner advisory lock to serialize imports for that owner.
+Completed/partial/failed deliveries are no-ops until explicit retry. Retry accepts
+only FAILED/PARTIAL jobs, with a configurable processing-attempt budget (default
+3). Infrastructure failures allow bounded automatic redelivery; invalid archives
+are recorded as permanent failures and require explicit owner action. In AWS
+mode, acknowledgement follows a durable result, including a permanent rejection.
+This refines ADR-012's former behavior of leaving every processing exception
+unacknowledged. Unknown failures still leave their messages unacknowledged.
+
+A RUNNING job left by a crash is eligible after the processing budget plus 60
+seconds; a live transaction's row lock prevents replacement. Per-item savepoints
+isolate malformed DB values. Limits cover upload/body bytes, declared extracted
+bytes, archive member count, conversation/node counts, query timeout, and deadline
+checks. These are bounded-work controls, not an exact-time process watchdog.
+
+Result Entry IDs, sanitized positional item errors, and attempts are persisted.
+New imports link Entries to their latest original artifact. Migration defaults
+do not reconstruct result/original links for pre-existing imports. Versioning,
+freshness/completeness reconciliation, deletion suppression, and artifact purge
+remain Phase 2.2; new-job reimport still uses the existing content-replacement
+semantics. There are no new AWS resources or recurring costs in this slice.

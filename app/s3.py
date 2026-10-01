@@ -4,6 +4,7 @@ from urllib.parse import urlparse
 from botocore.config import Config
 from botocore.exceptions import ClientError
 from app.config import settings
+from app.importers.limits import ImportValidationError
 
 
 def get_s3_bucket_name() -> str:
@@ -34,6 +35,7 @@ def get_s3_client():
             endpoint_url=settings.local_s3_endpoint,
             config=Config(
                 signature_version="s3v4",
+                connect_timeout=5, read_timeout=15, retries={"max_attempts": 2},
                 s3={"addressing_style": "path"},
             ),
         )
@@ -44,7 +46,7 @@ def get_s3_client():
         region_name=settings.aws_region,
     )
 
-    return session.client("s3")
+    return session.client("s3", config=Config(connect_timeout=5, read_timeout=15, retries={"max_attempts": 2}))
 
 
 def object_exists(s3_key: str) -> bool:
@@ -124,4 +126,13 @@ def download_object(
         Key=s3_key,
     )
 
-    return response["Body"].read()
+    body = response["Body"]
+    try:
+        if response.get("ContentLength", 0) > settings.import_max_upload_bytes:
+            raise ImportValidationError("Stored import exceeds the upload size limit")
+        content = body.read(settings.import_max_upload_bytes + 1)
+        if len(content) > settings.import_max_upload_bytes:
+            raise ImportValidationError("Stored import exceeds the upload size limit")
+        return content
+    finally:
+        body.close()

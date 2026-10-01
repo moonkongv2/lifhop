@@ -94,7 +94,7 @@ A broader persistent source/connection model may be added later when connected o
 
 ### Import / capture sources
 
-- ChatGPT data export (implemented backend; browser import planned)
+- ChatGPT data export ZIP (backend and browser import implemented)
 - Codex CLI on one Mac: available past sessions and scheduled collection of
   new messages, commands/results, and recorded code changes (planned)
 - Selected personal/organization GitHub repositories: full accessible periods,
@@ -216,9 +216,12 @@ connect to real AWS S3 intentionally, set `S3_MODE=aws` and configure
 `S3_BUCKET_NAME` and AWS credentials. The test suite blocks unexpected
 boto3 client creation.
 
-This setting affects S3 only. ChatGPT ZIP submission and the import worker
-still use the configured SQS queue; do not run that flow expecting zero AWS
-requests until local queue support is added.
+Queue selection is separate: `QUEUE_MODE=local` is the default and uses
+PostgreSQL ImportJob rows as a durable local queue. Run the import worker with
+`python -m app.workers.import_worker`; local Markdown and ZIP import require no
+AWS requests when `S3_MODE=local` is also selected. `QUEUE_MODE=aws` intentionally
+uses SQS and requires `SQS_IMPORT_QUEUE_URL` and AWS credentials. See
+`frontend/README.md` for setup, limits, retry behavior, and synthetic samples.
 
 ## Development Philosophy
 
@@ -259,7 +262,7 @@ usable product.
 
 The repository now includes a minimal React + TypeScript + Vite frontend that demonstrates the real browser-to-FastAPI flow:
 
-- React Router routes for login, Entry list/detail, and note creation
+- React Router routes for login, Entry list/detail, note creation, and imports/jobs
 - authenticated calls to the existing FastAPI login and Entry CRUD APIs
 - TanStack Query for Entry server-state handling
 - a Vite development proxy for local `/api/*` requests
@@ -273,7 +276,10 @@ unreliable, so it is not a dependable product capture path.
 Phase 1.1 now supports creating and managing a text Entry through the browser,
 with local automated checks complete and owner browser verification confirmed. See
 `frontend/README.md` for setup, user checks, and isolated test commands.
-Import and search are followed by Codex/GitHub historical collection,
+Phase 1.2 adds browser Markdown/ChatGPT ZIP upload, job status/results/retry,
+protected original downloads, and bounded local processing. Local automated
+checks, a real local-storage/worker integration check, and owner browser
+verification are complete. Search is followed by Codex/GitHub historical collection,
 source-grounded answers and period retrospectives, scheduled collection from
 both new sources, and private daily-use deployment in `ROADMAP.md`.
 

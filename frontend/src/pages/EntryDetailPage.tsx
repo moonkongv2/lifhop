@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, Navigate, useNavigate, useParams } from "react-router";
 import { deleteEntry, fetchEntry, updateEntry } from "../api/entries";
 import type { EntryUpdate } from "../api/entries";
+import ArtifactDownload from "../components/ArtifactDownload";
 import EntryForm from "../components/EntryForm";
 
 function EntryDetailPage() {
@@ -57,6 +58,7 @@ function EntryDetailPage() {
           {entry.event_at && <p>Event at: {new Date(entry.event_at).toLocaleString()}</p>}
           <p>Created: {new Date(entry.created_at).toLocaleString()}</p>
           <p>Updated: {new Date(entry.updated_at).toLocaleString()}</p>
+          {entry.import_artifact_id && <ArtifactDownload key={entry.import_artifact_id} artifactId={entry.import_artifact_id} />}
           {confirmDelete ? (
             <div>
               <p>이 Entry를 삭제할까? 삭제한 기록은 복구할 수 없어.</p>

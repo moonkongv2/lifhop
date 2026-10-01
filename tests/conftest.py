@@ -5,13 +5,15 @@ import os
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.engine import make_url
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event, text
+from uuid import uuid4
+from alembic import command
+from alembic.config import Config
 from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app.main import app
 from app.models import User
-from app.models.base import Base
 
 TEST_DATABASE_URL = os.environ.get(
     "TEST_DATABASE_URL",
@@ -37,11 +39,32 @@ def block_unexpected_aws_clients(monkeypatch) -> None:
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_database() -> Generator[None, None, None]:
-    Base.metadata.create_all(bind=test_engine)
+    # Verify the real migration chain in a fresh schema without touching other
+    # schemas, development records, or the pre-existing alembic_version table.
+    schema = f"pytest_{uuid4().hex}"
+    with test_engine.begin() as connection:
+        connection.execute(text(f'CREATE SCHEMA "{schema}"'))
+        connection.execute(text(f'SET LOCAL search_path TO "{schema}"'))
+        config = Config("alembic.ini", toml_file="pyproject.toml")
+        config.attributes["connection"] = connection
+        command.upgrade(config, "head")
 
-    yield
+    def set_search_path(dbapi_connection, connection_record, connection_proxy):
+        previous = dbapi_connection.autocommit
+        dbapi_connection.autocommit = True
+        try:
+            with dbapi_connection.cursor() as cursor:
+                cursor.execute(f'SET search_path TO "{schema}"')
+        finally:
+            dbapi_connection.autocommit = previous
 
-    Base.metadata.drop_all(bind=test_engine)
+    event.listen(test_engine, "checkout", set_search_path)
+    try:
+        yield
+    finally:
+        event.remove(test_engine, "checkout", set_search_path)
+        with test_engine.begin() as connection:
+            connection.execute(text(f'DROP SCHEMA "{schema}" CASCADE'))
 
 
 @pytest.fixture()

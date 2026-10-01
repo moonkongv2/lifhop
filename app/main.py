@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from app.upload_limits import ImportUploadLimit
 from app.api.entries import router as entries_router
 from app.api.auth import router as auth_router
 from app.api.attachments import router as attachments_router
@@ -11,6 +12,7 @@ from app.api.import_jobs import (
 from app.api.captures import router as captures_router
 
 app = FastAPI(title="Lifhop")
+app.add_middleware(ImportUploadLimit)
 
 app.include_router(entries_router)
 app.include_router(auth_router)

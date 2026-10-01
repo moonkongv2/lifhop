@@ -1,5 +1,6 @@
 from typing import Literal
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -10,7 +11,16 @@ class Settings(BaseSettings):
     aws_profile: str | None = None
     aws_region: str
     s3_bucket_name: str | None = None
-    sqs_import_queue_url: str
+    sqs_import_queue_url: str | None = None
+    queue_mode: Literal["local", "aws"] = "local"
+    import_max_upload_bytes: int = Field(default=25 * 1024 * 1024, ge=1)
+    import_max_extracted_bytes: int = Field(default=100 * 1024 * 1024, ge=1)
+    import_max_archive_files: int = Field(default=5000, ge=1)
+    import_max_items: int = Field(default=2000, ge=1)
+    import_max_nodes_per_item: int = Field(default=20000, ge=1)
+    import_max_total_nodes: int = Field(default=200000, ge=1)
+    import_max_seconds: int = Field(default=120, ge=1)
+    import_max_attempts: int = Field(default=3, ge=1)
     s3_mode: Literal["local", "aws"] = "local"
     local_s3_endpoint: str = "http://127.0.0.1:8333"
     local_s3_bucket_name: str = "lifhop-local"

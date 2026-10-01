@@ -6,6 +6,8 @@ from app.sqs import enqueue_import_job
 def test_enqueue_import_job(
     monkeypatch,
 ):
+    from app.config import settings
+    monkeypatch.setattr(settings, "queue_mode", "aws")
     sent = {}
 
     class FakeSQSClient:

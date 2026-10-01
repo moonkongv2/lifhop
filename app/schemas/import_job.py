@@ -10,10 +10,20 @@ class ImportJobSubmissionResponse(BaseModel):
     status: ImportJobStatus
 
 
+class ImportItemErrorResponse(BaseModel):
+    index: int
+    code: str
+    message: str
+
+
 class ImportJobResponse(BaseModel):
     id: int
     artifact_id: int
     status: ImportJobStatus
+
+    attempts: int
+    entry_ids: list[int]
+    item_errors: list[ImportItemErrorResponse]
 
     total_items: int
     processed_items: int

@@ -1,3 +1,5 @@
+from typing import Any
+
 from pydantic import BaseModel
 
 # PlainTextSource
@@ -20,4 +22,4 @@ class MarkdownSource(BaseModel):
 
 
 class ChatGPTSource(BaseModel):
-    conversations: list[dict]
+    conversations: list[Any]

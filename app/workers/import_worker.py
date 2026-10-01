@@ -1,9 +1,13 @@
 import json
+import time
 
 from app.db import SessionLocal
 from app.services.import_jobs import (
     process_chatgpt_import_job,
+    ImportJobBusy,
 )
+from app.importers.limits import ImportValidationError
+from app.config import settings
 from app.sqs import (
     delete_import_job_message,
     receive_import_job_message,
@@ -31,11 +35,19 @@ def process_one_message() -> bool:
                 job_id=job_id,
             )
 
-    except Exception as exc:
-        print(
-            f"Import job failed: {exc}"
-        )
-
+    except ImportJobBusy:
+        time.sleep(1)
+        return True
+    except ImportValidationError:
+        # Permanent archive failures were recorded durably; owner retry is explicit.
+        delete_import_job_message(message["ReceiptHandle"])
+        print("Import archive rejected; inspect the job result")
+        return True
+    except Exception:
+        # Never log exception text: provider/DB exceptions may contain private bodies.
+        print("Import processing failed; message remains available for redelivery")
+        if settings.queue_mode == "local":
+            time.sleep(1)
         return True
 
     delete_import_job_message(
@@ -53,7 +65,8 @@ def main() -> None:
     print("Import worker started")
 
     while True:
-        process_one_message()
+        if not process_one_message():
+            time.sleep(1)
 
 
 if __name__ == "__main__":

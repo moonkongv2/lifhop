@@ -53,7 +53,7 @@ def test_aws_s3_requires_explicit_mode_and_bucket(monkeypatch):
         def __init__(self, **kwargs):
             created["session"] = kwargs
 
-        def client(self, service_name):
+        def client(self, service_name, **kwargs):
             created["service_name"] = service_name
             return object()
 
@@ -74,3 +74,18 @@ def test_aws_s3_rejects_missing_bucket(monkeypatch):
 
     with pytest.raises(ValueError, match="S3_BUCKET_NAME is required"):
         get_s3_client()
+
+
+@pytest.mark.parametrize("declared_size", [0, 100])
+def test_import_download_is_bounded_and_closes_stream(monkeypatch, declared_size):
+    import io
+    from app.s3 import download_object
+    body = io.BytesIO(b"123456")
+    class Client:
+        def get_object(self, **kwargs):
+            return {"Body": body, "ContentLength": declared_size}
+    monkeypatch.setattr(settings, "import_max_upload_bytes", 5)
+    monkeypatch.setattr("app.s3.get_s3_client", Client)
+    with pytest.raises(ValueError, match="size limit"):
+        download_object("test-key")
+    assert body.closed

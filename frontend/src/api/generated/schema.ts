@@ -194,6 +194,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/import-jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Import Jobs */
+        get: operations["list_import_jobs_import_jobs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/import-jobs/{job_id}": {
         parameters: {
             query?: never;
@@ -205,6 +222,40 @@ export interface paths {
         get: operations["get_import_job_import_jobs__job_id__get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/import-jobs/{job_id}/entries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Import Job Entries */
+        get: operations["get_import_job_entries_import_jobs__job_id__entries_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/import-jobs/{job_id}/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Retry Import Job */
+        post: operations["retry_import_job_import_jobs__job_id__retry_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -388,6 +439,8 @@ export interface components {
         EntryResponse: {
             /** Id */
             id: number;
+            /** Import Artifact Id */
+            import_artifact_id?: number | null;
             type: components["schemas"]["EntryType"];
             /** Title */
             title: string;
@@ -431,6 +484,15 @@ export interface components {
             /** Download Url */
             download_url: string;
         };
+        /** ImportItemErrorResponse */
+        ImportItemErrorResponse: {
+            /** Index */
+            index: number;
+            /** Code */
+            code: string;
+            /** Message */
+            message: string;
+        };
         /** ImportJobResponse */
         ImportJobResponse: {
             /** Id */
@@ -438,6 +500,12 @@ export interface components {
             /** Artifact Id */
             artifact_id: number;
             status: components["schemas"]["ImportJobStatus"];
+            /** Attempts */
+            attempts: number;
+            /** Entry Ids */
+            entry_ids: number[];
+            /** Item Errors */
+            item_errors: components["schemas"]["ImportItemErrorResponse"][];
             /** Total Items */
             total_items: number;
             /** Processed Items */
@@ -982,6 +1050,38 @@ export interface operations {
             };
         };
     };
+    list_import_jobs_import_jobs_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportJobResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_import_job_import_jobs__job_id__get: {
         parameters: {
             query?: never;
@@ -1000,6 +1100,71 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ImportJobResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_import_job_entries_import_jobs__job_id__entries_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                job_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EntryResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    retry_import_job_import_jobs__job_id__retry_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportJobSubmissionResponse"];
                 };
             };
             /** @description Validation Error */

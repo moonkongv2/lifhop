@@ -16,6 +16,7 @@ class EntryCreate(BaseModel):
 
 class EntryResponse(BaseModel):
     id: int
+    import_artifact_id: int | None = None
     type: EntryType
     title: str
     content: str | None

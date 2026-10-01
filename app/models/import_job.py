@@ -1,7 +1,8 @@
 from datetime import datetime
 from enum import StrEnum
 
-from sqlalchemy import DateTime, Enum, ForeignKey, Integer, Text, func
+from sqlalchemy import DateTime, Enum, ForeignKey, Index, Integer, Text, func
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.models.base import Base
 
@@ -16,6 +17,9 @@ class ImportJobStatus(StrEnum):
 
 class ImportJob(Base):
     __tablename__ = "import_jobs"
+    __table_args__ = (
+        Index("ix_import_jobs_status_created_at", "status", "created_at"),
+    )
 
     id: Mapped[int] = mapped_column(
         primary_key=True,
@@ -58,6 +62,10 @@ class ImportJob(Base):
         nullable=False,
         default=0,
     )
+
+    attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    entry_ids: Mapped[list[int]] = mapped_column(JSONB, nullable=False, default=list, server_default="[]")
+    item_errors: Mapped[list[dict]] = mapped_column(JSONB, nullable=False, default=list, server_default="[]")
 
     started_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),

@@ -8,6 +8,7 @@ function App() {
       <nav>
         <Link to="/login">Login</Link>{" "}
         <Link to="/entries">Entries</Link>
+        <Link to="/imports">가져오기</Link>
       </nav>
 
       <hr />

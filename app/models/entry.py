@@ -31,6 +31,11 @@ class Entry(Base):
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     content: Mapped[str | None] = mapped_column(Text, nullable=True)
 
+    import_artifact_id: Mapped[int | None] = mapped_column(
+        ForeignKey("import_artifacts.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
     event_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
