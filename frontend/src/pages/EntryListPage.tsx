@@ -16,7 +16,7 @@ function SearchForm({ params, onApply }: { params: URLSearchParams; onApply: (pa
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (from && to && from > to) { setValidation("시작일은 종료일보다 늦을 수 없어."); return; }
+    if (from && to && from > to) { setValidation("Start date must be on or before end date."); return; }
     setValidation("");
     const next = new URLSearchParams();
     for (const [key, value] of Object.entries({ q: q.trim(), source, type, date_field: dateField, date_from: from, date_to: to })) {
@@ -27,25 +27,25 @@ function SearchForm({ params, onApply }: { params: URLSearchParams; onApply: (pa
 
   return (
     <form onSubmit={submit}>
-      <label htmlFor="search-q">검색어</label>
-      <input id="search-q" value={q} maxLength={256} onChange={(event) => setQ(event.target.value)} placeholder="제목·본문의 문구, 이름, 숫자, 코드" />
+      <label htmlFor="search-q">Search query</label>
+      <input id="search-q" value={q} maxLength={256} onChange={(event) => setQ(event.target.value)} placeholder="Search titles and content for phrases, names, numbers, or code" />
       <div className="search-filters">
-        <label>출처<select value={source} onChange={(event) => setSource(event.target.value)}>
-          <option value="">전체 출처</option>
+        <label>Source<select value={source} onChange={(event) => setSource(event.target.value)}>
+          <option value="">All sources</option>
           {Object.entries(sourceLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
         </select></label>
-        <label>유형<select value={type} onChange={(event) => setType(event.target.value)}>
-          <option value="">전체 유형</option><option value="NOTE">노트</option><option value="LOG">로그</option>
-          <option value="DOCUMENT">문서</option><option value="CONVERSATION">대화</option><option value="PROJECT_EVENT">프로젝트 기록</option>
+        <label>Type<select value={type} onChange={(event) => setType(event.target.value)}>
+          <option value="">All types</option><option value="NOTE">Note</option><option value="LOG">Log</option>
+          <option value="DOCUMENT">Document</option><option value="CONVERSATION">Conversation</option><option value="PROJECT_EVENT">Project event</option>
         </select></label>
-        <label>날짜 기준<select value={dateField} onChange={(event) => setDateField(event.target.value)}>
-          <option value="created_at">등록일</option><option value="event_at">원본/사건 날짜</option>
+        <label>Date field<select value={dateField} onChange={(event) => setDateField(event.target.value)}>
+          <option value="created_at">Added</option><option value="event_at">Source/event date</option>
         </select></label>
-        <label>시작일<input type="date" value={from} onChange={(event) => setFrom(event.target.value)} /></label>
-        <label>종료일<input type="date" value={to} onChange={(event) => setTo(event.target.value)} /></label>
+        <label>Start date<input type="date" value={from} onChange={(event) => setFrom(event.target.value)} /></label>
+        <label>End date<input type="date" value={to} onChange={(event) => setTo(event.target.value)} /></label>
       </div>
-      <p>날짜 범위는 Asia/Seoul 기준이며 종료일을 포함해. 원본/사건 날짜가 없는 기록은 해당 날짜 필터에서 제외돼.</p>
-      <div className="actions"><button type="submit">검색</button><button type="button" onClick={() => onApply(new URLSearchParams())}>초기화</button></div>
+      <p>Date ranges use Asia/Seoul and include the end date. Records without a source/event date are excluded when filtering by that date.</p>
+      <div className="actions"><button type="submit">Search</button><button type="button" onClick={() => onApply(new URLSearchParams())}>Reset</button></div>
       {validation && <p role="alert">{validation}</p>}
     </form>
   );
@@ -81,23 +81,23 @@ function EntryListPage() {
   return (
     <>
       <h2>Entries</h2>
-      <Link to="/entries/new" state={{ entryListSearch: serialized }}>새 노트 작성</Link>
+      <Link to="/entries/new" state={{ entryListSearch: serialized }}>New note</Link>
       <SearchForm key={serialized} params={params} onApply={setParams} />
-      {!validOffset && <p role="alert">페이지 값이 올바르지 않아. 초기화해 줘.</p>}
-      {isLoading && <p role="status">불러오는 중...</p>}
-      {error && <><p role="alert">{error.message}</p><button onClick={() => void refetch()}>다시 시도</button></>}
+      {!validOffset && <p role="alert">Invalid page value. Please reset the search.</p>}
+      {isLoading && <p role="status">Loading...</p>}
+      {error && <><p role="alert">{error.message}</p><button onClick={() => void refetch()}>Retry</button></>}
       {data && <>
-        <p>총 {data.total}개 · {Math.floor(offset / 20) + 1}페이지</p>
-        {data.items.length === 0 && <p>{filtered ? "검색 조건에 맞는 기록이 없어." : "저장된 Entry가 없어."}</p>}
+        <p>{data.total} {data.total === 1 ? "entry" : "entries"} · Page {Math.floor(offset / 20) + 1}</p>
+        {data.items.length === 0 && <p>{filtered ? "No entries match your search." : "No entries yet."}</p>}
         {data.items.map((entry) => <article key={entry.id}>
           <Link to={`/entries/${entry.id}`} state={{ entryListSearch: serialized }}><h3>{entry.title}</h3></Link>
           <p>{sourceLabels[entry.source ?? "unknown"]} · {entry.type}</p>
-          <p>등록일: {formatEntryDate(entry.created_at)} · 원본/사건 날짜: {formatEntryDate(entry.event_at)} (Asia/Seoul)</p>
-          <p className="entry-content">{entry.content ?? "내용 없음"}</p>
+          <p>Added: {formatEntryDate(entry.created_at)} · Source/event date: {formatEntryDate(entry.event_at)} (Asia/Seoul)</p>
+          <p className="entry-content">{entry.content ?? "No content"}</p>
         </article>)}
         <div className="actions">
-          <button disabled={isFetching || offset === 0} onClick={() => page(Math.max(0, offset - 20))}>이전 페이지</button>
-          <button disabled={isFetching || offset + 20 >= data.total} onClick={() => page(offset + 20)}>다음 페이지</button>
+          <button disabled={isFetching || offset === 0} onClick={() => page(Math.max(0, offset - 20))}>Previous page</button>
+          <button disabled={isFetching || offset + 20 >= data.total} onClick={() => page(offset + 20)}>Next page</button>
         </div>
       </>}
     </>

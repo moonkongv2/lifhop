@@ -3,6 +3,8 @@
 React + TypeScript + Vite. The browser supports login, Entry list/detail, and
 creating, editing, and deleting notes through the authenticated API. It also
 supports Markdown/ChatGPT ZIP uploads, job results/retry, and protected originals.
+The interface is in English; user content keeps its original language. Dates use
+English formatting in the Asia/Seoul timezone.
 Entries support phrase search, source/type/date filters, and pagination.
 New records use type `NOTE`; editing preserves the existing type and event date.
 
@@ -54,19 +56,19 @@ http://localhost:8000/docs, then sign in through the browser.
 
 ## Phase 1.1 user check
 
-1. Sign in and open Entries → 새 노트 작성.
+1. Sign in and open Entries → New note.
 2. Enter a title and multiline content, save, and check the detail and list.
-3. Open the note, select 수정, change the title/content, and save. Both views
+3. Open the note, select Edit, change the title/content, and save. Both views
    should show the saved values, including after reloading.
-4. Select 삭제. 취소 keeps the note; 삭제 확인 returns to the list and removes it.
+4. Select Delete. Cancel keeps the note; Confirm delete returns to the list and removes it.
 5. A whitespace-only title should show validation. If the API becomes
    unavailable, a failed save keeps the draft; restart the API and retry.
 
 ## Phase 1.2 user check
 
-1. Sign in at http://localhost:5173 and open 가져오기.
+1. Sign in at http://localhost:5173 and open Import.
 2. Select Markdown, upload a UTF-8 `.md` file, and open the result Entry. Select
-   원본 다운로드 준비 → 원본 파일 다운로드 and compare it with the uploaded file.
+   Prepare original download → Download original file and compare it with the uploaded file.
    Original download is also available on that Entry's detail page.
 3. Generate a synthetic ChatGPT ZIP from the checked-in fixture:
 
@@ -75,15 +77,15 @@ http://localhost:8000/docs, then sign in through the browser.
    ```
 
    Select ChatGPT ZIP and upload it. The job page polls every 2 seconds; expect
-   완료, 2 successes, 0 failures, 2 linked conversation Entries, and the original
+   Completed, 2 successes, 0 failures, 2 linked conversation Entries, and the original
    ZIP download. Counts/errors update after each saved batch.
 4. Upload the same ZIP again. It creates another job/original artifact while
    keeping the same two logical conversation Entries. The latest artifact link
-   on each Entry changes to the latest upload. Reload 가져오기 to revisit jobs.
-5. Upload a non-ZIP text file named `.zip`. Expect 실패 with a useful error.
-   작업 재시도 processes the same preserved file and fails again; fixing the
+   on each Entry changes to the latest upload. Reload Import to revisit jobs.
+5. Upload a non-ZIP text file named `.zip`. Expect Failed with a useful error.
+   Retry job processes the same preserved file and fails again; fixing the
    file requires a new upload. Empty/non-UTF-8 Markdown is rejected before storage.
-6. With the worker stopped, a ZIP remains 대기 중. Start the worker to finish it.
+6. With the worker stopped, a ZIP remains Pending. Start the worker to finish it.
    If storage/DB processing fails transiently, automatic attempts are bounded.
    Once FAILED/PARTIAL, the owner can explicitly retry within the remaining
    attempt budget. A duplicate retry while pending/running returns a conflict.
@@ -105,21 +107,21 @@ if importing additional samples.
    case-insensitive substring matching; it does not split words or infer synonyms.
    Exact titles rank first, title substrings next, body matches next; ties use
    newest registration and descending ID. No project/repository is required.
-3. Combine 출처=직접 작성 and 유형=노트. Markdown/ChatGPT records should disappear.
-   Switch to Markdown/문서 or ChatGPT/대화 to find the corresponding imports.
-   Unprovable older sources display 출처 미상, even when they look like a note.
-4. Select 날짜 기준=등록일 and today's date for both bounds. The note appears.
-   Switch to 원본/사건 날짜 with the same range: a note without `event_at` is
+3. Combine Source=Manual and Type=Note. Markdown/ChatGPT records should disappear.
+   Switch to Markdown/Document or ChatGPT/Conversation to find the corresponding imports.
+   Unprovable older sources display Unknown source, even when they look like a note.
+4. Select Date field=Added and today's date for both bounds. The note appears.
+   Switch to Source/event date with the same range: a note without `event_at` is
    excluded. ChatGPT's source date is its conversation creation timestamp.
    Markdown has no source date. A date written in text does not set `event_at`.
    Date bounds use Asia/Seoul, include both selected days, and dates are displayed
    in that timezone regardless of the browser's timezone.
-5. With more than 20 matching records, use 다음 페이지/이전 페이지. The total and
+5. With more than 20 matching records, use Next page/Previous page. The total and
    page change while filters remain selected. Reload or open the list URL in
-   another tab, open a detail then 목록으로, and confirm the filters/page survive.
-   New filters and 초기화 return to page one. Deleting the final record on the
+   another tab, open a detail then Back to entries, and confirm the filters/page survive.
+   New filters and Reset return to page one. Deleting the final record on the
    last page moves back to the last remaining page.
-6. Search an absent phrase: expect 검색 조건에 맞는 기록이 없어. Reversed dates
+6. Search an absent phrase: expect No entries match your search. Reversed dates
    show validation without applying. API failures show a retry button.
 
 Phase 1.3 owner browser verification is pending. Automated API tests use actual
@@ -178,7 +180,7 @@ processing, so a session lock is never intentionally released while writes conti
    export. Uploading a roughly 500 MiB archive should reach the job page.
 3. During preflight, total may be zero. During conversion, saved success/failure
    counts update in batches. On completion, open result Entries and search them.
-4. A textless active branch reports `EMPTY_CONVERSATION`; this can yield 일부 성공
+4. A textless active branch reports `EMPTY_CONVERSATION`; this can yield Partially completed
    even when all supported text conversations were saved. Repeating that same
    file does not create text for such items.
 5. Upload the same archive again and verify that conversation Entries do not

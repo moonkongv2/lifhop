@@ -6,15 +6,15 @@ type Submission = components["schemas"]["ImportJobSubmissionResponse"];
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = localStorage.getItem("access_token");
-  if (!token) throw new Error("로그인이 필요해.");
+  if (!token) throw new Error("Please log in to continue.");
   const response = await fetch(`/api${path}`, {
     ...options, headers: { Authorization: `Bearer ${token}` },
   });
   if (!response.ok) {
     let detail: unknown;
     try { detail = (await response.json()).detail; } catch { /* Use the status fallback. */ }
-    if (response.status === 401) throw new Error("로그인이 만료됐어. 다시 로그인해 줘.");
-    throw new Error(typeof detail === "string" ? detail : `가져오기 요청 실패: ${response.status}. 다시 시도해 줘.`);
+    if (response.status === 401) throw new Error("Your session has expired. Please log in again.");
+    throw new Error(typeof detail === "string" ? detail : `Import request failed: ${response.status}. Please try again.`);
   }
   return response.json();
 }
@@ -37,5 +37,5 @@ export const fetchArtifactDownload = (id: number) =>
 
 export const isActive = (job: ImportJob) => job.status === "PENDING" || job.status === "RUNNING";
 export const statusText: Record<ImportJob["status"], string> = {
-  PENDING: "대기 중", RUNNING: "처리 중", COMPLETED: "완료", PARTIAL: "일부 성공", FAILED: "실패",
+  PENDING: "Pending", RUNNING: "Running", COMPLETED: "Completed", PARTIAL: "Partially completed", FAILED: "Failed",
 };

@@ -35,7 +35,7 @@ function LoginPage() {
       });
 
       if (!response.ok) {
-        throw new Error("로그인에 실패했어.");
+        throw new Error("Login failed.");
       }
 
       const data: TokenResponse = await response.json();
@@ -46,7 +46,7 @@ function LoginPage() {
       navigate("/entries");
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "알 수 없는 오류가 발생했어."
+        err instanceof Error ? err.message : "An unexpected error occurred."
       );
     } finally {
       setLoading(false);
@@ -83,7 +83,7 @@ function LoginPage() {
         </div>
 
         <button type="submit" disabled={loading}>
-          {loading ? "로그인 중..." : "로그인"}
+          {loading ? "Logging in..." : "Log in"}
         </button>
       </form>
 

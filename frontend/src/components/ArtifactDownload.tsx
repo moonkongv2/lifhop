@@ -6,9 +6,9 @@ function ArtifactDownload({ artifactId }: { artifactId: number }) {
   return (
     <div>
       <button disabled={mutation.isPending} onClick={() => mutation.mutate()}>
-        {mutation.isPending ? "다운로드 준비 중..." : "원본 다운로드 준비"}
+        {mutation.isPending ? "Preparing download..." : "Prepare original download"}
       </button>
-      {mutation.data && <p><a href={mutation.data.download_url} target="_blank" rel="noreferrer">원본 파일 다운로드</a> (10분 동안 유효)</p>}
+      {mutation.data && <p><a href={mutation.data.download_url} target="_blank" rel="noreferrer">Download original file</a> (valid for 10 minutes)</p>}
       {mutation.error && <p role="alert">{mutation.error.message}</p>}
     </div>
   );

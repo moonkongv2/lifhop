@@ -4,10 +4,11 @@ Last updated: 2026-10-02
 
 ## Current product slice
 
-Phase 1.2 follow-up — large ChatGPT ZIPs and numbered conversation JSON shards.
+Frontend language follow-up — English interface before Phase 2.1.
 Phase 1.3 was committed at `8700536`; its owner browser check remains pending.
 The large-import implementation, local checks, and owner browser verification
-are complete (2026-10-02). Next: Phase 2.1 acquisition/coverage verification.
+are complete (2026-10-02). The English interface passes local frontend checks;
+owner browser verification is pending. Next: Phase 2.1 acquisition/coverage verification.
 Setup/checks: `frontend/README.md`.
 
 ## Personal-release target
@@ -54,6 +55,8 @@ exclusions are planned requirements, not implemented capabilities.
   unexpected AWS client creation.
 - React login, Entry list/detail, and note creation/editing/deletion using
   authenticated Entry APIs and server-result cache updates.
+- English interface labels, instructions, job statuses, and frontend error messages.
+  Dates use English formatting in Asia/Seoul; user content retains its language.
 - Empty/loading/error states, draft-preserving save errors, title validation,
   deletion confirmation, and account-switch cache clearing.
 - Disposable PostgreSQL tests use real migrations in fresh schemas. Local

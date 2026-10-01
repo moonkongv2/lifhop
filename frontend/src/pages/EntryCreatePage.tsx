@@ -21,7 +21,7 @@ function EntryCreatePage() {
 
   return (
     <>
-      <h2>새 노트</h2>
+      <h2>New note</h2>
       <EntryForm pending={mutation.isPending} error={mutation.error}
         onSubmit={(data) => mutation.mutate(data)} onCancel={() => navigate(search ? `/entries?${search}` : "/entries")} />
     </>

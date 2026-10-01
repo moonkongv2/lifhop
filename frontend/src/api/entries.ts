@@ -6,7 +6,7 @@ export type EntryUpdate = components["schemas"]["EntryUpdate"];
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = localStorage.getItem("access_token");
-  if (!token) throw new Error("로그인이 필요해.");
+  if (!token) throw new Error("Please log in to continue.");
 
   const response = await fetch(`/api/entries${path}`, {
     ...options,
@@ -17,15 +17,15 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   });
   if (!response.ok) {
     const messages: Record<number, string> = {
-      401: "로그인이 만료됐어. 다시 로그인해 줘.",
-      404: "Entry를 찾을 수 없어. 삭제됐거나 접근 권한이 없을 수 있어.",
+      401: "Your session has expired. Please log in again.",
+      404: "Entry not found. It may have been deleted or you may not have access.",
     };
     if (response.status === 422) {
       let detail: unknown;
       try { detail = (await response.json()).detail; } catch { /* Use a safe fallback. */ }
-      throw new Error(typeof detail === "string" ? detail : "입력값이나 검색 조건을 확인해 줘.");
+      throw new Error(typeof detail === "string" ? detail : "Please check your input or search filters.");
     }
-    throw new Error(messages[response.status] ?? `요청 실패: ${response.status}. 다시 시도해 줘.`);
+    throw new Error(messages[response.status] ?? `Request failed: ${response.status}. Please try again.`);
   }
   if (response.status === 204) return undefined as T;
   return response.json();

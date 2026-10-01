@@ -33,34 +33,34 @@ function ImportJobPage() {
   } });
 
   if (!token) return <Navigate to="/login" replace />;
-  if (job.isLoading) return <p role="status">작업을 불러오는 중...</p>;
-  if (job.error) return <><p role="alert">{job.error.message}</p><button onClick={() => void job.refetch()}>다시 시도</button><Link to="/imports">가져오기로</Link></>;
-  if (!job.data) return <p>작업을 찾을 수 없어.</p>;
+  if (job.isLoading) return <p role="status">Loading job...</p>;
+  if (job.error) return <><p role="alert">{job.error.message}</p><button onClick={() => void job.refetch()}>Retry</button><Link to="/imports">Back to imports</Link></>;
+  if (!job.data) return <p>Job not found.</p>;
   const data = job.data;
   return (
     <>
-      <Link to="/imports">← 가져오기로</Link>
-      <h2>가져오기 작업 #{data.id}</h2>
+      <Link to="/imports">← Back to imports</Link>
+      <h2>Import job #{data.id}</h2>
       <p role="status">{statusText[data.status]}</p>
-      <p>전체 {data.total_items} / 성공 {data.processed_items} / 실패 {data.failed_items} / 시도 {data.attempts}</p>
-      {isActive(data) && <p>작업 상태와 저장된 처리 건수를 자동 확인하고 있어. 파일을 확인하는 동안 전체 건수는 0으로 표시될 수 있어.</p>}
+      <p>Total {data.total_items} / Saved {data.processed_items} / Failed {data.failed_items} / Attempts {data.attempts}</p>
+      {isActive(data) && <p>Job status and saved progress update automatically. The total may be 0 while the archive is being validated.</p>}
       {data.error && <p role="alert">{data.error}</p>}
-      {data.item_errors.length > 0 && <section><h3>항목별 오류</h3><ul>
-        {data.item_errors.map((error) => <li key={error.index}>항목 {error.index}: {error.message} ({error.code})</li>)}
+      {data.item_errors.length > 0 && <section><h3>Item errors</h3><ul>
+        {data.item_errors.map((error) => <li key={error.index}>Item {error.index}: {error.message} ({error.code})</li>)}
       </ul></section>}
       {(data.status === "FAILED" || data.status === "PARTIAL") && <>
-        <p>중단된 작업은 저장된 지점부터 재개해. 모든 항목을 처리한 뒤 실패 항목이 남은 작업은 같은 ZIP 전체를 다시 처리해. 잘못된 파일은 수정한 ZIP을 새로 올려 줘.</p>
-        <button disabled={retry.isPending} onClick={() => retry.mutate()}>{retry.isPending ? "재시도 요청 중..." : "작업 재시도"}</button>
+        <p>Interrupted jobs resume from saved progress. If all items were processed but some failed, retry processes the entire ZIP again. To fix an invalid file, upload a corrected ZIP.</p>
+        <button disabled={retry.isPending} onClick={() => retry.mutate()}>{retry.isPending ? "Requesting retry..." : "Retry job"}</button>
       </>}
       {retry.error && <p role="alert">{retry.error.message}</p>}
       <ArtifactDownload key={data.artifact_id} artifactId={data.artifact_id} />
-      {!isActive(data) && <section><h3>결과 기록</h3>
-        {entries.isLoading && <p>결과를 불러오는 중...</p>}
-        {entries.error && <><p role="alert">{entries.error.message}</p><button onClick={() => void entries.refetch()}>결과 다시 시도</button></>}
-        {entries.data?.length === 0 && <p>조회 가능한 결과 기록이 없어.</p>}
+      {!isActive(data) && <section><h3>Result entries</h3>
+        {entries.isLoading && <p>Loading results...</p>}
+        {entries.error && <><p role="alert">{entries.error.message}</p><button onClick={() => void entries.refetch()}>Retry loading results</button></>}
+        {entries.data?.length === 0 && <p>No result entries available.</p>}
         {entries.data?.map((entry) => <p key={entry.id}><Link to={`/entries/${entry.id}`}>{entry.title}</Link></p>)}
-        <div className="actions"><button disabled={offset === 0} onClick={() => setOffset(offset - 20)}>이전 결과</button>
-          <button disabled={!entries.data || entries.data.length < 20} onClick={() => setOffset(offset + 20)}>다음 결과</button></div>
+        <div className="actions"><button disabled={offset === 0} onClick={() => setOffset(offset - 20)}>Previous results</button>
+          <button disabled={!entries.data || entries.data.length < 20} onClick={() => setOffset(offset + 20)}>Next results</button></div>
       </section>}
     </>
   );

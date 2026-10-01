@@ -19,7 +19,7 @@ function EntryForm({ entry, pending, error, onSubmit, onCancel }: Props) {
     event.preventDefault();
     if (pending) return;
     if (!title.trim() || title.length > 255) {
-      setValidation("제목은 공백만으로 작성할 수 없고, 255자 이하여야 해.");
+      setValidation("Title must contain non-whitespace text and be no longer than 255 characters.");
       return;
     }
     setValidation("");
@@ -29,15 +29,15 @@ function EntryForm({ entry, pending, error, onSubmit, onCancel }: Props) {
   return (
     <form onSubmit={handleSubmit}>
       <fieldset disabled={pending}>
-        <label htmlFor="entry-title">제목</label>
+        <label htmlFor="entry-title">Title</label>
         <input id="entry-title" value={title} maxLength={255} required
           onChange={(event) => setTitle(event.target.value)} />
-        <label htmlFor="entry-content">내용</label>
+        <label htmlFor="entry-content">Content</label>
         <textarea id="entry-content" rows={12} value={content}
           onChange={(event) => setContent(event.target.value)} />
         <div className="actions">
-          <button type="submit">{pending ? "저장 중..." : "저장"}</button>
-          <button type="button" onClick={onCancel}>취소</button>
+          <button type="submit">{pending ? "Saving..." : "Save"}</button>
+          <button type="button" onClick={onCancel}>Cancel</button>
         </div>
       </fieldset>
       {(validation || error) && <p role="alert">{validation || error?.message}</p>}

@@ -33,9 +33,9 @@ function ImportsPage() {
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (upload.isPending) return;
-    if (!file || file.size === 0) { setValidation("내용이 있는 파일을 선택해 줘."); return; }
+    if (!file || file.size === 0) { setValidation("Please select a non-empty file."); return; }
     const valid = kind === "markdown" ? /\.(md|markdown)$/i.test(file.name) : /\.zip$/i.test(file.name);
-    if (!valid) { setValidation("선택한 가져오기 종류에 맞는 파일을 선택해 줘."); return; }
+    if (!valid) { setValidation("Please select a file that matches the import type."); return; }
     setValidation("");
     setEntries([]);
     upload.mutate({ file, kind });
@@ -44,33 +44,33 @@ function ImportsPage() {
   if (!localStorage.getItem("access_token")) return <Navigate to="/login" replace />;
   return (
     <>
-      <h2>기록 가져오기</h2>
-      <p>Markdown은 UTF-8 텍스트, ChatGPT는 내보내기 ZIP을 선택해 줘.</p>
-      <p>기본 한도: Markdown 25 MiB, ZIP 1 GiB, ZIP 내부 전체 1 GiB, 대화 JSON 합계 256 MiB, 대화 2,000개. 분할 대화 JSON도 지원해. 서버 설정에 따라 달라질 수 있어.</p>
+      <h2>Import records</h2>
+      <p>Choose a UTF-8 text file for Markdown or an export ZIP for ChatGPT.</p>
+      <p>Default limits: Markdown 25 MiB, ZIP 1 GiB, total uncompressed archive 1 GiB, conversation JSON 256 MiB, and 2,000 conversations. Split conversation JSON files are supported. Limits may vary with server settings.</p>
       <form onSubmit={submit}>
         <fieldset disabled={upload.isPending}>
-          <label htmlFor="import-kind">가져오기 종류</label>
+          <label htmlFor="import-kind">Import type</label>
           <select id="import-kind" value={kind} onChange={(event) => { setKind(event.target.value); setFile(null); upload.reset(); setValidation(""); }}>
             <option value="markdown">Markdown</option><option value="chatgpt">ChatGPT ZIP</option>
           </select>
-          <label htmlFor="import-file">파일</label>
+          <label htmlFor="import-file">File</label>
           <input key={kind} id="import-file" type="file" accept={kind === "markdown" ? ".md,.markdown" : ".zip"}
             onChange={(event) => setFile(event.target.files?.[0] ?? null)} />
-          <button type="submit">{upload.isPending ? "업로드 중..." : "가져오기"}</button>
+          <button type="submit">{upload.isPending ? "Uploading..." : "Import"}</button>
         </fieldset>
       </form>
       {(validation || upload.error) && <p role="alert">{validation || upload.error?.message}</p>}
-      {entries.length > 0 && <section><h3>가져오기 완료</h3><p>{entries.length}개 기록을 저장했어.</p>
+      {entries.length > 0 && <section><h3>Import complete</h3><p>{entries.length} {entries.length === 1 ? "entry" : "entries"} saved.</p>
         {entries.map((entry) => <p key={entry.id}><Link to={`/entries/${entry.id}`}>{entry.title}</Link></p>)}
         {entries[0].import_artifact_id && <ArtifactDownload artifactId={entries[0].import_artifact_id} />}
       </section>}
-      <h3>최근 ChatGPT 가져오기 작업</h3>
-      {jobs.isLoading && <p role="status">작업 목록을 불러오는 중...</p>}
-      {jobs.error && <><p role="alert">{jobs.error.message}</p><button onClick={() => void jobs.refetch()}>작업 목록 다시 시도</button></>}
-      {jobs.data?.length === 0 && <p>가져오기 작업이 없어.</p>}
+      <h3>Recent ChatGPT import jobs</h3>
+      {jobs.isLoading && <p role="status">Loading jobs...</p>}
+      {jobs.error && <><p role="alert">{jobs.error.message}</p><button onClick={() => void jobs.refetch()}>Retry loading jobs</button></>}
+      {jobs.data?.length === 0 && <p>No import jobs yet.</p>}
       {jobs.data?.map((job) => <article key={job.id}>
-        <Link to={`/import-jobs/${job.id}`}>작업 #{job.id}</Link> — {statusText[job.status]}
-        <p>성공 {job.processed_items} / 실패 {job.failed_items} / 전체 {job.total_items}</p>
+        <Link to={`/import-jobs/${job.id}`}>Job #{job.id}</Link> — {statusText[job.status]}
+        <p>Saved {job.processed_items} / Failed {job.failed_items} / Total {job.total_items}</p>
       </article>)}
     </>
   );

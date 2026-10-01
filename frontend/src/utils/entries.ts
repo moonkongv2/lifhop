@@ -1,11 +1,11 @@
 import type { Entry } from "../api/entries";
 
 export const sourceLabels: Record<NonNullable<Entry["source"]>, string> = {
-  manual: "직접 작성", markdown: "Markdown", chatgpt: "ChatGPT", unknown: "출처 미상",
+  manual: "Manual", markdown: "Markdown", chatgpt: "ChatGPT", unknown: "Unknown source",
 };
 export function formatEntryDate(value: string | null): string {
-  if (!value) return "알 수 없음";
-  return new Intl.DateTimeFormat("ko-KR", {
+  if (!value) return "Unknown";
+  return new Intl.DateTimeFormat("en-US", {
     timeZone: "Asia/Seoul", dateStyle: "medium", timeStyle: "short",
   }).format(new Date(value));
 }

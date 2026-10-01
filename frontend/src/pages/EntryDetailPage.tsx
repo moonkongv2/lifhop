@@ -40,17 +40,17 @@ function EntryDetailPage() {
   });
 
   if (!token) return <Navigate to="/login" replace />;
-  if (!id) return <p>Entry ID가 없어.</p>;
-  if (isLoading) return <p role="status">불러오는 중...</p>;
-  if (error) return <><p role="alert">{error.message}</p><button onClick={() => void refetch()}>다시 시도</button><Link to={listTarget}>목록으로</Link></>;
-  if (!entry) return <p>Entry를 찾을 수 없어.</p>;
+  if (!id) return <p>Entry ID is missing.</p>;
+  if (isLoading) return <p role="status">Loading...</p>;
+  if (error) return <><p role="alert">{error.message}</p><button onClick={() => void refetch()}>Retry</button><Link to={listTarget}>Back to entries</Link></>;
+  if (!entry) return <p>Entry not found.</p>;
 
   return (
     <>
-      <Link to={listTarget}>← 목록으로</Link>
+      <Link to={listTarget}>← Back to entries</Link>
       {editing ? (
         <>
-          <h2>Entry 수정</h2>
+          <h2>Edit entry</h2>
           <EntryForm key={entry.id} entry={entry} pending={save.isPending} error={save.error}
             onSubmit={(data) => save.mutate(data)} onCancel={() => { setEditing(false); save.reset(); }} />
         </>
@@ -58,26 +58,26 @@ function EntryDetailPage() {
         <>
           <h2>{entry.title}</h2>
           <p>{sourceLabels[entry.source ?? "unknown"]} · {entry.type}</p>
-          <p className="entry-content">{entry.content ?? "내용 없음"}</p>
-          <p>원본/사건 날짜: {formatEntryDate(entry.event_at)} (Asia/Seoul)</p>
-          <p>등록일: {formatEntryDate(entry.created_at)} (Asia/Seoul)</p>
-          <p>수정일: {formatEntryDate(entry.updated_at)} (Asia/Seoul)</p>
+          <p className="entry-content">{entry.content ?? "No content"}</p>
+          <p>Source/event date: {formatEntryDate(entry.event_at)} (Asia/Seoul)</p>
+          <p>Added: {formatEntryDate(entry.created_at)} (Asia/Seoul)</p>
+          <p>Updated: {formatEntryDate(entry.updated_at)} (Asia/Seoul)</p>
           {entry.import_artifact_id && <ArtifactDownload key={entry.import_artifact_id} artifactId={entry.import_artifact_id} />}
           {confirmDelete ? (
             <div>
-              <p>이 Entry를 삭제할까? 삭제한 기록은 복구할 수 없어.</p>
+              <p>Delete this entry? This action cannot be undone.</p>
               <div className="actions">
                 <button disabled={remove.isPending} onClick={() => remove.mutate()}>
-                  {remove.isPending ? "삭제 중..." : "삭제 확인"}
+                  {remove.isPending ? "Deleting..." : "Confirm delete"}
                 </button>
-                <button disabled={remove.isPending} onClick={() => { setConfirmDelete(false); remove.reset(); }}>취소</button>
+                <button disabled={remove.isPending} onClick={() => { setConfirmDelete(false); remove.reset(); }}>Cancel</button>
               </div>
               {remove.error && <p role="alert">{remove.error.message}</p>}
             </div>
           ) : (
             <div className="actions">
-              <button onClick={() => setEditing(true)}>수정</button>
-              <button onClick={() => setConfirmDelete(true)}>삭제</button>
+              <button onClick={() => setEditing(true)}>Edit</button>
+              <button onClick={() => setConfirmDelete(true)}>Delete</button>
             </div>
           )}
         </>
