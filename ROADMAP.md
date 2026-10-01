@@ -1,6 +1,6 @@
 # lifhop Product Roadmap
 
-Last revised: 2026-09-30
+Last revised: 2026-10-01
 
 ## Purpose and release boundary
 
@@ -106,6 +106,10 @@ Provide Markdown and ChatGPT ZIP upload screens, job progress/results, useful
 failures, and access to resulting Entries and protected raw-artifact downloads.
 Provide a local queue path before demonstrating ZIP processing without AWS.
 Bound upload size, extracted archive size, item count, and processing work.
+Support the owner's approximately 500 MiB export, including numbered conversation
+JSON shards, with bounded-memory file handling and saved processing progress.
+Separate original-file and parsed-JSON budgets; verify interruption/restart with
+committed Entries and progress kept consistent.
 Expose item failures without logging private bodies; classify a job with zero
 successful items and processing errors as failed rather than useful partial
 success. Make repeated job delivery safe and provide a controlled retry path.

@@ -42,7 +42,7 @@ def test_worker_processes_and_deletes_message(
 
     def fake_process_chatgpt_import_job(
         db,
-        job_id: int,
+        job_id: int, load_results: bool = False,
     ):
         processed["db"] = db
         processed["job_id"] = job_id
@@ -110,7 +110,7 @@ def test_worker_does_not_delete_failed_message(
 
     def fail_processing(
         db,
-        job_id: int,
+        job_id: int, load_results: bool = False,
     ):
         raise RuntimeError(
             "processing failed"

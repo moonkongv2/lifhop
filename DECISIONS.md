@@ -914,3 +914,73 @@ corpus relevance/volume before selecting pg_trgm or language-aware full-text
 indexes. There is no fuzzy matching, stemming, synonym expansion, attachment
 extraction, new service, or added dependency. Offset pages may shift during
 concurrent writes; cursor/snapshot pagination remains a later measured need.
+
+---
+
+## ADR-020 — Stream large ChatGPT exports and persist import progress
+
+**Status:** Accepted
+**Date:** 2026-10-01
+
+### Requirement and decision
+
+An owner export near 500 MiB contains numbered conversation JSON shards and
+substantial non-conversation data. Support legacy `conversations.json` and
+`conversations-<number>.json` / `conversations_<number>.json` arrays, including
+nested paths. Preserve archive order as the stable processing order.
+
+Keep FastAPI's spooled upload as a file and use a bounded, serial S3 multipart
+transfer. The worker streams the object into an automatically cleaned temporary
+file; JSON arrays are decoded one bounded record at a time with the standard
+library. A complete preflight pass validates shards and determines the total
+before Entry writes. A second pass converts records. This requires no new service
+or package and leaves media in the preserved original.
+
+Defaults are 1 GiB compressed ZIP, 1 GiB total declared uncompressed content,
+256 MiB conversation JSON, and 16 MiB per JSON record. Markdown retains 25 MiB.
+Conversation/node/file/attempt limits remain unchanged. Local measurements fit
+the existing 120-second cooperative processing budget; deployment capacity must
+be measured separately. Temporary disk and concurrent requests remain relevant
+resource costs even though ZIP content is no longer materialized in RAM.
+
+### Commit and retry semantics
+
+Save Entries, success/failure counts, result IDs, and sanitized item errors in
+one transaction per 25 records. The sum of committed processed/failed counts is
+the resume cursor into the preserved immutable archive. Roll back the current
+batch on infrastructure failure; retain earlier batches and resume after them.
+Preflight may be repeated after restart and is read-only. No new schema field is
+needed because progress counters already exist and are committed with the data.
+
+Replace ADR-018's whole-import row/transaction lock with an owner session advisory
+lock on a pinned physical PostgreSQL connection, retained across batch commits.
+Each active batch also locks its job row. The connection is closed/invalidated
+if lock cleanup fails, and process exit releases the lock. Live work cannot be
+superseded just because RUNNING age crosses the stale threshold. A crashed worker
+is eligible after the processing budget plus 60 seconds; an infrastructure error
+can make it immediately PENDING within the attempt budget.
+
+Completed/partial/failed deliveries still do no work without explicit retry.
+Retry resumes incomplete work. When all items were visited and errors remain,
+explicit retry resets progress and reprocesses the archive, preserving the prior
+full-retry behavior. Stable source IDs prevent duplicate Entries. Full replay
+can still replace current content or recreate a deleted record; Phase 2.2
+versioning/tombstones remain outstanding. A textless active branch stays an
+observable EMPTY_CONVERSATION error rather than silently disappearing.
+
+### Evidence and verification boundaries
+
+Actual local HTTP upload, SeaweedFS storage, and separate worker processes were
+checked with synthetic and owner-provided large archives in disposable schemas.
+Checks covered saved progress, original byte equality, result search counts,
+reimport uniqueness, and synthetic termination after a saved batch followed by
+recovery. Worker peak RSS was approximately 119 MiB for the synthetic archive
+and 211 MiB for the owner archive. These are local measurements, not hosting
+sizing guarantees. No external AI service or AWS storage was used.
+
+The integration script sets its environment before importing application settings,
+verifies the disposable DB and unique schema, and records exactly the object keys
+it created for cleanup. These checks are required following a corrected validation
+incident described in CURRENT.md. Private archive contents never enter fixtures,
+Git, or tool output. The owner confirmed the expected large-import browser
+result on 2026-10-02.

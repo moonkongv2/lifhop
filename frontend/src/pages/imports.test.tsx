@@ -160,3 +160,14 @@ describe("Browser imports", () => {
     expect(requests).toHaveLength(0);
   });
 });
+
+
+it("displays saved progress while a large import is still running", async () => {
+  job = { ...job, status: "RUNNING", attempts: 1, total_items: 1284, processed_items: 25 };
+  mount("/import-jobs/1");
+  await screen.findByText("전체 1284 / 성공 25 / 실패 0 / 시도 1");
+  expect(screen.getByText(/저장된 처리 건수를 자동 확인/)).toBeTruthy();
+  expect(screen.queryByText("작업 재시도")).toBeNull();
+  job = { ...job, processed_items: 50 };
+  await screen.findByText("전체 1284 / 성공 50 / 실패 0 / 시도 1", {}, { timeout: 5000 });
+});

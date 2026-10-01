@@ -150,6 +150,7 @@ def fake_import_upload(
         fake_upload_object,
     )
 
+    monkeypatch.setattr("app.api.imports.upload_file", lambda s3_key, file, mime_type: objects.update({s3_key: file.read()}))
     return objects
 
 def build_chatgpt_zip(

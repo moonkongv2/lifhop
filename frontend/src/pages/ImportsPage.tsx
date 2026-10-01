@@ -46,7 +46,7 @@ function ImportsPage() {
     <>
       <h2>기록 가져오기</h2>
       <p>Markdown은 UTF-8 텍스트, ChatGPT는 내보내기 ZIP을 선택해 줘.</p>
-      <p>기본 한도: 업로드 25 MiB, 압축 해제 100 MiB, 대화 2,000개. 서버 설정에 따라 달라질 수 있어.</p>
+      <p>기본 한도: Markdown 25 MiB, ZIP 1 GiB, ZIP 내부 전체 1 GiB, 대화 JSON 합계 256 MiB, 대화 2,000개. 분할 대화 JSON도 지원해. 서버 설정에 따라 달라질 수 있어.</p>
       <form onSubmit={submit}>
         <fieldset disabled={upload.isPending}>
           <label htmlFor="import-kind">가져오기 종류</label>

@@ -75,6 +75,12 @@ def retry_import_job(
         raise HTTPException(409, "Only failed or partial jobs can be retried")
     if job.attempts >= settings.import_max_attempts:
         raise HTTPException(409, "Attempt limit reached; fix the cause and upload a new archive")
+    # Item-level retry deliberately replays the archive. Interrupted attempts
+    # retain their cursor and resume from the last atomic batch instead.
+    if job.total_items and job.processed_items + job.failed_items == job.total_items:
+        job.total_items = job.processed_items = job.failed_items = 0
+        job.entry_ids = []
+        job.item_errors = []
     job.status = ImportJobStatus.PENDING
     job.completed_at = None
     job.error = None

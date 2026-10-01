@@ -1,4 +1,6 @@
 import boto3
+from collections.abc import Callable
+from typing import BinaryIO
 
 from urllib.parse import urlparse
 from botocore.config import Config
@@ -134,5 +136,38 @@ def download_object(
         if len(content) > settings.import_max_upload_bytes:
             raise ImportValidationError("Stored import exceeds the upload size limit")
         return content
+    finally:
+        body.close()
+
+
+def upload_file(s3_key: str, file: BinaryIO, mime_type: str) -> None:
+    from boto3.s3.transfer import TransferConfig
+
+    # One transfer at a time bounds multipart buffers for a large local archive.
+    get_s3_client().upload_fileobj(
+        file, get_s3_bucket_name(), s3_key,
+        ExtraArgs={"ContentType": mime_type},
+        Config=TransferConfig(multipart_threshold=8 * 1024 * 1024,
+                              multipart_chunksize=8 * 1024 * 1024, use_threads=False),
+    )
+
+
+def download_to_file(s3_key: str, target: BinaryIO, check_deadline: Callable[[], None] = lambda: None) -> None:
+    response = get_s3_client().get_object(Bucket=get_s3_bucket_name(), Key=s3_key)
+    body = response["Body"]
+    size = 0
+    try:
+        if response.get("ContentLength", 0) > settings.import_max_zip_bytes:
+            raise ImportValidationError("Stored import exceeds the upload size limit")
+        while True:
+            check_deadline()
+            chunk = body.read(1024 * 1024)
+            if not chunk:
+                break
+            size += len(chunk)
+            if size > settings.import_max_zip_bytes:
+                raise ImportValidationError("Stored import exceeds the upload size limit")
+            target.write(chunk)
+        target.seek(0)
     finally:
         body.close()

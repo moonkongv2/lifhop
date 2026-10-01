@@ -33,6 +33,7 @@ def process_one_message() -> bool:
             process_chatgpt_import_job(
                 db=db,
                 job_id=job_id,
+                load_results=False,
             )
 
     except ImportJobBusy:

@@ -52,12 +52,13 @@ def fake_processor_s3(
     objects: dict[str, bytes] = {}
 
     def fake_download_object(
-        s3_key: str,
-    ) -> bytes:
-        return objects[s3_key]
+        s3_key: str, target, check_deadline,
+    ) -> None:
+        target.write(objects[s3_key])
+        target.seek(0)
 
     monkeypatch.setattr(
-        "app.services.import_jobs.download_object",
+        "app.services.import_jobs.download_to_file",
         fake_download_object,
     )
 

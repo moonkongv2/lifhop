@@ -17,7 +17,8 @@ from app.models.import_artifact import ImportArtifact
 from app.models.import_job import ImportJob, ImportJobStatus
 from app.schemas.entry import EntryCreate, EntryResponse
 from app.schemas.import_job import ImportJobSubmissionResponse
-from app.s3 import upload_object
+from app.s3 import upload_object, upload_file
+from starlette.concurrency import run_in_threadpool
 from app.sqs import enqueue_import_job
 
 router = APIRouter(prefix="/imports", tags=["imports"])
@@ -80,8 +81,25 @@ async def import_chatgpt(
     current_user: Annotated[User, Depends(get_current_user)],
     file: UploadFile = File(...),
 ) -> ImportJobSubmissionResponse:
-    filename, content = await read_upload(file, {".zip"})
-    artifact = store_artifact(db, current_user.id, filename, content, "application/zip")
+    filename = PurePosixPath((file.filename or "").replace("\\", "/")).name
+    if not filename or len(filename) > 255 or PurePosixPath(filename).suffix.lower() != ".zip":
+        raise HTTPException(400, "Choose a ChatGPT ZIP file")
+    # Starlette spools multipart files to disk; preserve that bounded-memory path.
+    size = file.size
+    if size is None or size == 0:
+        raise HTTPException(400, "Upload is empty")
+    if size > settings.import_max_zip_bytes:
+        raise HTTPException(413, "Upload exceeds the configured ZIP size limit")
+    key = f"users/{current_user.id}/imports/raw/{uuid4()}/{filename}"
+    try:
+        await file.seek(0)
+        await run_in_threadpool(upload_file, key, file.file, "application/zip")
+    except Exception:
+        raise HTTPException(503, "Original-file storage is unavailable; retry when the service is running") from None
+    artifact = ImportArtifact(user_id=current_user.id, s3_key=key, filename=filename,
+                              mime_type="application/zip", size=size)
+    db.add(artifact)
+    db.flush()
     job = ImportJob(user_id=current_user.id, artifact_id=artifact.id, status=ImportJobStatus.PENDING)
     db.add(job)
     db.commit()

@@ -43,13 +43,13 @@ function ImportJobPage() {
       <h2>가져오기 작업 #{data.id}</h2>
       <p role="status">{statusText[data.status]}</p>
       <p>전체 {data.total_items} / 성공 {data.processed_items} / 실패 {data.failed_items} / 시도 {data.attempts}</p>
-      {isActive(data) && <p>작업 상태를 자동 확인하고 있어. 처리 중 건수는 완료 후 표시돼. 대기가 계속되면 워커 실행 여부를 확인해 줘.</p>}
+      {isActive(data) && <p>작업 상태와 저장된 처리 건수를 자동 확인하고 있어. 파일을 확인하는 동안 전체 건수는 0으로 표시될 수 있어.</p>}
       {data.error && <p role="alert">{data.error}</p>}
       {data.item_errors.length > 0 && <section><h3>항목별 오류</h3><ul>
         {data.item_errors.map((error) => <li key={error.index}>항목 {error.index}: {error.message} ({error.code})</li>)}
       </ul></section>}
       {(data.status === "FAILED" || data.status === "PARTIAL") && <>
-        <p>재시도는 보관된 같은 ZIP을 다시 처리해. 파일 내용이 잘못됐으면 수정한 ZIP을 새로 올려 줘.</p>
+        <p>중단된 작업은 저장된 지점부터 재개해. 모든 항목을 처리한 뒤 실패 항목이 남은 작업은 같은 ZIP 전체를 다시 처리해. 잘못된 파일은 수정한 ZIP을 새로 올려 줘.</p>
         <button disabled={retry.isPending} onClick={() => retry.mutate()}>{retry.isPending ? "재시도 요청 중..." : "작업 재시도"}</button>
       </>}
       {retry.error && <p role="alert">{retry.error.message}</p>}

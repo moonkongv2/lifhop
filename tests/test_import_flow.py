@@ -37,7 +37,8 @@ def archive(items, extra_files=None):
 def storage(monkeypatch):
     objects = {}
     monkeypatch.setattr("app.api.imports.upload_object", lambda s3_key, content, mime_type: objects.update({s3_key: content}))
-    monkeypatch.setattr("app.services.import_jobs.download_object", lambda s3_key: objects[s3_key])
+    monkeypatch.setattr("app.api.imports.upload_file", lambda s3_key, file, mime_type: objects.update({s3_key: file.read()}))
+    monkeypatch.setattr("app.services.import_jobs.download_to_file", lambda s3_key, target, check_deadline: target.write(objects[s3_key]))
     return objects
 
 
@@ -97,7 +98,7 @@ def test_markdown_preserves_original_link_and_rejects_invalid_content(client, au
 
 @pytest.mark.parametrize("path,filename", [("markdown", "note.md"), ("chatgpt", "export.zip")])
 def test_upload_size_limit_before_storage(client, auth_headers, storage, monkeypatch, path, filename):
-    monkeypatch.setattr(settings, "import_max_upload_bytes", 5)
+    monkeypatch.setattr(settings, "import_max_zip_bytes" if path == "chatgpt" else "import_max_upload_bytes", 5)
     response = client.post(f"/imports/{path}", headers=auth_headers,
                            files={"file": (filename, b"123456")})
     assert response.status_code == 413
@@ -204,9 +205,9 @@ def test_queue_submission_failure_is_visible_and_retryable(client, auth_headers,
 
 def test_infrastructure_retry_is_bounded_and_sanitized(client, auth_headers, storage, db_session, monkeypatch):
     job_id = submit(client, auth_headers, archive(conversations()))
-    def fail(s3_key):
+    def fail(s3_key, target, check_deadline):
         raise RuntimeError("SECRET-MARKER")
-    monkeypatch.setattr("app.services.import_jobs.download_object", fail)
+    monkeypatch.setattr("app.services.import_jobs.download_to_file", fail)
     for attempt in range(settings.import_max_attempts):
         with pytest.raises(ImportInfrastructureError, match="infrastructure"):
             process_chatgpt_import_job(db_session, job_id)

@@ -279,7 +279,11 @@ with local automated checks complete and owner browser verification confirmed. S
 Phase 1.2 adds browser Markdown/ChatGPT ZIP upload, job status/results/retry,
 protected original downloads, and bounded local processing. Local automated
 checks, a real local-storage/worker integration check, and owner browser
-verification are complete. Phase 1.3 adds owner-scoped literal phrase search,
+verification of the initial flow are complete. A follow-up supports large ZIPs,
+numbered JSON shards, saved progress, and interruption recovery; local 512 MiB
+synthetic and 494 MiB real-archive checks passed, and the owner confirmed the
+large-import browser result on 2026-10-02.
+Phase 1.3 adds owner-scoped literal phrase search,
 source/type/date filters, URL-preserved search state, and browser pagination.
 Local checks are complete; owner browser verification is pending. This is
 followed by Codex/GitHub historical collection,

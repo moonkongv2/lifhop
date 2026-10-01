@@ -1,7 +1,9 @@
 from datetime import datetime, timedelta, timezone
 from time import monotonic
+from tempfile import TemporaryFile
 
 from sqlalchemy import select, text
+from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import DataError, IntegrityError
 
@@ -9,10 +11,10 @@ from app.config import settings
 from app.services.external_entries import upsert_external_entry
 from app.importers.chatgpt import ChatGPTImporter
 from app.importers.limits import ImportItemError, ImportValidationError
-from app.importers.source_factory import create_chatgpt_source_from_zip
+from app.importers.chatgpt_archive import ChatGPTArchive
 from app.models.entry import Entry
 from app.models.import_job import ImportJob, ImportJobStatus
-from app.s3 import download_object
+from app.s3 import download_to_file
 
 
 class ImportJobBusy(RuntimeError):
@@ -24,7 +26,7 @@ class ImportInfrastructureError(RuntimeError):
 
 
 def stale_before() -> datetime:
-    # Active processing holds a row lock; the extra margin covers startup work.
+    # Live processing holds an owner session lock across batch commits.
     return datetime.now(timezone.utc) - timedelta(seconds=settings.import_max_seconds + 60)
 
 
@@ -36,17 +38,46 @@ def result_entries(db: Session, job: ImportJob) -> list[Entry]:
     ).order_by(Entry.id)).all())
 
 
-def process_chatgpt_import_job(db: Session, job_id: int) -> list[Entry]:
+def process_chatgpt_import_job(db: Session, job_id: int, *, load_results: bool = True) -> list[Entry]:
+    # Pin one physical connection across batch commits. Its session advisory lock
+    # serializes this owner's jobs and disappears if the worker/connection dies.
+    bind = db.get_bind()
+    if isinstance(bind, Engine):
+        with bind.connect() as connection, Session(bind=connection) as worker_db:
+            return process_chatgpt_import_job(worker_db, job_id, load_results=load_results)
+    user_id = db.scalar(select(ImportJob.user_id).where(ImportJob.id == job_id))
+    if user_id is None:
+        db.rollback()
+        raise ImportJobBusy("Job missing or claimed by another worker")
+    locked = db.scalar(text("SELECT pg_try_advisory_lock(12012, :user_id)"), {"user_id": user_id})
+    if not locked:
+        db.rollback()
+        raise ImportJobBusy("Another import for this owner is running")
+    try:
+        entries = _process_locked_job(db, job_id, load_results=load_results)
+        for entry in entries:
+            db.expunge(entry)
+        return entries
+    finally:
+        db.rollback()
+        try:
+            db.execute(text("SELECT pg_advisory_unlock(12012, :user_id)"), {"user_id": user_id})
+            db.commit()
+        except Exception:
+            # Never return a connection with a possibly-held session lock to a pool.
+            db.rollback()
+            bind.invalidate()
+            raise
+
+
+def _process_locked_job(db: Session, job_id: int, *, load_results: bool) -> list[Entry]:
     job = db.scalar(select(ImportJob).where(ImportJob.id == job_id)
                     .with_for_update(skip_locked=True).execution_options(populate_existing=True))
     if job is None:
         raise ImportJobBusy("Job missing or claimed by another worker")
     if job.status in {ImportJobStatus.COMPLETED, ImportJobStatus.PARTIAL, ImportJobStatus.FAILED}:
-        entries = result_entries(db, job)
-        db.commit()
-        return entries
+        return result_entries(db, job) if load_results else []
     if job.status == ImportJobStatus.RUNNING and job.started_at and job.started_at > stale_before():
-        db.rollback()
         raise ImportJobBusy("Job is already running")
     if job.attempts >= settings.import_max_attempts:
         job.status = ImportJobStatus.FAILED
@@ -56,81 +87,75 @@ def process_chatgpt_import_job(db: Session, job_id: int) -> list[Entry]:
         return []
     job.status = ImportJobStatus.RUNNING
     job.attempts += 1
-    attempt = job.attempts
     job.started_at = datetime.now(timezone.utc)
     job.completed_at = None
     job.error = None
-    job.total_items = job.processed_items = job.failed_items = 0
-    job.entry_ids = []
-    job.item_errors = []
     db.commit()
 
-    # Keep the job locked until its result is durable. A stale/crashed RUNNING
-    # job can be claimed again, but a live worker cannot be superseded.
-    job = db.scalar(select(ImportJob).where(ImportJob.id == job_id)
-                    .with_for_update(skip_locked=True).execution_options(populate_existing=True))
-    if job is None or job.attempts != attempt:
-        db.rollback()
-        raise ImportJobBusy("Job was claimed by another worker")
-    locked = db.scalar(text("SELECT pg_try_advisory_xact_lock(12012, :user_id)"), {"user_id": job.user_id})
-    if not locked:
-        job.status = ImportJobStatus.PENDING
-        job.started_at = None
-        job.attempts -= 1
-        db.commit()
-        raise ImportJobBusy("Another import for this owner is running")
-
     started = monotonic()
-    try:
-        db.execute(text("SELECT set_config('statement_timeout', :timeout, true)"),
-                   {"timeout": str(settings.import_max_seconds * 1000)})
-        content = download_object(job.artifact.s3_key)
-        source = create_chatgpt_source_from_zip(content)
-        job.total_items = len(source.conversations)
-        if not source.conversations:
-            raise ImportValidationError("Archive contains no conversations")
+
+    def check_deadline() -> None:
         if monotonic() - started > settings.import_max_seconds:
             raise ImportValidationError("Import exceeded the processing time limit")
-        importer = ChatGPTImporter()
-        entries: list[Entry] = []
-        entry_ids: list[int] = []
-        errors: list[dict] = []
-        for index, conversation in enumerate(source.conversations, start=1):
-            if monotonic() - started > settings.import_max_seconds:
-                raise ImportValidationError("Import exceeded the processing time limit")
-            try:
-                # A malformed item or failed insert must not poison other items.
-                with db.begin_nested():
-                    item = importer.import_conversation(conversation)
-                    entry = upsert_external_entry(db, user_id=job.user_id, item=item)
-                    entry.import_artifact_id = job.artifact_id
-                    db.flush()
-                    if monotonic() - started > settings.import_max_seconds:
-                        raise ImportValidationError("Import exceeded the processing time limit")
-                entries.append(entry)
-                entry_ids.append(entry.id)
-            except ImportItemError as exc:
-                errors.append({"index": index, "code": exc.code, "message": str(exc)})
-            except (DataError, IntegrityError):
-                errors.append({"index": index, "code": "INVALID_DATABASE_VALUE",
-                               "message": "Conversation contains unsupported database text or values"})
-            except ImportValidationError:
-                raise
-            except (ValueError, TypeError, KeyError, AttributeError, OverflowError):
-                errors.append({"index": index, "code": "INVALID_CONVERSATION",
-                               "message": "Conversation contains malformed fields or timestamps"})
-        job.processed_items = len(entry_ids)
-        job.failed_items = len(errors)
-        job.entry_ids = list(dict.fromkeys(entry_ids))
-        job.item_errors = errors
-        if not entry_ids:
-            job.status = ImportJobStatus.FAILED
-            job.error = "No conversations were imported; inspect the item errors"
-        else:
-            job.status = ImportJobStatus.PARTIAL if errors else ImportJobStatus.COMPLETED
-        job.completed_at = datetime.now(timezone.utc)
-        db.commit()
-        return entries
+
+    def lock_batch() -> None:
+        db.refresh(job, with_for_update=True)
+        db.execute(text("SELECT set_config('statement_timeout', :timeout, true)"),
+                   {"timeout": str(settings.import_max_seconds * 1000)})
+
+    try:
+        with TemporaryFile(mode="w+b") as archive_file:
+            download_to_file(job.artifact.s3_key, archive_file, check_deadline)
+            archive = ChatGPTArchive(archive_file, check_deadline)
+            total = archive.count()
+            if not total:
+                raise ImportValidationError("Archive contains no conversations")
+            job.total_items = total
+            db.commit()
+            lock_batch()
+            # The committed counters are a cursor into the immutable archive.
+            resume_after = job.processed_items + job.failed_items
+            importer = ChatGPTImporter()
+            for index, conversation in enumerate(archive.conversations(), start=1):
+                check_deadline()
+                if index <= resume_after:
+                    continue
+                try:
+                    with db.begin_nested():
+                        item = importer.import_conversation(conversation)
+                        entry = upsert_external_entry(db, user_id=job.user_id, item=item)
+                        entry.import_artifact_id = job.artifact_id
+                        db.flush()
+                        check_deadline()
+                    job.processed_items += 1
+                    if entry.id not in job.entry_ids:
+                        job.entry_ids = [*job.entry_ids, entry.id]
+                except ImportItemError as exc:
+                    job.failed_items += 1
+                    job.item_errors = [*job.item_errors, {"index": index, "code": exc.code, "message": str(exc)}]
+                except (DataError, IntegrityError):
+                    job.failed_items += 1
+                    job.item_errors = [*job.item_errors, {"index": index, "code": "INVALID_DATABASE_VALUE",
+                                       "message": "Conversation contains unsupported database text or values"}]
+                except ImportValidationError:
+                    raise
+                except (ValueError, TypeError, KeyError, AttributeError, OverflowError):
+                    job.failed_items += 1
+                    job.item_errors = [*job.item_errors, {"index": index, "code": "INVALID_CONVERSATION",
+                                       "message": "Conversation contains malformed fields or timestamps"}]
+                if index % settings.import_batch_size == 0:
+                    # Entry writes and their cursor commit atomically. Uncommitted
+                    # items replay after a failure; durable items are skipped.
+                    db.commit()
+                    lock_batch()
+            if not job.processed_items:
+                job.status = ImportJobStatus.FAILED
+                job.error = "No conversations were imported; inspect the item errors"
+            else:
+                job.status = ImportJobStatus.PARTIAL if job.failed_items else ImportJobStatus.COMPLETED
+            job.completed_at = datetime.now(timezone.utc)
+            db.commit()
+            return result_entries(db, job) if load_results else []
     except Exception as exc:
         db.rollback()
         failed_job = db.get(ImportJob, job_id)
@@ -140,9 +165,8 @@ def process_chatgpt_import_job(db: Session, job_id: int) -> list[Entry]:
             failed_job.error = str(exc)
             db.commit()
             raise
-        # Infrastructure failures are eligible for bounded automatic redelivery.
         failed_job.status = (ImportJobStatus.PENDING if failed_job.attempts < settings.import_max_attempts
                              else ImportJobStatus.FAILED)
-        failed_job.error = "Storage or database processing failed; retry when the service is available"
+        failed_job.error = "Storage or database processing failed; retry resumes from saved progress"
         db.commit()
         raise ImportInfrastructureError("Import infrastructure failure") from None

@@ -13,7 +13,8 @@ class ImportUploadLimit:
         if scope["type"] != "http" or scope["method"] != "POST" or not scope["path"].startswith("/imports/"):
             await self.app(scope, receive, send)
             return
-        limit = settings.import_max_upload_bytes + 64 * 1024
+        file_limit = settings.import_max_zip_bytes if scope["path"].rstrip("/") == "/imports/chatgpt" else settings.import_max_upload_bytes
+        limit = file_limit + 64 * 1024
         size = 0
 
         async def limited_receive():

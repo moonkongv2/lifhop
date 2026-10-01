@@ -14,7 +14,11 @@ class Settings(BaseSettings):
     sqs_import_queue_url: str | None = None
     queue_mode: Literal["local", "aws"] = "local"
     import_max_upload_bytes: int = Field(default=25 * 1024 * 1024, ge=1)
-    import_max_extracted_bytes: int = Field(default=100 * 1024 * 1024, ge=1)
+    import_max_zip_bytes: int = Field(default=1024 * 1024 * 1024, ge=1)
+    import_max_extracted_bytes: int = Field(default=1024 * 1024 * 1024, ge=1)
+    import_max_json_bytes: int = Field(default=256 * 1024 * 1024, ge=1)
+    import_max_record_bytes: int = Field(default=16 * 1024 * 1024, ge=1)
+    import_batch_size: int = Field(default=25, ge=1, le=2000)
     import_max_archive_files: int = Field(default=5000, ge=1)
     import_max_items: int = Field(default=2000, ge=1)
     import_max_nodes_per_item: int = Field(default=20000, ge=1)

@@ -76,7 +76,7 @@ http://localhost:8000/docs, then sign in through the browser.
 
    Select ChatGPT ZIP and upload it. The job page polls every 2 seconds; expect
    완료, 2 successes, 0 failures, 2 linked conversation Entries, and the original
-   ZIP download. Counts/errors become visible when processing finishes.
+   ZIP download. Counts/errors update after each saved batch.
 4. Upload the same ZIP again. It creates another job/original artifact while
    keeping the same two logical conversation Entries. The latest artifact link
    on each Entry changes to the latest upload. Reload 가져오기 to revisit jobs.
@@ -129,8 +129,12 @@ isolated PostgreSQL; frontend tests render pages with mocked API responses.
 
 | Environment setting | Default |
 | --- | --- |
-| `IMPORT_MAX_UPLOAD_BYTES` | 25 MiB per file |
-| `IMPORT_MAX_EXTRACTED_BYTES` | 100 MiB total declared archive size/read JSON |
+| `IMPORT_MAX_UPLOAD_BYTES` | 25 MiB per Markdown file |
+| `IMPORT_MAX_ZIP_BYTES` | 1 GiB per ZIP file |
+| `IMPORT_MAX_EXTRACTED_BYTES` | 1 GiB total declared uncompressed ZIP size |
+| `IMPORT_MAX_JSON_BYTES` | 256 MiB total conversation JSON |
+| `IMPORT_MAX_RECORD_BYTES` | 16 MiB per conversation JSON record |
+| `IMPORT_BATCH_SIZE` | 25 items per saved batch |
 | `IMPORT_MAX_ARCHIVE_FILES` | 5,000 archive members |
 | `IMPORT_MAX_ITEMS` | 2,000 conversations |
 | `IMPORT_MAX_NODES_PER_ITEM` | 20,000 message nodes |
@@ -138,20 +142,73 @@ isolated PostgreSQL; frontend tests render pages with mocked API responses.
 | `IMPORT_MAX_SECONDS` | 120 seconds of processing budget |
 | `IMPORT_MAX_ATTEMPTS` | 3 processing attempts, automatic + manual combined |
 
-Multipart request input is limited to the file budget plus 64 KiB overhead.
-Archive members are read in memory; no ZIP paths are extracted to the filesystem.
-Cycles/missing branch links are rejected. Each item uses a DB savepoint, so an
-invalid database value does not abort otherwise valid items. Error output uses
-item position and fixed reasons; private content and exception bodies are not
-logged. Zero successful items with errors is FAILED, rather than PARTIAL.
+Multipart request input is limited to the selected file budget plus 64 KiB
+of overhead. Uploaded ZIPs remain spooled files and are streamed to object storage.
+The worker downloads to an automatically cleaned temporary file. Reserve temporary
+disk space for concurrent uploads/workers in addition to preserved originals.
 
-A completed/partial/failed job delivery returns its recorded result without
-reprocessing. Explicit retry switches FAILED/PARTIAL back to PENDING. Processing
-is serialized per owner, with the job locked until its final transaction commits.
-A crashed RUNNING job can be reclaimed after `IMPORT_MAX_SECONDS + 60` seconds;
-live jobs remain protected by their row lock. Byte/node/query/deadline limits
-bound work, but there is no subprocess watchdog that forcibly kills a parser
-at exactly the deadline. Progress is status-level; per-item counts are final.
+Both `conversations.json` and numbered `conversations-000.json` /
+`conversations_000.json` arrays are supported, including nested directories.
+A sequential preflight pass validates JSON/CRC/size/item/node limits and counts
+records before any Entry writes. A second pass parses one bounded record at a
+time, in archive order. Media remains in the preserved ZIP and is not extracted
+or indexed. JSON metadata, raw archive size, and individual records have separate
+budgets. Malformed later shards therefore fail before partially saving Entries.
+
+Entries and processed/failed counts commit atomically every `IMPORT_BATCH_SIZE`
+items. A pinned PostgreSQL connection holds an owner session advisory lock across
+these commits. Interrupted attempts retain completed batches and resume after
+`processed_items + failed_items`; the current uncommitted batch rolls back. Worker
+exit releases the lock. A crashed RUNNING job is eligible after
+`IMPORT_MAX_SECONDS + 60` seconds, provided another worker holds no owner lock.
+
+An already completed/partial/failed delivery is a no-op. Explicit retry resumes
+an interrupted attempt; if every item was visited and errors remain, it resets
+the counters and reprocesses the complete archive. Existing conversation IDs
+prevent duplicates, but the current content can be replaced on full retry/reimport.
+Attempts are bounded. SQL query timeouts and cooperative deadline checks remain;
+there is no exact wall-clock process watchdog. A lost database connection ends
+processing, so a session lock is never intentionally released while writes continue.
+
+### Large ZIP user check
+
+1. Restart both the API and worker so they load the new code/default limits.
+   No new migration or package installation is needed for this follow-up.
+2. Open http://localhost:5173/imports, select ChatGPT ZIP, and upload the original
+   export. Uploading a roughly 500 MiB archive should reach the job page.
+3. During preflight, total may be zero. During conversion, saved success/failure
+   counts update in batches. On completion, open result Entries and search them.
+4. A textless active branch reports `EMPTY_CONVERSATION`; this can yield 일부 성공
+   even when all supported text conversations were saved. Repeating that same
+   file does not create text for such items.
+5. Upload the same archive again and verify that conversation Entries do not
+   multiply. Check the protected original download. Inspect source/event dates
+   separately from registration dates in Entries.
+
+The owner-provided archive produced 1,254 saved conversations and 30 textless
+items from 1,284 total in the local check. The owner confirmed the expected
+browser result on 2026-10-02. Agent integration checks used a disposable DB
+schema and temporary local storage objects; the owner performed the browser
+import separately.
+
+To repeat the actual HTTP/storage/worker check with a synthetic 512 MiB archive:
+
+```bash
+docker compose up -d seaweedfs
+docker compose -f compose.test.yaml up -d --wait
+.venv/bin/python scripts/check_large_import.py
+# Optional: read an existing archive locally; never modifies that file.
+.venv/bin/python scripts/check_large_import.py --archive /path/to/export.zip
+```
+
+The script forces local storage and the disposable test DB, verifies its unique
+schema before processing/cleanup, and only deletes object keys created by its
+own invocation. It reports aggregate counts, durations, peak worker RSS, original
+byte equality, and reimport uniqueness. The synthetic check also terminates a
+worker after a durable batch and verifies recovery. It prints no imported titles
+or bodies. Measurements on this Mac were ~6 seconds for upload and ~12 seconds
+for processing, with ~119 MiB synthetic / ~211 MiB real worker peak RSS; deployment
+hardware, concurrent uploads, and larger individual records require measurement.
 
 ## Automated checks
 
