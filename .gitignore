@@ -27,3 +27,5 @@ dist/
 
 codex_reviews/
 
+# Private acquisition previews and samples
+.local/

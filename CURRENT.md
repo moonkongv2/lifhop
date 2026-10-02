@@ -4,12 +4,14 @@ Last updated: 2026-10-02
 
 ## Current product slice
 
-Frontend language follow-up — English interface before Phase 2.1.
+Phase 2.1 — Codex/GitHub acquisition and coverage verification.
 Phase 1.3 was committed at `8700536`; its owner browser check remains pending.
 The large-import implementation, local checks, and owner browser verification
-are complete (2026-10-02). The English interface passes local frontend checks;
-owner browser verification is pending. Next: Phase 2.1 acquisition/coverage verification.
-Setup/checks: `frontend/README.md`.
+are complete (2026-10-02). English UI was committed at `e41dd6b`.
+Acquisition probes and real sample reads pass; owner preview verification is
+pending; the owner requested proceeding to Phase 2.2 without that check.
+Next: Phase 2.2 provenance/version/deletion/AI policy.
+Setup/checks: `frontend/README.md` and `ACQUISITION.md`.
 
 ## Personal-release target
 
@@ -59,8 +61,18 @@ exclusions are planned requirements, not implemented capabilities.
   Dates use English formatting in Asia/Seoul; user content retains its language.
 - Empty/loading/error states, draft-preserving save errors, title validation,
   deletion confirmation, and account-switch cache clearing.
+- Read-only Codex/GitHub verification CLI produces private local HTML/JSON previews,
+  with source IDs/dates, command outcomes/diffs, coverage, and omissions. No Entry
+  writes, uploads, model execution, or scheduled collection.
+- Codex CLI 0.158.0 official app-server reads run against disposable rollout/history
+  DB copies. Local inventory: 169 files; selected historical sample: 3 turns,
+  22 command items and 3 file-change items; list/turn pagination verified.
+- Selected public GitHub repository `moonkongv2/jy_yamyam`: 3 branches inventoried,
+  only `main` selected; 372 reachable commits across 4 pages. One commit's 2 file
+  patches and README at its pinned SHA verified through anonymous REST GET.
 - Disposable PostgreSQL tests use real migrations in fresh schemas. Local
-  checks: 161 backend tests and 25 frontend tests pass; frontend lint/build pass.
+  checks: 186 backend tests (25 acquisition cases) and 25 frontend tests pass;
+  frontend lint/build pass.
 - Actual local HTTP/S3/worker checks passed with a 512 MiB synthetic ZIP and a
   494 MiB owner archive in isolated schemas. Original hashes, search counts,
   reimport uniqueness, visible progress, and synthetic worker-kill recovery passed.
@@ -76,16 +88,16 @@ user-verifiable product slices in `ROADMAP.md`.
 
 ## Next
 
-1. Phase 2.1: verify Codex/GitHub historical acquisition and define coverage with
-   small selected samples before building collectors.
+1. Inspect the local acquisition previews using `ACQUISITION.md`, then Phase 2.2:
+   persistent provenance, versions, deletion suppression, and external-AI policy.
 2. Follow the sequence: Codex/GitHub history → evidence-based answers/retrospectives
    → scheduled collectors → private AWS release.
 
 ## Known limitations
 
 - Owner confirmed the initial and large-ZIP Phase 1.2 flows in the browser.
-  The specific Phase 1.3 browser checks remain pending. Remote CI execution remains
-  pending; frontend automated tests stub API.
+  Phase 1.3, English UI, and Phase 2.1 owner preview checks remain pending.
+  Remote CI execution remains pending; frontend automated tests stub API.
 - Search is literal case-insensitive substring matching; no word stemming, fuzzy
   matching, relevance model, attachment text extraction, or LLM answers. Large
   real-corpus performance is unverified; ranked searches/counts scan owned rows.
@@ -97,9 +109,13 @@ user-verifiable product slices in `ROADMAP.md`.
   as EMPTY_CONVERSATION errors and can produce a PARTIAL result.
 - Earlier imported Entries/jobs have no reconstructed artifact/result links.
   Markdown reupload creates another Entry; ChatGPT reupload uses stable IDs.
-- Codex/GitHub adapters, retained Entry versions, deletion tombstones, and
-  external-AI policies are not implemented. Source access/history size and
-  deployment cost still require verification; enum values are not integrations.
+- Codex/GitHub checks are local previews; ingestion/backfill, retained Entry
+  versions, deletion tombstones, and external-AI policies are not implemented.
+  Codex reads require installed CLI 0.158.0 and bounded disposable snapshots.
+  Other recorded versions, archived contents, private repos, organization SSO,
+  and expiring-token access are not verified with real samples. Preview truncation
+  and incomplete secret redaction require reports to stay private. Full collection
+  volume and deployment cost still need verification.
 - The ChatGPT Web extension is experimental and currently unreliable on
   affected pages. Do not use it as the product's dependable capture path.
 - Attachment storage does not extract PDF or image content for search.

@@ -984,3 +984,40 @@ it created for cleanup. These checks are required following a corrected validati
 incident described in CURRENT.md. Private archive contents never enter fixtures,
 Git, or tool output. The owner confirmed the expected large-import browser
 result on 2026-10-02.
+
+---
+
+## ADR-021 — Verify acquisition with local previews before persistent ingestion
+
+**Status:** Accepted for Phase 2.1
+**Date:** 2026-10-02
+
+Use a separate read-only acquisition CLI and private HTML/JSON previews to verify
+Codex/GitHub access, source IDs/dates, actual messages/results/diffs, and coverage.
+Do not write Entries or expand the canonical model before Phase 2.2 introduces
+versions, deletion suppression, and external-AI policy. No dependency/service or
+schema change is required for these checks. Private previews stay out of Git and
+are not sent to external AI; sanitized/truncated previews are not exact originals.
+
+Prefer official Codex app-server reads over a version-dependent content parser.
+The verified CLI is 0.158.0. Paginated sessions require the history projection DB
+and experimental `thread/turns/list`; JSONL-only full-history reads returned no
+turns for the selected sample. Run against disposable copies of selected rollouts
+and a read-only SQLite backup so app-server scan/repair or migrations cannot
+alter source history. Copy no auth/config/state DB. Allow only history read RPCs;
+never resume a session, execute captured commands, or start model turns. Record
+version, snapshot identity, page limits, unsupported items, and unknown outputs.
+An idle-session snapshot is the verified path; full backfill and a future CLI/DB
+format require renewed checks rather than a silent fallback.
+
+Use GitHub versioned REST GET with a pinned selected branch head. Inventory
+reachable commits with pagination, preserve repository ID and commit SHA, and
+read sample documents at that same SHA. Public read is sufficient for the
+selected user-owned repository; do not add a token solely for this sample.
+Private/organization credentials need separate least-privilege, SSO, and expiry
+checks. An absent patch, inaccessible document, 401/403/404/429, or incomplete
+page walk is an explicit gap and never proof of deletion. Enumerated branches
+are not automatically selected for ingestion. Full commits/documents followed
+by PR/review/issue collection remains Phase 2.4.
+
+Real evidence and owner verification steps are recorded in `ACQUISITION.md`.

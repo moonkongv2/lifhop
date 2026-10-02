@@ -250,6 +250,7 @@ Avoid introducing infrastructure purely to make the architecture look sophistica
 - `CURRENT.md` — concise working status and next product slice
 - `DECISIONS.md` — durable architecture decisions
 - `CAPTURE.md` — capture/acquisition strategy and risk register
+- `ACQUISITION.md` — Phase 2.1 read-only source checks and private preview guide
 
 The repository is the source of truth for the project. ChatGPT, Codex CLI, Antigravity CLI, and other coding agents should read the project documentation before making changes.
 
@@ -289,6 +290,11 @@ Local checks are complete; owner browser verification is pending. This is
 followed by Codex/GitHub historical collection,
 source-grounded answers and period retrospectives, scheduled collection from
 both new sources, and private daily-use deployment in `ROADMAP.md`.
+
+Phase 2.1 provides a read-only CLI for Codex and selected GitHub history previews.
+Real historical Codex messages/commands/changes and a GitHub commit/diff/document
+were verified locally, with coverage and omissions recorded. These previews do
+not create Entries or run collectors. See `ACQUISITION.md`; owner review is pending.
 
 See `CURRENT.md` for the active product slice and `ROADMAP.md` for its
 completion criteria.
