@@ -58,6 +58,74 @@ export interface paths {
         patch: operations["update_entry_entries__entry_id__patch"];
         trace?: never;
     };
+    "/entries/{entry_id}/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Versions */
+        get: operations["versions_entries__entry_id__versions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/entries/{entry_id}/versions/{version_id}/select": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Choose Version */
+        post: operations["choose_version_entries__entry_id__versions__version_id__select_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/entries/{entry_id}/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Settings */
+        patch: operations["settings_entries__entry_id__settings_patch"];
+        trace?: never;
+    };
+    "/entries/{entry_id}/source-state": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Source State */
+        patch: operations["source_state_entries__entry_id__source_state_patch"];
+        trace?: never;
+    };
     "/auth/register": {
         parameters: {
             query?: never;
@@ -296,6 +364,108 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/captures/snapshots": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Capture Snapshot */
+        post: operations["capture_snapshot_captures_snapshots_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Sources */
+        get: operations["list_sources_sources_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sources/{source_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Policy */
+        patch: operations["update_policy_sources__source_id__patch"];
+        trace?: never;
+    };
+    "/sources/suppressed/records": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Suppressions */
+        get: operations["suppressions_sources_suppressed_records_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sources/suppressed/{suppression_id}/allow-reimport": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Allow Reimport */
+        post: operations["allow_reimport_sources_suppressed__suppression_id__allow_reimport_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sources/purges/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Purge Status */
+        get: operations["purge_status_sources_purges_status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -372,6 +542,10 @@ export interface components {
             file: string;
             /** Title */
             title?: string | null;
+            /** External Id */
+            external_id?: string | null;
+            /** Source Updated At */
+            source_updated_at?: string | null;
         };
         /** Body_login_auth_login_post */
         Body_login_auth_login_post: {
@@ -396,6 +570,49 @@ export interface components {
              * Format: password
              */
             client_secret?: string | null;
+        };
+        /** CanonicalItem */
+        CanonicalItem: {
+            provider: components["schemas"]["SourceProvider"];
+            /** External Id */
+            external_id?: string | null;
+            /** Title */
+            title: string;
+            /**
+             * Source Scope
+             * @default default
+             */
+            source_scope: string;
+            /** Locator */
+            locator?: string | null;
+            /** Source Updated At */
+            source_updated_at?: string | null;
+            /**
+             * Parser Version
+             * @default canonical-v1
+             */
+            parser_version: string;
+            /**
+             * Completeness
+             * @default unknown
+             * @enum {string}
+             */
+            completeness: "complete" | "partial" | "unknown";
+            /** Event At */
+            event_at?: string | null;
+            /** Payload */
+            payload: components["schemas"]["DocumentPayload"] | components["schemas"]["ConversationPayload"] | components["schemas"]["DevSessionPayload"];
+        };
+        /** CanonicalMessage */
+        CanonicalMessage: {
+            /** Role */
+            role: string;
+            /** Content */
+            content: string;
+            /** Created At */
+            created_at?: string | null;
+            /** Message Id */
+            message_id?: string | null;
         };
         /** CaptureDiagnostics */
         CaptureDiagnostics: {
@@ -436,11 +653,47 @@ export interface components {
             external_id: string;
             /** Title */
             title: string;
+            /** Source Updated At */
+            source_updated_at?: string | null;
             /** Source Url */
             source_url?: string | null;
             /** Messages */
             messages: components["schemas"]["CaptureMessage"][];
             diagnostics: components["schemas"]["CaptureDiagnostics"];
+        };
+        /** ConversationPayload */
+        ConversationPayload: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "conversation";
+            /** Messages */
+            messages: components["schemas"]["CanonicalMessage"][];
+        };
+        /** DevSessionPayload */
+        DevSessionPayload: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "dev_session";
+            /** Messages */
+            messages: components["schemas"]["CanonicalMessage"][];
+            /** Commands */
+            commands?: components["schemas"]["RecordedCommand"][];
+            /** Diffs */
+            diffs?: components["schemas"]["RecordedDiff"][];
+        };
+        /** DocumentPayload */
+        DocumentPayload: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "document";
+            /** Content */
+            content: string;
         };
         /** EntryCreate */
         EntryCreate: {
@@ -460,6 +713,39 @@ export interface components {
             import_artifact_id?: number | null;
             /** @default unknown */
             source: components["schemas"]["EntrySource"];
+            /** Provider */
+            provider?: string | null;
+            /** External Id */
+            external_id?: string | null;
+            /**
+             * Source Scope
+             * @default default
+             */
+            source_scope: string;
+            /** Current Version Id */
+            current_version_id?: number | null;
+            /** Annotation */
+            annotation?: string | null;
+            /**
+             * Read Only
+             * @default false
+             */
+            read_only: boolean;
+            /**
+             * Source State
+             * @default unknown
+             */
+            source_state: string;
+            /**
+             * External Ai Allowed
+             * @default false
+             */
+            external_ai_allowed: boolean;
+            /**
+             * Review Required
+             * @default false
+             */
+            review_required: boolean;
             type: components["schemas"]["EntryType"];
             /** Title */
             title: string;
@@ -498,7 +784,7 @@ export interface components {
          * EntrySource
          * @enum {string}
          */
-        EntrySource: "manual" | "markdown" | "chatgpt" | "unknown";
+        EntrySource: "manual" | "markdown" | "chatgpt" | "codex" | "github" | "unknown";
         /**
          * EntryType
          * @enum {string}
@@ -575,10 +861,101 @@ export interface components {
             job_id: number;
             status: components["schemas"]["ImportJobStatus"];
         };
+        /** PolicyResponse */
+        PolicyResponse: {
+            /** Collection Enabled */
+            collection_enabled: boolean;
+            /** External Ai Allowed */
+            external_ai_allowed: boolean;
+            /** Id */
+            id: number;
+            /** Provider */
+            provider: string;
+            /** Scope */
+            scope: string;
+        };
+        /** PolicyUpdate */
+        PolicyUpdate: {
+            /** Collection Enabled */
+            collection_enabled: boolean;
+            /** External Ai Allowed */
+            external_ai_allowed: boolean;
+        };
+        /** RecordSettings */
+        RecordSettings: {
+            /** Annotation */
+            annotation?: string | null;
+            /** External Ai Allowed */
+            external_ai_allowed?: boolean | null;
+        };
+        /** RecordedCommand */
+        RecordedCommand: {
+            /** Item Id */
+            item_id: string;
+            /** Command */
+            command: string;
+            /**
+             * State
+             * @default unknown
+             * @enum {string}
+             */
+            state: "completed" | "failed" | "unknown" | "partial";
+            /** Output */
+            output?: string | null;
+            /** Exit Code */
+            exit_code?: number | null;
+        };
+        /** RecordedDiff */
+        RecordedDiff: {
+            /** Item Id */
+            item_id: string;
+            /** Path */
+            path: string;
+            /** Diff */
+            diff?: string | null;
+            /**
+             * State
+             * @default unavailable
+             * @enum {string}
+             */
+            state: "recorded" | "unavailable" | "partial";
+        };
         /** RefreshRequest */
         RefreshRequest: {
             /** Refresh Token */
             refresh_token: string;
+        };
+        /**
+         * SourceProvider
+         * @enum {string}
+         */
+        SourceProvider: "markdown" | "plain_text" | "chatgpt" | "claude" | "gemini" | "notion" | "codex" | "claude_code" | "github";
+        /** SourceStateUpdate */
+        SourceStateUpdate: {
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "available" | "deleted" | "unavailable" | "unknown";
+            /**
+             * Confirmed
+             * @default false
+             */
+            confirmed: boolean;
+        };
+        /** SuppressionResponse */
+        SuppressionResponse: {
+            /** Id */
+            id: number;
+            /** Provider */
+            provider: string;
+            /** External Id */
+            external_id: string;
+            /**
+             * Deleted At
+             * Format: date-time
+             */
+            deleted_at: string;
         };
         /** TokenResponse */
         TokenResponse: {
@@ -625,6 +1002,46 @@ export interface components {
             input?: unknown;
             /** Context */
             ctx?: Record<string, never>;
+        };
+        /** VersionResponse */
+        VersionResponse: {
+            /** Id */
+            id: number;
+            /** Entry Id */
+            entry_id: number;
+            /** Number */
+            number: number;
+            /** Content Hash */
+            content_hash: string;
+            /** Title */
+            title: string;
+            /** Content */
+            content: string | null;
+            /** Entry Type */
+            entry_type: string;
+            /** Event At */
+            event_at: string | null;
+            /**
+             * Observed At
+             * Format: date-time
+             */
+            observed_at: string;
+            /** Source Updated At */
+            source_updated_at: string | null;
+            /** Locator */
+            locator: string | null;
+            /** Parser Version */
+            parser_version: string;
+            /** Completeness */
+            completeness: string;
+            /** Material Kind */
+            material_kind: string;
+            /** Payload */
+            payload: {
+                [key: string]: unknown;
+            } | null;
+            /** Import Artifact Id */
+            import_artifact_id: number | null;
         };
     };
     responses: never;
@@ -705,6 +1122,7 @@ export interface operations {
             query?: {
                 q?: string;
                 source?: components["schemas"]["EntrySource"] | null;
+                source_state?: ("available" | "deleted" | "unavailable" | "unknown") | null;
                 type?: components["schemas"]["EntryType"] | null;
                 date_field?: "created_at" | "event_at";
                 date_from?: string | null;
@@ -810,6 +1228,139 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["EntryUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EntryResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    versions_entries__entry_id__versions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entry_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VersionResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    choose_version_entries__entry_id__versions__version_id__select_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entry_id: number;
+                version_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EntryResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    settings_entries__entry_id__settings_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entry_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordSettings"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EntryResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    source_state_entries__entry_id__source_state_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entry_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SourceStateUpdate"];
             };
         };
         responses: {
@@ -1285,6 +1836,165 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    capture_snapshot_captures_snapshots_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CanonicalItem"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EntryResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_sources_sources_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PolicyResponse"][];
+                };
+            };
+        };
+    };
+    update_policy_sources__source_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PolicyUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PolicyResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    suppressions_sources_suppressed_records_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuppressionResponse"][];
+                };
+            };
+        };
+    };
+    allow_reimport_sources_suppressed__suppression_id__allow_reimport_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                suppression_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    purge_status_sources_purges_status_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
         };

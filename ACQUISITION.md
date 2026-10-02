@@ -54,9 +54,23 @@ confirmed repository access. Its credentials are not exported into the probe.
    Other branches are listed but their commits are not collected unless selected.
    A page budget means a lower bound, never complete history. Access failures
    mean unavailable/unknown; they are not proof of source deletion.
-4. Confirm these previews before implementing Phase 2.2's persistent provenance,
-   versions, deletion suppression, and external-AI policy. The normal lifhop
-   browser does not display these sources as Entries yet.
+4. The owner requested proceeding to Phase 2.2 without this preview check.
+   Use `HISTORY.md` for current browser checks. Real Codex/GitHub collection is
+   still Phase 2.3/2.4; these previews do not populate the archive.
+
+### What to look at in the JSON-shaped HTML
+
+You only need three sections; the inventory is context, not a checklist of all files.
+
+| Report section | Owner check |
+| --- | --- |
+| Codex sample turns/items | Recognize one old question/answer; inspect one command's output/exit and one recorded diff. Null output means unknown, not successful execution. |
+| GitHub `sample` | Match message and the two `files` patches with commit `c3107bc…`; `documents_at_commit` is README at that SHA. |
+| `omissions` and coverage | Notice unavailable/truncated outputs and main-only scope. 372 enumerated commits does not mean every diff/document was ingested. |
+
+The aggregate source-read checks were already executed by the agent. Owner
+review asks whether the visible sample matches the history you recognize.
+Phase 2.2's history/deletion/permission checks are in the application itself.
 
 ## Verified on 2026-10-02
 

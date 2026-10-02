@@ -9,7 +9,7 @@ import LoginPage from "./LoginPage";
 import type { Entry } from "../api/entries";
 
 const note: Entry = {
-  id: 1, source: "manual", type: "NOTE", title: "여행 메모", content: "첫 줄\n둘째 줄",
+  id: 1, source: "manual", source_scope: "default", read_only: false, source_state: "unknown", external_ai_allowed: false, review_required: false, type: "NOTE", title: "여행 메모", content: "첫 줄\n둘째 줄",
   event_at: null, created_at: "2026-10-01T00:00:00Z", updated_at: "2026-10-01T00:00:00Z",
 };
 let records: Entry[];
@@ -272,4 +272,15 @@ describe("Entry search and pagination", () => {
     mount();
     await screen.findByText(/Added: Oct 1, 2026, 1:00 AM/);
   });
+});
+
+it("removes cached versions immediately after confirmed deletion", async () => {
+  records = [{ ...note, read_only: true }];
+  const cache = mount("/entries/1");
+  cache.setQueryData(["entry-versions", 1], [{ content: "Retained synthetic text" }]);
+  await screen.findByText(note.title);
+  click("Delete");
+  click("Confirm delete");
+  await waitFor(() => expect(cache.getQueryData(["entry-versions", 1])).toBeUndefined());
+  expect(records).toEqual([]);
 });

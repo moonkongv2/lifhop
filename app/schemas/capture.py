@@ -1,6 +1,7 @@
+from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, model_validator, field_validator
 
 
 class CaptureMessage(BaseModel):
@@ -28,6 +29,7 @@ class ChatGPTCaptureRequest(BaseModel):
         min_length=1,
         max_length=255,
     )
+    source_updated_at: datetime | None = None
     source_url: str | None = None
 
     messages: list[CaptureMessage] = Field(
@@ -35,6 +37,13 @@ class ChatGPTCaptureRequest(BaseModel):
     )
 
     diagnostics: CaptureDiagnostics
+
+    @field_validator("source_updated_at")
+    @classmethod
+    def aware_time(cls, value):
+        if value is not None and value.utcoffset() is None:
+            raise ValueError("Source modification time requires a timezone")
+        return value
 
     @model_validator(mode="after")
     def validate_capture(self):

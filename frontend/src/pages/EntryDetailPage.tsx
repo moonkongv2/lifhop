@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, Navigate, useNavigate, useParams, useLocation } from "react-router";
 import { deleteEntry, fetchEntry, updateEntry } from "../api/entries";
 import type { EntryUpdate } from "../api/entries";
+import EntryHistory from "../components/EntryHistory";
 import ArtifactDownload from "../components/ArtifactDownload";
 import { formatEntryDate, sourceLabels } from "../utils/entries";
 import EntryForm from "../components/EntryForm";
@@ -34,6 +35,9 @@ function EntryDetailPage() {
     mutationFn: () => deleteEntry(id!),
     onSuccess: async () => {
       queryClient.removeQueries({ queryKey: ["entry", id], exact: true });
+      queryClient.removeQueries({ queryKey: ["entry-versions", Number(id)] });
+      await queryClient.invalidateQueries({ queryKey: ["suppressed"] });
+      await queryClient.invalidateQueries({ queryKey: ["purges"] });
       await queryClient.invalidateQueries({ queryKey: ["entries"] });
       navigate(listTarget, { replace: true });
     },
@@ -63,9 +67,10 @@ function EntryDetailPage() {
           <p>Added: {formatEntryDate(entry.created_at)} (Asia/Seoul)</p>
           <p>Updated: {formatEntryDate(entry.updated_at)} (Asia/Seoul)</p>
           {entry.import_artifact_id && <ArtifactDownload key={entry.import_artifact_id} artifactId={entry.import_artifact_id} />}
+          <EntryHistory key={entry.id} entry={entry} />
           {confirmDelete ? (
             <div>
-              <p>Delete this entry? This action cannot be undone.</p>
+              <p>Delete this entry and all versions? Imported records will be blocked from reimport. Associated originals, including shared ZIPs, will be purged.</p>
               <div className="actions">
                 <button disabled={remove.isPending} onClick={() => remove.mutate()}>
                   {remove.isPending ? "Deleting..." : "Confirm delete"}
@@ -76,7 +81,7 @@ function EntryDetailPage() {
             </div>
           ) : (
             <div className="actions">
-              <button onClick={() => setEditing(true)}>Edit</button>
+              {!entry.read_only && <button onClick={() => setEditing(true)}>Edit</button>}
               <button onClick={() => setConfirmDelete(true)}>Delete</button>
             </div>
           )}

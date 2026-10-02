@@ -17,3 +17,5 @@ __all__ = [
     "ImportJob",
     "ImportJobStatus",
 ]
+
+from app.models.history import EntryVersion, EntrySuppression, SourcePolicy, ObjectPurge, EntryMaterial

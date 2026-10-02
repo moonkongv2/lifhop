@@ -4,14 +4,15 @@ Last updated: 2026-10-02
 
 ## Current product slice
 
-Phase 2.1 — Codex/GitHub acquisition and coverage verification.
-Phase 1.3 was committed at `8700536`; its owner browser check remains pending.
-The large-import implementation, local checks, and owner browser verification
-are complete (2026-10-02). English UI was committed at `e41dd6b`.
-Acquisition probes and real sample reads pass; owner preview verification is
-pending; the owner requested proceeding to Phase 2.2 without that check.
-Next: Phase 2.2 provenance/version/deletion/AI policy.
-Setup/checks: `frontend/README.md` and `ACQUISITION.md`.
+Phase 2.2 — provenance, observed versions, deletion suppression, and AI policy.
+Phase 2.1 committed at `69dc764`; owner requested continuing without its HTML
+preview check. Phase 2.2 implementation/local validation is complete. The owner
+confirmed successful synthetic-demo execution (Entry 1270) and authorized the
+commit; the complete browser scenarios in `HISTORY.md` remain pending.
+Development DB upgraded to `a22b8c30d567`: all 1,266 existing Entries have one
+initial observed version; source timestamps/history were not invented.
+Local API health/new routes verified and import/purge worker restarted.
+Next implementation after owner feedback: Phase 2.3 Codex historical backfill.
 
 ## Personal-release target
 
@@ -25,12 +26,27 @@ with commits and key documents; PRs/issues remain in scope.
 
 The release must support access from other devices/external networks, prefer
 AWS, and fit a combined hosting/storage/AI budget of USD 20/month. Version
-retention, deletion suppression, and repository/record-level external-AI
-exclusions are planned requirements, not implemented capabilities.
+retention, deletion suppression, and source/repository/record-level external-AI
+exclusions are implemented foundations; full collectors remain upcoming.
 
 ## What works now
 
-- FastAPI/PostgreSQL backend with authentication and user-owned Entry CRUD.
+- FastAPI/PostgreSQL backend with authentication and user-owned Entries.
+- Observed versions, explicit current pointer, source identity/locator/times,
+  content/evidence SHA-256, parser/completeness and original-material links.
+  Newer complete snapshots replace current; older/partial/unknown-time candidates
+  remain inspectable. Unchanged replay has no duplicate Entry/version.
+- Imported content read-only; separate personal annotations survive imports.
+  Manual editing works. Browser history/provenance and explicit version selection.
+- Confirmed source-deletion markers retain content; unavailable/unknown is distinct.
+  Search explicitly filters source state and otherwise includes retained records.
+- Lifhop deletion removes body/versions/annotations immediately, blocks reimport
+  through minimal identities, and durably queues original purge in the worker.
+  Shared ZIP deletion blocks/removes the entire raw object, preserving other text.
+- Sources UI separates collection and AI permission; AI starts disabled at source
+  and record levels. Egress guard checks every dependency/policy revision; mocked
+  embeddings/reranking/summary/answer/telemetry deny tests pass. No AI provider is
+  connected. Latest deletion-ledger export/apply protects isolated restores.
 - Owner-scoped literal phrase search in title/content, combined source/type/date
   filters, total counts, and 20-record browser pagination. Search state lives in
   the URL and survives detail/create navigation.
@@ -71,13 +87,16 @@ exclusions are planned requirements, not implemented capabilities.
   only `main` selected; 372 reachable commits across 4 pages. One commit's 2 file
   patches and README at its pinned SHA verified through anonymous REST GET.
 - Disposable PostgreSQL tests use real migrations in fresh schemas. Local
-  checks: 186 backend tests (25 acquisition cases) and 25 frontend tests pass;
+  checks: 211 backend tests (25 acquisition and 25 history/policy cases) and 30 frontend tests pass;
   frontend lint/build pass.
 - Actual local HTTP/S3/worker checks passed with a 512 MiB synthetic ZIP and a
   494 MiB owner archive in isolated schemas. Original hashes, search counts,
   reimport uniqueness, visible progress, and synthetic worker-kill recovery passed.
   Worker peak RSS was about 119/211 MiB respectively; these are local measurements.
   Test objects/schemas were removed.
+- Phase 2.2 real HTTP/SeaweedFS synthetic Markdown/shared-ZIP deletion checks
+  passed in an isolated transaction/schema: blocked downloads, removed objects,
+  retained sibling text, and rollback cleanup. Actual AWS purge is unverified.
 - GitHub Actions checks for migrations, backend/frontend tests, generated API
   types, and frontend lint/build (remote workflow execution pending).
 
@@ -88,8 +107,8 @@ user-verifiable product slices in `ROADMAP.md`.
 
 ## Next
 
-1. Inspect the local acquisition previews using `ACQUISITION.md`, then Phase 2.2:
-   persistent provenance, versions, deletion suppression, and external-AI policy.
+1. Verify Phase 2.2 using `HISTORY.md`: synthetic history, annotations, source
+   markers, deletion/reimport block, and Sources permissions.
 2. Follow the sequence: Codex/GitHub history → evidence-based answers/retrospectives
    → scheduled collectors → private AWS release.
 
@@ -107,10 +126,12 @@ user-verifiable product slices in `ROADMAP.md`.
 - Progress updates at batch commits. Preflight validation initially shows zero
   total; upload byte percentages are not shown. Textless active branches appear
   as EMPTY_CONVERSATION errors and can produce a PARTIAL result.
-- Earlier imported Entries/jobs have no reconstructed artifact/result links.
-  Markdown reupload creates another Entry; ChatGPT reupload uses stable IDs.
-- Codex/GitHub checks are local previews; ingestion/backfill, retained Entry
-  versions, deletion tombstones, and external-AI policies are not implemented.
+- Earlier imported Entries/jobs have no reconstructed missing artifact/result
+  links. Existing duplicate Markdown rows are preserved separately; future
+  identical uploads match their initial canonical byte identity. Explicit document
+  IDs and verified source modification times track changed Markdown versions.
+- Codex/GitHub checks are local previews; actual history ingestion,
+  backfill and scheduled collection are not implemented.
   Codex reads require installed CLI 0.158.0 and bounded disposable snapshots.
   Other recorded versions, archived contents, private repos, organization SSO,
   and expiring-token access are not verified with real samples. Preview truncation
@@ -123,9 +144,14 @@ user-verifiable product slices in `ROADMAP.md`.
   review production authentication before internet deployment.
 - Queue redrive/DLQ, the crash window between DB commit and AWS SQS enqueue,
   production worker supervision, and broader observability remain follow-up.
-- Reimport still replaces current conversation content without version/freshness
-  guards. New-job reimport can resurrect a deleted source; tombstones and artifact
-  purge rules remain Phase 2.2. Same completed-job redelivery skips processing.
+- Source deletion confirmation is manual until adapters reconcile source state.
+  Missing/equal source modification times require explicit version review.
+- Original purge needs the worker; already issued download URLs can work up to
+  10 minutes or object removal. Attachment final purge waits 11 minutes because
+  upload URLs remain valid after completion. Real AWS version deletion/IAM,
+  automatic policy/deletion journaling, backups and 30-day expiry are unverified
+  deployment work. Old uploads without known Entry links cannot be safely purged
+  by attribution. Restore must apply latest deletion ledger and current denies.
 - Worker recovery uses RUNNING age (processing limit + 60 seconds) and owner locks;
   hard process termination is not a wall-clock timeout guarantee.
 

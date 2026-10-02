@@ -6,6 +6,7 @@ from app.importers.canonical import (
     CanonicalItem,
     ConversationPayload,
     DocumentPayload,
+    DevSessionPayload,
 )
 from app.models.entry import EntryType
 
@@ -37,6 +38,13 @@ class EntryNormalizer:
                 title=item.title,
                 content=content,
                 event_at=item.event_at,
+            )
+
+        if isinstance(item.payload, DevSessionPayload):
+            import json
+            return NormalizedEntry(
+                type=EntryType.PROJECT_EVENT, title=item.title, event_at=item.event_at,
+                content=json.dumps(item.payload.model_dump(mode="json"), ensure_ascii=False, indent=2),
             )
 
         raise ValueError(

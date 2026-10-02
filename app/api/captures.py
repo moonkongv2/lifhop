@@ -1,7 +1,7 @@
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.auth import get_current_user
@@ -47,10 +47,15 @@ def capture_chatgpt(
         provider=SourceProvider.CHATGPT,
         external_id=data.external_id,
         title=data.title,
+        locator=data.source_url,
+        source_updated_at=data.source_updated_at,
+        completeness="complete",
+        parser_version="chatgpt-dom-text-v1",
         payload=ConversationPayload(
             messages=[
                 CanonicalMessage(
                     role=message.role,
+                    message_id=message.message_id,
                     content=message.content,
                 )
                 for message in data.messages
@@ -67,4 +72,16 @@ def capture_chatgpt(
     db.commit()
     db.refresh(entry)
 
+    return entry
+
+
+@router.post("/snapshots", response_model=EntryResponse)
+def capture_snapshot(data: CanonicalItem, db: Annotated[Session, Depends(get_db)],
+                     current_user: Annotated[User, Depends(get_current_user)]) -> Entry:
+    # Shared ingestion contract; adapters must sanitize before submitting.
+    if data.external_id is None:
+        raise HTTPException(422, "A stable external ID is required")
+    entry = upsert_external_entry(db, user_id=current_user.id, item=data)
+    db.commit()
+    db.refresh(entry)
     return entry

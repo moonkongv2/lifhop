@@ -171,3 +171,21 @@ def download_to_file(s3_key: str, target: BinaryIO, check_deadline: Callable[[],
         target.seek(0)
     finally:
         body.close()
+
+
+def delete_object(s3_key: str) -> None:
+    client, bucket = get_s3_client(), get_s3_bucket_name()
+    if settings.s3_mode == "aws":
+        versioning = client.get_bucket_versioning(Bucket=bucket)
+        if versioning.get("Status") in {"Enabled", "Suspended"}:
+            pages = client.get_paginator("list_object_versions").paginate(Bucket=bucket, Prefix=s3_key)
+            for page in pages:
+                objects = [{"Key": obj["Key"], "VersionId": obj["VersionId"]}
+                           for obj in [*page.get("Versions", []), *page.get("DeleteMarkers", [])]
+                           if obj["Key"] == s3_key]
+                for offset in range(0, len(objects), 1000):
+                    result = client.delete_objects(Bucket=bucket, Delete={"Objects": objects[offset:offset + 1000], "Quiet": True})
+                    if result.get("Errors"):
+                        raise RuntimeError("Some object versions could not be purged")
+            return
+    client.delete_object(Bucket=bucket, Key=s3_key)

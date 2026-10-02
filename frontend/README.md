@@ -167,7 +167,8 @@ exit releases the lock. A crashed RUNNING job is eligible after
 An already completed/partial/failed delivery is a no-op. Explicit retry resumes
 an interrupted attempt; if every item was visited and errors remain, it resets
 the counters and reprocesses the complete archive. Existing conversation IDs
-prevent duplicates, but the current content can be replaced on full retry/reimport.
+prevent duplicate Entries. Changed snapshots retain versions; only a strictly newer
+source timestamp with non-decreasing completeness can replace current automatically.
 Attempts are bounded. SQL query timeouts and cooperative deadline checks remain;
 there is no exact wall-clock process watchdog. A lost database connection ends
 processing, so a session lock is never intentionally released while writes continue.
@@ -263,8 +264,8 @@ Job history shows the latest 20 jobs; each job's result Entries have
 pagination. Earlier Entries/jobs do not have reconstructed artifact/result
 links. Markdown reupload creates a new Entry. Tokens remain in localStorage
 for development;
-production authentication and imported-record version/deletion policies are
-later roadmap work. The owner confirmed the Phase 1.1 browser flow. GitHub
+production authentication remains later roadmap work. Imported-record
+version/deletion policies are implemented in Phase 2.2. The owner confirmed the Phase 1.1 browser flow. GitHub
 Actions execution
 remains to be checked separately from local automated tests. The owner
 confirmed the Phase 1.2 browser flow. Automated browser connection failed in
@@ -272,8 +273,10 @@ the implementation session. Real local S3/queue/worker integration passed using
 synthetic inputs in an isolated DB schema, including original downloads,
 reimport, failed ZIP, and retry. Temporary inputs/storage were cleaned up.
 
-Reimport continues to replace current ChatGPT content. Retained versions,
-freshness checks, deletion suppression, and original/artifact purge policies
-are Phase 2.2. Deleting an Entry currently leaves its preserved original file;
-a new import job can recreate a deleted conversation. Do not treat this as the
-final archive deletion behavior.
+Phase 2.2 adds history/provenance on Entry detail, personal annotations, source
+status filters, and Sources collection/AI/reimport controls. Imported text is
+read-only; manual notes stay editable. Deletion removes versions immediately,
+blocks automatic reimport and queues original purge through the import worker.
+Shared ZIP deletion removes the whole original while retaining other record text.
+See [HISTORY.md](../HISTORY.md) for the precise browser walkthrough, synthetic demo,
+retention/restore policy, and AWS/backup verification boundaries.

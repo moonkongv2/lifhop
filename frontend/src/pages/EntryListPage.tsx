@@ -8,6 +8,7 @@ import { formatEntryDate, sourceLabels } from "../utils/entries";
 function SearchForm({ params, onApply }: { params: URLSearchParams; onApply: (params: URLSearchParams) => void }) {
   const [q, setQ] = useState(params.get("q") ?? "");
   const [source, setSource] = useState(params.get("source") ?? "");
+  const [sourceState, setSourceState] = useState(params.get("source_state") ?? "");
   const [type, setType] = useState(params.get("type") ?? "");
   const [dateField, setDateField] = useState(params.get("date_field") ?? "created_at");
   const [from, setFrom] = useState(params.get("date_from") ?? "");
@@ -19,7 +20,7 @@ function SearchForm({ params, onApply }: { params: URLSearchParams; onApply: (pa
     if (from && to && from > to) { setValidation("Start date must be on or before end date."); return; }
     setValidation("");
     const next = new URLSearchParams();
-    for (const [key, value] of Object.entries({ q: q.trim(), source, type, date_field: dateField, date_from: from, date_to: to })) {
+    for (const [key, value] of Object.entries({ q: q.trim(), source, source_state: sourceState, type, date_field: dateField, date_from: from, date_to: to })) {
       if (value && !(key === "date_field" && value === "created_at")) next.set(key, value);
     }
     onApply(next);
@@ -33,6 +34,10 @@ function SearchForm({ params, onApply }: { params: URLSearchParams; onApply: (pa
         <label>Source<select value={source} onChange={(event) => setSource(event.target.value)}>
           <option value="">All sources</option>
           {Object.entries(sourceLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+        </select></label>
+        <label>Source status<select value={sourceState} onChange={e => setSourceState(e.target.value)}>
+          <option value="">All retained records</option>
+          {["available", "deleted", "unavailable", "unknown"].map(value => <option key={value} value={value}>{value}</option>)}
         </select></label>
         <label>Type<select value={type} onChange={(event) => setType(event.target.value)}>
           <option value="">All types</option><option value="NOTE">Note</option><option value="LOG">Log</option>
@@ -77,7 +82,7 @@ function EntryListPage() {
     setParams(next);
   }
   if (!token) return <Navigate to="/login" replace />;
-  const filtered = ["q", "source", "type", "date_from", "date_to"].some((key) => params.get(key));
+  const filtered = ["q", "source", "source_state", "type", "date_from", "date_to"].some((key) => params.get(key));
   return (
     <>
       <h2>Entries</h2>
@@ -91,7 +96,7 @@ function EntryListPage() {
         {data.items.length === 0 && <p>{filtered ? "No entries match your search." : "No entries yet."}</p>}
         {data.items.map((entry) => <article key={entry.id}>
           <Link to={`/entries/${entry.id}`} state={{ entryListSearch: serialized }}><h3>{entry.title}</h3></Link>
-          <p>{sourceLabels[entry.source ?? "unknown"]} · {entry.type}</p>
+          <p>{sourceLabels[entry.source ?? "unknown"]} · {entry.type} · Source: {entry.source_state ?? "unknown"}</p>
           <p>Added: {formatEntryDate(entry.created_at)} · Source/event date: {formatEntryDate(entry.event_at)} (Asia/Seoul)</p>
           <p className="entry-content">{entry.content ?? "No content"}</p>
         </article>)}

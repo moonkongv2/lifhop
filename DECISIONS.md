@@ -1021,3 +1021,59 @@ are not automatically selected for ingestion. Full commits/documents followed
 by PR/review/issue collection remains Phase 2.4.
 
 Real evidence and owner verification steps are recorded in `ACQUISITION.md`.
+
+
+---
+
+## ADR-022 — Preserve observations and separate collection, AI and deletion
+
+**Status:** Accepted for Phase 2.2
+**Date:** 2026-10-02
+
+Keep Entry as the current searchable projection and retain EntryVersion with an
+explicit current pointer. Preserve source identity/scope, locator, source/observed
+times, parser, completeness, normalized hash and structured message/command/diff
+evidence. Immutable source versions use retained JSON; exact uploads reference
+ImportArtifact. EntryMaterial also links unchanged repeated uploads for deletion.
+Existing rows become one unknown-completeness initial observed version, with no
+invented source modification times or earlier history. Known Markdown byte
+identities deduplicate future replay; existing duplicate rows remain independent.
+
+Changed content/evidence is retained. Auto-select only a strictly newer source
+snapshot whose completeness does not decrease. Unchanged current observations
+advance a freshness frontier without duplicate versions; older/partial/unknown
+candidates need explicit selection. Imported text is read-only; owner annotation
+is separate. Source-deleted records remain visible; auth/fetch failures are not
+deletion. Local search includes retained source states by default and explicitly
+filters them; future AI source-deletion inclusion is opt-in within policy.
+
+SourcePolicy scopes collection and external-AI permission independently; record
+AI permission is an additional deny boundary. Both AI permissions default false
+and upsert never resets them. Future AI/derived results must use the common
+dependency/epoch egress boundary for embedding/reranking/summary/answer/telemetry.
+Every dependency must be allowed, and changed owner policy/content invalidates
+prepared work or cached results. No remote AI service or AI cache/job is added.
+
+A transaction advisory owner lock (namespace 12022), acquired before job/record
+locks, serializes ingest commits, deletion, policy and egress. Keep the existing
+import session lock (12012) across batches; reacquire policy lock per batch and
+check suppression per item before its atomic commit. A lifhop delete removes
+all versions/annotations, retains minimal identity suppression, immediately
+blocks raw downloads and records durable object deletion in a PostgreSQL outbox.
+This reuses the current worker and adds no AWS service, queue or dependency.
+
+A shared ZIP is purged whole when any collected member is deleted; other
+normalized records remain. Every newly detected suppressed ZIP upload is also
+blocked/purged. All attachment final purges wait 11 minutes because PUT URLs can
+rewrite objects after completion; raw downloads already issued have 10-minute
+expiry. Retry failures remain observable. AWS purge explicitly deletes all
+exact-key object versions/delete markers and treats partial errors as failures.
+Real AWS IAM/Object Lock/versioned deletion are deployment checks.
+
+Keep deletion ledger rows after explicit Allow reimport so old backups still
+exclude pre-deletion content. Export/apply the latest minimal ledger before
+serving a restore; current denies must also be reapplied, with restored AI off
+until verified. Content backup expiry target is 30 days; automatic journal,
+backups, expiry and restore supervision remain Phase 5. Logical deletion does
+not promise secure erasure of PostgreSQL pages/WAL or owner source originals.
+Operator commands and user verification are in HISTORY.md.

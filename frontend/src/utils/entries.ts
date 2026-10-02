@@ -1,7 +1,7 @@
 import type { Entry } from "../api/entries";
 
 export const sourceLabels: Record<NonNullable<Entry["source"]>, string> = {
-  manual: "Manual", markdown: "Markdown", chatgpt: "ChatGPT", unknown: "Unknown source",
+  manual: "Manual", markdown: "Markdown", chatgpt: "ChatGPT", codex: "Codex", github: "GitHub", unknown: "Unknown source",
 };
 export function formatEntryDate(value: string | null): string {
   if (!value) return "Unknown";

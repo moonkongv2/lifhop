@@ -7,6 +7,8 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import DataError, IntegrityError
 
+from fastapi import HTTPException
+from app.services.source_history import owner_lock, check_collection, block_artifact
 from app.config import settings
 from app.services.external_entries import upsert_external_entry
 from app.importers.chatgpt import ChatGPTImporter
@@ -71,6 +73,8 @@ def process_chatgpt_import_job(db: Session, job_id: int, *, load_results: bool =
 
 
 def _process_locked_job(db: Session, job_id: int, *, load_results: bool) -> list[Entry]:
+    owner_id = db.scalar(select(ImportJob.user_id).where(ImportJob.id == job_id))
+    owner_lock(db, owner_id)
     job = db.scalar(select(ImportJob).where(ImportJob.id == job_id)
                     .with_for_update(skip_locked=True).execution_options(populate_existing=True))
     if job is None:
@@ -99,11 +103,16 @@ def _process_locked_job(db: Session, job_id: int, *, load_results: bool) -> list
             raise ImportValidationError("Import exceeded the processing time limit")
 
     def lock_batch() -> None:
+        check_collection(db, job.user_id, "chatgpt")
         db.refresh(job, with_for_update=True)
+        db.refresh(job.artifact)
+        if job.artifact.blocked_at:
+            raise ImportValidationError("Original file was blocked for deletion")
         db.execute(text("SELECT set_config('statement_timeout', :timeout, true)"),
                    {"timeout": str(settings.import_max_seconds * 1000)})
 
     try:
+        lock_batch()
         with TemporaryFile(mode="w+b") as archive_file:
             download_to_file(job.artifact.s3_key, archive_file, check_deadline)
             archive = ChatGPTArchive(archive_file, check_deadline)
@@ -123,13 +132,17 @@ def _process_locked_job(db: Session, job_id: int, *, load_results: bool) -> list
                 try:
                     with db.begin_nested():
                         item = importer.import_conversation(conversation)
-                        entry = upsert_external_entry(db, user_id=job.user_id, item=item)
-                        entry.import_artifact_id = job.artifact_id
+                        entry = upsert_external_entry(db, user_id=job.user_id, item=item, artifact_id=job.artifact_id)
                         db.flush()
                         check_deadline()
                     job.processed_items += 1
                     if entry.id not in job.entry_ids:
                         job.entry_ids = [*job.entry_ids, entry.id]
+                except HTTPException as exc:
+                    if exc.status_code == 409:
+                        block_artifact(db, job.artifact)
+                    job.failed_items += 1
+                    job.item_errors = [*job.item_errors, {"index": index, "code": "POLICY_BLOCKED", "message": exc.detail}]
                 except ImportItemError as exc:
                     job.failed_items += 1
                     job.item_errors = [*job.item_errors, {"index": index, "code": exc.code, "message": str(exc)}]
@@ -160,9 +173,9 @@ def _process_locked_job(db: Session, job_id: int, *, load_results: bool) -> list
         db.rollback()
         failed_job = db.get(ImportJob, job_id)
         failed_job.completed_at = datetime.now(timezone.utc)
-        if isinstance(exc, ImportValidationError):
+        if isinstance(exc, (ImportValidationError, HTTPException)):
             failed_job.status = ImportJobStatus.FAILED
-            failed_job.error = str(exc)
+            failed_job.error = "Collection policy blocked this import" if isinstance(exc, HTTPException) else str(exc)
             db.commit()
             raise
         failed_job.status = (ImportJobStatus.PENDING if failed_job.attempts < settings.import_max_attempts

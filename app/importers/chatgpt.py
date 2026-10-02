@@ -44,6 +44,10 @@ class ChatGPTImporter(Importer[ChatGPTSource]):
             provider=SourceProvider.CHATGPT,
             external_id=external_id,
             title=title.strip(),
+            source_updated_at=self._to_datetime(conversation.get("update_time")),
+            locator=f"https://chatgpt.com/c/{external_id}",
+            parser_version="chatgpt-active-text-v1",
+            completeness="complete",
             event_at=self._to_datetime(
                 conversation.get("create_time")
             ),
@@ -109,6 +113,7 @@ class ChatGPTImporter(Importer[ChatGPTSource]):
             messages.append(
                 CanonicalMessage(
                     role=role,
+                    message_id=message.get("id") or node.get("id"),
                     content="\n".join(text_parts),
                     created_at=self._to_datetime(
                         message.get("create_time")

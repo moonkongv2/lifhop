@@ -14,6 +14,7 @@ from app.schemas.entry import EntryResponse
 from app.schemas.import_job import ImportJobResponse, ImportJobSubmissionResponse
 from app.sqs import enqueue_import_job
 
+from app.services.source_history import check_collection
 router = APIRouter(prefix="/import-jobs", tags=["import-jobs"])
 
 
@@ -70,7 +71,10 @@ def retry_import_job(
     db: Annotated[Session, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_user)],
 ) -> ImportJobSubmissionResponse:
+    check_collection(db, current_user.id, "chatgpt")
     job = owned_job(db, current_user.id, job_id, lock=True)
+    if job.artifact.blocked_at:
+        raise HTTPException(410, "Original file was blocked for deletion; upload a new archive")
     if job.status not in {ImportJobStatus.FAILED, ImportJobStatus.PARTIAL}:
         raise HTTPException(409, "Only failed or partial jobs can be retried")
     if job.attempts >= settings.import_max_attempts:

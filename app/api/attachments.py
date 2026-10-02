@@ -21,6 +21,8 @@ from app.s3 import (
     object_exists,
 )
 
+from app.services.source_history import owner_lock
+
 router = APIRouter(
     prefix="/entries/{entry_id}/attachments",
     tags=["attachments"],
@@ -38,6 +40,7 @@ def create_attachment(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> AttachmentUploadResponse:
+    owner_lock(db, current_user.id)
     entry = db.scalar(
         select(Entry).where(
             Entry.id == entry_id,
@@ -67,14 +70,15 @@ def create_attachment(
     )
 
     db.add(attachment)
-    db.commit()
-    db.refresh(attachment)
+    db.flush()
 
     upload_url = generate_presigned_upload_url(
         s3_key=attachment.s3_key,
         mime_type=attachment.mime_type,
     )
 
+    db.commit()
+    db.refresh(attachment)
     return AttachmentUploadResponse(
         attachment=attachment,
         upload_url=upload_url,
@@ -90,6 +94,7 @@ def complete_attachment(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> Attachment:
+    owner_lock(db, current_user.id)
     attachment = db.scalar(
         select(Attachment)
         .join(Entry)
@@ -130,6 +135,7 @@ def download_attachment(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> AttachmentDownloadResponse:
+    owner_lock(db, current_user.id)
     attachment = db.scalar(
         select(Attachment)
         .join(Entry)

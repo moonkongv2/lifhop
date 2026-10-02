@@ -20,7 +20,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
       401: "Your session has expired. Please log in again.",
       404: "Entry not found. It may have been deleted or you may not have access.",
     };
-    if (response.status === 422) {
+    if ([403, 409, 410, 422].includes(response.status)) {
       let detail: unknown;
       try { detail = (await response.json()).detail; } catch { /* Use a safe fallback. */ }
       throw new Error(typeof detail === "string" ? detail : "Please check your input or search filters.");

@@ -1,3 +1,4 @@
+from datetime import datetime
 from pathlib import PurePosixPath
 from typing import Annotated
 from uuid import uuid4
@@ -21,6 +22,8 @@ from app.s3 import upload_object, upload_file
 from starlette.concurrency import run_in_threadpool
 from app.sqs import enqueue_import_job
 
+from app.services.external_entries import upsert_external_entry
+from app.services.source_history import check_collection, markdown_identity
 router = APIRouter(prefix="/imports", tags=["imports"])
 
 
@@ -55,20 +58,29 @@ async def import_markdown(
     current_user: Annotated[User, Depends(get_current_user)],
     file: UploadFile = File(...),
     title: str | None = Form(default=None, max_length=255),
+    external_id: str | None = Form(default=None, min_length=1, max_length=255),
+    source_updated_at: datetime | None = Form(default=None),
 ) -> list[Entry]:
     filename, content = await read_upload(file, {".md", ".markdown"})
     try:
         source = create_markdown_source(content=content, filename=filename, title=title)
         items = MarkdownImporter().import_data(source)
         normalized = [EntryNormalizer().normalize(item) for item in items]
-        values = [EntryCreate(type=item.type, title=item.title, content=item.content,
-                              event_at=item.event_at) for item in normalized]
+        for item in normalized:
+            EntryCreate(type=item.type, title=item.title, content=item.content, event_at=item.event_at)
     except ValueError:
         raise HTTPException(400, "Markdown must contain UTF-8 text and a non-empty title of at most 255 characters") from None
+    identity = external_id or markdown_identity(content.decode("utf-8"))
+    check_collection(db, current_user.id, "markdown", external_id=identity)
+    for item in items:
+        item.external_id = identity
+        item.source_updated_at = source_updated_at
+        item.parser_version = "markdown-utf8-v1"
+        item.completeness = "complete"
+        if source_updated_at and source_updated_at.utcoffset() is None:
+            raise HTTPException(422, "Source modification time must include a timezone")
     artifact = store_artifact(db, current_user.id, filename, content, "text/markdown")
-    entries = [Entry(user_id=current_user.id, provider="markdown", import_artifact_id=artifact.id,
-                     **value.model_dump()) for value in values]
-    db.add_all(entries)
+    entries = [upsert_external_entry(db, user_id=current_user.id, item=item, artifact_id=artifact.id) for item in items]
     db.commit()
     for entry in entries:
         db.refresh(entry)
@@ -90,6 +102,7 @@ async def import_chatgpt(
         raise HTTPException(400, "Upload is empty")
     if size > settings.import_max_zip_bytes:
         raise HTTPException(413, "Upload exceeds the configured ZIP size limit")
+    check_collection(db, current_user.id, "chatgpt")
     key = f"users/{current_user.id}/imports/raw/{uuid4()}/{filename}"
     try:
         await file.seek(0)

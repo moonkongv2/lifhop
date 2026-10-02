@@ -107,8 +107,8 @@ common importer/canonical normalization boundary.
 
 The private release must retain collected versions, prevent deleted records
 from being reimported, and support repository/record-level exclusions from
-external AI, including embeddings. These are planned requirements; current
-upsert replaces Entry content. See `ROADMAP.md` for the agreed scope and checks.
+external AI, including embeddings. These foundations are implemented in Phase 2.2; current
+selection uses freshness/completeness guards and keeps observed versions. See `ROADMAP.md` for the agreed scope and checks.
 
 ## Long-Term Architecture Direction
 
@@ -251,6 +251,7 @@ Avoid introducing infrastructure purely to make the architecture look sophistica
 - `DECISIONS.md` — durable architecture decisions
 - `CAPTURE.md` — capture/acquisition strategy and risk register
 - `ACQUISITION.md` — Phase 2.1 read-only source checks and private preview guide
+- `HISTORY.md` — Phase 2.2 browser checks, retention policy and restore procedure
 
 The repository is the source of truth for the project. ChatGPT, Codex CLI, Antigravity CLI, and other coding agents should read the project documentation before making changes.
 
@@ -295,6 +296,12 @@ Phase 2.1 provides a read-only CLI for Codex and selected GitHub history preview
 Real historical Codex messages/commands/changes and a GitHub commit/diff/document
 were verified locally, with coverage and omissions recorded. These previews do
 not create Entries or run collectors. See `ACQUISITION.md`; owner review is pending.
+
+Phase 2.2 adds observed versions and provenance, imported read-only content with
+personal annotations, source deletion markers, reimport suppression and durable
+original purge, and independent collection/external-AI permissions. Existing
+records have initial observed versions. Local checks pass; owner browser
+verification is next using the synthetic walkthrough in `HISTORY.md`.
 
 See `CURRENT.md` for the active product slice and `ROADMAP.md` for its
 completion criteria.

@@ -8,7 +8,8 @@ function App() {
       <nav>
         <Link to="/login">Login</Link>{" "}
         <Link to="/entries">Entries</Link>
-        <Link to="/imports">Import</Link>
+        <Link to="/imports">Import</Link>{" "}
+        <Link to="/sources">Sources</Link>
       </nav>
 
       <hr />

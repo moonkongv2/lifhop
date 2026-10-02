@@ -7,6 +7,7 @@ import "./index.css";
 
 import ImportsPage from "./pages/ImportsPage";
 import ImportJobPage from "./pages/ImportJobPage";
+import SourcesPage from "./pages/SourcesPage";
 import App from "./App";
 import LoginPage from "./pages/LoginPage";
 import EntryListPage from "./pages/EntryListPage";
@@ -20,6 +21,7 @@ const router = createBrowserRouter([
     path: "/",
     element: <App />,
     children: [
+      { path: "sources", element: <SourcesPage /> },
       { path: "imports", element: <ImportsPage /> },
       { path: "import-jobs/:id", element: <ImportJobPage /> },
       {

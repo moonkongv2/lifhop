@@ -75,9 +75,10 @@ def test_local_upload_worker_results_and_reimport(client, authenticated_user, db
     assert len(db_session.scalars(select(Entry).where(Entry.user_id == user.id)).all()) == 2
     # A completed delivery never rewrites newer Entry content or recreates a deleted Entry.
     entry_id = entries[0]["id"]
-    client.patch(f"/entries/{entry_id}", headers=headers, json={"title": "Personal edit"})
+    assert client.patch(f"/entries/{entry_id}", headers=headers, json={"title": "Personal edit"}).status_code == 403
+    client.patch(f"/entries/{entry_id}/settings", headers=headers, json={"annotation": "Personal edit"})
     process_chatgpt_import_job(db_session, job_id)
-    assert client.get(f"/entries/{entry_id}", headers=headers).json()["title"] == "Personal edit"
+    assert client.get(f"/entries/{entry_id}", headers=headers).json()["annotation"] == "Personal edit"
     client.delete(f"/entries/{entry_id}", headers=headers)
     process_chatgpt_import_job(db_session, job_id)
     assert client.get(f"/entries/{entry_id}", headers=headers).status_code == 404

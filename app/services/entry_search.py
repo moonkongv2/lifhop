@@ -22,6 +22,7 @@ def search_entries(
     user_id: int,
     q: str = "",
     source: EntrySource | None = None,
+    source_state: str | None = None,
     entry_type: EntryType | None = None,
     date_field: DateField = "created_at",
     date_from: date | None = None,
@@ -31,9 +32,11 @@ def search_entries(
 ) -> EntrySearchResponse:
     conditions = [Entry.user_id == user_id]
     if source == EntrySource.UNKNOWN:
-        conditions.append(or_(Entry.provider.is_(None), ~Entry.provider.in_(["manual", "markdown", "chatgpt"])))
+        conditions.append(or_(Entry.provider.is_(None), ~Entry.provider.in_([source.value for source in EntrySource if source != EntrySource.UNKNOWN])))
     elif source is not None:
         conditions.append(Entry.provider == source.value)
+    if source_state is not None:
+        conditions.append(Entry.source_state == source_state)
     if entry_type is not None:
         conditions.append(Entry.type == entry_type)
     timestamp = Entry.created_at if date_field == "created_at" else Entry.event_at

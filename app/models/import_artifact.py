@@ -45,6 +45,8 @@ class ImportArtifact(Base):
         nullable=False,
     )
 
+    blocked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
     jobs: Mapped[list["ImportJob"]] = relationship(
         back_populates="artifact",
     )

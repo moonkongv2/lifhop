@@ -24,8 +24,10 @@ export const fetchJob = (id: string) => request<ImportJob>(`/import-jobs/${id}`)
 export const fetchJobEntries = (id: string, offset: number) =>
   request<Entry[]>(`/import-jobs/${id}/entries?limit=20&offset=${offset}`);
 export const retryJob = (id: string) => request<Submission>(`/import-jobs/${id}/retry`, { method: "POST" });
-export async function uploadMarkdown(file: File): Promise<Entry[]> {
+export async function uploadMarkdown(file: File, identity = "", modified = ""): Promise<Entry[]> {
   const form = new FormData(); form.append("file", file);
+  if (identity) form.append("external_id", identity);
+  if (modified) form.append("source_updated_at", new Date(modified).toISOString());
   return request("/imports/markdown", { method: "POST", body: form });
 }
 export async function uploadChatGPT(file: File): Promise<Submission> {

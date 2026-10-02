@@ -217,6 +217,7 @@ def test_process_chatgpt_import_job_updates_existing_conversation(
         fixture_path.read_text()
     )
 
+    conversations[0]["update_time"] = 1750000000
     first_bytes = build_chatgpt_zip(
         conversations
     )
@@ -238,6 +239,7 @@ def test_process_chatgpt_import_job_updates_existing_conversation(
     )
 
     conversations[0]["title"] = "Updated title"
+    conversations[0]["update_time"] = 1750000010
 
     second_bytes = build_chatgpt_zip(
         conversations

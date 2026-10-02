@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, String, func
+from sqlalchemy import DateTime, Integer, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
@@ -38,6 +38,8 @@ class User(Base):
         onupdate=func.now(),
         nullable=False,
     )
+
+    policy_revision: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
 
     entries: Mapped[list["Entry"]] = relationship(
         back_populates="user",

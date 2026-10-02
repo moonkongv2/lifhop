@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 
 import pytest
 from sqlalchemy import select
@@ -34,6 +35,8 @@ def make_conversation(
         provider=SourceProvider.CHATGPT,
         external_id=external_id,
         title=title,
+        source_updated_at=datetime(2026, 1, 2 if title == "Updated title" else 1, tzinfo=timezone.utc),
+        completeness="complete",
         payload=ConversationPayload(
             messages=messages,
         ),

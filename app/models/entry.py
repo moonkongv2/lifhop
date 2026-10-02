@@ -1,6 +1,6 @@
 from datetime import datetime
 from enum import StrEnum
-from sqlalchemy import DateTime, Enum, ForeignKey, Index, String, Text, UniqueConstraint, func
+from sqlalchemy import DateTime, Enum, ForeignKey, Index, Boolean, Integer, String, Text, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column
 from app.models.base import Base
 from typing import TYPE_CHECKING
@@ -15,6 +15,8 @@ class EntrySource(StrEnum):
     MANUAL = "manual"
     MARKDOWN = "markdown"
     CHATGPT = "chatgpt"
+    CODEX = "codex"
+    GITHUB = "github"
     UNKNOWN = "unknown"
 
 
@@ -63,6 +65,7 @@ class Entry(Base):
 
     attachments: Mapped[list["Attachment"]] = relationship(
         back_populates="entry",
+        cascade="all, delete-orphan",
     )
 
     provider: Mapped[str | None] = mapped_column(
@@ -74,6 +77,19 @@ class Entry(Base):
         String(255),
         nullable=True,
     )
+
+    source_scope: Mapped[str] = mapped_column(String(255), default="default", server_default="default")
+    current_version_id: Mapped[int | None] = mapped_column(ForeignKey("entry_versions.id", use_alter=True, name="fk_entries_current_version", ondelete="SET NULL"))
+    latest_source_updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    annotation: Mapped[str | None] = mapped_column(Text)
+    source_state: Mapped[str] = mapped_column(String(20), default="unknown", server_default="unknown")
+    source_state_observed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    external_ai_allowed: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    review_required: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+
+    @property
+    def read_only(self) -> bool:
+        return self.provider not in {None, "manual"} or self.import_artifact_id is not None
 
     @property
     def source(self) -> EntrySource:

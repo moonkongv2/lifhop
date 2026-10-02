@@ -66,6 +66,9 @@ def main() -> None:
     print("Import worker started")
 
     while True:
+        from app.services.source_history import process_purges
+        with SessionLocal() as db:
+            process_purges(db)
         if not process_one_message():
             time.sleep(1)
 

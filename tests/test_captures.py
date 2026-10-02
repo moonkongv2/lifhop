@@ -7,6 +7,7 @@ from app.models.entry import Entry
 def make_payload():
     return {
         "ok": True,
+        "source_updated_at": "2026-01-01T00:00:00Z",
         "provider": "chatgpt",
         "external_id": "test-conversation-123",
         "title": "Socket programming",
@@ -49,6 +50,7 @@ def test_capture_creates_and_updates_entry(
     first_id = first.json()["id"]
 
     payload["title"] = "Updated conversation"
+    payload["source_updated_at"] = "2026-01-02T00:00:00Z"
     payload["messages"].append({
         "role": "user",
         "content": "New question",

@@ -10,6 +10,8 @@ function ImportsPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [kind, setKind] = useState("markdown");
+  const [identity, setIdentity] = useState("");
+  const [modified, setModified] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [validation, setValidation] = useState("");
   const [entries, setEntries] = useState<Entry[]>([]);
@@ -19,7 +21,7 @@ function ImportsPage() {
   });
   const upload = useMutation({
     mutationFn: async ({ file, kind }: { file: File; kind: string }) => {
-      if (kind === "markdown") return { entries: await uploadMarkdown(file) };
+      if (kind === "markdown") return { entries: await uploadMarkdown(file, identity.trim(), modified) };
       return { job: await uploadChatGPT(file) };
     },
     onSuccess: async (result) => {
@@ -53,6 +55,14 @@ function ImportsPage() {
           <select id="import-kind" value={kind} onChange={(event) => { setKind(event.target.value); setFile(null); upload.reset(); setValidation(""); }}>
             <option value="markdown">Markdown</option><option value="chatgpt">ChatGPT ZIP</option>
           </select>
+          {kind === "markdown" && <>
+            <label htmlFor="document-id">Document ID (optional)</label>
+            <input id="document-id" value={identity} maxLength={255} onChange={e => setIdentity(e.target.value)} />
+            <p>Use the same ID when updating one document. Without an ID, identical file content is deduplicated.</p>
+            <label htmlFor="source-modified">Source modified time (optional, your device timezone)</label>
+            <input id="source-modified" type="datetime-local" value={modified} onChange={e => setModified(e.target.value)} />
+            <p>Without a verified source time, changed content is retained for manual review instead of replacing current content.</p>
+          </>}
           <label htmlFor="import-file">File</label>
           <input key={kind} id="import-file" type="file" accept={kind === "markdown" ? ".md,.markdown" : ".zip"}
             onChange={(event) => setFile(event.target.files?.[0] ?? null)} />

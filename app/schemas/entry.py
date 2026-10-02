@@ -27,6 +27,15 @@ class EntryResponse(BaseModel):
     id: int
     import_artifact_id: int | None = None
     source: EntrySource = EntrySource.UNKNOWN
+    provider: str | None = None
+    external_id: str | None = None
+    source_scope: str = "default"
+    current_version_id: int | None = None
+    annotation: str | None = None
+    read_only: bool = False
+    source_state: str = "unknown"
+    external_ai_allowed: bool = False
+    review_required: bool = False
     type: EntryType
     title: str
     content: str | None
