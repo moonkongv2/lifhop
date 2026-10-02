@@ -14,7 +14,8 @@ export default function SourcesPage() {
     onSuccess: async () => { await cache.invalidateQueries({ queryKey: ["sources"] }); await cache.invalidateQueries({ queryKey: ["suppressed"] }); },
   });
   if (!enabled) return <Navigate to="/login" replace />;
-  return <>
+  return <section className="panel page-card">
+    <p className="eyebrow">You stay in control</p>
     <h2>Sources and deletion policy</h2>
     <p>Collection controls incoming records. External AI permission is separate and also requires each record to be allowed. Storage permission does not grant AI permission.</p>
     <p>Existing records remain available for local viewing and search when collection is paused. Sources appear after the first import.</p>
@@ -41,5 +42,5 @@ export default function SourcesPage() {
     <p>The import worker removes originals. Deleting one record blocks and purges its entire shared ZIP; other retained record text stays available. Pending attachment uploads wait 11 minutes for upload links to expire.</p>
     {[sources.error, suppressed.error, purges.error, change.error].filter(Boolean).map((error, index) => <p role="alert" key={index}>{error!.message}</p>)}
     {(sources.error || suppressed.error || purges.error) && <button onClick={() => { void sources.refetch(); void suppressed.refetch(); void purges.refetch(); }}>Retry loading policies</button>}
-  </>;
+  </section>;
 }

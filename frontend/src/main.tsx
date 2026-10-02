@@ -11,6 +11,7 @@ import SourcesPage from "./pages/SourcesPage";
 import App from "./App";
 import LoginPage from "./pages/LoginPage";
 import EntryListPage from "./pages/EntryListPage";
+import EntrySearchPage from "./pages/EntrySearchPage";
 import EntryCreatePage from "./pages/EntryCreatePage";
 import EntryDetailPage from "./pages/EntryDetailPage";
 
@@ -21,6 +22,7 @@ const router = createBrowserRouter([
     path: "/",
     element: <App />,
     children: [
+      { path: "search", element: <EntrySearchPage /> },
       { path: "sources", element: <SourcesPage /> },
       { path: "imports", element: <ImportsPage /> },
       { path: "import-jobs/:id", element: <ImportJobPage /> },

@@ -171,3 +171,22 @@ it("displays saved progress while a large import is still running", async () => 
   job = { ...job, processed_items: 50 };
   await screen.findByText("Total 1284 / Saved 50 / Failed 0 / Attempts 1", {}, { timeout: 5000 });
 });
+
+
+it("shows English file controls and validates explicit source date/time before upload", async () => {
+  mount();
+  expect(screen.getByText("No file selected")).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Choose file" })).toBeTruthy();
+  chooseFile("sample.md");
+  expect(screen.getByText("sample.md")).toBeTruthy();
+  fireEvent.change(screen.getByLabelText("Source modified date"), { target: { value: "2026-02-31" } });
+  fireEvent.change(screen.getByLabelText("Source modified time"), { target: { value: "12:00" } });
+  click("Import");
+  await screen.findByText(/Enter a valid source date and time/);
+  expect(requests.some(request => request.path === "/api/imports/markdown")).toBe(false);
+  fireEvent.change(screen.getByLabelText("Source modified date"), { target: { value: "2026-10-03" } });
+  click("Import");
+  await screen.findByText("Import complete");
+  const upload = requests.find(request => request.path === "/api/imports/markdown")!;
+  expect((upload.options.body as FormData).get("source_updated_at")).toBe(new Date("2026-10-03T12:00").toISOString());
+});

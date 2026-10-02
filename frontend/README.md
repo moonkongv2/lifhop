@@ -5,7 +5,9 @@ creating, editing, and deleting notes through the authenticated API. It also
 supports Markdown/ChatGPT ZIP uploads, job results/retry, and protected originals.
 The interface is in English; user content keeps its original language. Dates use
 English formatting in the Asia/Seoul timezone.
-Entries support phrase search, source/type/date filters, and pagination.
+Entries shows recent records; Search has phrase search, source/type/date filters,
+and pagination. Both pages show 20 records at a time. Search applies on submission;
+its initial screen makes no search request. Filter-only searches are supported.
 New records use type `NOTE`; editing preserves the existing type and event date.
 
 ## Run locally
@@ -60,9 +62,63 @@ http://localhost:8000/docs, then sign in through the browser.
 2. Enter a title and multiline content, save, and check the detail and list.
 3. Open the note, select Edit, change the title/content, and save. Both views
    should show the saved values, including after reloading.
-4. Select Delete. Cancel keeps the note; Confirm delete returns to the list and removes it.
+4. Open the three-dot Record actions menu and select Delete. Cancel keeps the note;
+   Confirm delete returns to the list and removes it.
 5. A whitespace-only title should show validation. If the API becomes
    unavailable, a failed save keeps the draft; restart the API and retry.
+
+## UI checkpoint user check
+
+Use the local API/frontend commands above. No new migration or package is required
+for this UI update. Imports and original-file purge still need the storage/worker.
+
+1. Open http://localhost:5173/entries. Expect recent cards with short previews,
+   page controls, and New note. The top menu is Entries · Search · Import · Sources.
+2. Open http://localhost:5173/search. Expect a large search field, collapsible
+   Filters, and an initial prompt. Submit a phrase with Enter or Search. Reset
+   returns to the initial prompt. With an empty query, choose Source or another
+   filter and submit: matching records should still appear.
+3. Apply filters, open a result, and return with Back to search: conditions and
+   page should remain. Open a result link in a new tab and reload its detail:
+   Back to search should keep the same conditions. Search remains the active menu.
+   An old `/entries?q=...` URL should redirect to `/search?q=...`.
+4. On detail, expect record navigation on the left, the full text in the center,
+   and Notes & history on the right. Switch records using the left panel.
+   A manual record has Edit; imported source content remains read-only.
+5. Save a personal annotation, then open View history and provenance and inspect
+   a retained version. The main reader should continue showing the current version.
+   The existing synthetic demo at `/entries/1270` can be used while available;
+   see [HISTORY.md](../HISTORY.md) for generating another disposable demo.
+6. Open the three-dot Record actions menu → Delete → Cancel. The confirmation
+   should appear near the top of the reader; Cancel should keep the record.
+7. Open Import, a job, Sources, New note, and Login. Forms/buttons should use the
+   same design. Narrow the browser to about 390 px: panels should stack vertically
+   with no page-wide horizontal scroll. The record sidebar scrolls within its panel;
+   at very narrow widths the top menu can scroll horizontally inside its own row.
+
+Owner visual review is pending. Local Chromium verification uses synthetic API
+responses, not the development DB. Screenshots are kept outside Git under
+`.local/verification/search-ui/`. Safari/Firefox and actual devices are unverified.
+
+### English controls and account state
+
+1. Reload http://localhost:5173/search and open Filters. Start/End date should
+   show `YYYY-MM-DD`; calendar months, weekdays, Today and Clear should be English.
+   Select a date and submit, or type a date. Invalid dates show an English error.
+2. Open Import. Markdown source modification uses the same English calendar and
+   a `HH:mm` text field (24-hour time, device timezone). File controls show
+   Choose file / No file selected; a selected filename keeps its original language.
+3. After login, the top-right action should be Logout. Click it: expect Login,
+   the login page, and cleared account data. Reload: stay logged out. A second
+   open tab should also move to Login when the first tab logs out.
+4. Submit an empty login form: expect English validation. An API response with
+   an expired/invalid token should return to Login with an English expiry notice.
+
+The source audit found no remaining Korean application labels. Korean-locale
+Chromium checks cover these controls and session flows with synthetic API
+responses; screenshots are under `.local/verification/english-session-ui/`.
+Operating-system file pickers and browser-owned menus can still use the device
+language. Imported content is preserved as written.
 
 ## Phase 1.2 user check
 
@@ -102,7 +158,7 @@ if importing additional samples.
 
 1. Open http://localhost:5173/entries and create a note titled `제주 여행` with
    content `Alice Kim / 120 RPM / 3.5 km / use_state / 100%`.
-2. Search each phrase or code term, including `alice kim`. Expect the note to
+2. Open Search and submit each phrase or code term, including `alice kim`. Expect the note to
    appear. `%` and `_` are literal characters. Search covers title/content with
    case-insensitive substring matching; it does not split words or infer synonyms.
    Exact titles rank first, title substrings next, body matches next; ties use
@@ -117,9 +173,10 @@ if importing additional samples.
    Date bounds use Asia/Seoul, include both selected days, and dates are displayed
    in that timezone regardless of the browser's timezone.
 5. With more than 20 matching records, use Next page/Previous page. The total and
-   page change while filters remain selected. Reload or open the list URL in
-   another tab, open a detail then Back to entries, and confirm the filters/page survive.
-   New filters and Reset return to page one. Deleting the final record on the
+   page change while filters remain selected. Reload or open the Search URL in
+   another tab, open a detail then Back to search, and confirm the filters/page survive.
+   New filters return to page one; Reset returns to the initial Search prompt.
+   Deleting the final record on the
    last page moves back to the last remaining page.
 6. Search an absent phrase: expect No entries match your search. Reversed dates
    show validation without applying. API failures show a retry button.
@@ -222,6 +279,9 @@ tests cover URL filters, pagination/reset, detail return, deletion page recovery
 calendar validation, empty results, and Seoul date display. Import
 page tests cover multipart upload, polling, item errors, cache refresh, original
 download preparation, and resuming jobs by URL.
+Session tests cover logout/cache cleanup, cross-tab logout, API 401 expiry and
+late responses from a previous session. Date/time tests reject impossible dates
+and incomplete timestamps; form validation and file-selection labels are English.
 They do not establish a real browser-to-PostgreSQL integration result.
 
 ```bash

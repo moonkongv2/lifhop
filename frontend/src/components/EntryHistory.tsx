@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchVersions, chooseVersion, saveSettings, saveSourceState } from "../api/history";
 import type { Entry } from "../api/entries";
 import { formatEntryDate } from "../utils/entries";
+import Icon from "./Icon";
 import ArtifactDownload from "./ArtifactDownload";
 
 export default function EntryHistory({ entry }: { entry: Entry }) {
@@ -24,25 +25,16 @@ export default function EntryHistory({ entry }: { entry: Entry }) {
     },
   });
   const version = versions.data?.find(v => v.id === selected);
-  return <section>
+  return <aside className="panel notes-panel" aria-label="Notes and history">
+    <div className="panel-heading"><Icon name="note" /><h3>Notes & history</h3></div>
     {entry.read_only && <p>Imported source content is read-only. Write your own notes below.</p>}
     <p>Source status: <strong>{entry.source_state ?? "unknown"}</strong>. Source deletions remain in local search; deleting in lifhop removes all versions.</p>
-    {entry.review_required && <p role="status">A snapshot needs review. Current content was kept because freshness or completeness could not be established.</p>}
-    <details><summary>Source status and AI permission</summary>
-      <p>External AI needs both source and record permission. New sources and records start disabled. No AI service is connected yet.</p>
-      <label><input type="checkbox" checked={entry.external_ai_allowed ?? false} disabled={change.isPending}
-        onChange={e => change.mutate({ kind: "ai", value: e.target.checked })} />Allow external AI for this record</label>
-      <p>Only mark a source deletion after checking the source yourself.</p>
-      <div className="actions">{["available", "unavailable", "unknown", "deleted"].map(state =>
-        <button key={state} disabled={change.isPending || entry.source_state === state} onClick={() => {
-          if (state !== "deleted" || window.confirm("Have you confirmed that this record was deleted at its source?")) change.mutate({ kind: "state", value: state });
-        }}>Mark {state === "deleted" ? "confirmed source deletion" : state}</button>)}</div>
-    </details>
+    {entry.review_required && <p className="review-notice" role="status">A snapshot needs review. Current content was kept because freshness or completeness could not be established.</p>}
     <label htmlFor="annotation">Personal annotation</label>
-    <textarea id="annotation" value={annotation} maxLength={100000} onChange={e => setAnnotation(e.target.value)} />
-    <button disabled={change.isPending} onClick={() => change.mutate({ kind: "annotation" })}>Save annotation</button>
-    <p><button onClick={() => setOpen(!open)}>{open ? "Hide history" : "View history and provenance"}</button></p>
-    {open && <>
+    <textarea id="annotation" placeholder="Keep your own thoughts alongside the source…" value={annotation} maxLength={100000} onChange={e => setAnnotation(e.target.value)} />
+    <button className="primary save-note" disabled={change.isPending} onClick={() => change.mutate({ kind: "annotation" })}>Save annotation</button>
+    <p><button className="history-toggle" aria-expanded={open} onClick={() => setOpen(!open)}><Icon name="history" />{open ? "Hide history" : "View history and provenance"}</button></p>
+    {open && <div className="history-list">
       {versions.isLoading && <p role="status">Loading history...</p>}
       {versions.error && <><p role="alert">{versions.error.message}</p><button onClick={() => void versions.refetch()}>Retry history</button></>}
       {versions.data?.map(v => <article key={v.id}>
@@ -55,7 +47,7 @@ export default function EntryHistory({ entry }: { entry: Entry }) {
           if (window.confirm(`Use version ${v.number} as current? Completeness: ${v.completeness}. Existing history will be retained.`)) change.mutate({ kind: "select", value: v.id });
         }}>Use as current</button>}
       </article>)}
-      {version && <section><h4>Version {version.number}: provenance and content</h4>
+      {version && <section className="version-preview"><h4>Version {version.number}: provenance and content</h4>
         <p>Provider: {entry.provider ?? "unknown"} · Identity: {entry.external_id ?? "not recorded"} · Scope: {entry.source_scope}</p>
         <p>Locator: {version.locator ?? "Not recorded"}</p>
         <p>SHA-256: <code>{version.content_hash}</code></p>
@@ -63,8 +55,18 @@ export default function EntryHistory({ entry }: { entry: Entry }) {
         {version.payload && <details><summary>Structured messages, commands and diffs</summary><pre className="entry-content">{JSON.stringify(version.payload, null, 2)}</pre></details>}
         {version.import_artifact_id && <ArtifactDownload artifactId={version.import_artifact_id} />}
       </section>}
-    </>}
+    </div>}
+    <details className="policy-details"><summary>Source status and AI permission</summary>
+      <p>External AI needs both source and record permission. New sources and records start disabled. No AI service is connected yet.</p>
+      <label><input type="checkbox" checked={entry.external_ai_allowed ?? false} disabled={change.isPending}
+        onChange={e => change.mutate({ kind: "ai", value: e.target.checked })} />Allow external AI for this record</label>
+      <p>Only mark a source deletion after checking the source yourself.</p>
+      <div className="actions">{["available", "unavailable", "unknown", "deleted"].map(state =>
+        <button key={state} disabled={change.isPending || entry.source_state === state} onClick={() => {
+          if (state !== "deleted" || window.confirm("Have you confirmed that this record was deleted at its source?")) change.mutate({ kind: "state", value: state });
+        }}>Mark {state === "deleted" ? "confirmed source deletion" : state}</button>)}</div>
+    </details>
     {change.error && <p role="alert">{change.error.message}</p>}
     {change.isSuccess && <p role="status">Saved.</p>}
-  </section>;
+  </aside>;
 }

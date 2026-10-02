@@ -1,3 +1,4 @@
+import { assertCurrentSession, expireSession, sessionExpiredMessage } from "../utils/session";
 import type { components } from "./generated/schema";
 import type { Entry } from "./entries";
 export type Version = components["schemas"]["VersionResponse"];
@@ -11,12 +12,15 @@ export async function historyRequest<T>(path: string, data?: unknown, method = "
     method, headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
     body: data === undefined ? undefined : JSON.stringify(data),
   });
+  if (response.status === 401) { expireSession(token); throw new Error(sessionExpiredMessage); }
   if (!response.ok) {
     let detail: unknown;
     try { detail = (await response.json()).detail; } catch { /* Use a status fallback. */ }
     throw new Error(typeof detail === "string" ? detail : `Request failed: ${response.status}`);
   }
-  return response.status === 204 ? undefined as T : response.json();
+  const result = response.status === 204 ? undefined : await response.json();
+  assertCurrentSession(token);
+  return result as T;
 }
 export const fetchVersions = (id: number) => historyRequest<Version[]>(`/entries/${id}/versions`);
 export const chooseVersion = (id: number, version: number) => historyRequest<Entry>(`/entries/${id}/versions/${version}/select`, {}, "POST");

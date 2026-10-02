@@ -1,3 +1,5 @@
+import { assertCurrentSession, getAccessToken, setAccessToken } from "../utils/session";
+import Icon from "../components/Icon";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import type { FormEvent } from "react";
@@ -21,12 +23,17 @@ function LoginPage() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
+    if (loading) return;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) || !password) {
+      setError("Enter a valid email address and password."); return;
+    }
+    const previousToken = getAccessToken();
     setLoading(true);
     setError("");
 
     try {
       const form = new URLSearchParams();
-      form.append("username", email);
+      form.append("username", email.trim());
       form.append("password", password);
 
       const response = await fetch("/api/auth/login", {
@@ -40,8 +47,10 @@ function LoginPage() {
 
       const data: TokenResponse = await response.json();
 
+      if (previousToken) assertCurrentSession(previousToken);
+      else if (getAccessToken()) throw new Error("Your session has changed. Please try again.");
       queryClient.clear();
-      localStorage.setItem("access_token", data.access_token);
+      setAccessToken(data.access_token);
 
       navigate("/entries");
     } catch (err) {
@@ -54,15 +63,19 @@ function LoginPage() {
   }
 
   return (
-    <>
+    <section className="panel page-card login-card">
+      <span className="brand-mark"><Icon name="archive" /></span>
+      <p className="eyebrow">Welcome back</p>
       <h2>Login</h2>
+      <p>Your records, right where you left them.</p>
 
-      <form onSubmit={handleSubmit}>
+      <form noValidate onSubmit={handleSubmit}>
         <div>
           <label>
             Email
             <input
               type="email"
+              autoComplete="username"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               required
@@ -75,6 +88,7 @@ function LoginPage() {
             Password
             <input
               type="password"
+              autoComplete="current-password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               required
@@ -87,8 +101,9 @@ function LoginPage() {
         </button>
       </form>
 
-      {error && <p>{error}</p>}
-    </>
+      {sessionStorage.getItem("session_notice") && <p role="alert">{sessionStorage.getItem("session_notice")}</p>}
+      {error && <p role="alert">{error}</p>}
+    </section>
   );
 }
 

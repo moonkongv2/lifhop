@@ -1,18 +1,23 @@
 # lifhop Current Status
 
-Last updated: 2026-10-02
+Last updated: 2026-10-03
 
 ## Current product slice
 
-Phase 2.2 — provenance, observed versions, deletion suppression, and AI policy.
+Phase 2.3 preparation — Codex CLI historical backfill (implementation not started).
 Phase 2.1 committed at `69dc764`; owner requested continuing without its HTML
-preview check. Phase 2.2 implementation/local validation is complete. The owner
+preview check. Phase 2.2 committed at `d99ef9e`. The owner
 confirmed successful synthetic-demo execution (Entry 1270) and authorized the
 commit; the complete browser scenarios in `HISTORY.md` remain pending.
 Development DB upgraded to `a22b8c30d567`: all 1,266 existing Entries have one
 initial observed version; source timestamps/history were not invented.
 Local API health/new routes verified and import/purge worker restarted.
-Next implementation after owner feedback: Phase 2.3 Codex historical backfill.
+The owner requested a Notebook-inspired frontend refresh before further collection
+work, followed by separating Search from recent Entries. Implementation and local
+checks are complete. The owner requested English-control/session fixes after
+browser review and authorized committing the UI checkpoint. The broader visual
+walkthrough remains available in `frontend/README.md`.
+Next implementation: Phase 2.3 Codex historical backfill.
 
 ## Personal-release target
 
@@ -48,8 +53,12 @@ exclusions are implemented foundations; full collectors remain upcoming.
   embeddings/reranking/summary/answer/telemetry deny tests pass. No AI provider is
   connected. Latest deletion-ledger export/apply protects isolated restores.
 - Owner-scoped literal phrase search in title/content, combined source/type/date
-  filters, total counts, and 20-record browser pagination. Search state lives in
-  the URL and survives detail/create navigation.
+  filters, total counts, and 20-record browser pagination. Search has its own
+  `/search` screen; `/entries` shows recent records. Empty Search makes no API
+  request; keyword and filter-only searches apply on submission. Old filtered
+  `/entries` URLs redirect to Search. Validated detail return URLs preserve
+  origin, conditions and page across sidebar navigation, reload and new tabs.
+  Entries pagination survives note creation/cancellation.
 - Title matches rank before body matches, then newest registration and ID. Dates
   are displayed/filtered in Asia/Seoul; registration and source/event dates are
   separate. Missing event dates are never inferred from text.
@@ -75,6 +84,18 @@ exclusions are implemented foundations; full collectors remain upcoming.
   authenticated Entry APIs and server-result cache updates.
 - English interface labels, instructions, job statuses, and frontend error messages.
   Dates use English formatting in Asia/Seoul; user content retains its language.
+  Search/Markdown date controls use an English calendar and `YYYY-MM-DD`;
+  Markdown time uses `HH:mm` in the device timezone. File selection and form
+  validation messages stay English even with a Korean browser locale.
+  Login changes to Logout after authentication. Logout clears tokens/private
+  query caches, redirects to Login, and propagates to other tabs. API 401 responses
+  end the matching session with an English notice; stale responses cannot restore
+  the previous session's record cache.
+- Light panel UI: collapsible Search filters and preview cards; detail record navigation,
+  full-text reader, and annotations/history. Import, Sources, job, note, and login
+  pages share the same styles. Narrow screens stack panels. Delete lives in the
+  record actions menu with an explicit confirmation near the top of the reader.
+  Switching records resets the previous edit state and preserves list filters.
 - Empty/loading/error states, draft-preserving save errors, title validation,
   deletion confirmation, and account-switch cache clearing.
 - Read-only Codex/GitHub verification CLI produces private local HTML/JSON previews,
@@ -87,8 +108,18 @@ exclusions are implemented foundations; full collectors remain upcoming.
   only `main` selected; 372 reachable commits across 4 pages. One commit's 2 file
   patches and README at its pinned SHA verified through anonymous REST GET.
 - Disposable PostgreSQL tests use real migrations in fresh schemas. Local
-  checks: 211 backend tests (25 acquisition and 25 history/policy cases) and 30 frontend tests pass;
-  frontend lint/build pass.
+  Phase 2.2 checks: 211 backend tests (25 acquisition and 25 history/policy cases).
+  UI checkpoint checks: 79 frontend tests, lint/build pass; backend unchanged.
+  Local Chromium checks with synthetic API responses cover Entries, Search initial/
+  results, detail, Import, Sources, job, login and new note at desktop/mobile sizes,
+  plus 320/768/1024/1280px layouts. Search submission, filter-only queries, reset,
+  legacy redirects, new-tab/reload return context, active menu, deletion cancellation,
+  history, annotations and draft reset pass.
+  Korean-locale Chromium checks also pass for English date/time/file controls,
+  calendar selection and viewport bounds, login/logout, logout after reload,
+  cross-tab logout and expired-session redirects. No application Korean labels
+  remain in the source audit; Korean user-content fixtures remain intentional.
+  This UI check does not establish actual DB/storage integration.
 - Actual local HTTP/S3/worker checks passed with a 512 MiB synthetic ZIP and a
   494 MiB owner archive in isolated schemas. Original hashes, search counts,
   reimport uniqueness, visible progress, and synthetic worker-kill recovery passed.
@@ -107,9 +138,12 @@ user-verifiable product slices in `ROADMAP.md`.
 
 ## Next
 
-1. Verify Phase 2.2 using `HISTORY.md`: synthetic history, annotations, source
+1. Implement Phase 2.3 Codex historical backfill with preview/exclusions,
+   durable ingestion and interruption/replay checks. The UI checkpoint is committed;
+   further Entries/Search/English-control checks are in `frontend/README.md`.
+2. Verify Phase 2.2 using `HISTORY.md`: synthetic history, annotations, source
    markers, deletion/reimport block, and Sources permissions.
-2. Follow the sequence: Codex/GitHub history → evidence-based answers/retrospectives
+3. Follow the sequence: Codex/GitHub history → evidence-based answers/retrospectives
    → scheduled collectors → private AWS release.
 
 ## Known limitations
@@ -117,6 +151,10 @@ user-verifiable product slices in `ROADMAP.md`.
 - Owner confirmed the initial and large-ZIP Phase 1.2 flows in the browser.
   Phase 1.3, English UI, and Phase 2.1 owner preview checks remain pending.
   Remote CI execution remains pending; frontend automated tests stub API.
+- Refreshed UI owner review is pending. Chromium layout/interaction checks use
+  synthetic API responses; other browser engines and actual mobile devices remain
+  unverified. Theme is light; a dark theme is not implemented.
+  OS file-picker dialogs and browser-owned menus can use the device language.
 - Search is literal case-insensitive substring matching; no word stemming, fuzzy
   matching, relevance model, attachment text extraction, or LLM answers. Large
   real-corpus performance is unverified; ranked searches/counts scan owned rows.

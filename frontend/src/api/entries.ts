@@ -1,3 +1,4 @@
+import { assertCurrentSession, expireSession, sessionExpiredMessage } from "../utils/session";
 import type { components } from "./generated/schema";
 
 export type Entry = components["schemas"]["EntryResponse"];
@@ -15,9 +16,9 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
       "Content-Type": "application/json",
     },
   });
+  if (response.status === 401) { expireSession(token); throw new Error(sessionExpiredMessage); }
   if (!response.ok) {
     const messages: Record<number, string> = {
-      401: "Your session has expired. Please log in again.",
       404: "Entry not found. It may have been deleted or you may not have access.",
     };
     if ([403, 409, 410, 422].includes(response.status)) {
@@ -27,8 +28,9 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     }
     throw new Error(messages[response.status] ?? `Request failed: ${response.status}. Please try again.`);
   }
-  if (response.status === 204) return undefined as T;
-  return response.json();
+  const result = response.status === 204 ? undefined : await response.json();
+  assertCurrentSession(token);
+  return result as T;
 }
 
 export const fetchEntries = () => request<Entry[]>("");

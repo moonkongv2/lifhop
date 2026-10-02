@@ -4,7 +4,7 @@ import { fetchArtifactDownload } from "../api/imports";
 function ArtifactDownload({ artifactId }: { artifactId: number }) {
   const mutation = useMutation({ mutationFn: () => fetchArtifactDownload(artifactId) });
   return (
-    <div>
+    <div className="original-download">
       <button disabled={mutation.isPending} onClick={() => mutation.mutate()}>
         {mutation.isPending ? "Preparing download..." : "Prepare original download"}
       </button>

@@ -1,3 +1,4 @@
+import { assertCurrentSession, expireSession, sessionExpiredMessage } from "../utils/session";
 import type { components } from "./generated/schema";
 import type { Entry } from "./entries";
 
@@ -10,13 +11,15 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const response = await fetch(`/api${path}`, {
     ...options, headers: { Authorization: `Bearer ${token}` },
   });
+  if (response.status === 401) { expireSession(token); throw new Error(sessionExpiredMessage); }
   if (!response.ok) {
     let detail: unknown;
     try { detail = (await response.json()).detail; } catch { /* Use the status fallback. */ }
-    if (response.status === 401) throw new Error("Your session has expired. Please log in again.");
     throw new Error(typeof detail === "string" ? detail : `Import request failed: ${response.status}. Please try again.`);
   }
-  return response.json();
+  const result = await response.json();
+  assertCurrentSession(token);
+  return result;
 }
 
 export const fetchJobs = () => request<ImportJob[]>("/import-jobs");

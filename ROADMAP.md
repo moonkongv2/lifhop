@@ -1,6 +1,6 @@
 # lifhop Product Roadmap
 
-Last revised: 2026-10-01
+Last revised: 2026-10-03
 
 ## Purpose and release boundary
 
@@ -187,6 +187,20 @@ adapters, through migrations. Apply the same rules to existing imports:
 **User check:** Replay, edit, send an older/partial snapshot, delete at the
 source, and delete in lifhop. Verify history/current state and no resurrection.
 Use mocked egress checks to prove AI-excluded records are never transmitted.
+
+### UI checkpoint before 2.3
+
+At the owner's request, refine the frontend before adding more collectors.
+Use a light, Notebook-inspired panel layout: recent Entries and concise archive cards;
+top-level Search with a large query field, collapsible filters, and results;
+record navigation, full-text reading, and personal annotations/history on detail.
+Apply consistent spacing, typography, forms, and navigation to Import, Sources,
+jobs, and login. Keep the English interface and support narrow screens.
+
+**User check:** Browse/search, preserve search context through detail/new-tab/reload,
+switch records, read full content, save an annotation,
+inspect retained versions, and cancel deletion from the record actions menu.
+Verify the layout at desktop and mobile widths before committing the UI checkpoint.
 
 ### 2.3 Backfill Codex CLI history
 

@@ -27,7 +27,7 @@ function EntryForm({ entry, pending, error, onSubmit, onCancel }: Props) {
   }
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form noValidate onSubmit={handleSubmit}>
       <fieldset disabled={pending}>
         <label htmlFor="entry-title">Title</label>
         <input id="entry-title" value={title} maxLength={255} required
@@ -36,7 +36,7 @@ function EntryForm({ entry, pending, error, onSubmit, onCancel }: Props) {
         <textarea id="entry-content" rows={12} value={content}
           onChange={(event) => setContent(event.target.value)} />
         <div className="actions">
-          <button type="submit">{pending ? "Saving..." : "Save"}</button>
+          <button className="primary" type="submit">{pending ? "Saving..." : "Save"}</button>
           <button type="button" onClick={onCancel}>Cancel</button>
         </div>
       </fieldset>

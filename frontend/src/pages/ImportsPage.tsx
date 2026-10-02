@@ -1,17 +1,22 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, Navigate, useNavigate } from "react-router";
 import { fetchJobs, isActive, statusText, uploadChatGPT, uploadMarkdown } from "../api/imports";
 import type { Entry } from "../api/entries";
 import ArtifactDownload from "../components/ArtifactDownload";
+import DateInput from "../components/DateInput";
+import { validLocalDateTime } from "../utils/dates";
 
 function ImportsPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [kind, setKind] = useState("markdown");
   const [identity, setIdentity] = useState("");
-  const [modified, setModified] = useState("");
+  const [modifiedDate, setModifiedDate] = useState("");
+  const [modifiedTime, setModifiedTime] = useState("");
+  const modified = modifiedDate || modifiedTime ? `${modifiedDate}T${modifiedTime}` : "";
+  const fileInput = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [validation, setValidation] = useState("");
   const [entries, setEntries] = useState<Entry[]>([]);
@@ -35,6 +40,9 @@ function ImportsPage() {
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (upload.isPending) return;
+    if (kind === "markdown" && modified && !validLocalDateTime(modified)) {
+      setValidation("Enter a valid source date and time as YYYY-MM-DD and HH:mm (24-hour time)."); return;
+    }
     if (!file || file.size === 0) { setValidation("Please select a non-empty file."); return; }
     const valid = kind === "markdown" ? /\.(md|markdown)$/i.test(file.name) : /\.zip$/i.test(file.name);
     if (!valid) { setValidation("Please select a file that matches the import type."); return; }
@@ -45,11 +53,12 @@ function ImportsPage() {
 
   if (!localStorage.getItem("access_token")) return <Navigate to="/login" replace />;
   return (
-    <>
+    <section className="panel page-card">
+      <p className="eyebrow">Bring your context together</p>
       <h2>Import records</h2>
       <p>Choose a UTF-8 text file for Markdown or an export ZIP for ChatGPT.</p>
       <p>Default limits: Markdown 25 MiB, ZIP 1 GiB, total uncompressed archive 1 GiB, conversation JSON 256 MiB, and 2,000 conversations. Split conversation JSON files are supported. Limits may vary with server settings.</p>
-      <form onSubmit={submit}>
+      <form noValidate onSubmit={submit}>
         <fieldset disabled={upload.isPending}>
           <label htmlFor="import-kind">Import type</label>
           <select id="import-kind" value={kind} onChange={(event) => { setKind(event.target.value); setFile(null); upload.reset(); setValidation(""); }}>
@@ -59,13 +68,17 @@ function ImportsPage() {
             <label htmlFor="document-id">Document ID (optional)</label>
             <input id="document-id" value={identity} maxLength={255} onChange={e => setIdentity(e.target.value)} />
             <p>Use the same ID when updating one document. Without an ID, identical file content is deduplicated.</p>
-            <label htmlFor="source-modified">Source modified time (optional, your device timezone)</label>
-            <input id="source-modified" type="datetime-local" value={modified} onChange={e => setModified(e.target.value)} />
+            <p className="field-heading">Source modified time (optional, your device timezone)</p>
+            <div className="source-datetime">
+              <div><label htmlFor="source-modified-date">Source modified date</label><DateInput id="source-modified-date" label="Source modified date" value={modifiedDate} onChange={setModifiedDate} /></div>
+              <div><label htmlFor="source-modified-time">Source modified time</label><input id="source-modified-time" type="text" placeholder="HH:mm" maxLength={5} value={modifiedTime} onChange={e => setModifiedTime(e.target.value)} /></div>
+            </div>
             <p>Without a verified source time, changed content is retained for manual review instead of replacing current content.</p>
           </>}
           <label htmlFor="import-file">File</label>
-          <input key={kind} id="import-file" type="file" accept={kind === "markdown" ? ".md,.markdown" : ".zip"}
+          <input ref={fileInput} className="visually-hidden" tabIndex={-1} key={kind} id="import-file" type="file" accept={kind === "markdown" ? ".md,.markdown" : ".zip"}
             onChange={(event) => setFile(event.target.files?.[0] ?? null)} />
+          <div className="file-picker"><button type="button" onClick={() => fileInput.current?.click()}>Choose file</button><span>{file?.name ?? "No file selected"}</span></div>
           <button type="submit">{upload.isPending ? "Uploading..." : "Import"}</button>
         </fieldset>
       </form>
@@ -82,7 +95,7 @@ function ImportsPage() {
         <Link to={`/import-jobs/${job.id}`}>Job #{job.id}</Link> — {statusText[job.status]}
         <p>Saved {job.processed_items} / Failed {job.failed_items} / Total {job.total_items}</p>
       </article>)}
-    </>
+    </section>
   );
 }
 export default ImportsPage;

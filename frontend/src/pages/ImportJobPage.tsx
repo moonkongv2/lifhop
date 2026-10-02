@@ -38,8 +38,9 @@ function ImportJobPage() {
   if (!job.data) return <p>Job not found.</p>;
   const data = job.data;
   return (
-    <>
+    <section className="panel page-card">
       <Link to="/imports">← Back to imports</Link>
+      <p className="eyebrow">Import progress</p>
       <h2>Import job #{data.id}</h2>
       <p role="status">{statusText[data.status]}</p>
       <p>Total {data.total_items} / Saved {data.processed_items} / Failed {data.failed_items} / Attempts {data.attempts}</p>
@@ -62,7 +63,7 @@ function ImportJobPage() {
         <div className="actions"><button disabled={offset === 0} onClick={() => setOffset(offset - 20)}>Previous results</button>
           <button disabled={!entries.data || entries.data.length < 20} onClick={() => setOffset(offset + 20)}>Next results</button></div>
       </section>}
-    </>
+    </section>
   );
 }
 export default ImportJobPage;
