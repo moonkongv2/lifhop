@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+from typing import Literal
 from sqlalchemy import select, or_, and_
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
@@ -8,8 +10,19 @@ from app.models.history import EntryVersion
 from app.services.source_history import check_collection, content_hash, record_version, select_version, link_material
 
 
+@dataclass
+class UpsertResult:
+    entry: Entry
+    outcome: Literal["new", "unchanged", "updated", "retained"]
+
+
 def upsert_external_entry(db: Session, *, user_id: int, item: CanonicalItem,
                           artifact_id: int | None = None) -> Entry:
+    return upsert_external_entry_with_outcome(db, user_id=user_id, item=item, artifact_id=artifact_id).entry
+
+
+def upsert_external_entry_with_outcome(db: Session, *, user_id: int, item: CanonicalItem,
+                                     artifact_id: int | None = None) -> UpsertResult:
     if item.external_id is None:
         raise ValueError("external_id is required for external entry upsert")
     check_collection(db, user_id, item.provider.value, item.source_scope, item.external_id)
@@ -26,7 +39,7 @@ def upsert_external_entry(db: Session, *, user_id: int, item: CanonicalItem,
         entry.latest_source_updated_at = item.source_updated_at
         link_material(db, entry, artifact_id)
         entry.source_state = "available"
-        return entry
+        return UpsertResult(entry, "new")
     link_material(db, entry, artifact_id)
     if entry.source_scope != item.source_scope:
         raise HTTPException(422, "Stable identity cannot move between source scopes")
@@ -44,7 +57,7 @@ def upsert_external_entry(db: Session, *, user_id: int, item: CanonicalItem,
         # A later unchanged observation advances freshness without adding a version.
         if replay.id == current.id and item.source_updated_at and (frontier is None or item.source_updated_at > frontier):
             entry.latest_source_updated_at = item.source_updated_at
-        return entry
+        return UpsertResult(entry, "unchanged")
     candidate.id = entry.id
     # Capture candidate values without mutating the current Entry.
     version = record_version(db, candidate, item=item, artifact_id=artifact_id)
@@ -56,4 +69,4 @@ def upsert_external_entry(db: Session, *, user_id: int, item: CanonicalItem,
         entry.latest_source_updated_at = item.source_updated_at
     else:
         entry.review_required = True
-    return entry
+    return UpsertResult(entry, "updated" if newer and ranks[item.completeness] >= ranks[current.completeness] else "retained")

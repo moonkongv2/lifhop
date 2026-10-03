@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Navigate } from "react-router";
 import { historyRequest } from "../api/history";
 import type { Policy, Suppression } from "../api/history";
+import CollectionRuns from "../components/CollectionRuns";
 
 export default function SourcesPage() {
   const cache = useQueryClient();
@@ -18,7 +19,7 @@ export default function SourcesPage() {
     <p className="eyebrow">You stay in control</p>
     <h2>Sources and deletion policy</h2>
     <p>Collection controls incoming records. External AI permission is separate and also requires each record to be allowed. Storage permission does not grant AI permission.</p>
-    <p>Existing records remain available for local viewing and search when collection is paused. Sources appear after the first import.</p>
+    <p>Existing records remain available for local viewing and search when collection is paused. Sources appear after the first import or backfill registration.</p>
     {sources.isLoading && <p role="status">Loading sources...</p>}
     {sources.data?.length === 0 && <p>No sources yet. Import a record first.</p>}
     {sources.data?.map(policy => <article key={policy.id}>
@@ -29,6 +30,7 @@ export default function SourcesPage() {
         })} />{field === "collection_enabled" ? "Allow collection" : "Allow external AI for this source"}
       </label>)}
     </article>)}
+    <CollectionRuns />
     <h3>Blocked from reimport</h3>
     <p>Deleting in lifhop removes all versions and annotations. Only source identifiers remain. Allowing reimport does not restore deleted content.</p>
     {suppressed.isLoading && <p role="status">Loading deletion records...</p>}

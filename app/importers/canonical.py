@@ -60,11 +60,33 @@ class RecordedDiff(BaseModel):
     state: Literal["recorded", "unavailable", "partial"] = "unavailable"
 
 
+class EvidenceRef(BaseModel):
+    kind: Literal["message", "command", "diff"]
+    index: int = Field(ge=0)
+
+
 class DevSessionPayload(BaseModel):
     kind: Literal[CanonicalKind.DEV_SESSION] = CanonicalKind.DEV_SESSION
     messages: list[CanonicalMessage]
     commands: list[RecordedCommand] = Field(default_factory=list)
     diffs: list[RecordedDiff] = Field(default_factory=list)
+    order: list[EvidenceRef] = Field(default_factory=list)
+    thread_id: str | None = None
+    turn_id: str | None = None
+    forked_from_id: str | None = None
+    archived: bool = False
+    omissions: list[str] = Field(default_factory=list)
+    capture_method: str | None = None
+    filter_version: str | None = None
+
+    @model_validator(mode="after")
+    def ordered_evidence(self):
+        groups = {"message": self.messages, "command": self.commands, "diff": self.diffs}
+        refs = [(ref.kind, ref.index) for ref in self.order]
+        if self.order and (len(set(refs)) != len(refs) or
+                set(refs) != {(kind, index) for kind, rows in groups.items() for index in range(len(rows))}):
+            raise ValueError("Evidence order must reference every retained item exactly once")
+        return self
 
 
 CanonicalPayload = Annotated[

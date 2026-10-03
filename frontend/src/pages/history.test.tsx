@@ -36,6 +36,7 @@ beforeEach(() => {
     ]);
     if (path === "/api/entries/7/versions/19/select") { record.current_version_id = 19; record.content = "Older text"; record.review_required = false; return Response.json(record); }
     if (path === "/api/sources") return Response.json([{ id: 1, provider: "codex", scope: "default", collection_enabled: true, external_ai_allowed: false }]);
+    if (path.startsWith("/api/collection-runs?")) return Response.json([{ id: 2, scope: "mac:synthetic", status: "partial", started_at: "2026-01-01T00:00:00Z", last_seen_at: "2026-01-01T01:00:00Z", completed_at: "2026-01-01T01:00:00Z", expected_items: 3, counts: { new: 2, blocked: 1 }, coverage: { discovered: 4, selected: 3, excluded: 1, read: 2, failed: 0, deferred: 1, gaps: ["ACTIVE_SESSION"] } }]);
     if (path === "/api/sources/suppressed/records") return Response.json(denied ? [{ id: 3, provider: "codex", external_id: "deleted-1", deleted_at: "2026-01-01T00:00:00Z" }] : []);
     if (path === "/api/sources/purges/status") return Response.json({ pending: 1, failed_attempts: 2, errors: [] });
     if (path === "/api/sources/1") return Response.json({ id: 1, provider: "codex", scope: "default", ...body });
@@ -84,4 +85,14 @@ it("shows independent source controls, pending purge, and owner reimport action"
   fireEvent.click(screen.getByText("Allow reimport"));
   await screen.findByText("No blocked records.");
   expect(window.confirm).toHaveBeenCalled();
+});
+
+it("shows Codex backfill coverage separately from collector freshness", async () => {
+  mount("/sources");
+  await screen.findByText("Backfill #2 · Partially completed");
+  expect(screen.getByText(/4 discovered · 3 selected · 1 excluded/)).toBeTruthy();
+  expect(screen.getByText(/2 new · 0 unchanged/)).toBeTruthy();
+  expect(screen.getByText(/Collection is manual/)).toBeTruthy();
+  expect(screen.getByText("active session")).toBeTruthy();
+  expect(screen.getByRole("button", { name: "Previous backfills" }).hasAttribute("disabled")).toBe(true);
 });

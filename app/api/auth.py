@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.db import get_db
+from app.auth import get_current_user
 from app.models.user import User
 from app.schemas.auth import RefreshRequest, TokenResponse
 from app.schemas.user import UserCreate, UserResponse
@@ -24,6 +25,11 @@ router = APIRouter(
     prefix="/auth",
     tags=["auth"],
 )
+
+
+@router.get("/me", response_model=UserResponse)
+def current_identity(current_user: Annotated[User, Depends(get_current_user)]) -> User:
+    return current_user
 
 
 @router.post(

@@ -32,8 +32,8 @@ def inventory(home: Path) -> tuple[dict, list[dict]]:
                 errors["symlink_skipped"] += 1
                 continue
             totals[directory] += 1
-            totals["bytes"] += path.stat().st_size
             try:
+                totals["bytes"] += path.stat().st_size
                 with path.open("rb") as stream:
                     line = stream.readline(1024 * 1024 + 1)
                 if len(line) > 1024 * 1024:
@@ -61,10 +61,10 @@ class ReadOnlyAppServer:
     """Only starts against a disposable CODEX_HOME; RPC methods are allowlisted."""
     METHODS = {"initialize", "thread/list", "thread/read", "thread/turns/list", "thread/items/list"}
 
-    def __init__(self, home: Path):
+    def __init__(self, home: Path, *, timeout: float = 20):
         if not (home / ".lifhop-snapshot").is_file():
             raise ProbeError("App-server must run against a disposable lifhop snapshot.")
-        env = os.environ.copy()
+        env = {key: os.environ[key] for key in ("PATH", "HOME", "TMPDIR", "LANG", "LC_ALL") if key in os.environ}
         env["CODEX_HOME"] = str(home)
         self.process = subprocess.Popen(
             ["codex", "app-server", "--listen", "stdio://", "-c", "analytics.enabled=false",
@@ -75,6 +75,7 @@ class ReadOnlyAppServer:
         self.selector.register(self.process.stdout, selectors.EVENT_READ)
         self.buffer = b""
         self.sequence = 0
+        self.timeout = timeout
 
     def request(self, method: str, params: dict) -> dict:
         if method not in self.METHODS:
@@ -82,7 +83,7 @@ class ReadOnlyAppServer:
         self.sequence += 1
         self.process.stdin.write((json.dumps({"id": self.sequence, "method": method, "params": params}) + "\n").encode())
         self.process.stdin.flush()
-        deadline = time.monotonic() + 20
+        deadline = time.monotonic() + self.timeout
         while time.monotonic() < deadline:
             if b"\n" not in self.buffer:
                 if not self.selector.select(max(0, deadline - time.monotonic())):

@@ -340,3 +340,15 @@ blocks automatic reimport and queues original purge through the import worker.
 Shared ZIP deletion removes the whole original while retaining other record text.
 See [HISTORY.md](../HISTORY.md) for the precise browser walkthrough, synthetic demo,
 retention/restore policy, and AWS/backup verification boundaries.
+## Phase 2.3 Codex verification
+
+After preview review and explicit apply using `../CODEX_BACKFILL.md`, open
+`http://localhost:5173/sources` to inspect backfill counts, session coverage,
+timestamps and gap reasons. Results refresh every five seconds and paginate.
+Search with source Codex, open a record, then inspect Notes & history for ordered
+messages, command results/exit codes, diffs, thread/turn/fork/archive context and
+declared omissions. Existing history/policy controls remain available.
+
+The collector runs manually on the Mac; it does not need to keep running for
+stored records to remain visible. Synthetic automated/browser checks pass;
+actual owner-history checks follow explicit apply.

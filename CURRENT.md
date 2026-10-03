@@ -4,12 +4,15 @@ Last updated: 2026-10-03
 
 ## Current product slice
 
-Phase 2.3 preparation — Codex CLI historical backfill (implementation not started).
+Phase 2.3 — Codex CLI historical backfill implemented; owner confirmed local
+preview review and authorized the implementation commit. Personal apply and
+actual-history browser verification remain pending. Development DB upgraded to
+`b23c7d91e042`.
 Phase 2.1 committed at `69dc764`; owner requested continuing without its HTML
 preview check. Phase 2.2 committed at `d99ef9e`. The owner
 confirmed successful synthetic-demo execution (Entry 1270) and authorized the
 commit; the complete browser scenarios in `HISTORY.md` remain pending.
-Development DB upgraded to `a22b8c30d567`: all 1,266 existing Entries have one
+Phase 2.2 migration `a22b8c30d567` gave all 1,266 existing Entries one
 initial observed version; source timestamps/history were not invented.
 Local API health/new routes verified and import/purge worker restarted.
 The owner requested a Notebook-inspired frontend refresh before further collection
@@ -17,7 +20,7 @@ work, followed by separating Search from recent Entries. Implementation and loca
 checks are complete. The owner requested English-control/session fixes after
 browser review and authorized committing the UI checkpoint. The broader visual
 walkthrough remains available in `frontend/README.md`.
-Next implementation: Phase 2.3 Codex historical backfill.
+UI checkpoint: `19e395a`. Next implementation: Phase 2.4 GitHub historical backfill.
 
 ## Personal-release target
 
@@ -36,6 +39,23 @@ exclusions are implemented foundations; full collectors remain upcoming.
 
 ## What works now
 
+- Codex CLI 0.158.0 manual backfill: explicit project/thread selection, exclusions
+  and date filters, immutable private sanitized preview, device-scoped turn IDs,
+  bounded official reads against disposable snapshots and explicit gaps.
+  Authenticated direct HTTP apply saves Entry/version and receipt atomically;
+  interruption/lost acknowledgment can resume without duplication. Server receipts
+  verify local checkpoint skips. Ownership, collection policy, deletion suppression,
+  annotations and AI-off defaults are preserved. No S3, worker or new AWS service
+  is required for Codex text ingestion. Sources displays paginated runs/coverage;
+  Search and version inspection show ordered recorded evidence and omissions.
+  See `CODEX_BACKFILL.md` for execution and verification.
+- Phase 2.3 checks: 237 backend tests with fresh-schema migrations, including actual
+  loopback HTTP synthetic apply/replay and pre-commit rollback; 80 frontend tests,
+  lint/build pass. Synthetic Chromium Sources/search/evidence/failure/retry checks
+  pass at 320/390/768/1440px. A final-suite setup attempt used the wrong test DB
+  account; the corrected rerun passed. Actual private preview selected 13 of 171
+  files, read 10 sessions, failed 3 and prepared 33 turns; SOURCE_CONFLICT and
+  EMPTY_HISTORY remain gaps. Personal source content has not been uploaded.
 - FastAPI/PostgreSQL backend with authentication and user-owned Entries.
 - Observed versions, explicit current pointer, source identity/locator/times,
   content/evidence SHA-256, parser/completeness and original-material links.
@@ -99,8 +119,9 @@ exclusions are implemented foundations; full collectors remain upcoming.
 - Empty/loading/error states, draft-preserving save errors, title validation,
   deletion confirmation, and account-switch cache clearing.
 - Read-only Codex/GitHub verification CLI produces private local HTML/JSON previews,
-  with source IDs/dates, command outcomes/diffs, coverage, and omissions. No Entry
-  writes, uploads, model execution, or scheduled collection.
+  with source IDs/dates, command outcomes/diffs, coverage, and omissions. These
+  Phase 2.1 commands do no Entry writes, uploads, model execution or scheduling;
+  Phase 2.3 adds a separate explicit Codex apply command.
 - Codex CLI 0.158.0 official app-server reads run against disposable rollout/history
   DB copies. Local inventory: 169 files; selected historical sample: 3 turns,
   22 command items and 3 file-change items; list/turn pagination verified.
@@ -138,12 +159,14 @@ user-verifiable product slices in `ROADMAP.md`.
 
 ## Next
 
-1. Implement Phase 2.3 Codex historical backfill with preview/exclusions,
-   durable ingestion and interruption/replay checks. The UI checkpoint is committed;
-   further Entries/Search/English-control checks are in `frontend/README.md`.
-2. Verify Phase 2.2 using `HISTORY.md`: synthetic history, annotations, source
+1. Explicitly apply the reviewed private Phase 2.3 preview; verify Sources,
+   Codex search/evidence, replay, annotations and disposable deletion/policy checks
+   in `CODEX_BACKFILL.md`. The owner confirmed preview review and authorized
+   committing the implementation before personal apply.
+2. Implement Phase 2.4 GitHub historical backfill after the current slice is verified.
+3. Verify Phase 2.2 using `HISTORY.md`: synthetic history, annotations, source
    markers, deletion/reimport block, and Sources permissions.
-3. Follow the sequence: Codex/GitHub history → evidence-based answers/retrospectives
+4. Follow the sequence: Codex/GitHub history → evidence-based answers/retrospectives
    → scheduled collectors → private AWS release.
 
 ## Known limitations
@@ -168,10 +191,11 @@ user-verifiable product slices in `ROADMAP.md`.
   links. Existing duplicate Markdown rows are preserved separately; future
   identical uploads match their initial canonical byte identity. Explicit document
   IDs and verified source modification times track changed Markdown versions.
-- Codex/GitHub checks are local previews; actual history ingestion,
-  backfill and scheduled collection are not implemented.
-  Codex reads require installed CLI 0.158.0 and bounded disposable snapshots.
-  Other recorded versions, archived contents, private repos, organization SSO,
+- GitHub ingestion and scheduled collection are not implemented. Codex backfill
+  is implemented, but personal apply/browser verification remains pending.
+  Codex reads require installed CLI 0.158.0 and bounded disposable snapshots;
+  conflicts, empty legacy responses and unknown/divergent snapshots remain gaps.
+  Other installed CLI versions, private repos, organization SSO,
   and expiring-token access are not verified with real samples. Preview truncation
   and incomplete secret redaction require reports to stay private. Full collection
   volume and deployment cost still need verification.

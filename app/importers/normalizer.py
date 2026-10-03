@@ -41,10 +41,25 @@ class EntryNormalizer:
             )
 
         if isinstance(item.payload, DevSessionPayload):
-            import json
+            payload = item.payload
+            groups = {"message": payload.messages, "command": payload.commands, "diff": payload.diffs}
+            order = [(ref.kind, ref.index) for ref in payload.order] or [
+                (kind, index) for kind, rows in groups.items() for index in range(len(rows))]
+            parts = []
+            for kind, index in order:
+                row = groups[kind][index]
+                if kind == "message":
+                    parts.append(f"{row.role}: {row.content}")
+                elif kind == "command":
+                    code = str(row.exit_code) if row.exit_code is not None else "unknown"
+                    parts.append(f"Command ({row.state}, exit {code}):\n{row.command}\n\nResult:\n{row.output if row.output is not None else '[Output unavailable]'}")
+                else:
+                    parts.append(f"Recorded change ({row.state}): {row.path}\n{row.diff if row.diff is not None else '[Diff unavailable]'}")
+            if payload.omissions:
+                parts.append("Collection gaps:\n" + "\n".join(payload.omissions))
             return NormalizedEntry(
                 type=EntryType.PROJECT_EVENT, title=item.title, event_at=item.event_at,
-                content=json.dumps(item.payload.model_dump(mode="json"), ensure_ascii=False, indent=2),
+                content="\n\n".join(parts),
             )
 
         raise ValueError(

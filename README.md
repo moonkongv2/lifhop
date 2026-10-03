@@ -305,3 +305,10 @@ verification is next using the synthetic walkthrough in `HISTORY.md`.
 
 See `CURRENT.md` for the active product slice and `ROADMAP.md` for its
 completion criteria.
+
+Phase 2.3 adds manual Codex historical backfill: private filtered previews,
+authenticated turn ingestion, durable replay receipts, Sources coverage and
+readable message/command/diff evidence. Local tests and synthetic HTTP/browser
+checks pass; owner preview review is confirmed, personal apply verification is
+pending. Setup, exclusions,
+device identity recovery, resume and cleanup are in `CODEX_BACKFILL.md`.

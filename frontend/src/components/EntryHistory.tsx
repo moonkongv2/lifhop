@@ -51,6 +51,14 @@ export default function EntryHistory({ entry }: { entry: Entry }) {
         <p>Provider: {entry.provider ?? "unknown"} · Identity: {entry.external_id ?? "not recorded"} · Scope: {entry.source_scope}</p>
         <p>Locator: {version.locator ?? "Not recorded"}</p>
         <p>SHA-256: <code>{version.content_hash}</code></p>
+        {version.payload?.kind === "dev_session" && <>
+          <p>Thread: {String(version.payload.thread_id ?? "Not recorded")}<br />Turn: {String(version.payload.turn_id ?? "Not recorded")}</p>
+          {typeof version.payload.forked_from_id === "string" && <p>Forked from: {version.payload.forked_from_id}</p>}
+          {version.payload.archived === true && <p>Read from archived history.</p>}
+          {Array.isArray(version.payload.omissions) && version.payload.omissions.length > 0 && <div className="review-notice">
+            <h4>Collection gaps</h4><ul>{version.payload.omissions.filter((code): code is string => typeof code === "string").map(code => <li key={code}>{code.replaceAll("_", " ").toLowerCase()}</li>)}</ul>
+          </div>}
+        </>}
         <pre className="entry-content">{version.content ?? "No content"}</pre>
         {version.payload && <details><summary>Structured messages, commands and diffs</summary><pre className="entry-content">{JSON.stringify(version.payload, null, 2)}</pre></details>}
         {version.import_artifact_id && <ArtifactDownload artifactId={version.import_artifact_id} />}

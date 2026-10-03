@@ -19,3 +19,4 @@ __all__ = [
 ]
 
 from app.models.history import EntryVersion, EntrySuppression, SourcePolicy, ObjectPurge, EntryMaterial
+from app.models.collection_run import CollectionRun, CollectionRunItem

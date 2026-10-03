@@ -1077,3 +1077,52 @@ until verified. Content backup expiry target is 30 days; automatic journal,
 backups, expiry and restore supervision remain Phase 5. Logical deletion does
 not promise secure erasure of PostgreSQL pages/WAL or owner source originals.
 Operator commands and user verification are in HISTORY.md.
+
+---
+
+## ADR-023 — Ingest reviewed Codex turns with atomic durable receipts
+
+**Status:** Accepted for Phase 2.3
+**Date:** 2026-10-03
+
+Use one recorded Codex turn per PROJECT_EVENT Entry, retaining ordered messages,
+command results and diffs as structured evidence and readable searchable text.
+The source identity is device UUID + original thread/turn ID (a deterministic
+hash when the composite exceeds the identity limit); archived/fork context is
+retained without merging separate source turns. Never invent command outcomes.
+Keep the device UUID in a private persistent config; recovery requires explicit
+reuse of the authenticated source UUID instead of silently generating a new one.
+
+Read with official app-server history RPCs against disposable rollout copies and
+a read-only history projection backup. Parent credentials are excluded from the
+child environment. Source changes, active sessions, duplicate thread sources,
+unknown/divergent identifier/order verification, unsupported CLI/formats and
+resource limits remain coverage/completeness gaps. Pin support to CLI 0.158.0;
+there is no implicit raw-content parser fallback.
+
+Explicit preview creates a sanitized private immutable manifest/payload bundle;
+apply requires that exact reviewed config/device/hash contract. Credential/path
+filtering is incomplete, so personal preview review remains required. Original
+rollouts/history DB stay local. Store sanitized canonical text/evidence directly
+in PostgreSQL over authenticated HTTP, reusing Phase 2.2 history and owner locks.
+The synchronous local collector provides natural backpressure and does not need
+S3/SQS, a new worker, dependency or AWS resource for this flow.
+
+CollectionRun and minimal body-free CollectionRunItem receipts persist Entry/
+version outcomes in the same transaction before ACK. Stable run manifests and
+receipt digests reject changed replay; a local owner/origin/device-bound checkpoint
+is checked against the server before skipping a turn. Lost ACK, interrupted
+apply and server restore can replay safely. Preflight policy/deletion checks avoid
+blocked body transmission; the server rechecks under the owner lock. A policy
+change after preflight can reject an already transmitted body without storing it.
+Successful receipts are historical facts and survive later Entry deletion; they
+do not bypass current suppression or represent current retained Entry counts.
+Blocked outcomes are terminal for that run; explicit re-enable/reimport requires
+a new reviewed preview. Existing annotations/permissions remain intact, with AI
+off by default and no external model calls.
+
+Sources shows run outcomes and coverage separately from record completeness.
+Completed means the selected reviewed manifest has durable outcomes, not complete
+recovery of every historical source or continuously current collection. Scheduled
+collection and browser collect-now remain Phase 4. Operational commands and
+verification boundaries are in `CODEX_BACKFILL.md`.

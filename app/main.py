@@ -11,6 +11,7 @@ from app.api.import_jobs import (
 )
 from app.api.captures import router as captures_router
 from app.api.sources import router as sources_router
+from app.api.collection_runs import router as collection_runs_router
 
 app = FastAPI(title="Lifhop")
 app.add_middleware(ImportUploadLimit)
@@ -23,6 +24,7 @@ app.include_router(import_artifacts_router)
 app.include_router(import_jobs_router)
 app.include_router(captures_router)
 app.include_router(sources_router)
+app.include_router(collection_runs_router)
 
 @app.get("/health")
 def health() -> dict[str, str]:

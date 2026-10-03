@@ -132,7 +132,9 @@ empty legacy/full-history response as proof of an empty conversation.
 
 Limits: 16 MiB per copied rollout, 256 MiB projection DB snapshot, 16 MiB RPC
 response, 20 seconds per RPC/DB backup, and 20 pagination requests per list.
-The full backfill's snapshot/checkpoint strategy remains Phase 2.3 work.
+These limits describe the Phase 2.1 probe. Phase 2.3 now implements a separate
+Codex backfill with bounded snapshots, private sanitized bundles and durable
+HTTP ingestion/replay. See `CODEX_BACKFILL.md` for its limits and commands.
 
 ### GitHub
 
