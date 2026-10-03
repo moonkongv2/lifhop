@@ -34,4 +34,3 @@ def upgrade():
 def downgrade():
     op.drop_table("collection_run_items")
     op.drop_table("collection_runs")
-

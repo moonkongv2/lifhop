@@ -51,4 +51,3 @@ def run_response(db: Session, run: CollectionRun) -> RunResponse:
     return RunResponse(**{key: getattr(run, key) for key in ("id", "client_run_uuid", "provider", "scope",
         "manifest_digest", "parser_version", "filter_version", "expected_items", "coverage", "started_at",
         "last_seen_at", "completed_at")}, status=status, counts=counts)
-

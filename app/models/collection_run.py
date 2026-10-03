@@ -33,4 +33,3 @@ class CollectionRunItem(Base):
     payload_digest: Mapped[str] = mapped_column(String(64))
     outcome: Mapped[str] = mapped_column(String(20))
     error_code: Mapped[str | None] = mapped_column(String(60))
-
