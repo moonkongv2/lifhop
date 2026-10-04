@@ -14,6 +14,7 @@ export default function EntrySearchForm({ params, onApply }: { params: URLSearch
   const [from, setFrom] = useState(params.get("date_from") ?? "");
   const [to, setTo] = useState(params.get("date_to") ?? "");
   const [validation, setValidation] = useState("");
+  const [includeWork, setIncludeWork] = useState(params.get("include_work_commentary") === "true");
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -24,6 +25,7 @@ export default function EntrySearchForm({ params, onApply }: { params: URLSearch
     for (const [key, value] of Object.entries({ q: q.trim(), source, source_state: sourceState, type, date_field: dateField, date_from: from, date_to: to })) {
       if (value && !(key === "date_field" && value === "created_at")) next.set(key, value);
     }
+    if (includeWork) next.set("include_work_commentary", "true");
     onApply(next);
   }
 
@@ -55,6 +57,7 @@ export default function EntrySearchForm({ params, onApply }: { params: URLSearch
         </div>
         <p className="help-text">Date ranges use Asia/Seoul and include the end date. Records without a source/event date are excluded when filtering by that date.</p>
       </details>
+      <label className="work-search-option"><input type="checkbox" checked={includeWork} onChange={event => setIncludeWork(event.target.checked)} />Include work commentary from Codex</label>
       <button className="search-reset" type="button" onClick={() => onApply(new URLSearchParams())}>Reset</button>
       {validation && <p role="alert">{validation}</p>}
     </form>

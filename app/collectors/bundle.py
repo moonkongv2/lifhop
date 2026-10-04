@@ -9,7 +9,8 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from app.acquisition.common import ProbeError, _SECRET
 from app.importers.canonical import CanonicalItem, DevSessionPayload, CanonicalMessage, RecordedCommand, RecordedDiff, EvidenceRef
 
-PARSER = "codex-app-server-0.158.0-turn-v1"
+PARSER = "codex-app-server-0.158.0-turn-v2"
+SUPPORTED_PARSERS = {"codex-app-server-0.158.0-turn-v1", PARSER, "codex-app-server-0.160.0-turn-v2"}
 FILTER = "codex-local-filter-v1"
 FORMAT = "lifhop-codex-preview-v1"
 
@@ -117,11 +118,12 @@ def source_time(value):
 
 
 def canonical_turn(thread: dict, turn: dict, cfg: CollectorConfig, *, archived: bool,
-                   consistency: str | None = None, cwd: str | None = None) -> CanonicalItem:
+                   consistency: str | None = None, cwd: str | None = None, turn_position: int | None = None,
+                   parser_version: str = PARSER) -> CanonicalItem:
     identity = external_id(str(cfg.device_uuid), thread["id"], turn["id"])
     payload = DevSessionPayload(messages=[], thread_id=thread["id"], turn_id=turn["id"],
         forked_from_id=thread.get("forkedFromId"), archived=archived,
-        capture_method="official app-server; disposable snapshot", filter_version=FILTER)
+        capture_method="official app-server; disposable snapshot", filter_version=FILTER, turn_position=turn_position)
     omissions = set()
     if consistency:
         omissions.add(consistency)
@@ -142,6 +144,7 @@ def canonical_turn(thread: dict, turn: dict, cfg: CollectorConfig, *, archived: 
                     omissions.add("NON_TEXT_INPUT_OMITTED")
             else:
                 content = row.get("text")
+                payload.message_phases[item_id] = row.get("phase") if row.get("phase") in {"commentary", "final_answer"} else "unknown"
             payload.order.append(EvidenceRef(kind="message", index=len(payload.messages)))
             payload.messages.append(CanonicalMessage(role="user" if kind == "userMessage" else "assistant",
                 content=clean_text(content, cfg, omissions, cwd), message_id=item_id))
@@ -179,4 +182,4 @@ def canonical_turn(thread: dict, turn: dict, cfg: CollectorConfig, *, archived: 
     return CanonicalItem(provider="codex", source_scope=f"mac:{cfg.device_uuid}", external_id=identity,
         title=first[:255], locator=f"codex:{thread['id']}:{turn['id']}"[:2048],
         event_at=source_time(turn.get("startedAt")), source_updated_at=source_time(turn.get("completedAt")),
-        completeness="partial" if omissions else "complete", parser_version=PARSER, payload=payload)
+        completeness="partial" if omissions else "complete", parser_version=parser_version, payload=payload)

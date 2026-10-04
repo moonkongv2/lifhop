@@ -9,10 +9,10 @@ Mac is offline.
 
 ## Setup
 
-Use installed Codex CLI **0.158.0**, the project's Python environment, and the
+Use installed Codex CLI **0.158.0 or 0.160.0**, the project's Python environment, and the
 running backend/frontend from `README.md` / `frontend/README.md`. Apply the DB
 migration with `.venv/bin/alembic upgrade head`; Phase 2.3 head is
-`b23c7d91e042`. No import worker or object-storage service is required for this
+`b23c7d91e042`; the session checkpoint adds `c04d8a12e673`. No import worker or object-storage service is required for this
 Codex flow. Sanitized text/evidence is stored in PostgreSQL. Raw rollouts and the
 Codex history DB stay on your Mac.
 
@@ -124,7 +124,87 @@ recovered. Individual Entries can contain declared omissions even in a completed
 run. Receipt counts describe that ingestion, not the number of currently retained
 Entries after later deletion.
 
+## Session browsing and message phases (2026-10-04)
+
+Entries now shows one card per retained Codex session, grouped on the server.
+Other records remain individual. Open a session to read 20 turn summaries per
+page; bodies load for opened turns. Search results link to the matched turn's
+page. Scope/thread identity survives deletion of the representative turn.
+
+Explicit `final_answer` and unclassified assistant messages stay in primary
+reading. Explicit `commentary` is in Work details; commands/results/diffs remain
+available in primary reading and full work order. Search excludes classified
+commentary by default. Select **Include work commentary from Codex** and submit
+to search it. The option alone does not start an empty search.
+
+The collector now writes v2 parser metadata for the verified CLI version,
+including original turn position and assistant phases. Missing/unrecognized phase
+is unknown; a missing final answer is never inferred from the last message.
+v1 previews/checkpoints/receipts remain valid and unchanged. Existing bodies,
+observed versions and hashes are retained; `primary_content` is a separate current
+search projection. Recollecting equal source timestamps can retain a v2 candidate;
+choose it explicitly in history to change the current reading. An older or
+partial source observation does not automatically replace current evidence.
+
+Session counts mean currently retained turns. Deleted, excluded or failed source
+turns are not reconstructed. Unknown/duplicate positions use source dates/IDs with
+an original-order warning. Fork sessions remain separate and link to a retained
+same-owner parent where available. Session-wide deletion/settings are not offered.
+
+### User verification with synthetic records
+
+Start the API/frontend using their normal README commands; the development DB
+migration is already applied in this workspace. Run from the repository root:
+
+```bash
+.venv/bin/python scripts/seed_codex_session_demo.py --email YOUR_EMAIL
+```
+
+Enter your local account password. This explicitly creates 25 disposable synthetic
+turns in a new source on every invocation; it reads no personal Codex history and
+executes no recorded commands. Open `http://localhost:5173/entries`:
+
+1. Find `[Synthetic] Codex session turn 1`: one card, 25 retained turns.
+2. Open it: primary content shows the question/final conclusion and recorded
+   command/diff. Work details also shows `Synthetic interim zebra hypothesis`.
+3. Next turns shows the remaining five turns; Previous turns restores the first page.
+4. Search `interim zebra`: default gives zero demo matches; enable commentary and
+   submit to get 25 demo matches. Results include a commentary match label.
+5. Open a later-page search result, then Open record and provenance, Back to session,
+   and Back to search. Filters/page/option should survive reload and navigation.
+6. Save a turn annotation, inspect/select a version, or cancel Delete turn. For a
+   disposable deletion check, confirm one turn deletion: count decreases and that
+   turn remains suppressed on reimport. Other turns and annotations survive.
+
+The helper prints the exact session URL. Synthetic turns may be deleted individually
+after verification; Sources run counts remain a historical ingestion receipt.
+
+### Personal v2 preview prepared in this workspace
+
+The existing v1 preview has been preserved. A new private preview is available at
+`.local/verification/codex-session-v2/preview/preview.html`. It selected 13 of 171
+files for the lifhop cwd, read 10 sessions and prepared 33 turns; 3 failed with
+SOURCE_CONFLICT/EMPTY_HISTORY. It records 63 commentary and 32 final messages.
+Review its linked exact JSON bodies, including message_phases/turn_position, before
+explicit apply. No personal preview was uploaded during this implementation.
+
+```bash
+.venv/bin/python -m app.collectors.codex apply \
+  --config .local/verification/phase23/codex-collector.json \
+  --run-dir .local/verification/codex-session-v2/preview \
+  --email YOUR_EMAIL
+```
+
+Latest verification: 244 backend and 83 frontend tests; lint/build pass. Actual
+loopback HTTP + isolated DB validates synthetic 25-turn ingestion/search/grouping/
+focus/replay. Synthetic Chromium passes at 320/390/768/1440px. Existing personal
+v1 payload digests remain unchanged. Small synthetic EXPLAIN confirms the grouped
+query; large-corpus performance, other browser engines and actual mobile devices
+remain unverified.
+
 ## Cleanup and known limits
+
+### Remove a local preview
 
 ```bash
 .venv/bin/python -m app.collectors.codex cleanup \

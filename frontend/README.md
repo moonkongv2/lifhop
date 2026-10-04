@@ -352,3 +352,18 @@ declared omissions. Existing history/policy controls remain available.
 The collector runs manually on the Mac; it does not need to keep running for
 stored records to remain visible. Synthetic automated/browser checks pass;
 actual owner-history checks follow explicit apply.
+
+## Codex session checkpoint
+
+Entries groups Codex turns into session cards; Search stays at matching-turn
+granularity and focuses the selected turn in its session. Work details retains
+commentary, while primary reading/search shows user/final/unknown messages and
+recorded commands/results/diffs. Include work commentary is an optional Search
+checkbox applied on submit. Unknown legacy phases/order remain explicit.
+
+Use `.venv/bin/python scripts/seed_codex_session_demo.py --email YOUR_EMAIL` from
+the repository root after starting the API to create a labelled disposable
+25-turn session. Follow the browser steps in `../CODEX_BACKFILL.md`: grouping,
+turn pagination, work toggle, opt-in search, matching later-page focus, history/
+annotation/delete and return context. Local agent checks use synthetic responses;
+owner actual-history browser checks remain pending.

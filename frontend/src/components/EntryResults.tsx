@@ -4,6 +4,7 @@ import useEntrySearch from "../hooks/useEntrySearch";
 import { entryTarget, listContext } from "../utils/entryNavigation";
 import { formatEntryDate, sourceLabels } from "../utils/entries";
 import Icon from "./Icon";
+import { sessionTarget } from "../utils/codexSessions";
 
 export default function EntryResults({ searching }: { searching: boolean }) {
   const [rawParams, setParams] = useSearchParams();
@@ -33,9 +34,10 @@ export default function EntryResults({ searching }: { searching: boolean }) {
       {data.items.length === 0 && <div className="panel empty-state"><Icon name="archive" /><p>{searching ? "No entries match your search." : "No entries yet."}</p><span>{searching ? "Try another phrase or reset your filters." : "Create a note or import your first records."}</span></div>}
       <div className="records-grid">{data.items.map((entry) => <article className="panel record-card" key={entry.id}>
         <div className="badges"><span className="badge source"><Icon name="note" />{sourceLabels[entry.source ?? "unknown"]}</span><span className="badge">{entry.type}</span></div>
-        <Link to={entryTarget(entry.id, context)}><h3>{entry.title}</h3></Link>
+        <Link to={entry.session_ref ? sessionTarget(entry.session_ref, context, entry.id) : entryTarget(entry.id, context)}><h3>{entry.title}</h3></Link>
+        {entry.matched_in_commentary_only && <span className="badge">Matched in work commentary</span>}
         {entry.source_state === "deleted" && <span className="badge">Deleted at source</span>}
-        <p className="entry-content">{entry.content ?? "No content"}</p>
+        <p className="entry-content">{entry.preview_text ?? entry.content ?? "No content"}</p>
         <p className="record-date">Added: {formatEntryDate(entry.created_at)} · Source/event date: {formatEntryDate(entry.event_at)} (Asia/Seoul)</p>
       </article>)}</div>
       <div className="actions pagination">

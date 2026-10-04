@@ -16,7 +16,7 @@ function App() {
       if (location.pathname !== "/login") navigate("/login", { replace: true });
     }
   }, [token, cache, navigate, location.pathname]);
-  const activeView = location.pathname.startsWith("/entries/")
+  const activeView = location.pathname.startsWith("/entries/") || location.pathname === "/sessions/codex"
     ? resolveEntryContext(location.search, location.state).pathname : location.pathname;
   return (
     <div className="app-shell">

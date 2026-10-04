@@ -5,6 +5,7 @@ import type { Entry } from "../api/entries";
 import { formatEntryDate } from "../utils/entries";
 import Icon from "./Icon";
 import ArtifactDownload from "./ArtifactDownload";
+import { invalidateRecordViews } from "../utils/recordCache";
 
 export default function EntryHistory({ entry }: { entry: Entry }) {
   const cache = useQueryClient();
@@ -20,7 +21,7 @@ export default function EntryHistory({ entry }: { entry: Entry }) {
     },
     onSuccess: async (saved) => {
       cache.setQueryData(["entry", String(entry.id)], saved);
-      await cache.invalidateQueries({ queryKey: ["entries"] });
+      await invalidateRecordViews(cache);
       await cache.invalidateQueries({ queryKey: ["entry-versions", entry.id] });
     },
   });

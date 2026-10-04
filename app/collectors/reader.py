@@ -171,5 +171,6 @@ def check_version():
         result = subprocess.run(["codex", "--version"], capture_output=True, text=True, timeout=10, check=True)
     except (OSError, subprocess.SubprocessError):
         raise ReadFailure("FORMAT_UNSUPPORTED") from None
-    if result.stdout.strip() != SUPPORTED_CLI:
+    if result.stdout.strip() not in {SUPPORTED_CLI, "codex-cli 0.160.0"}:
         raise ReadFailure("FORMAT_UNSUPPORTED")
+    return result.stdout.strip()

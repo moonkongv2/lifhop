@@ -79,6 +79,7 @@ def search_entry_list(
     date_to: date | None = None,
     limit: Annotated[int, Query(ge=1, le=100)] = 20,
     offset: Annotated[int, Query(ge=0)] = 0,
+    include_work_commentary: bool = False,
 ) -> EntrySearchResponse:
     if date_from and date_to and date_from > date_to:
         raise HTTPException(422, "Start date must be on or before end date")
@@ -92,6 +93,7 @@ def search_entry_list(
     return search_entries(
         db, user_id=current_user.id, q=q, source=source, source_state=source_state, entry_type=type,
         date_field=date_field, date_from=date_from, date_to=date_to, limit=limit, offset=offset,
+        include_work_commentary=include_work_commentary,
     )
 
 

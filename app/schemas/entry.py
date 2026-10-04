@@ -63,8 +63,19 @@ class EntryUpdate(BaseModel):
         return value
 
 
+class CodexSessionRef(BaseModel):
+    source_scope: str
+    thread_id: str
+
+
+class EntrySearchItemResponse(EntryResponse):
+    preview_text: str = ""
+    session_ref: CodexSessionRef | None = None
+    matched_in_commentary_only: bool = False
+
+
 class EntrySearchResponse(BaseModel):
-    items: list[EntryResponse]
+    items: list[EntrySearchItemResponse]
     total: int
     limit: int
     offset: int

@@ -1126,3 +1126,32 @@ Completed means the selected reviewed manifest has durable outcomes, not complet
 recovery of every historical source or continuously current collection. Scheduled
 collection and browser collect-now remain Phase 4. Operational commands and
 verification boundaries are in `CODEX_BACKFILL.md`.
+
+---
+
+## ADR-024 — Derive Codex sessions and primary reading from retained turns
+
+**Status:** Accepted for the checkpoint after Phase 2.3
+**Date:** 2026-10-04
+
+Keep turn-level Entries, immutable observed versions and full normalized evidence.
+Derive session browsing from current version payloads grouped by owner, Codex
+source scope and thread ID. Group before pagination; forks and devices remain
+separate. Counts describe retained turns, not full source coverage. Verified turn
+positions determine order; missing/duplicate positions use a warned date/ID fallback.
+Keep deletion, annotations and permissions per turn.
+
+Preserve official assistant phases and original turn positions in v2 DevSession
+metadata. Only explicit commentary is excluded from primary reading/search;
+unknown messages, user text, command results and diffs remain. Full evidence is
+available in Work details and commentary search is opt-in. Reasoning items remain
+outside collection. Store nullable current Entry.primary_content for SQL search,
+refresh it atomically on current version changes, and distinguish NULL from an
+empty projection. Existing content, hashes and version bodies are not rewritten.
+
+Serialize absent new metadata exactly as v1 to preserve old preview/receipt digests.
+Accept the explicit supported parser versions; never reinterpret legacy phases.
+Same-time observations can remain candidates requiring explicit current selection.
+Extend the collector's installed CLI support to 0.160.0 after official schema and
+actual read verification, retaining 0.158.0 support. The separate Phase 2.1 probe
+remains pinned. No new dependency, AWS service or automatic personal apply is added.

@@ -1,13 +1,14 @@
 # lifhop Current Status
 
-Last updated: 2026-10-03
+Last updated: 2026-10-04
 
 ## Current product slice
 
-Phase 2.3 — Codex CLI historical backfill implemented; owner confirmed local
-preview review and authorized the implementation commit. Personal apply and
-actual-history browser verification remain pending. Development DB upgraded to
-`b23c7d91e042`.
+Codex session browsing and message-phase checkpoint after Phase 2.3: implemented
+and locally verified; owner browser verification pending. Plan committed at
+`bdfcd57`; the session implementation is committed in this checkpoint. Development DB upgraded to
+`c04d8a12e673`. Phase 2.3 implementation is committed at `36de1de` with whitespace
+cleanup at `63f0c1a`; owner confirmed its preview. Personal apply remains unverified.
 Phase 2.1 committed at `69dc764`; owner requested continuing without its HTML
 preview check. Phase 2.2 committed at `d99ef9e`. The owner
 confirmed successful synthetic-demo execution (Entry 1270) and authorized the
@@ -39,6 +40,28 @@ exclusions are implemented foundations; full collectors remain upcoming.
 
 ## What works now
 
+- Entries groups current Codex turns by owner/scope/thread before server pagination;
+  other records remain individual. Sessions retain fork/archive/gap metadata,
+  inferred-order warnings, lazy turn reading and focus links from Search.
+  Final answers and unknown messages stay in primary reading/search; explicitly
+  classified commentary stays in Work details and an optional search scope.
+  Per-turn history, annotation, delete/suppression and AI permission remain intact.
+  Current-version primary_content is derived separately; existing bodies/hashes
+  remain unchanged. v1 manifests/receipts remain valid, v2 records phase/order.
+- Latest checks: 244 backend tests, 83 frontend tests, lint/build and whitespace
+  checks pass. Real loopback HTTP/isolated-schema verification covers 25 synthetic
+  turns, search scope, grouped count/focus and replay without duplicate versions.
+  Synthetic Chromium checks pass at 320/390/768/1440px with no page errors.
+  An initial full run's health test used an offline development DB; corrected
+  DATABASE_URL/TEST_DATABASE_URL isolated settings passed. Frontend old list/cache
+  assertions were updated for archive; an initial browser stub intercepted module
+  imports and was corrected. No unresolved check failures remain.
+- Installed CLI 0.160.0 schemas and actual bounded reads verified: 33 turns from
+  10 selected readable lifhop sessions, with 63 commentary and 32 final messages.
+  Original v1 preview's 33 payload digests remain unchanged. New private v2 preview
+  is `.local/verification/codex-session-v2/preview`; it has not been uploaded.
+  `scripts/seed_codex_session_demo.py` creates an explicit synthetic 25-turn local
+  source for user checks. See CODEX_BACKFILL.md.
 - Codex CLI 0.158.0 manual backfill: explicit project/thread selection, exclusions
   and date filters, immutable private sanitized preview, device-scoped turn IDs,
   bounded official reads against disposable snapshots and explicit gaps.
@@ -159,18 +182,27 @@ user-verifiable product slices in `ROADMAP.md`.
 
 ## Next
 
-1. Explicitly apply the reviewed private Phase 2.3 preview; verify Sources,
+1. Verify session browsing/message separation with the synthetic helper in
+   CODEX_BACKFILL.md; review the new private v2 preview before any personal apply.
+   Saved-title and conversation-only reader refinements follow as separate commits.
+2. Explicitly apply a reviewed private Phase 2.3 preview; verify Sources,
    Codex search/evidence, replay, annotations and disposable deletion/policy checks
    in `CODEX_BACKFILL.md`. The owner confirmed preview review and authorized
    committing the implementation before personal apply.
-2. Implement Phase 2.4 GitHub historical backfill after the current slice is verified.
-3. Verify Phase 2.2 using `HISTORY.md`: synthetic history, annotations, source
+3. Implement Phase 2.4 GitHub historical backfill after the current slice is verified.
+4. Verify Phase 2.2 using `HISTORY.md`: synthetic history, annotations, source
    markers, deletion/reimport block, and Sources permissions.
-4. Follow the sequence: Codex/GitHub history → evidence-based answers/retrospectives
+5. Follow the sequence: Codex/GitHub history → evidence-based answers/retrospectives
    → scheduled collectors → private AWS release.
 
 ## Known limitations
 
+- Legacy assistant phases and missing turn positions stay unknown. Same-time v2
+  observations can be retained candidates requiring explicit current selection.
+  Session counts describe retained turns, not full source coverage. Session-wide
+  deletion/settings are not implemented. JSONB grouping was checked on small
+  synthetic data; large-corpus performance is unverified. Concurrent offset pages
+  can shift. Owner actual-history UI/mobile-device checks remain pending.
 - Owner confirmed the initial and large-ZIP Phase 1.2 flows in the browser.
   Phase 1.3, English UI, and Phase 2.1 owner preview checks remain pending.
   Remote CI execution remains pending; frontend automated tests stub API.
@@ -193,7 +225,8 @@ user-verifiable product slices in `ROADMAP.md`.
   IDs and verified source modification times track changed Markdown versions.
 - GitHub ingestion and scheduled collection are not implemented. Codex backfill
   is implemented, but personal apply/browser verification remains pending.
-  Codex reads require installed CLI 0.158.0 and bounded disposable snapshots;
+  Codex backfill supports installed CLI 0.158.0/0.160.0 with bounded snapshots;
+  the separate Phase 2.1 probe remains pinned to 0.158.0.
   conflicts, empty legacy responses and unknown/divergent snapshots remain gaps.
   Other installed CLI versions, private repos, organization SSO,
   and expiring-token access are not verified with real samples. Preview truncation

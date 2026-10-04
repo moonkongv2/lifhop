@@ -188,3 +188,12 @@ details > p:first-of-type { margin-top: 12px; }
   .button-link { white-space: nowrap; } .pagination { justify-content: space-between; }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; } }
+.session-header { padding: 24px; margin-bottom: 20px; overflow-wrap: anywhere; }
+.session-turn { padding: 24px; margin-bottom: 20px; scroll-margin-top: 20px; }
+.turn-toggle { display: flex; width: 100%; justify-content: space-between; gap: 16px; text-align: left; }
+.turn-toggle span:first-child { font-weight: 600; overflow-wrap: anywhere; }
+.turn-toggle span:last-child { flex-shrink: 0; }
+.work-details { padding: 14px 0; border-top: 1px solid var(--border); overflow-wrap: anywhere; }
+.work-search-option { display: flex; align-items: center; gap: 8px; }
+.work-search-option input { width: auto; }
+.session-turn .history-panel { width: 100%; margin-top: 20px; }

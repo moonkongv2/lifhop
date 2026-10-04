@@ -1,6 +1,6 @@
 import { Link, Navigate, useSearchParams } from "react-router";
 import Icon from "../components/Icon";
-import EntryResults from "../components/EntryResults";
+import ArchiveResults from "../components/ArchiveResults";
 import { entryTarget, hasLegacyFilters, listContext, listTarget } from "../utils/entryNavigation";
 
 export default function EntryListPage() {
@@ -13,6 +13,6 @@ export default function EntryListPage() {
       <div><p className="eyebrow">Your archive</p><h2>Entries</h2><p className="subtitle">Your recent records, ready to revisit.</p></div>
       <Link className="button-link primary" to={entryTarget("new", context)}><Icon name="note" />New note</Link>
     </header>
-    <EntryResults searching={false} />
+    <ArchiveResults />
   </>;
 }

@@ -70,6 +70,8 @@ def select_version(db: Session, entry: Entry, version: EntryVersion) -> None:
     entry.title, entry.content, entry.event_at = version.title, version.content, version.event_at
     entry.import_artifact_id = version.import_artifact_id
     entry.current_version_id = version.id
+    from app.services.codex_presentation import primary_content
+    entry.primary_content = primary_content(entry.provider, version.payload, version.content)
     entry.review_required = False
     invalidate_context(db, entry.user_id)
 

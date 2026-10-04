@@ -1,5 +1,5 @@
-const filterKeys = ["q", "source", "source_state", "type", "date_field", "date_from", "date_to"];
-const conditionKeys = filterKeys.filter(key => key !== "date_field");
+const filterKeys = ["q", "source", "source_state", "type", "date_field", "date_from", "date_to", "include_work_commentary"];
+const conditionKeys = filterKeys.filter(key => !["date_field", "include_work_commentary"].includes(key));
 export type EntryListContext = { pathname: "/entries" | "/search"; search: string };
 
 export function hasLegacyFilters(params: URLSearchParams) {

@@ -219,6 +219,20 @@ new local records while the Mac is asleep; show collector freshness separately.
 **User check:** Find a past question, command result, and available code change
 through lifhop. Interrupt/restart the backfill and confirm stable identities.
 
+### UI checkpoint after 2.3 — Codex session reading
+
+At the owner's request, group turn Entries into Codex session cards and a
+paginated session reader before GitHub backfill. Preserve original message phase
+and turn order where available. Show final/unknown messages in primary reading,
+retain interim commentary in Work details, and allow optional commentary search.
+Keep turn-level history, annotation, deletion suppression and AI permission.
+Group before server pagination; search links focus the matched turn in its session.
+Unknown legacy metadata stays explicit and v1 collector replay remains compatible.
+
+**User check:** Browse a 25-turn synthetic session, expand work details, search
+with/without commentary, open the matching later-page turn and return to Search.
+Review new personal preview metadata before explicit apply.
+
 ### 2.4 Backfill GitHub history
 
 Implement in two reviewable increments: commits/key documents first, then

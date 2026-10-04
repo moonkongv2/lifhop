@@ -10,13 +10,17 @@ import ArtifactDownload from "../components/ArtifactDownload";
 import { formatEntryDate, sourceLabels } from "../utils/entries";
 import EntryForm from "../components/EntryForm";
 import { listTarget, resolveEntryContext } from "../utils/entryNavigation";
+import { safeSessionReturn } from "../utils/codexSessions";
+import { invalidateRecordViews } from "../utils/recordCache";
+import CodexReader from "../components/CodexReader";
 
 function EntryDetail() {
   const { id } = useParams();
   const location = useLocation();
   const context = resolveEntryContext(location.search, location.state);
-  const returnTarget = listTarget(context);
-  const backLabel = context.pathname === "/search" ? "Back to search" : "Back to entries";
+  const sessionReturn = safeSessionReturn(new URLSearchParams(location.search).get("sessionReturn"));
+  const returnTarget = sessionReturn ?? listTarget(context);
+  const backLabel = sessionReturn ? "Back to session" : context.pathname === "/search" ? "Back to search" : "Back to entries";
   const token = localStorage.getItem("access_token");
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -31,7 +35,7 @@ function EntryDetail() {
     mutationFn: (data: EntryUpdate) => updateEntry(id!, data),
     onSuccess: async (saved) => {
       queryClient.setQueryData(["entry", id], saved);
-      await queryClient.invalidateQueries({ queryKey: ["entries"] });
+      await invalidateRecordViews(queryClient);
       setEditing(false);
     },
   });
@@ -42,7 +46,7 @@ function EntryDetail() {
       queryClient.removeQueries({ queryKey: ["entry-versions", Number(id)] });
       await queryClient.invalidateQueries({ queryKey: ["suppressed"] });
       await queryClient.invalidateQueries({ queryKey: ["purges"] });
-      await queryClient.invalidateQueries({ queryKey: ["entries"] });
+      await invalidateRecordViews(queryClient);
       navigate(returnTarget, { replace: true });
     },
   });
@@ -85,7 +89,7 @@ function EntryDetail() {
                   {remove.error && <p role="alert">{remove.error.message}</p>}
                 </div>
               )}
-              <p className="entry-content reader-body">{entry.content ?? "No content"}</p>
+              {entry.provider === "codex" ? <CodexReader entry={entry} /> : <p className="entry-content reader-body">{entry.content ?? "No content"}</p>}
               <div className="reader-footer"><p>Added: {formatEntryDate(entry.created_at)} (Asia/Seoul)</p>
               <p>Updated: {formatEntryDate(entry.updated_at)} (Asia/Seoul)</p></div>
               {entry.import_artifact_id && <ArtifactDownload key={entry.import_artifact_id} artifactId={entry.import_artifact_id} />}

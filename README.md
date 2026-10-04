@@ -312,3 +312,7 @@ readable message/command/diff evidence. Local tests and synthetic HTTP/browser
 checks pass; owner preview review is confirmed, personal apply verification is
 pending. Setup, exclusions,
 device identity recovery, resume and cleanup are in `CODEX_BACKFILL.md`.
+
+The Codex session checkpoint groups turn Entries for browsing, retains message
+phase/order, separates commentary from primary reading/search, and focuses search
+matches within sessions. Synthetic verification commands are in `CODEX_BACKFILL.md`.

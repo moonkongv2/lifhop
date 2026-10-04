@@ -1,7 +1,8 @@
 # Codex 세션 보기와 AI 메시지 구분 구현 계획
 
 작성일: 2026-10-04
-상태: 구현 전 계획. Antigravity compact plan review 1회 완료, 유효한 지적 3건 반영.
+상태: 구현 및 로컬 검증 완료, 사용자 브라우저 확인 대기. 계획 커밋 `bdfcd57`.
+Antigravity compact plan review 1회 완료, 유효한 지적 3건 반영.
 기준 커밋: `63f0c1a` (Phase 2.3 구현 `36de1de`).
 
 ## 1. 목표와 사용자 흐름
@@ -292,9 +293,10 @@ ROADMAP의 2.3 뒤 UI 보완 순서를 구현 시작 시 반영한다. 계획 �
 - 세션은 현재 남아 있는 기록의 묶음이다. 원본 세션 전체 수집/삭제를 뜻하지 않는다.
 - offset 페이지는 concurrent ingestion/deletion으로 이동할 수 있다. 이번에는
   snapshot cursor를 도입하지 않고 유효한 페이지 보정과 안정된 tie-breaker를 제공한다.
-- 세션 grouping/JSONB aggregate의 실제 대규모 성능은 구현 시 측정한다.
-- 계획 작업 완료는 plan + review 결과 반영까지다. 구현/테스트/개인 적용/커밋은
-  이번 요청에서 수행하지 않는다.
+- 세션 grouping/JSONB aggregate는 작은 합성 데이터에서 EXPLAIN으로 확인했다.
+  실제 대규모 성능은 미검증이다.
+- 구현은 로컬 검증까지 완료했다. 개인 기록 적용과 사용자 브라우저 확인은
+  남아 있으며, 구현 커밋은 사용자 확인 후 권장한다.
 
 ## 11. 계획 검토 결과
 
@@ -303,4 +305,22 @@ ROADMAP의 2.3 뒤 UI 보완 순서를 구현 시작 시 반영한다. 계획 �
   참조 동시 정리, 혼합 목록의 동일시각 정렬 키와 페이지 경계 테스트 구체화.
 - 거절/사용자 결정 필요 사항 없음. 추가 loop는 요청하지 않아 실행하지 않았다.
 - 검증: 관련 코드와 계획의 계약 대조, plan whitespace 검사, Git 상태 확인.
-  이 계획 파일만 추가했으며 앱 테스트·migration·개인 기록 적용·커밋은 하지 않았다.
+  계획 검토 당시 이 파일만 추가했으며 앱 테스트·migration·개인 기록 적용·커밋은 하지 않았다.
+
+## 12. 구현 및 검증 결과
+
+- turn별 Entry/버전은 유지하고, 서버에서 현재 기록을 세션 단위로 묶어 페이지를
+  계산한다. 검색은 일치한 turn의 세션 페이지로 이동한다.
+- 명시적 commentary를 기본 본문/검색에서 분리하고 Work details와 검색 옵션으로
+  제공한다. unknown과 명령 결과/diff는 기본 본문에 남는다.
+- nullable primary_content migration을 개발 DB에 적용했다. v1 payload/digest와
+  기존 버전/본문은 보존하고 현재 버전 선택 시 projection을 갱신한다.
+- 공식 스키마와 실제 읽기를 확인한 CLI 0.160.0 지원을 추가했다. 기존 0.158.0과
+  v1 preview도 지원한다. 개인 v2 preview는 33turn, commentary 63개/final 32개이며
+  서버에 자동 적용하지 않았다.
+- 백엔드 244개, 프런트엔드 83개 테스트 통과. lint/build 통과. 실제 localhost
+  HTTP와 격리 PostgreSQL에서 25turn 수집/재실행/검색/세션 페이지를 확인했다.
+- 합성 API 응답을 사용하는 Chromium에서 320/390/768/1440px 레이아웃과 검색→
+  해당 turn→기록→세션→검색 복귀를 확인했다. 실제 개인 기록 UI와 다른 브라우저,
+  모바일 기기는 미검증이다.
+- 합성 기록 생성 명령과 개인 preview 검토/적용 절차는 `CODEX_BACKFILL.md`에 있다.

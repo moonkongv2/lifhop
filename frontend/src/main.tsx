@@ -14,6 +14,7 @@ import EntryListPage from "./pages/EntryListPage";
 import EntrySearchPage from "./pages/EntrySearchPage";
 import EntryCreatePage from "./pages/EntryCreatePage";
 import EntryDetailPage from "./pages/EntryDetailPage";
+import CodexSessionPage from "./pages/CodexSessionPage";
 
 const queryClient = new QueryClient();
 
@@ -22,6 +23,7 @@ const router = createBrowserRouter([
     path: "/",
     element: <App />,
     children: [
+      { path: "sessions/codex", element: <CodexSessionPage /> },
       { path: "search", element: <EntrySearchPage /> },
       { path: "sources", element: <SourcesPage /> },
       { path: "imports", element: <ImportsPage /> },

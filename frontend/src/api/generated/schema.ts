@@ -603,6 +603,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Archive */
+        get: operations["read_archive_archive_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/codex-sessions/turns": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Turns */
+        get: operations["read_turns_codex_sessions_turns_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/entries/{entry_id}/presentation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Presentation */
+        get: operations["read_presentation_entries__entry_id__presentation_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -624,6 +675,27 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** ArchiveItem */
+        ArchiveItem: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "entry" | "codex_session";
+            entry?: components["schemas"]["EntryResponse"] | null;
+            session?: components["schemas"]["SessionSummary"] | null;
+        };
+        /** ArchiveResponse */
+        ArchiveResponse: {
+            /** Items */
+            items: components["schemas"]["ArchiveItem"][];
+            /** Total */
+            total: number;
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+        };
         /** AttachmentCreate */
         AttachmentCreate: {
             /** Filename */
@@ -798,6 +870,13 @@ export interface components {
             messages: components["schemas"]["CaptureMessage"][];
             diagnostics: components["schemas"]["CaptureDiagnostics"];
         };
+        /** CodexSessionRef */
+        CodexSessionRef: {
+            /** Source Scope */
+            source_scope: string;
+            /** Thread Id */
+            thread_id: string;
+        };
         /** CollectorItem */
         CollectorItem: {
             /**
@@ -890,6 +969,12 @@ export interface components {
             capture_method?: string | null;
             /** Filter Version */
             filter_version?: string | null;
+            /** Message Phases */
+            message_phases?: {
+                [key: string]: "commentary" | "final_answer" | "unknown";
+            };
+            /** Turn Position */
+            turn_position?: number | null;
         };
         /** DocumentPayload */
         DocumentPayload: {
@@ -970,10 +1055,80 @@ export interface components {
              */
             updated_at: string;
         };
+        /** EntrySearchItemResponse */
+        EntrySearchItemResponse: {
+            /** Id */
+            id: number;
+            /** Import Artifact Id */
+            import_artifact_id?: number | null;
+            /** @default unknown */
+            source: components["schemas"]["EntrySource"];
+            /** Provider */
+            provider?: string | null;
+            /** External Id */
+            external_id?: string | null;
+            /**
+             * Source Scope
+             * @default default
+             */
+            source_scope: string;
+            /** Current Version Id */
+            current_version_id?: number | null;
+            /** Annotation */
+            annotation?: string | null;
+            /**
+             * Read Only
+             * @default false
+             */
+            read_only: boolean;
+            /**
+             * Source State
+             * @default unknown
+             */
+            source_state: string;
+            /**
+             * External Ai Allowed
+             * @default false
+             */
+            external_ai_allowed: boolean;
+            /**
+             * Review Required
+             * @default false
+             */
+            review_required: boolean;
+            type: components["schemas"]["EntryType"];
+            /** Title */
+            title: string;
+            /** Content */
+            content: string | null;
+            /** Event At */
+            event_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /**
+             * Preview Text
+             * @default
+             */
+            preview_text: string;
+            session_ref?: components["schemas"]["CodexSessionRef"] | null;
+            /**
+             * Matched In Commentary Only
+             * @default false
+             */
+            matched_in_commentary_only: boolean;
+        };
         /** EntrySearchResponse */
         EntrySearchResponse: {
             /** Items */
-            items: components["schemas"]["EntryResponse"][];
+            items: components["schemas"]["EntrySearchItemResponse"][];
             /** Total */
             total: number;
             /** Limit */
@@ -1109,6 +1264,20 @@ export interface components {
             /** External Ai Allowed */
             external_ai_allowed: boolean;
         };
+        /** PresentationResponse */
+        PresentationResponse: {
+            /** Entry Id */
+            entry_id: number;
+            /** Version Id */
+            version_id: number | null;
+            /** Primary Content */
+            primary_content: string | null;
+            payload: components["schemas"]["DevSessionPayload"] | null;
+            /** Unknown Phase */
+            unknown_phase: boolean;
+            /** Has Final Answer */
+            has_final_answer: boolean;
+        };
         /** Receipt */
         Receipt: {
             /** External Id */
@@ -1230,6 +1399,57 @@ export interface components {
                 [key: string]: number;
             };
         };
+        /** SessionSummary */
+        SessionSummary: {
+            /** Source Scope */
+            source_scope: string;
+            /** Thread Id */
+            thread_id: string;
+            /** Title */
+            title: string;
+            /** Title Inferred */
+            title_inferred: boolean;
+            /** Turn Count */
+            turn_count: number;
+            /** Start At */
+            start_at: string | null;
+            /** End At */
+            end_at: string | null;
+            /** Partial */
+            partial: boolean;
+            /** Review Required */
+            review_required: boolean;
+            /** Order Unknown */
+            order_unknown: boolean;
+            /** Archived */
+            archived: boolean | null;
+            /** Forked From Id */
+            forked_from_id: string | null;
+            /** Metadata Conflict */
+            metadata_conflict: boolean;
+            /**
+             * Fork Available
+             * @default false
+             */
+            fork_available: boolean;
+        };
+        /** SessionTurnsResponse */
+        SessionTurnsResponse: {
+            session: components["schemas"]["SessionSummary"];
+            /** Items */
+            items: components["schemas"]["TurnSummary"][];
+            /** Total */
+            total: number;
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+            /**
+             * Focus Missing
+             * @default false
+             */
+            focus_missing: boolean;
+        };
         /**
          * SourceProvider
          * @enum {string}
@@ -1270,6 +1490,19 @@ export interface components {
             refresh_token: string;
             /** Token Type */
             token_type: string;
+        };
+        /** TurnSummary */
+        TurnSummary: {
+            /** Id */
+            id: number;
+            /** Title */
+            title: string;
+            /** Event At */
+            event_at: string | null;
+            /** Current Version Id */
+            current_version_id: number | null;
+            /** Preview Text */
+            preview_text: string;
         };
         /** UserCreate */
         UserCreate: {
@@ -1434,6 +1667,7 @@ export interface operations {
                 date_to?: string | null;
                 limit?: number;
                 offset?: number;
+                include_work_commentary?: boolean;
             };
             header?: never;
             path?: never;
@@ -2576,6 +2810,104 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RunResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_archive_archive_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArchiveResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_turns_codex_sessions_turns_get: {
+        parameters: {
+            query: {
+                scope: string;
+                thread_id: string;
+                limit?: number;
+                offset?: number;
+                focus_entry_id?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionTurnsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_presentation_entries__entry_id__presentation_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entry_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PresentationResponse"];
                 };
             };
             /** @description Validation Error */

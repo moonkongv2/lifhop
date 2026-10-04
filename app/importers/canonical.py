@@ -1,7 +1,7 @@
 from datetime import datetime
 from enum import StrEnum
 from typing import Annotated, Literal
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator, model_serializer
 
 class SourceProvider(StrEnum):
     MARKDOWN = "markdown"
@@ -78,9 +78,24 @@ class DevSessionPayload(BaseModel):
     omissions: list[str] = Field(default_factory=list)
     capture_method: str | None = None
     filter_version: str | None = None
+    message_phases: dict[str, Literal["commentary", "final_answer", "unknown"]] = Field(default_factory=dict)
+    turn_position: int | None = Field(default=None, ge=0)
+
+    @model_serializer(mode="wrap")
+    def compatible_metadata(self, handler):
+        data = handler(self)
+        if not self.message_phases:
+            data.pop("message_phases", None)
+        if self.turn_position is None:
+            data.pop("turn_position", None)
+        return data
 
     @model_validator(mode="after")
     def ordered_evidence(self):
+        if self.message_phases:
+            ids = [message.message_id for message in self.messages if message.role == "assistant"]
+            if len(set(ids)) != len(ids) or not set(self.message_phases).issubset(set(ids)):
+                raise ValueError("Message phases must reference unique retained assistant IDs")
         groups = {"message": self.messages, "command": self.commands, "diff": self.diffs}
         refs = [(ref.kind, ref.index) for ref in self.order]
         if self.order and (len(set(refs)) != len(refs) or

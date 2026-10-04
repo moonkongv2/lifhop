@@ -3,6 +3,7 @@ import { Navigate, useNavigate, useLocation } from "react-router";
 import { createEntry } from "../api/entries";
 import EntryForm from "../components/EntryForm";
 import { entryTarget, listTarget, resolveEntryContext } from "../utils/entryNavigation";
+import { invalidateRecordViews } from "../utils/recordCache";
 
 function EntryCreatePage() {
   const navigate = useNavigate();
@@ -13,7 +14,7 @@ function EntryCreatePage() {
     mutationFn: createEntry,
     onSuccess: async (entry) => {
       queryClient.setQueryData(["entry", String(entry.id)], entry);
-      await queryClient.invalidateQueries({ queryKey: ["entries"] });
+      await invalidateRecordViews(queryClient);
       navigate(entryTarget(entry.id, context));
     },
   });

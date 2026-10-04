@@ -10,7 +10,7 @@ from pathlib import Path
 from uuid import uuid4
 from app.acquisition.codex import inventory
 from app.acquisition.common import ProbeError
-from app.collectors.bundle import CollectorConfig, FILTER, FORMAT, PARSER, bytes_json, canonical_turn, digest, external_id, load_config, private_write, read_json, source_time
+from app.collectors.bundle import CollectorConfig, FILTER, FORMAT, PARSER, SUPPORTED_PARSERS, bytes_json, canonical_turn, digest, external_id, load_config, private_write, read_json, source_time
 from app.collectors.reader import check_version, stored_thread, ReadFailure
 
 
@@ -20,7 +20,11 @@ def bounded_payload(data: dict, maximum: int):
     while len(bytes_json(data)) > maximum and len(payload["order"]) > 1:
         ref = payload["order"].pop()
         group = {"message": "messages", "command": "commands", "diff": "diffs"}[ref["kind"]]
-        payload[group].pop()
+        removed = payload[group].pop()
+        if group == "messages":
+            payload.get("message_phases", {}).pop(removed.get("message_id"), None)
+            if not payload.get("message_phases"):
+                payload.pop("message_phases", None)
         data["completeness"] = "partial"
         payload["omissions"] = sorted(set(payload["omissions"]) | {"TURN_TRUNCATED"})
     if len(bytes_json(data)) > maximum:
@@ -31,7 +35,8 @@ def bounded_payload(data: dict, maximum: int):
 def preview(home: Path, cfg: CollectorConfig, output: Path, *, cwd: list[str], threads: list[str], all_accessible=False):
     if not cwd and not threads and not all_accessible:
         raise ProbeError("Select --include-cwd, --thread or --all-accessible explicitly")
-    check_version()
+    cli = check_version()
+    parser_version = "codex-app-server-0.160.0-turn-v2" if cli == "codex-cli 0.160.0" else PARSER
     summary, rows = inventory(home)
     discovered = sum(summary["files"].get(key, 0) for key in ("sessions", "archived_sessions"))
     def in_paths(value, roots):
@@ -50,7 +55,7 @@ def preview(home: Path, cfg: CollectorConfig, output: Path, *, cwd: list[str], t
     if summary["metadata_errors"]:
         gaps.add("UNREADABLE_METADATA")
     manifest = dict(bundle_format=FORMAT, client_run_uuid=str(uuid4()), provider="codex",
-        scope=f"mac:{cfg.device_uuid}", parser_version=PARSER, filter_version=FILTER,
+        scope=f"mac:{cfg.device_uuid}", parser_version=parser_version, filter_version=FILTER,
         config_digest=digest(cfg.model_dump(mode="json")), items=[], coverage=coverage)
     deadline = time.monotonic() + cfg.run_seconds
     total_bytes = 0
@@ -81,7 +86,8 @@ def preview(home: Path, cfg: CollectorConfig, output: Path, *, cwd: list[str], t
                             continue
                     identity = external_id(str(cfg.device_uuid), thread["id"], turn["id"])
                     try:
-                        item = canonical_turn(thread, turn, cfg, archived=row["archived"], consistency=check(turn), cwd=row["cwd"])
+                        item = canonical_turn(thread, turn, cfg, archived=row["archived"], consistency=check(turn), cwd=row["cwd"],
+                            turn_position=count - 1, parser_version=parser_version)
                         data = bounded_payload(item.model_dump(mode="json"), cfg.turn_bytes - 256)
                         raw = bytes_json(data)
                     except (ValueError, KeyError, TypeError):
@@ -142,7 +148,7 @@ def validate_bundle(directory: Path, cfg: CollectorConfig):
         raise ProbeError("Preview manifest was modified")
     if manifest["config_digest"] != digest(cfg.model_dump(mode="json")) or manifest["scope"] != f"mac:{cfg.device_uuid}":
         raise ProbeError("Config/device identity differs from the reviewed preview")
-    if manifest["parser_version"] != PARSER or manifest["filter_version"] != FILTER:
+    if manifest["parser_version"] not in SUPPORTED_PARSERS or manifest["filter_version"] != FILTER:
         raise ProbeError("Preview parser/filter version is unsupported; create a new preview")
     if len(manifest["items"]) != manifest["expected_items"] or len(manifest["items"]) > 100000:
         raise ProbeError("Invalid manifest item count")

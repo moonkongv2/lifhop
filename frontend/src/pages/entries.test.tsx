@@ -46,6 +46,10 @@ beforeEach(() => {
       records = records.filter((entry) => entry.id !== Number(path.split("/").at(-1)));
       return new Response(null, { status: 204 });
     }
+    if (path.startsWith("/api/archive?")) {
+      const offset = Number(new URL(path, "http://localhost").searchParams.get("offset") ?? 0);
+      return Response.json({ items: records.slice(offset, offset + 20).map(entry => ({ kind: "entry", entry })), total: records.length, limit: 20, offset });
+    }
     if (path.startsWith("/api/entries/search?")) {
       const params = new URL(path, "http://localhost").searchParams;
       const offset = Number(params.get("offset") ?? 0);
@@ -364,10 +368,10 @@ describe("Dedicated Search page", () => {
     await screen.findByRole("heading", { name: "Updated record" });
     click("← Back to search");
     await screen.findByRole("heading", { name: "Updated record" });
-    expect(cache.getQueryState(["entries", ""])?.isInvalidated).toBe(true);
+    expect(cache.getQueryState(["archive", 0])?.isInvalidated).toBe(true);
     fireEvent.click(within(screen.getByRole("navigation", { name: "Main navigation" })).getByRole("link", { name: "Entries" }));
     await screen.findByRole("heading", { name: "Updated record" });
-    await waitFor(() => expect(cache.getQueryState(["entries", ""])?.isInvalidated).toBe(false));
+    await waitFor(() => expect(cache.getQueryState(["archive", 0])?.isInvalidated).toBe(false));
   });
 
   it("keeps a page-only Entries URL and corrects it after last-page deletion", async () => {
@@ -378,8 +382,8 @@ describe("Dedicated Search page", () => {
     click("Record 21");
     expect((await screen.findByRole("link", { name: "← Back to entries" })).getAttribute("href")).toBe("/entries?offset=20");
     click("Delete"); click("Confirm delete");
-    await screen.findByText("20 entries · Page 1");
-    expect(requests.at(-1)?.path).toBe("/api/entries/search?limit=20");
+    await screen.findByText("20 records · Page 1");
+    expect(requests.at(-1)?.path).toBe("/api/archive?limit=20");
   });
 
   it.each(["/search", "/search?q=%20%20", "/search?date_field=event_at&offset=20"])("starts without an API request at %s", async path => {
@@ -464,7 +468,7 @@ describe("Dedicated Search page", () => {
     mount(path);
     click("Cancel");
     await screen.findByText("No entries yet.");
-    expect(requests[0].path).toBe("/api/entries/search?offset=20&limit=20");
+    expect(requests[0].path).toBe("/api/archive?limit=20&offset=20");
     cleanup();
     mount(path);
     fill("New record", "New content");
