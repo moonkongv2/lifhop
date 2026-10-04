@@ -4,10 +4,11 @@ Last updated: 2026-10-04
 
 ## Current product slice
 
-Codex session browsing and message-phase checkpoint after Phase 2.3: implemented
-and locally verified; owner browser verification pending. Plan committed at
-`bdfcd57`; session implementation is committed at `ab40b30`, with saved-title
-support committed in this checkpoint. Development DB upgraded to
+Codex session browsing, saved titles and conversation-only reading after Phase 2.3:
+implemented and locally verified. The owner inspected synthetic and actual session
+screens; final conversation-only reading verification remains pending. Plan committed
+at `bdfcd57`; session browsing at `ab40b30`, saved titles at `fd7597b`, and the reader
+refinement is committed in this checkpoint. Development DB upgraded to
 `c04d8a12e673`. Phase 2.3 implementation is committed at `36de1de` with whitespace
 cleanup at `63f0c1a`; owner confirmed its preview. Personal apply remains unverified.
 Phase 2.1 committed at `69dc764`; owner requested continuing without its HTML
@@ -47,12 +48,16 @@ exclusions are implemented foundations; full collectors remain upcoming.
   Final answers and unknown messages stay in primary reading/search; explicitly
   classified commentary stays in Work details and an optional search scope.
   Per-turn history, annotation, delete/suppression and AI permission remain intact.
+  Read turn and Codex Entry detail show only user/assistant messages, excluding
+  classified commentary. Commands/results/diffs remain in Work details and search.
+  Collection gaps are a separate notice. Existing structured records need no
+  recollection; records without valid structured evidence retain a warned full view.
   Current-version primary_content is derived separately; existing bodies/hashes
   remain unchanged. v1 manifests/receipts remain valid, v2 records phase/order.
   Session titles prefer saved Codex names; fallback titles normalize whitespace
   and cap display at 60 characters plus an ellipsis. First questions appear in
   separate two-line card previews. Original turn titles/content remain unchanged.
-- Latest checks: 248 backend tests, 83 frontend tests, lint/build and whitespace
+- Latest checks: 249 backend tests, 83 frontend tests, lint/build and whitespace
   checks pass. Real loopback HTTP/isolated-schema verification covers 25 synthetic
   turns, search scope, grouped count/focus and replay without duplicate versions.
   Synthetic Chromium checks pass at 320/390/768/1440px with no page errors.
@@ -65,6 +70,12 @@ exclusions are implemented foundations; full collectors remain upcoming.
   legacy serialization, name priority and fallback/preview are covered.
   Final targeted rerun hit sandbox TCP restrictions; the approved host rerun
   passed all 28 collector/session tests. No application failure remained.
+  The new conversation test initially omitted required command/diff item IDs;
+  correcting its fixture passed. Reading excludes tools without changing search,
+  evidence, versions, or command-like text inside an assistant answer.
+  The supplied sample.html matched a private preview: seven command/result blocks
+  are excluded from reading, leaving two messages (18,485 → 2,404 characters),
+  with no server writes. Synthetic Chromium reading/work checks pass at four widths.
 - Installed CLI 0.160.0 schemas and actual bounded reads verified: 33 turns from
   10 selected readable lifhop sessions, with 63 commentary and 32 final messages.
   Original v1 preview's 33 payload digests remain unchanged. New private v2 preview
@@ -196,11 +207,11 @@ user-verifiable product slices in `ROADMAP.md`.
 
 1. Verify session browsing/message separation with the synthetic helper in
    CODEX_BACKFILL.md; review the new private v2 preview before any personal apply.
-   Conversation-only reading follows as a separate commit.
-2. Explicitly apply a reviewed private Phase 2.3 preview; verify Sources,
+   Confirm conversation-only reading and full Work details in the supplied session.
+2. Verify the owner-bound private Phase 2.3 apply run status in Sources and
    Codex search/evidence, replay, annotations and disposable deletion/policy checks
-   in `CODEX_BACKFILL.md`. The owner confirmed preview review and authorized
-   committing the implementation before personal apply.
+   in `CODEX_BACKFILL.md`. Its checkpoint has 33 acknowledgments; completed status,
+   target account and selected current versions still require confirmation.
 3. Implement Phase 2.4 GitHub historical backfill after the current slice is verified.
 4. Verify Phase 2.2 using `HISTORY.md`: synthetic history, annotations, source
    markers, deletion/reimport block, and Sources permissions.

@@ -101,6 +101,33 @@ def test_search_phase_projection_and_version_selection(client, auth_headers, db_
     assert client.get("/entries/search?q=zebra", headers=auth_headers).json()["total"] == 1
 
 
+def test_conversation_reader_hides_tools_but_preserves_evidence_and_search(client, auth_headers, db_session):
+    owner = client.get("/auth/me", headers=auth_headers).json()["id"]
+    for thread, phases in (("new", True), ("legacy", False)):
+        observed = item(thread=thread, phases=phases)
+        observed.payload.messages[-1].content = "Final conclusion\nCommand (example): keep this answer text"
+        observed.payload.omissions = ["NON_TEXT_INPUT_OMITTED"]
+        # Revalidate typed payload and retain the full observed sequence.
+        raw = observed.model_dump(mode="json")
+        raw["payload"]["commands"] = [{"item_id": "cmd", "command": "pytest searchable-command", "output": "searchable-result", "exit_code": 0, "state": "completed"}]
+        raw["payload"]["diffs"] = [{"item_id": "diff", "path": "file.py", "diff": "+searchable-diff", "state": "recorded"}]
+        raw["payload"]["order"] = [{"kind": "message", "index": 0}, {"kind": "message", "index": 1},
+            {"kind": "command", "index": 0}, {"kind": "diff", "index": 0}, {"kind": "message", "index": 2}]
+        entry = upsert_external_entry(db_session, user_id=owner, item=CanonicalItem.model_validate(raw))
+        db_session.commit()
+        original, version = entry.content, entry.current_version_id
+        response = client.get(f"/entries/{entry.id}/presentation", headers=auth_headers).json()
+        assert response["primary_content"].startswith("user: Question")
+        assert "Command (example): keep this answer text" in response["primary_content"]
+        for marker in ("searchable-command", "searchable-result", "searchable-diff", "Collection gaps:"):
+            assert marker not in response["primary_content"]
+            assert marker in original
+        assert ("Interim zebra" in response["primary_content"]) == (not phases)
+        assert response["payload"]["omissions"] == ["NON_TEXT_INPUT_OMITTED"]
+        db_session.refresh(entry)
+        assert entry.content == original and entry.current_version_id == version
+    for keyword in ("searchable-command", "searchable-result", "searchable-diff"):
+        assert client.get(f"/entries/search?q={keyword}", headers=auth_headers).json()["total"] == 2
 
 
 def test_mixed_grouping_pagination_focus_and_deletion(client, auth_headers, db_session):

@@ -1142,8 +1142,9 @@ positions determine order; missing/duplicate positions use a warned date/ID fall
 Keep deletion, annotations and permissions per turn.
 
 Preserve official assistant phases and original turn positions in v2 DevSession
-metadata. Only explicit commentary is excluded from primary reading/search;
-unknown messages, user text, command results and diffs remain. Full evidence is
+metadata. Basic reading includes user/assistant messages and excludes explicit
+commentary; unknown assistant messages remain visible. Default search still includes
+user/unknown/final messages, command results and diffs, excluding commentary. Full evidence is
 available in Work details and commentary search is opt-in. Reasoning items remain
 outside collection. Store nullable current Entry.primary_content for SQL search,
 refresh it atomically on current version changes, and distinguish NULL from an
@@ -1166,3 +1167,10 @@ normalized titles capped at 60 characters plus an ellipsis, and the representati
 first question as a separate two-line preview. No new AI call generates a title.
 Previously collected records require reviewed recollection/current selection;
 never silently rewrite old evidence or reviewed bundles to add names.
+
+Derive the questions/answers reading text at presentation time from structured
+messages; do not change the stored search projection or evidence to simplify the
+reader. Hide commands/results/diffs from basic reading and retain full ordered
+evidence in Work details. Show collection gaps separately. Preserve command-like
+text inside an assistant message. Valid legacy payloads work without recollection;
+invalid/missing structured evidence uses a warned full-content fallback.

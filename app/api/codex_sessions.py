@@ -9,7 +9,7 @@ from app.models.history import EntryVersion
 from app.models.user import User
 from app.schemas.codex_session import ArchiveResponse, SessionTurnsResponse, PresentationResponse
 from app.services.codex_sessions import archive, session_turns
-from app.services.codex_presentation import dev_payload, primary_content
+from app.services.codex_presentation import dev_payload, conversation_content
 
 router = APIRouter(tags=["codex-sessions"])
 DB = Annotated[Session, Depends(get_db)]
@@ -39,6 +39,6 @@ def read_presentation(entry_id: int, db: DB, owner: Owner):
     parsed = dev_payload(entry.provider, version.payload if version and version.entry_id == entry.id else None)
     phases = parsed.message_phases if parsed else {}
     return PresentationResponse(entry_id=entry.id, version_id=entry.current_version_id,
-        primary_content=primary_content(entry.provider, version.payload if version else None, entry.content) if parsed else entry.content,
+        primary_content=conversation_content(parsed) if parsed else entry.content,
         payload=parsed, unknown_phase=parsed is None or any(phases.get(m.message_id, "unknown") == "unknown" for m in parsed.messages if m.role == "assistant"),
         has_final_answer="final_answer" in phases.values())

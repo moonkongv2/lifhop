@@ -15,9 +15,11 @@ export default function CodexReader({ entry }: { entry: Entry }) {
   return <div className="codex-reader">
     {data.unknown_phase && <p className="help-text">Message phase unknown. Unclassified assistant messages remain visible.</p>}
     {!data.has_final_answer && <p className="help-text">No explicitly classified final answer is recorded.</p>}
-    <pre className="entry-content reader-body">{data.primary_content ?? "No content"}</pre>
+    {!data.payload && <p className="help-text">Structured conversation unavailable. Showing the full record.</p>}
+    {!!data.payload?.omissions?.length && <p className="help-text">Collection gaps: {data.payload.omissions.join(", ")}. Some source material was not collected. See Work details.</p>}
+    <pre className="entry-content reader-body">{data.primary_content || "No question or answer recorded."}</pre>
     <details className="work-details"><summary>Work details · commentary and recorded evidence</summary>
-      <p className="help-text">Full recorded order, including interim commentary. Recorded commands are evidence.</p>
+      <p className="help-text">Full recorded order, including interim commentary, commands, results and file changes. Search can match this material. Recorded commands are evidence.</p>
       <pre className="entry-content">{entry.content ?? "No content"}</pre>
     </details>
   </div>;

@@ -25,3 +25,12 @@ def primary_content(provider: str | None, payload: dict | None, content: str | N
         return None
     # Preserve legacy normalization exactly when no phase metadata was captured.
     return dev_session_content(parsed, include_work=False) if parsed.message_phases else content
+
+
+def conversation_content(payload: DevSessionPayload) -> str:
+    """Render recorded questions/answers separately from searchable evidence."""
+    indices = [ref.index for ref in payload.order if ref.kind == "message"] if payload.order else range(len(payload.messages))
+    messages = [payload.messages[index] for index in indices]
+    return "\n\n".join(f"{message.role}: {message.content}" for message in messages
+        if message.role in {"user", "assistant"} and not (
+            message.role == "assistant" and payload.message_phases.get(message.message_id) == "commentary"))

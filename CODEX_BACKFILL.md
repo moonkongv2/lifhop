@@ -138,10 +138,17 @@ page; bodies load for opened turns. Search results link to the matched turn's
 page. Scope/thread identity survives deletion of the representative turn.
 
 Explicit `final_answer` and unclassified assistant messages stay in primary
-reading. Explicit `commentary` is in Work details; commands/results/diffs remain
-available in primary reading and full work order. Search excludes classified
+reading. Explicit `commentary` and recorded commands/results/diffs are in Work
+details. Collection gaps appear as a separate notice, outside the conversation.
+Search still includes commands/results/diffs by default and excludes classified
 commentary by default. Select **Include work commentary from Codex** and submit
 to search it. The option alone does not start an empty search.
+
+The conversation-only reader also works for previously collected valid structured
+payloads: restart the API if it is not running with reload, then refresh the page.
+No new migration, preview or personal apply is needed for this display change.
+An assistant answer's own code/command examples remain part of the answer. Missing
+or invalid structured payloads keep a full-record fallback with an explicit notice.
 
 The collector now writes v2 parser metadata for the verified CLI version,
 including original turn position and assistant phases. Missing/unrecognized phase
@@ -172,8 +179,8 @@ executes no recorded commands. Open `http://localhost:5173/entries`:
 
 1. Find `[Synthetic] Codex session demo`: one card, 25 retained turns; the first
    question appears below its title. Older demo runs retain their original title.
-2. Open it: primary content shows the question/final conclusion and recorded
-   command/diff. Work details also shows `Synthetic interim zebra hypothesis`.
+2. Open it: primary content shows only the question/final conclusion. Work details
+   shows the command/result/diff and `Synthetic interim zebra hypothesis`.
 3. Next turns shows the remaining five turns; Previous turns restores the first page.
 4. Search `interim zebra`: default gives zero demo matches; enable commentary and
    submit to get 25 demo matches. Results include a commentary match label.
@@ -202,12 +209,17 @@ explicit apply. No personal preview was uploaded during this implementation.
   --email YOUR_EMAIL
 ```
 
-Latest verification: 248 backend and 83 frontend tests; lint/build pass. Actual
+Latest verification: 249 backend and 83 frontend tests; lint/build pass. Actual
 loopback HTTP + isolated DB validates synthetic 25-turn ingestion/search/grouping/
 focus/replay. Synthetic Chromium passes at 320/390/768/1440px. Existing personal
 v1 payload digests remain unchanged. Small synthetic EXPLAIN confirms the grouped
 query; large-corpus performance, other browser engines and actual mobile devices
 remain unverified.
+
+The owner-provided sample.html matched one retained private preview payload.
+Offline reading verification removes its seven recorded command/result blocks
+from basic reading (18,485 to 2,404 characters, two messages). Full evidence remains
+unchanged. This check performs no server writes or source-command execution.
 
 ### Saved-title refresh
 

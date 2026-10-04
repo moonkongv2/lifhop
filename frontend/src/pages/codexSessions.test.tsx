@@ -12,7 +12,7 @@ const summary = { source_scope: "mac:demo", thread_id: "thread", title: "Session
   preview_text: "The original first question with additional context",
   title_inferred: false, start_at: null, end_at: null, partial: false, review_required: false,
   order_unknown: false, archived: false, forked_from_id: null, metadata_conflict: false };
-const record = { id: 21, title: "Turn 21", content: "user: Question\n\nassistant: interim zebra\n\nassistant: Final conclusion",
+const record = { id: 21, title: "Turn 21", content: "user: Question\n\nassistant: interim zebra\n\nCommand (completed, exit 0):\nrecorded check\n\nResult:\nrecorded output\n\nRecorded change (recorded): file.py\n+recorded diff\n\nassistant: Final conclusion\n\nCollection gaps:\nNON_TEXT_INPUT_OMITTED",
   current_version_id: 120, source: "codex", provider: "codex", type: "PROJECT_EVENT", source_scope: "mac:demo", read_only: true,
   annotation: null, source_state: "available", external_ai_allowed: false, event_at: null, created_at: "2026-01-01T00:00:00Z", updated_at: "2026-01-01T00:00:00Z" };
 let requests: string[]; let deleted: boolean;
@@ -34,7 +34,7 @@ beforeEach(() => {
     const match = url.pathname.match(/^\/api\/entries\/(\d+)(\/presentation)?$/);
     if (match) {
       if (options.method === "DELETE") { deleted = true; return new Response(null, { status: 204 }); }
-      return Response.json(match[2] ? { entry_id: Number(match[1]), version_id: 120, primary_content: "user: Question\n\nassistant: Final conclusion", payload: null, unknown_phase: false, has_final_answer: true } : { ...record, id: Number(match[1]), title: `Turn ${match[1]}` });
+      return Response.json(match[2] ? { entry_id: Number(match[1]), version_id: 120, primary_content: "user: Question\n\nassistant: Final conclusion", payload: {kind: "dev_session", messages: [], omissions: ["NON_TEXT_INPUT_OMITTED"]}, unknown_phase: false, has_final_answer: true } : { ...record, id: Number(match[1]), title: `Turn ${match[1]}` });
     }
     return Response.json([]);
   }));
@@ -56,9 +56,16 @@ describe("Codex session browsing", () => {
     await screen.findByText("user: Question assistant: Final conclusion");
     const work = screen.getByText("Work details · commentary and recorded evidence").closest("details")!;
     expect(work.open).toBe(false);
+    const reader = work.parentElement!;
+    const primary = reader.querySelector("pre.reader-body")!;
+    expect(primary.textContent).not.toMatch(/recorded check|recorded output|recorded diff|Collection gaps/);
+    expect(reader.querySelector("p.help-text")?.textContent).toContain("Collection gaps:");
     fireEvent.click(work.querySelector("summary")!);
     expect(work.open).toBe(true);
     expect(work.textContent).toContain("interim zebra");
+    expect(work.textContent).toContain("recorded check");
+    expect(work.textContent).toContain("recorded output");
+    expect(work.textContent).toContain("recorded diff");
     fireEvent.click(screen.getByRole("link", { name: "← Back to entries" }));
     await screen.findByRole("link", { name: "Session question" });
   });

@@ -357,8 +357,9 @@ actual owner-history checks follow explicit apply.
 
 Entries groups Codex turns into session cards; Search stays at matching-turn
 granularity and focuses the selected turn in its session. Work details retains
-commentary, while primary reading/search shows user/final/unknown messages and
-recorded commands/results/diffs. Include work commentary is an optional Search
+commentary and recorded commands/results/diffs, while basic reading shows only
+user/final/unknown assistant messages. Collection gaps appear separately. Search
+continues to match command results/diffs. Include work commentary is an optional Search
 checkbox applied on submit. Unknown legacy phases/order remain explicit.
 
 Use `.venv/bin/python scripts/seed_codex_session_demo.py --email YOUR_EMAIL` from
