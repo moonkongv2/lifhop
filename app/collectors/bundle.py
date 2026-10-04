@@ -125,6 +125,10 @@ def canonical_turn(thread: dict, turn: dict, cfg: CollectorConfig, *, archived: 
         forked_from_id=thread.get("forkedFromId"), archived=archived,
         capture_method="official app-server; disposable snapshot", filter_version=FILTER, turn_position=turn_position)
     omissions = set()
+    name = thread.get("name")
+    if isinstance(name, str) and name.strip():
+        cleaned = clean_text(name, cfg, omissions, cwd)
+        payload.thread_name = " ".join(cleaned.split())[:255] or None
     if consistency:
         omissions.add(consistency)
     seen = set()

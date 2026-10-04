@@ -127,6 +127,12 @@ Entries after later deletion.
 ## Session browsing and message phases (2026-10-04)
 
 Entries now shows one card per retained Codex session, grouped on the server.
+Cards prefer the saved Codex session name and show the first question separately
+as a two-line preview. Without a name, the first question becomes a compact title
+(up to 60 characters plus an ellipsis). Titles are normalized for display; original
+turn titles and messages remain intact. Names come from official `thread.name` or
+the selected thread's persisted local resume index in the disposable snapshot,
+pass the existing sanitizer, and require no new AI call.
 Other records remain individual. Open a session to read 20 turn summaries per
 page; bodies load for opened turns. Search results link to the matched turn's
 page. Scope/thread identity survives deletion of the representative turn.
@@ -164,7 +170,8 @@ Enter your local account password. This explicitly creates 25 disposable synthet
 turns in a new source on every invocation; it reads no personal Codex history and
 executes no recorded commands. Open `http://localhost:5173/entries`:
 
-1. Find `[Synthetic] Codex session turn 1`: one card, 25 retained turns.
+1. Find `[Synthetic] Codex session demo`: one card, 25 retained turns; the first
+   question appears below its title. Older demo runs retain their original title.
 2. Open it: primary content shows the question/final conclusion and recorded
    command/diff. Work details also shows `Synthetic interim zebra hypothesis`.
 3. Next turns shows the remaining five turns; Previous turns restores the first page.
@@ -195,12 +202,25 @@ explicit apply. No personal preview was uploaded during this implementation.
   --email YOUR_EMAIL
 ```
 
-Latest verification: 244 backend and 83 frontend tests; lint/build pass. Actual
+Latest verification: 248 backend and 83 frontend tests; lint/build pass. Actual
 loopback HTTP + isolated DB validates synthetic 25-turn ingestion/search/grouping/
 focus/replay. Synthetic Chromium passes at 320/390/768/1440px. Existing personal
 v1 payload digests remain unchanged. Small synthetic EXPLAIN confirms the grouped
 query; large-corpus performance, other browser engines and actual mobile devices
 remain unverified.
+
+### Saved-title refresh
+
+Records collected before thread_name support continue to use their first question.
+Create and review a new preview to collect saved names; unchanged source timestamps
+can retain a new candidate version, which must be selected explicitly in History
+to change the current session view. Existing bundles are not edited or automatically
+applied. The title-verified private preview in this workspace is
+`.local/verification/codex-session-titles-verified/preview/preview.html`.
+This read-only preview includes saved titles for 4 sessions/25 of its 33 turns;
+the remaining sessions use the first-question fallback. The owner's local apply
+checkpoint acknowledges 33 turns; verify the run result and current versions in
+the browser. The agent did not apply personal history.
 
 ## Cleanup and known limits
 

@@ -11,6 +11,8 @@ WITH base AS (
  SELECT e.id, e.title, e.created_at, e.event_at, e.current_version_id,
  e.provider, e.source_scope, e.review_required,
  v.source_updated_at, v.completeness,
+ CASE WHEN jsonb_typeof(v.payload->'thread_name')='string'
+   THEN left(v.payload->>'thread_name',255) END AS thread_name,
  CASE WHEN jsonb_typeof(v.payload->'thread_id') = 'string'
    AND length(v.payload->>'thread_id') BETWEEN 1 AND 1024
    THEN v.payload->>'thread_id' END AS thread_id,
@@ -33,17 +35,28 @@ WITH base AS (
  count(DISTINCT archived)>1 OR count(DISTINCT fork)>1 AS metadata_conflict
  FROM base WHERE provider='codex' AND thread_id IS NOT NULL GROUP BY source_scope,thread_id
 ), summaries AS (
- SELECT g.*, g.order_unknown AS title_inferred,
+ SELECT g.*, NOT EXISTS(SELECT 1 FROM base n WHERE n.provider='codex'
+   AND n.source_scope=g.source_scope AND n.thread_id=g.thread_id
+   AND nullif(trim(n.thread_name),'') IS NOT NULL) AS title_inferred,
  EXISTS(SELECT 1 FROM groups parent WHERE parent.source_scope=g.source_scope AND parent.thread_id=g.forked_from_id) AS fork_available,
+ (SELECT n.thread_name FROM base n WHERE n.provider='codex' AND n.source_scope=g.source_scope
+   AND n.thread_id=g.thread_id AND nullif(trim(n.thread_name),'') IS NOT NULL
+   ORDER BY n.source_updated_at DESC NULLS LAST,n.id DESC LIMIT 1) AS saved_title,
  (SELECT b.title FROM base b WHERE b.provider='codex' AND b.source_scope=g.source_scope AND b.thread_id=g.thread_id
-  ORDER BY CASE WHEN NOT g.order_unknown THEN b.position END ASC NULLS LAST,b.id ASC LIMIT 1) AS title
+  ORDER BY CASE WHEN NOT g.order_unknown THEN b.position END ASC NULLS LAST,b.id ASC LIMIT 1) AS first_question
  FROM groups g
 )
 """
 
 
 def summary(row):
-    return SessionSummary.model_validate(dict(row))
+    data = dict(row)
+    question = " ".join((data.get("first_question") or "").split())
+    name = " ".join((data.get("saved_title") or "").split())
+    title = name or question or "Codex session"
+    data["title"] = title[:60].rstrip() + "…" if len(title) > 60 else title
+    data["preview_text"] = question
+    return SessionSummary.model_validate(data)
 
 
 def archive(db: Session, owner: int, limit: int, offset: int):

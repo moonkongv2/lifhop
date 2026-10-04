@@ -10,7 +10,7 @@ from app.acquisition.common import ProbeError
 from app.acquisition.codex import ReadOnlyAppServer
 from app.collectors.bundle import CollectorConfig, canonical_turn, private_write, read_json, load_config, digest
 from app.collectors.codex import preview, validate_bundle, bounded_payload
-from app.collectors.reader import ReadFailure, pages, stored_thread, consistency
+from app.collectors.reader import ReadFailure, pages, stored_thread, consistency, saved_thread_name
 from app.collectors.client import apply_bundle, bundle_lock, CollectorAPI, APIError
 from app.importers.normalizer import EntryNormalizer
 from app.importers.canonical import CanonicalItem
@@ -26,6 +26,50 @@ def example_turn():
 
 def config():
     return CollectorConfig(device_uuid=uuid4())
+
+
+def test_saved_thread_name_is_sanitized_metadata():
+    result = canonical_turn({"id": "thread", "name": "  Fix\n session titles  "}, example_turn(), config(), archived=False)
+    assert result.payload.thread_name == "Fix session titles"
+    assert result.title == "Past question"
+    unnamed = canonical_turn({"id": "thread", "name": " \n "}, example_turn(), config(), archived=False)
+    assert "thread_name" not in unnamed.payload.model_dump(mode="json")
+
+
+def test_saved_name_index_is_read_from_disposable_snapshot(tmp_path, monkeypatch):
+    home, file = source(tmp_path)
+    index = home / "session_index.jsonl"
+    raw = json.dumps({"id": "thread", "thread_name": "Saved session name", "updated_at": "2026-01-01T00:00:00Z"}) + "\n"
+    index.write_text(raw)
+
+    class NamedServer(Server):
+        def __init__(self, root):
+            super().__init__(root)
+            assert root != home
+            assert (root / "session_index.jsonl").read_text() == raw
+
+        def request(self, method, params):
+            result = super().request(method, params)
+            return result
+
+    monkeypatch.setattr("app.collectors.reader.ReadOnlyAppServer", NamedServer)
+    row = {"path": file, "id": "thread", "history_mode": "legacy"}
+    with stored_thread(home, row, config(), time.monotonic() + 5) as (thread, turns, check):
+        assert thread["name"] == "Saved session name"
+        assert list(turns)
+    assert index.read_text() == raw
+
+
+def test_saved_name_uses_latest_valid_matching_thread(tmp_path):
+    index = tmp_path / "session_index.jsonl"
+    rows = [dict(id="thread", thread_name="New title", updated_at="2026-01-02T00:00:00Z"),
+        dict(id="other", thread_name="Other title", updated_at="2026-01-03T00:00:00Z"),
+        dict(id="thread", thread_name="Old title", updated_at="2026-01-01T00:00:00Z"),
+        dict(id="thread", thread_name="Invalid timestamp", updated_at="bad"),
+        dict(id="thread", thread_name="Non-string timestamp", updated_at=123)]
+    index.write_text("invalid json\n" + "\n".join(json.dumps(row) for row in rows))
+    assert saved_thread_name(index, "thread") == "New title"
+    assert saved_thread_name(index, "missing") is None
 
 
 def source(tmp_path, *, archived=False):

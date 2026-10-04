@@ -954,6 +954,8 @@ export interface components {
             order?: components["schemas"]["EvidenceRef"][];
             /** Thread Id */
             thread_id?: string | null;
+            /** Thread Name */
+            thread_name?: string | null;
             /** Turn Id */
             turn_id?: string | null;
             /** Forked From Id */
@@ -1409,6 +1411,11 @@ export interface components {
             title: string;
             /** Title Inferred */
             title_inferred: boolean;
+            /**
+             * Preview Text
+             * @default
+             */
+            preview_text: string;
             /** Turn Count */
             turn_count: number;
             /** Start At */

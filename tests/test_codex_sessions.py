@@ -35,6 +35,7 @@ def test_legacy_bytes_and_hash_unchanged():
     legacy = item(phases=False)
     raw = legacy.model_dump(mode="json")
     assert "message_phases" not in raw["payload"] and "turn_position" not in raw["payload"]
+    assert "thread_name" not in raw["payload"]
     assert CanonicalItem.model_validate(json.loads(json.dumps(raw))).model_dump(mode="json") == raw
     normalized = EntryNormalizer().normalize(legacy)
     entry = Entry(**normalized.model_dump())
@@ -53,6 +54,29 @@ def test_phase_references_and_trim():
     CanonicalItem.model_validate(data)
 
 
+def test_session_saved_name_and_question_fallback(client, auth_headers, db_session):
+    owner = client.get("/auth/me", headers=auth_headers).json()["id"]
+    first = item(turn="first")
+    first.title = "  A long first question\n" + "with context " * 15
+    first.payload.thread_name = "  Fix\n session titles  "
+    upsert_external_entry(db_session, user_id=owner, item=first)
+    second = item(turn="second", position=1)
+    second.payload.thread_name = "Renamed session"
+    second.source_updated_at = datetime(2026, 1, 2, tzinfo=timezone.utc)
+    upsert_external_entry(db_session, user_id=owner, item=second)
+    fallback = item(thread="fallback")
+    fallback.title = "A very long question " * 10
+    upsert_external_entry(db_session, user_id=owner, item=fallback)
+    db_session.commit()
+    summaries = {r["session"]["thread_id"]: r["session"] for r in client.get("/archive", headers=auth_headers).json()["items"]}
+    named = summaries["thread"]
+    assert named["title"] == "Renamed session" and not named["title_inferred"]
+    assert named["preview_text"].startswith("A long first question with context")
+    assert summaries["fallback"]["title"].endswith("…")
+    assert len(summaries["fallback"]["title"]) <= 61
+    assert summaries["fallback"]["title_inferred"]
+    detail = client.get("/codex-sessions/turns?scope=mac:demo&thread_id=thread", headers=auth_headers).json()
+    assert detail["session"] == named
 
 
 def test_search_phase_projection_and_version_selection(client, auth_headers, db_session):

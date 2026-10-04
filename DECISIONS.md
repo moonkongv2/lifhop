@@ -1155,3 +1155,14 @@ Same-time observations can remain candidates requiring explicit current selectio
 Extend the collector's installed CLI support to 0.160.0 after official schema and
 actual read verification, retaining 0.158.0 support. The separate Phase 2.1 probe
 remains pinned. No new dependency, AWS service or automatic personal apply is added.
+
+Prefer saved Codex thread names for session display; retain original turn titles.
+Capture optional sanitized thread_name from official thread metadata or the latest
+valid matching row of the persisted resume index. Read that index only from a
+bounded private disposable copy (8 MiB maximum), without exposing the original
+state DB to app-server. Absent names serialize as before, preserving old digests.
+Choose the most recent named current observation per session. Display whitespace
+normalized titles capped at 60 characters plus an ellipsis, and the representative
+first question as a separate two-line preview. No new AI call generates a title.
+Previously collected records require reviewed recollection/current selection;
+never silently rewrite old evidence or reviewed bundles to add names.

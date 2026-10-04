@@ -6,7 +6,8 @@ Last updated: 2026-10-04
 
 Codex session browsing and message-phase checkpoint after Phase 2.3: implemented
 and locally verified; owner browser verification pending. Plan committed at
-`bdfcd57`; the session implementation is committed in this checkpoint. Development DB upgraded to
+`bdfcd57`; session implementation is committed at `ab40b30`, with saved-title
+support committed in this checkpoint. Development DB upgraded to
 `c04d8a12e673`. Phase 2.3 implementation is committed at `36de1de` with whitespace
 cleanup at `63f0c1a`; owner confirmed its preview. Personal apply remains unverified.
 Phase 2.1 committed at `69dc764`; owner requested continuing without its HTML
@@ -48,7 +49,10 @@ exclusions are implemented foundations; full collectors remain upcoming.
   Per-turn history, annotation, delete/suppression and AI permission remain intact.
   Current-version primary_content is derived separately; existing bodies/hashes
   remain unchanged. v1 manifests/receipts remain valid, v2 records phase/order.
-- Latest checks: 244 backend tests, 83 frontend tests, lint/build and whitespace
+  Session titles prefer saved Codex names; fallback titles normalize whitespace
+  and cap display at 60 characters plus an ellipsis. First questions appear in
+  separate two-line card previews. Original turn titles/content remain unchanged.
+- Latest checks: 248 backend tests, 83 frontend tests, lint/build and whitespace
   checks pass. Real loopback HTTP/isolated-schema verification covers 25 synthetic
   turns, search scope, grouped count/focus and replay without duplicate versions.
   Synthetic Chromium checks pass at 320/390/768/1440px with no page errors.
@@ -56,10 +60,18 @@ exclusions are implemented foundations; full collectors remain upcoming.
   DATABASE_URL/TEST_DATABASE_URL isolated settings passed. Frontend old list/cache
   assertions were updated for archive; an initial browser stub intercepted module
   imports and was corrected. No unresolved check failures remain.
+  The added snapshot-index test initially called a yielded generator as a function;
+  correcting that test passed. Saved-name sanitization, latest valid index row,
+  legacy serialization, name priority and fallback/preview are covered.
+  Final targeted rerun hit sandbox TCP restrictions; the approved host rerun
+  passed all 28 collector/session tests. No application failure remained.
 - Installed CLI 0.160.0 schemas and actual bounded reads verified: 33 turns from
   10 selected readable lifhop sessions, with 63 commentary and 32 final messages.
   Original v1 preview's 33 payload digests remain unchanged. New private v2 preview
   is `.local/verification/codex-session-v2/preview`; it has not been uploaded.
+  A separate title-verified preview at `.local/verification/codex-session-titles-verified/preview`
+  captures saved names for 4 sessions/25 turns. The owner's local apply checkpoint
+  acknowledges all 33 turns; final run status and current-version UI are unverified.
   `scripts/seed_codex_session_demo.py` creates an explicit synthetic 25-turn local
   source for user checks. See CODEX_BACKFILL.md.
 - Codex CLI 0.158.0 manual backfill: explicit project/thread selection, exclusions
@@ -184,7 +196,7 @@ user-verifiable product slices in `ROADMAP.md`.
 
 1. Verify session browsing/message separation with the synthetic helper in
    CODEX_BACKFILL.md; review the new private v2 preview before any personal apply.
-   Saved-title and conversation-only reader refinements follow as separate commits.
+   Conversation-only reading follows as a separate commit.
 2. Explicitly apply a reviewed private Phase 2.3 preview; verify Sources,
    Codex search/evidence, replay, annotations and disposable deletion/policy checks
    in `CODEX_BACKFILL.md`. The owner confirmed preview review and authorized

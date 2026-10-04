@@ -10,6 +10,7 @@ class SessionSummary(BaseModel):
     thread_id: str
     title: str
     title_inferred: bool
+    preview_text: str = ""
     turn_count: int
     start_at: datetime | None
     end_at: datetime | None

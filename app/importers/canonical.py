@@ -72,6 +72,7 @@ class DevSessionPayload(BaseModel):
     diffs: list[RecordedDiff] = Field(default_factory=list)
     order: list[EvidenceRef] = Field(default_factory=list)
     thread_id: str | None = None
+    thread_name: str | None = Field(default=None, max_length=255)
     turn_id: str | None = None
     forked_from_id: str | None = None
     archived: bool = False
@@ -88,6 +89,8 @@ class DevSessionPayload(BaseModel):
             data.pop("message_phases", None)
         if self.turn_position is None:
             data.pop("turn_position", None)
+        if self.thread_name is None:
+            data.pop("thread_name", None)
         return data
 
     @model_validator(mode="after")

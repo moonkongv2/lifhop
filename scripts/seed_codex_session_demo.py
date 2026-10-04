@@ -17,6 +17,7 @@ def demo_items(device: str):
             "parser_version": "codex-app-server-0.160.0-turn-v2", "completeness": "complete",
             "event_at": f"2026-01-01T00:{index:02}:00Z", "source_updated_at": f"2026-01-01T00:{index:02}:30Z",
             "payload": {"kind": "dev_session", "thread_id": "synthetic-session", "turn_id": f"turn-{index}",
+                "thread_name": "[Synthetic] Codex session demo",
                 "turn_position": index, "filter_version": FILTER,
                 "messages": [{"role": "user", "message_id": "user", "content": f"Synthetic question {index + 1}"},
                     {"role": "assistant", "message_id": "work", "content": "Synthetic interim zebra hypothesis."},

@@ -33,9 +33,10 @@ export default function ArchiveResults() {
       <div className="records-grid">{data.items.map(row => row.session ? <article className="panel record-card" key={`session:${JSON.stringify([row.session.source_scope, row.session.thread_id])}`}>
         <span className="badge source">Codex session</span>
         <Link to={sessionTarget(row.session, context)}><h3>{row.session.title}</h3></Link>
+        {row.session.preview_text && <p className="entry-content session-preview">{row.session.preview_text}</p>}
         <p>{row.session.turn_count} retained turns</p>
         <p className="record-date">Source period: {formatEntryDate(row.session.start_at)} – {formatEntryDate(row.session.end_at)}</p>
-        {row.session.order_unknown && <p className="help-text">Original turn order unverified. Representative title inferred.</p>}
+        {row.session.order_unknown && <p className="help-text">Original turn order unverified.</p>}
         {(row.session.partial || row.session.review_required) && <span className="badge">Partial evidence or version review</span>}
         <p className="help-text">Counts cover stored turns. Collection coverage is available in Sources.</p>
       </article> : row.entry ? <article className="panel record-card" key={row.entry.id}>

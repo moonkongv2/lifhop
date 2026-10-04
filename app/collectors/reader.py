@@ -7,6 +7,7 @@ import subprocess
 import tempfile
 import time
 from contextlib import closing, contextmanager
+from datetime import datetime
 from pathlib import Path
 from app.acquisition.codex import ReadOnlyAppServer, SUPPORTED_CLI
 from app.acquisition.common import ProbeError
@@ -21,6 +22,33 @@ class ReadFailure(ProbeError):
 def sha_file(path: Path):
     with path.open("rb") as stream:
         return hashlib.file_digest(stream, "sha256").hexdigest()
+
+
+def saved_thread_name(index: Path, thread_id: str):
+    """Read only the selected thread's persisted resume title from a snapshot."""
+    if not index.exists():
+        return None
+    selected = None
+    latest = (float("-inf"), -1)
+    with index.open() as stream:
+        for position, line in enumerate(stream):
+            try:
+                row = json.loads(line)
+                if not isinstance(row, dict) or row.get("id") != thread_id:
+                    continue
+                name = row.get("thread_name")
+                updated = row.get("updated_at")
+                if not isinstance(name, str) or not isinstance(updated, str):
+                    continue
+                stamp = datetime.fromisoformat(updated.replace("Z", "+00:00"))
+                if stamp.tzinfo is None:
+                    continue
+                order = (stamp.timestamp(), position)
+                if order > latest:
+                    selected, latest = name, order
+            except (ValueError, TypeError, KeyError):
+                continue
+    return selected
 
 
 def pages(server, method: str, params: dict, maximum: int, deadline: float):
@@ -102,6 +130,18 @@ def stored_thread(home: Path, row: dict, cfg, deadline: float):
         destination.chmod(0o600)
         if before != sha_file(destination) or before != sha_file(source):
             raise ReadFailure("SOURCE_CHANGED")
+        # Snapshot persisted resume titles alongside the rollout. The isolated
+        # official reader may omit these names without the original state DB.
+        name_index = home / "session_index.jsonl"
+        if name_index.exists():
+            if name_index.is_symlink() or name_index.stat().st_size > 8 * 1024 * 1024:
+                raise ReadFailure("SOURCE_LIMIT")
+            index_hash = sha_file(name_index)
+            index_copy = snapshot / name_index.name
+            shutil.copyfile(name_index, index_copy)
+            index_copy.chmod(0o600)
+            if index_hash != sha_file(index_copy) or index_hash != sha_file(name_index):
+                raise ReadFailure("SOURCE_CHANGED")
         if row["history_mode"] == "paginated":
             database = home / "thread_history_1.sqlite"
             if database.is_symlink() or not database.exists() or database.stat().st_size > 256 * 1024 * 1024:
@@ -126,6 +166,8 @@ def stored_thread(home: Path, row: dict, cfg, deadline: float):
             thread = server.request("thread/read", {"threadId": row["id"], "includeTurns": False})["thread"]
             if thread["id"] != row["id"]:
                 raise ReadFailure("SOURCE_CONFLICT")
+            if not isinstance(thread.get("name"), str) or not thread["name"].strip():
+                thread["name"] = saved_thread_name(snapshot / "session_index.jsonl", thread["id"])
 
             def turns():
                 if thread.get("historyMode") == "paginated":

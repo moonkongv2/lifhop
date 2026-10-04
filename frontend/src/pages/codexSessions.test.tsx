@@ -9,6 +9,7 @@ import CodexSessionPage from "./CodexSessionPage";
 import { safeSessionReturn } from "../utils/codexSessions";
 
 const summary = { source_scope: "mac:demo", thread_id: "thread", title: "Session question", turn_count: 25,
+  preview_text: "The original first question with additional context",
   title_inferred: false, start_at: null, end_at: null, partial: false, review_required: false,
   order_unknown: false, archived: false, forked_from_id: null, metadata_conflict: false };
 const record = { id: 21, title: "Turn 21", content: "user: Question\n\nassistant: interim zebra\n\nassistant: Final conclusion",
@@ -49,6 +50,7 @@ function mount(path: string) {
 describe("Codex session browsing", () => {
   it("opens a grouped session and separates commentary from primary reading", async () => {
     mount("/entries");
+    await screen.findByText("The original first question with additional context");
     fireEvent.click(await screen.findByRole("link", { name: "Session question" }));
     await screen.findByText("25 retained turns · Page 1");
     await screen.findByText("user: Question assistant: Final conclusion");
