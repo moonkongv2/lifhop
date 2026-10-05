@@ -1,6 +1,6 @@
 # lifhop Current Status
 
-Last updated: 2026-10-05
+Last updated: 2026-10-06
 
 ## Current product slice
 
@@ -10,10 +10,14 @@ pinned resumable preparation, reviewed apply, Sources results and GitHub readers
 reuse the existing PostgreSQL history/receipt model; no migration/dependency was
 needed. The plan and implementation are included in this Phase 2.4A commit;
 owner verification remains pending.
-Actual public inventory: 372 commits; anonymous quota paused after 29 commits +
-14 document snapshots. A separate 43-item partial preview is available privately;
-no personal apply was run. Full actual preparation and private/org access are
-unverified. Phase 2.4B starts after owner verification of A.
+Full selected public preparation is finished: 372 commits + 43 document snapshots
+(415 items), following quota pauses and owner-selected GitHub CLI authentication.
+All 415 were verified in isolated PostgreSQL + real HTTP/browser; same/equivalent
+preview replay, owner/policy/annotation/delete checks passed. Oldest/latest source
+samples match fresh GitHub reads. The sealed full preview is private; no personal
+account apply was run. Evidence omissions correctly finish Partial. Owner account
+apply/browser confirmation and private/org access remain pending. Phase 2.4B starts
+after owner verification of A. Authentication/verification follow-up is committed separately.
 Codex plan: `bdfcd57`; session browsing: `ab40b30`; saved titles: `fd7597b`;
 conversation-only reading: `2598187`. Local checks pass. Development DB upgraded to
 `c04d8a12e673`. Phase 2.3 implementation is committed at `36de1de` with whitespace
@@ -53,7 +57,7 @@ exclusions are implemented foundations; full collectors remain upcoming.
   preparation with pinned heads, quota pause/resume, immutable preview validation,
   authenticated idempotent apply and owner/policy/deletion checks. Sources provider
   switching and current-version evidence readers connect related commit/doc records.
-  Backend 274 tests and frontend 87 tests passed; Chromium synthetic UI checks fit
+  Backend 276 tests and frontend 87 tests passed; Chromium synthetic UI checks fit
   320/390/768/1440px. Final lint/build and OpenAPI consistency checks are recorded
   in `GITHUB_BACKFILL.md`. No real account apply was performed.
 
@@ -222,7 +226,8 @@ user-verifiable product slices in `ROADMAP.md`.
 
 1. Verify Phase 2.4A using `GITHUB_BACKFILL.md`: synthetic Sources/search/evidence,
    private partial preview review, explicit personal apply and same-bundle replay.
-   Resume full actual preparation after quota reset or with local token setup.
+   Full source preparation and isolated actual verification are complete. Apply the
+   reviewed 415-item preview in the owner terminal; confirm Sources/search/results.
    Phase 2.4B discussions follow A owner verification.
 2. Verify the owner-bound private Phase 2.3 apply run status in Sources and
    Codex search/evidence, replay, annotations and disposable deletion/policy checks
@@ -262,8 +267,8 @@ user-verifiable product slices in `ROADMAP.md`.
   links. Existing duplicate Markdown rows are preserved separately; future
   identical uploads match their initial canonical byte identity. Explicit document
   IDs and verified source modification times track changed Markdown versions.
-- GitHub commit/document ingestion is implemented; full actual preparation and
-  owner apply remain pending. GitHub discussions and scheduled collection are
+- GitHub commit/document ingestion is implemented; owner apply remains pending; full selected actual preparation and isolated
+  verification are complete. GitHub discussions and scheduled collection are
   not implemented. Codex backfill
   and reading are implemented and owner screen verification is complete; final
   apply run/account/current-version diagnostics remain separate follow-up checks.

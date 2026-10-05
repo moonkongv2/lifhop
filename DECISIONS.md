@@ -1196,3 +1196,11 @@ serialization/checkpoint behavior. Source gaps and lower bounds make finish part
 even when every manifest item has a receipt. Selected invalid records can have
 body-free failure receipts. Source renderers display inert text and derive trusted
 GitHub locators from repository/SHA/path rather than arbitrary imported URLs.
+
+GitHub authentication remains explicitly selected: reuse `GITHUB_TOKEN` or opt into
+`--github-cli-auth` after the user logs in using GitHub CLI. Read the existing token
+only into process memory for GETs. Track anonymous/authenticated quota mode in the
+private preparation journal so a mode switch does not inherit the other's wait;
+never store a token or change source/config identity to bypass a saved deadline.
+Actual backfill verification uses a fresh, verified isolated PostgreSQL schema
+and real HTTP calls, preserving the original reviewed bundle and personal DB.

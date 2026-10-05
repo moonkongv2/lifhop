@@ -385,3 +385,30 @@ def test_empty_patch_is_distinct_from_unavailable(tmp_path):
     item=GitHubCollectorItem.model_validate(read_json(tmp_path/row['file'],cfg.turn_bytes))
     assert item.payload.files[0].patch_state=='available'
     assert '[Patch unavailable]' not in EntryNormalizer().normalize(item).content
+
+
+def test_cli_auth_token_stays_in_memory_and_failure_is_sanitized(monkeypatch):
+    from app.collectors.github import github_token
+    from types import SimpleNamespace
+    monkeypatch.setattr('app.collectors.github.subprocess.run',lambda *args,**kwargs:SimpleNamespace(returncode=0,stdout='synthetic-secret\n',stderr=''))
+    assert github_token(True)=='synthetic-secret'
+    monkeypatch.setattr('app.collectors.github.subprocess.run',lambda *args,**kwargs:SimpleNamespace(returncode=1,stdout='',stderr='synthetic-secret private diagnostic'))
+    with pytest.raises(ProbeError,match='authentication unavailable') as error:
+        github_token(True)
+    assert 'synthetic-secret' not in str(error.value)
+
+
+def test_signed_in_resume_uses_its_own_rate_bucket(tmp_path):
+    cfg=GitHubConfig(repository='example/repo',repository_id=123)
+    reader=Reader()
+    prep=Preparation(tmp_path,cfg,reader)
+    prep.state['retry_at']=9999999999
+    prep.save()
+    assert Preparation(tmp_path,cfg,Reader()).reader.retry_at==9999999999
+    signed=Reader()
+    signed.authenticated=True
+    resumed=Preparation(tmp_path,cfg,signed)
+    assert resumed.reader.retry_at==0
+    resumed.state['retry_at']=9999999999
+    resumed.save()
+    assert Preparation(tmp_path,cfg,signed).reader.retry_at==9999999999

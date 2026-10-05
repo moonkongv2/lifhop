@@ -319,6 +319,7 @@ matches within sessions. Synthetic verification commands are in `CODEX_BACKFILL.
 
 Phase 2.4A adds manual GitHub commit/diff and historical Markdown collection with
 private resumable preparation, reviewed apply and Sources/evidence readers. Local
-checks pass; actual public preparation is partially verified and owner browser/
-apply verification is next. See `GITHUB_BACKFILL.md` for synthetic and real-source
+checks pass; all 415 selected-source items were prepared and verified through
+isolated PostgreSQL/HTTP/browser checks. Owner account apply and browser
+confirmation are next. See `GITHUB_BACKFILL.md` for synthetic and real-source
 commands. PR/review/issue/comment collection follows after this slice is verified.

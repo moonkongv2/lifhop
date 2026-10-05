@@ -35,7 +35,8 @@ At `http://localhost:5173`:
 ## 2. Choose a real repository and prepare
 
 The selected repository is `moonkongv2/jy_yamyam`, default branch `main`.
-Optional credentials are read only from the `GITHUB_TOKEN` environment variable;
+Optional credentials come from the `GITHUB_TOKEN` environment variable or an
+explicit `--github-cli-auth` selection of an existing GitHub CLI login;
 never put a token in config, command arguments, Git, screenshots or chat. For
 private repositories, provide access limited to that repository with Contents
 read permission. Real private/organization SSO access remains unverified.
@@ -48,7 +49,22 @@ read permission. Real private/organization SSO access remains unverified.
   --run-dir .local/github-backfill
 ```
 
-This resolves the numeric repository ID. Review the config before preparation:
+To reuse an existing GitHub CLI login without copying a token into your shell:
+
+```bash
+gh auth login --hostname github.com --git-protocol https --web
+.venv/bin/python -m app.collectors.github prepare \
+  --config .local/github-collector.json \
+  --run-dir .local/github-backfill --github-cli-auth
+```
+
+The collector reads the CLI credential into memory for its repository GETs; it
+does not print or save it. A switch between anonymous and authenticated reads
+rechecks the corresponding quota instead of retaining the other bucket's wait.
+Configuration, pinned heads and record identities stay fixed.
+
+The init-config command resolves the numeric repository ID. Review the config
+before preparation:
 branches, document patterns (`README.md`, `ROADMAP.md`, `DECISIONS.md`,
 `docs/**/*.md`), exclusions and budgets. Configuration is fixed for a run.
 
@@ -162,27 +178,62 @@ walkthrough covers Sources, commit/diff and document screens at
 320/390/768/1440px with no horizontal overflow or page errors.
 
 Actual selected repository ID: `1228467402`, pinned main head:
-`c3107bc78ee7ac5e45a40023105eb89917d9ecd9`. The inventory walk reached its end with
-**372 reachable commits**. Anonymous quota paused preparation after **29 commits
-and 14 document snapshots (43 items)**. Full real-source collection is pending.
+`c3107bc78ee7ac5e45a40023105eb89917d9ecd9`. Preparation is now finished for
+**372 reachable commits + 43 historical document snapshots = 415 items**.
+The anonymous run paused at 43 items, later reached 96, and resumed to completion
+using the owner's explicit GitHub CLI login selection.
 
-- Resumable preparation: `.local/github-backfill-20261005`
-- Separate, sealed partial preview:
-  `.local/github-backfill-20261005-partial/preview.html`
-- Shared config: `.local/github-collector.json`
-- Partial gaps: `PATCH_UNAVAILABLE`, `SENSITIVE_CONTENT_OMITTED`,
-  `PREPARATION_INCOMPLETE`. Counts are lower bounds. No personal apply was run.
+- Full sealed preview: `.local/github-backfill-20261005/preview.html`
+- Config: `.local/github-collector.json`
+- Earlier 43-item partial preview remains untouched in
+  `.local/github-backfill-20261005-partial`; use the full preview for the first
+  personal apply. They share a preparation UUID and cannot both replace the
+  same owner's immutable server manifest. No personal account apply was run.
+- Full-preview gaps: `PATCH_UNAVAILABLE`, `SENSITIVE_CONTENT_OMITTED`,
+  `CREDENTIAL_REDACTED`. The selected history walk finished, while evidence has
+  omissions. Sources correctly finishes as **Partial**, with zero failed items
+  in the isolated verification. No PREPARATION_INCOMPLETE gap remains.
 
-To review/apply those 43 items, use the partial directory with the apply command
-in section 3. To continue full collection, use the original directory with prepare.
-The partial and complete previews share a preparation UUID because the partial
-is a local snapshot copy: **choose one to apply**. If the partial is applied first,
-create a fresh preparation directory for the subsequent complete server run;
-the old server manifest is immutable. Earlier data will deduplicate by repository/
-object identity. Private repositories, organization SSO, expired-token recovery,
-very large repositories and AWS deployment remain unverified with real sources.
+Fresh GitHub GETs matched the oldest/latest commit messages and tree SHAs, and
+the oldest/latest historical document blob SHAs and sanitized content. Git blob
+hashes were independently recomputed for the document samples. Commit event
+range: 2026-05-04 03:37:11 UTC to 2026-08-21 12:46:00 UTC. These are the selected
+source's dates, not lifhop import times.
 
-Final local checks: **274 backend tests**, **87 frontend tests**, frontend lint/build,
+All 415 items were applied through a real loopback HTTP API into a fresh migrated
+schema in `lifhop_test`: **415 Entries + 415 versions**. Same-bundle replay and
+a new equivalent preview did not increase those totals. All 415 current evidence
+responses were checked. Search/related records, annotation/AI-deny preservation,
+owner boundaries and deletion suppression passed. All temporary schemas, APIs
+and generated browser credentials were removed afterward. Development records
+and their collection policies were not modified.
+
+The real frontend used the isolated API responses without fixture responses.
+390/1440px checks passed for Sources → Search → document → related commit →
+Search return; document text matched stored evidence, with no page errors or
+horizontal overflow. Private reports/screenshots are under
+`.local/verification/github-actual-full`; reference comparisons are under
+`.local/verification/github-evidence`. No real credential is in those reports.
+
+To reproduce the actual HTTP/DB checks without applying to a development account:
+
+```bash
+docker compose -f compose.test.yaml up -d test-db
+.venv/bin/python scripts/check_github_preview.py \
+  --run-dir .local/github-backfill-20261005 \
+  --config .local/github-collector.json
+```
+
+The check creates only its own schema in the hard-coded isolated test DB, verifies
+database/schema before mutation, and cleans that schema on normal exit. It clones
+the reviewed files into a private temporary directory for ACKs, so the original
+preview is unchanged. `--hold-for-browser` is for agent verification: it keeps a
+loopback API for up to 20 minutes, writing generated temporary login details to a
+private `access.json`; the release-file path in that file ends the hold. Otherwise
+the script performs all API/DB checks and cleans up immediately. PR/issue access,
+private/org SSO and actual mobile devices remain unverified.
+
+Final local checks: **276 backend tests**, **87 frontend tests**, frontend lint/build,
 OpenAPI generated-file consistency and `git diff --check` passed. The backend
 suite includes upgrading a fresh isolated PostgreSQL schema to migration head.
 No new persistent schema was required. Synthetic preparation measured 102
@@ -195,5 +246,5 @@ Initial sandbox attempts could not reach local PostgreSQL or launch Chromium;
 approved execution succeeded. The in-app browser could not initialize because
 its tool reported a missing `sandboxPolicy`; standalone local Chromium supplied
 the synthetic UI checks. A build initially caught incomplete required fields in
-a new test fixture; those fields were added and the build passed. Full real-source
-preparation, owner account apply and actual mobile-device checks remain pending.
+a new test fixture; those fields were added and the build passed. Owner account apply and actual mobile-device checks remain pending; full selected
+source preparation and isolated actual HTTP/browser checks are complete.

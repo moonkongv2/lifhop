@@ -6,6 +6,7 @@ import html
 import json
 import os
 import re
+import subprocess
 from datetime import datetime
 from pathlib import Path
 from urllib.parse import quote
@@ -102,6 +103,11 @@ class Preparation:
                 branches=[], commits=[], items=[], processed=[], documents=[], head_documents=[], gaps=[], retry_at=0,
                 heads_done=[], complete=False)
         self.reader.retry_at = self.state["retry_at"]
+        rate_authentication = "authenticated" if getattr(reader, "authenticated", False) else "anonymous"
+        if self.state.get("rate_authentication", "anonymous") != rate_authentication:
+            # Anonymous and signed-in requests use different GitHub quota buckets.
+            self.reader.retry_at = self.state["retry_at"] = 0
+        self.state["rate_authentication"] = rate_authentication
 
     def save(self):
         if len(bytes_json(self.state)) > 32 * 1024 * 1024:
@@ -449,6 +455,19 @@ def cleanup(directory, cfg):
         return len(files)
 
 
+def github_token(use_cli=False):
+    if not use_cli:
+        return os.environ.get("GITHUB_TOKEN")
+    try:
+        result = subprocess.run(["gh", "auth", "token", "--hostname", "github.com"],
+            capture_output=True, text=True, timeout=15, check=False)
+    except (OSError, subprocess.TimeoutExpired):
+        raise ProbeError("GitHub CLI authentication unavailable; run gh auth login") from None
+    if result.returncode != 0 or not result.stdout.strip():
+        raise ProbeError("GitHub CLI authentication unavailable; run gh auth login")
+    return result.stdout.strip()
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action",choices=["init-config","prepare","seal","apply","cleanup"])
@@ -459,6 +478,7 @@ def main():
     parser.add_argument("--partial",action="store_true")
     parser.add_argument("--api-url",default="http://localhost:8000")
     parser.add_argument("--email")
+    parser.add_argument("--github-cli-auth", action="store_true", help="Use existing gh login for GitHub GETs")
     args = parser.parse_args()
     try:
         directory = args.run_dir.expanduser().absolute()
@@ -468,7 +488,7 @@ def main():
         directory.chmod(0o700)
         if args.action == "init-config":
             cfg = GitHubConfig(repository=args.repository,repository_id=1,branches=args.branch or ["main"])
-            reader = RepositoryReader(directory/"cache",cfg,os.environ.get("GITHUB_TOKEN"))
+            reader = RepositoryReader(directory/"cache",cfg,github_token(args.github_cli_auth))
             repo,_ = reader.get(f"/repos/{cfg.repository}")
             cfg.repository_id = repo["id"]
             private_write(args.config,cfg.model_dump(mode="json"))
@@ -488,7 +508,8 @@ def main():
         if (directory/"manifest.json").exists():
             raise ProbeError("Preview already sealed; apply it or choose a new directory")
         with bundle_lock(directory):
-            prep = Preparation(directory,cfg,RepositoryReader(directory/"cache",cfg,os.environ.get("GITHUB_TOKEN")))
+            token = github_token(args.github_cli_auth) if args.action == "prepare" else None
+            prep = Preparation(directory,cfg,RepositoryReader(directory/"cache",cfg,token))
             if args.action == "prepare":
                 try:
                     prep.run()

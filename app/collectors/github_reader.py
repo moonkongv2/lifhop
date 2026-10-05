@@ -18,6 +18,7 @@ class Paused(ProbeError):
 class RepositoryReader:
     def __init__(self, directory, config, token=None):
         self.directory, self.config, self.token = directory, config, token
+        self.authenticated = bool(token)
         self.opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
         self.requests = 0
         self.deadline = time.monotonic() + config.run_seconds
