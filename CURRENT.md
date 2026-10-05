@@ -1,14 +1,21 @@
 # lifhop Current Status
 
-Last updated: 2026-10-04
+Last updated: 2026-10-05
 
 ## Current product slice
 
-Codex session browsing, saved titles and conversation-only reading after Phase 2.3:
-implemented and locally verified. The owner inspected synthetic and actual session
-screens; final conversation-only reading verification remains pending. Plan committed
-at `bdfcd57`; session browsing at `ab40b30`, saved titles at `fd7597b`, and the reader
-refinement is committed in this checkpoint. Development DB upgraded to
+Phase 2.4A GitHub commits/document backfill is implemented with local checks;
+owner verification is next using `GITHUB_BACKFILL.md`. Strict run/evidence contracts,
+pinned resumable preparation, reviewed apply, Sources results and GitHub readers
+reuse the existing PostgreSQL history/receipt model; no migration/dependency was
+needed. The plan and implementation are included in this Phase 2.4A commit;
+owner verification remains pending.
+Actual public inventory: 372 commits; anonymous quota paused after 29 commits +
+14 document snapshots. A separate 43-item partial preview is available privately;
+no personal apply was run. Full actual preparation and private/org access are
+unverified. Phase 2.4B starts after owner verification of A.
+Codex plan: `bdfcd57`; session browsing: `ab40b30`; saved titles: `fd7597b`;
+conversation-only reading: `2598187`. Local checks pass. Development DB upgraded to
 `c04d8a12e673`. Phase 2.3 implementation is committed at `36de1de` with whitespace
 cleanup at `63f0c1a`; owner confirmed its preview. Personal apply remains unverified.
 Phase 2.1 committed at `69dc764`; owner requested continuing without its HTML
@@ -23,7 +30,7 @@ work, followed by separating Search from recent Entries. Implementation and loca
 checks are complete. The owner requested English-control/session fixes after
 browser review and authorized committing the UI checkpoint. The broader visual
 walkthrough remains available in `frontend/README.md`.
-UI checkpoint: `19e395a`. Next implementation: Phase 2.4 GitHub historical backfill.
+UI checkpoint: `19e395a`. Next implementation after owner checks: Phase 2.4B GitHub discussions.
 
 ## Personal-release target
 
@@ -41,6 +48,14 @@ retention, deletion suppression, and source/repository/record-level external-AI
 exclusions are implemented foundations; full collectors remain upcoming.
 
 ## What works now
+
+- GitHub commit/diff and historical Markdown snapshot collection: private cached
+  preparation with pinned heads, quota pause/resume, immutable preview validation,
+  authenticated idempotent apply and owner/policy/deletion checks. Sources provider
+  switching and current-version evidence readers connect related commit/doc records.
+  Backend 274 tests and frontend 87 tests passed; Chromium synthetic UI checks fit
+  320/390/768/1440px. Final lint/build and OpenAPI consistency checks are recorded
+  in `GITHUB_BACKFILL.md`. No real account apply was performed.
 
 - Entries groups current Codex turns by owner/scope/thread before server pagination;
   other records remain individual. Sessions retain fork/archive/gap metadata,
@@ -205,14 +220,15 @@ user-verifiable product slices in `ROADMAP.md`.
 
 ## Next
 
-1. Verify session browsing/message separation with the synthetic helper in
-   CODEX_BACKFILL.md; review the new private v2 preview before any personal apply.
-   Confirm conversation-only reading and full Work details in the supplied session.
+1. Verify Phase 2.4A using `GITHUB_BACKFILL.md`: synthetic Sources/search/evidence,
+   private partial preview review, explicit personal apply and same-bundle replay.
+   Resume full actual preparation after quota reset or with local token setup.
+   Phase 2.4B discussions follow A owner verification.
 2. Verify the owner-bound private Phase 2.3 apply run status in Sources and
    Codex search/evidence, replay, annotations and disposable deletion/policy checks
    in `CODEX_BACKFILL.md`. Its checkpoint has 33 acknowledgments; completed status,
    target account and selected current versions still require confirmation.
-3. Implement Phase 2.4 GitHub historical backfill after the current slice is verified.
+3. Finish Phase 2.4B before Phase 3 evaluation and record-grounded answers.
 4. Verify Phase 2.2 using `HISTORY.md`: synthetic history, annotations, source
    markers, deletion/reimport block, and Sources permissions.
 5. Follow the sequence: Codex/GitHub history → evidence-based answers/retrospectives
@@ -225,7 +241,7 @@ user-verifiable product slices in `ROADMAP.md`.
   Session counts describe retained turns, not full source coverage. Session-wide
   deletion/settings are not implemented. JSONB grouping was checked on small
   synthetic data; large-corpus performance is unverified. Concurrent offset pages
-  can shift. Owner actual-history UI/mobile-device checks remain pending.
+  can shift. Owner Codex reading screens are confirmed; mobile-device checks remain pending.
 - Owner confirmed the initial and large-ZIP Phase 1.2 flows in the browser.
   Phase 1.3, English UI, and Phase 2.1 owner preview checks remain pending.
   Remote CI execution remains pending; frontend automated tests stub API.
@@ -246,8 +262,11 @@ user-verifiable product slices in `ROADMAP.md`.
   links. Existing duplicate Markdown rows are preserved separately; future
   identical uploads match their initial canonical byte identity. Explicit document
   IDs and verified source modification times track changed Markdown versions.
-- GitHub ingestion and scheduled collection are not implemented. Codex backfill
-  is implemented, but personal apply/browser verification remains pending.
+- GitHub commit/document ingestion is implemented; full actual preparation and
+  owner apply remain pending. GitHub discussions and scheduled collection are
+  not implemented. Codex backfill
+  and reading are implemented and owner screen verification is complete; final
+  apply run/account/current-version diagnostics remain separate follow-up checks.
   Codex backfill supports installed CLI 0.158.0/0.160.0 with bounded snapshots;
   the separate Phase 2.1 probe remains pinned to 0.158.0.
   conflicts, empty legacy responses and unknown/divergent snapshots remain gaps.

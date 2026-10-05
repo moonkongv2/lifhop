@@ -1174,3 +1174,25 @@ reader. Hide commands/results/diffs from basic reading and retain full ordered
 evidence in Work details. Show collection gaps separately. Preserve command-like
 text inside an assistant message. Valid legacy payloads work without recollection;
 invalid/missing structured evidence uses a warned full-content fallback.
+
+## 2026-10-05: GitHub commit/document historical backfill
+
+Deliver Phase 2.4A commits and selected Markdown documents first; owner verification
+precedes Phase 2.4B discussions. Use numeric repository scope with commit SHA and
+commit/path document identities. Store typed evidence in existing EntryVersion
+JSONB; source observation rules, annotations, AI denies and deletion suppression
+remain shared. No migration, queue, worker, AWS service or dependency is added.
+
+Pin selected branch heads, validate name/numeric-repository pagination Links,
+cache bounded private REST GETs and pause on quota with a saved retry time. Verify
+regular Git tree modes before reading Contents at the commit SHA. Keep changes
+from distinct commits even if their document content matches; reuse a reachable
+path/blob snapshot for the selected-head baseline mapping. Branch membership stays
+in run coverage rather than immutable evidence.
+
+Separate mutable preparation from a sealed sanitized bundle and explicit apply.
+Keep provider-specific strict run/item/coverage contracts and preserve old Codex
+serialization/checkpoint behavior. Source gaps and lower bounds make finish partial
+even when every manifest item has a receipt. Selected invalid records can have
+body-free failure receipts. Source renderers display inert text and derive trusted
+GitHub locators from repository/SHA/path rather than arbitrary imported URLs.

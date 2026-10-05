@@ -61,7 +61,7 @@ export default function EntryHistory({ entry }: { entry: Entry }) {
           </div>}
         </>}
         <pre className="entry-content">{version.content ?? "No content"}</pre>
-        {version.payload && <details><summary>Structured messages, commands and diffs</summary><pre className="entry-content">{JSON.stringify(version.payload, null, 2)}</pre></details>}
+        {version.payload && <details><summary>{entry.provider === "github" ? "Structured GitHub evidence" : "Structured messages, commands and diffs"}</summary><pre className="entry-content">{JSON.stringify(version.payload, null, 2)}</pre></details>}
         {version.import_artifact_id && <ArtifactDownload artifactId={version.import_artifact_id} />}
       </section>}
     </div>}

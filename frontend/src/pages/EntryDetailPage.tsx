@@ -13,6 +13,7 @@ import { listTarget, resolveEntryContext } from "../utils/entryNavigation";
 import { safeSessionReturn } from "../utils/codexSessions";
 import { invalidateRecordViews } from "../utils/recordCache";
 import CodexReader from "../components/CodexReader";
+import GitHubReader from "../components/GitHubReader";
 
 function EntryDetail() {
   const { id } = useParams();
@@ -89,7 +90,7 @@ function EntryDetail() {
                   {remove.error && <p role="alert">{remove.error.message}</p>}
                 </div>
               )}
-              {entry.provider === "codex" ? <CodexReader entry={entry} /> : <p className="entry-content reader-body">{entry.content ?? "No content"}</p>}
+              {entry.provider === "codex" ? <CodexReader entry={entry} /> : entry.provider === "github" ? <GitHubReader entry={entry} /> : <p className="entry-content reader-body">{entry.content ?? "No content"}</p>}
               <div className="reader-footer"><p>Added: {formatEntryDate(entry.created_at)} (Asia/Seoul)</p>
               <p>Updated: {formatEntryDate(entry.updated_at)} (Asia/Seoul)</p></div>
               {entry.import_artifact_id && <ArtifactDownload key={entry.import_artifact_id} artifactId={entry.import_artifact_id} />}

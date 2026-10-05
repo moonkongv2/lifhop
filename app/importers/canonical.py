@@ -1,7 +1,8 @@
 from datetime import datetime
 from enum import StrEnum
+import hashlib
 from typing import Annotated, Literal
-from pydantic import BaseModel, Field, field_validator, model_validator, model_serializer
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator, model_serializer
 
 class SourceProvider(StrEnum):
     MARKDOWN = "markdown"
@@ -19,6 +20,8 @@ class CanonicalKind(StrEnum):
     DOCUMENT = "document"
     CONVERSATION = "conversation"
     DEV_SESSION = "dev_session"
+    GITHUB_COMMIT = "github_commit"
+    GITHUB_DOCUMENT = "github_document"
 
 
 class CanonicalMessage(BaseModel):
@@ -107,8 +110,63 @@ class DevSessionPayload(BaseModel):
         return self
 
 
+class GitHubFile(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    path: str = Field(min_length=1, max_length=4096)
+    previous_path: str | None = None
+    status: str
+    additions: int = Field(default=0, ge=0)
+    deletions: int = Field(default=0, ge=0)
+    patch: str | None = None
+    patch_state: Literal["available", "unavailable", "partial", "excluded"]
+
+
+class GitHubCommitPayload(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    kind: Literal[CanonicalKind.GITHUB_COMMIT] = CanonicalKind.GITHUB_COMMIT
+    repository_id: int = Field(gt=0)
+    repository: str = Field(min_length=1, max_length=255)
+    sha: str = Field(pattern=r"^[a-f0-9]{40}$")
+    tree_sha: str = Field(pattern=r"^[a-f0-9]{40}$")
+    message: str
+    author: dict[str, str] = Field(default_factory=dict)
+    committer: dict[str, str] = Field(default_factory=dict)
+    parents: list[Annotated[str, Field(pattern=r"^[a-f0-9]{40}$")]] = Field(default_factory=list)
+    files: list[GitHubFile] = Field(default_factory=list, max_length=3000)
+    omissions: list[str] = Field(default_factory=list)
+    filter_version: str
+
+
+class GitHubDocumentPayload(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    kind: Literal[CanonicalKind.GITHUB_DOCUMENT] = CanonicalKind.GITHUB_DOCUMENT
+    repository_id: int = Field(gt=0)
+    repository: str = Field(min_length=1, max_length=255)
+    sha: str = Field(pattern=r"^[a-f0-9]{40}$")
+    blob_sha: str = Field(pattern=r"^[a-f0-9]{40}$")
+    path: str = Field(min_length=1, max_length=4096)
+    content: str
+    snapshot_reason: Literal["historical_change", "head_baseline"]
+    omissions: list[str] = Field(default_factory=list)
+    filter_version: str
+
+    @field_validator("path")
+    @classmethod
+    def relative_path(cls, value):
+        if value.startswith("/") or any(p in {"", ".", ".."} for p in value.split("/")) or any(ord(c) < 32 for c in value):
+            raise ValueError("Invalid repository-relative path")
+        return value
+
+
+def github_external_id(payload: GitHubCommitPayload | GitHubDocumentPayload):
+    scope = f"repo:{payload.repository_id}"
+    if isinstance(payload, GitHubCommitPayload):
+        return f"{scope}:commit:{payload.sha}"
+    return f"{scope}:document:{payload.sha}:{hashlib.sha256(payload.path.encode()).hexdigest()}"
+
+
 CanonicalPayload = Annotated[
-    DocumentPayload | ConversationPayload | DevSessionPayload,
+    DocumentPayload | ConversationPayload | DevSessionPayload | GitHubCommitPayload | GitHubDocumentPayload,
     Field(discriminator="kind"),
 ]
 
@@ -137,4 +195,9 @@ class CanonicalItem(BaseModel):
         if self.provider == SourceProvider.GITHUB:
             if self.source_scope == "default" or not self.external_id or not self.external_id.startswith(self.source_scope + ":"):
                 raise ValueError("GitHub requires stable repository scope and a repository-prefixed object identity")
+            if isinstance(self.payload, (GitHubCommitPayload, GitHubDocumentPayload)) and (
+                self.source_scope != f"repo:{self.payload.repository_id}" or self.external_id != github_external_id(self.payload)):
+                raise ValueError("Repository/object identity does not match evidence")
+        elif isinstance(self.payload, (GitHubCommitPayload, GitHubDocumentPayload)):
+            raise ValueError("GitHub evidence requires GitHub provider")
         return self

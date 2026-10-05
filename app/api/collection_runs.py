@@ -7,7 +7,7 @@ from app.db import get_db
 from app.models.user import User
 from app.models.collection_run import CollectionRun, CollectionRunItem
 from app.importers.canonical import CanonicalItem
-from app.schemas.collection_run import RunCreate, RunResponse, CollectorItem, Receipt, OutcomeReport, payload_digest
+from app.schemas.collection_run import AnyRunCreate, AnyRunResponse, AnyCollectorItem, Receipt, OutcomeReport, payload_digest
 from app.services.collection_runs import get_run, receipt, blocked_code, run_response, now
 from app.services.source_history import owner_lock, source_policy
 from app.services.external_entries import upsert_external_entry_with_outcome
@@ -17,8 +17,8 @@ DB = Annotated[Session, Depends(get_db)]
 Owner = Annotated[User, Depends(get_current_user)]
 
 
-@router.post("", response_model=RunResponse)
-def create_run(data: RunCreate, db: DB, owner: Owner):
+@router.post("", response_model=AnyRunResponse)
+def create_run(data: AnyRunCreate, db: DB, owner: Owner):
     owner_lock(db, owner.id)
     run = db.scalar(select(CollectionRun).where(CollectionRun.user_id == owner.id,
         CollectionRun.client_run_uuid == str(data.client_run_uuid)))
@@ -36,8 +36,8 @@ def create_run(data: RunCreate, db: DB, owner: Owner):
     return run_response(db, run)
 
 
-@router.get("", response_model=list[RunResponse])
-def list_runs(db: DB, owner: Owner, provider: str = "codex",
+@router.get("", response_model=list[AnyRunResponse])
+def list_runs(db: DB, owner: Owner, provider: Annotated[str, Query(pattern="^(codex|github)$")] = "codex",
               limit: Annotated[int, Query(ge=1, le=100)] = 20,
               offset: Annotated[int, Query(ge=0)] = 0):
     return [run_response(db, run) for run in db.scalars(select(CollectionRun).where(
@@ -45,7 +45,7 @@ def list_runs(db: DB, owner: Owner, provider: str = "codex",
         .order_by(CollectionRun.id.desc()).offset(offset).limit(limit))]
 
 
-@router.get("/{run_id}", response_model=RunResponse)
+@router.get("/{run_id}", response_model=AnyRunResponse)
 def read_run(run_id: int, db: DB, owner: Owner):
     return run_response(db, get_run(db, owner.id, run_id))
 
@@ -87,10 +87,12 @@ def save_receipt(db: Session, run: CollectionRun, identity: str, digest: str, ou
 
 
 @router.post("/{run_id}/items", response_model=Receipt)
-def ingest_item(run_id: int, data: CollectorItem, db: DB, owner: Owner):
+def ingest_item(run_id: int, data: AnyCollectorItem, db: DB, owner: Owner):
     run = get_run(db, owner.id, run_id, lock=True)
-    if data.source_scope != run.scope or data.parser_version != run.parser_version or data.payload.filter_version != run.filter_version:
+    if data.provider != run.provider or data.source_scope != run.scope or data.parser_version != run.parser_version or data.payload.filter_version != run.filter_version:
         raise HTTPException(422, "Item does not match run scope/parser/filter")
+    if run.provider == "github" and data.payload.repository != run.coverage["repository"]:
+        raise HTTPException(422, "Repository name does not match run")
     digest = payload_digest(data)
     old = receipt(db, run, data.external_id)
     if old and old.payload_digest != digest:
@@ -121,14 +123,14 @@ def report_outcome(run_id: int, data: OutcomeReport, db: DB, owner: Owner):
     return result
 
 
-@router.post("/{run_id}/finish", response_model=RunResponse)
+@router.post("/{run_id}/finish", response_model=AnyRunResponse)
 def finish_run(run_id: int, db: DB, owner: Owner):
     run = get_run(db, owner.id, run_id, lock=True)
     counts = run_response(db, run).counts
     if sum(counts.values()) != run.expected_items:
         raise HTTPException(409, "Some manifest items have no durable receipt; resume collection")
     success = sum(counts.get(key, 0) for key in ("new", "unchanged", "updated", "retained"))
-    gaps = run.coverage["gaps"] or counts.get("failed") or counts.get("blocked")
+    gaps = run.coverage["gaps"] or counts.get("failed") or counts.get("blocked") or (run.provider == "github" and run.coverage["lower_bound"])
     run.status = ("partial" if success else "failed") if gaps else ("completed" if success else "empty")
     run.completed_at = run.last_seen_at = now()
     db.commit()

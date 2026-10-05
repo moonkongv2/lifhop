@@ -78,16 +78,18 @@ def bundle_lock(directory: Path):
         os.close(fd)
 
 
-def apply_bundle(directory, cfg, url, email, *, api=None, password=None):
+def apply_bundle(directory, cfg, url, email, *, api=None, password=None, validator=None, item_type=None, run_type=None):
     from app.collectors.codex import validate_bundle
     from app.schemas.collection_run import CollectorItem, RunCreate
     with bundle_lock(directory):
-        manifest = validate_bundle(directory, cfg)
+        manifest = (validator or validate_bundle)(directory, cfg)
         api = api or CollectorAPI(url)
         owner_id = api.login(email, password if password is not None else getpass.getpass("Local lifhop password: "))
         binding = dict(api_origin=api.origin, owner_id=owner_id, scope=manifest["scope"],
             manifest_digest=manifest["manifest_digest"], parser_version=manifest["parser_version"],
             filter_version=manifest["filter_version"])
+        if manifest["provider"] != "codex":
+            binding["provider"] = manifest["provider"]
         checkpoint_path = directory / "checkpoint.json"
         if checkpoint_path.exists():
             checkpoint = read_json(checkpoint_path, 32 * 1024 * 1024)
@@ -97,7 +99,7 @@ def apply_bundle(directory, cfg, url, email, *, api=None, password=None):
             checkpoint = dict(binding=binding, acknowledged=[])
         create = {key: manifest[key] for key in ("client_run_uuid", "provider", "scope", "manifest_digest",
             "parser_version", "filter_version", "expected_items", "coverage")}
-        RunCreate.model_validate(create)
+        (run_type or RunCreate).model_validate(create)
         run = api.request("/collection-runs", create)
         acknowledged = set(checkpoint["acknowledged"])
         for entry in manifest["items"]:
@@ -113,7 +115,7 @@ def apply_bundle(directory, cfg, url, email, *, api=None, password=None):
                 if digest(data) != entry["payload_digest"]:
                     raise ProbeError("Preview changed during apply")
                 try:
-                    CollectorItem.model_validate(data)
+                    (item_type or CollectorItem).model_validate(data)
                 except ValueError:
                     code = "INVALID_ITEM"
             if code:

@@ -654,6 +654,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/entries/{entry_id}/github-presentation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Presentation */
+        get: operations["presentation_entries__entry_id__github_presentation_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -810,7 +827,7 @@ export interface components {
             /** Event At */
             event_at?: string | null;
             /** Payload */
-            payload: components["schemas"]["DocumentPayload"] | components["schemas"]["ConversationPayload"] | components["schemas"]["DevSessionPayload"];
+            payload: components["schemas"]["DocumentPayload"] | components["schemas"]["ConversationPayload"] | components["schemas"]["DevSessionPayload"] | components["schemas"]["GitHubCommitPayload"] | components["schemas"]["GitHubDocumentPayload"];
         };
         /** CanonicalMessage */
         CanonicalMessage: {
@@ -1173,6 +1190,256 @@ export interface components {
             /** Index */
             index: number;
         };
+        /** GitHubBranch */
+        GitHubBranch: {
+            /** Name */
+            name: string;
+            /** Head Sha */
+            head_sha: string | null;
+            /** Walk Complete */
+            walk_complete: boolean;
+            /** Commits */
+            commits: number;
+        };
+        /** GitHubCollectorItem */
+        GitHubCollectorItem: {
+            /**
+             * Provider
+             * @constant
+             */
+            provider: "github";
+            /** External Id */
+            external_id: string;
+            /** Title */
+            title: string;
+            /** Source Scope */
+            source_scope: string;
+            /** Locator */
+            locator?: string | null;
+            /** Source Updated At */
+            source_updated_at?: string | null;
+            /**
+             * Parser Version
+             * @default canonical-v1
+             */
+            parser_version: string;
+            /**
+             * Completeness
+             * @default unknown
+             * @enum {string}
+             */
+            completeness: "complete" | "partial" | "unknown";
+            /** Event At */
+            event_at?: string | null;
+            /** Payload */
+            payload: components["schemas"]["GitHubCommitPayload"] | components["schemas"]["GitHubDocumentPayload"];
+        };
+        /** GitHubCommitPayload */
+        GitHubCommitPayload: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "github_commit";
+            /** Repository Id */
+            repository_id: number;
+            /** Repository */
+            repository: string;
+            /** Sha */
+            sha: string;
+            /** Tree Sha */
+            tree_sha: string;
+            /** Message */
+            message: string;
+            /** Author */
+            author?: {
+                [key: string]: string;
+            };
+            /** Committer */
+            committer?: {
+                [key: string]: string;
+            };
+            /** Parents */
+            parents?: string[];
+            /** Files */
+            files?: components["schemas"]["GitHubFile"][];
+            /** Omissions */
+            omissions?: string[];
+            /** Filter Version */
+            filter_version: string;
+        };
+        /** GitHubCoverage */
+        GitHubCoverage: {
+            /** Repository */
+            repository: string;
+            /** Repository Id */
+            repository_id: number;
+            /** Branches */
+            branches: components["schemas"]["GitHubBranch"][];
+            /** Commits */
+            commits: number;
+            /** Documents */
+            documents: number;
+            /** Lower Bound */
+            lower_bound: boolean;
+            /** Gaps */
+            gaps?: ("SOURCE_CONFLICT" | "SOURCE_LIMIT" | "FORMAT_UNSUPPORTED" | "READ_FAILED" | "TIMEOUT" | "PAGE_LIMIT" | "RUN_LIMIT" | "INVALID_ITEM" | "TREE_TRUNCATED" | "DOCUMENT_TYPE_OMITTED" | "DOCUMENT_SIZE_LIMIT" | "DOCUMENT_UNAVAILABLE" | "DOCUMENT_INVALID" | "PATH_EXCLUDED" | "PATCH_UNAVAILABLE" | "FILE_PAGE_LIMIT" | "ITEM_TRUNCATED" | "PREPARATION_INCOMPLETE" | "SENSITIVE_CONTENT_OMITTED" | "CREDENTIAL_REDACTED" | "TEXT_TRUNCATED" | "DATE_UNAVAILABLE")[];
+            /** Head Documents */
+            head_documents?: components["schemas"]["GitHubHeadDocument"][];
+        };
+        /** GitHubDocumentPayload */
+        GitHubDocumentPayload: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "github_document";
+            /** Repository Id */
+            repository_id: number;
+            /** Repository */
+            repository: string;
+            /** Sha */
+            sha: string;
+            /** Blob Sha */
+            blob_sha: string;
+            /** Path */
+            path: string;
+            /** Content */
+            content: string;
+            /**
+             * Snapshot Reason
+             * @enum {string}
+             */
+            snapshot_reason: "historical_change" | "head_baseline";
+            /** Omissions */
+            omissions?: string[];
+            /** Filter Version */
+            filter_version: string;
+        };
+        /** GitHubFile */
+        GitHubFile: {
+            /** Path */
+            path: string;
+            /** Previous Path */
+            previous_path?: string | null;
+            /** Status */
+            status: string;
+            /**
+             * Additions
+             * @default 0
+             */
+            additions: number;
+            /**
+             * Deletions
+             * @default 0
+             */
+            deletions: number;
+            /** Patch */
+            patch?: string | null;
+            /**
+             * Patch State
+             * @enum {string}
+             */
+            patch_state: "available" | "unavailable" | "partial" | "excluded";
+        };
+        /** GitHubHeadDocument */
+        GitHubHeadDocument: {
+            /** Head Sha */
+            head_sha: string;
+            /** Path */
+            path: string;
+            /** External Id */
+            external_id: string;
+        };
+        /** GitHubPresentation */
+        GitHubPresentation: {
+            /** Entry Id */
+            entry_id: number;
+            /** Version Id */
+            version_id: number | null;
+            /** Payload */
+            payload: (components["schemas"]["GitHubCommitPayload"] | components["schemas"]["GitHubDocumentPayload"]) | null;
+            /** Locator */
+            locator: string | null;
+            /** Related */
+            related: components["schemas"]["GitHubRelatedRecord"][];
+            /** Related Has More */
+            related_has_more: boolean;
+        };
+        /** GitHubRelatedRecord */
+        GitHubRelatedRecord: {
+            /** Id */
+            id: number;
+            /** Title */
+            title: string;
+            /** Kind */
+            kind: string;
+        };
+        /** GitHubRunCreate */
+        GitHubRunCreate: {
+            /**
+             * Client Run Uuid
+             * Format: uuid
+             */
+            client_run_uuid: string;
+            /**
+             * Provider
+             * @constant
+             */
+            provider: "github";
+            /** Scope */
+            scope: string;
+            /** Manifest Digest */
+            manifest_digest: string;
+            /** Parser Version */
+            parser_version: string;
+            /** Filter Version */
+            filter_version: string;
+            /** Expected Items */
+            expected_items: number;
+            coverage: components["schemas"]["GitHubCoverage"];
+        };
+        /** GitHubRunResponse */
+        GitHubRunResponse: {
+            /** Id */
+            id: number;
+            /** Client Run Uuid */
+            client_run_uuid: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            provider: "github";
+            /** Scope */
+            scope: string;
+            /** Manifest Digest */
+            manifest_digest: string;
+            /** Parser Version */
+            parser_version: string;
+            /** Filter Version */
+            filter_version: string;
+            /** Expected Items */
+            expected_items: number;
+            coverage: components["schemas"]["GitHubCoverage"];
+            /** Status */
+            status: string;
+            /**
+             * Started At
+             * Format: date-time
+             */
+            started_at: string;
+            /**
+             * Last Seen At
+             * Format: date-time
+             */
+            last_seen_at: string;
+            /** Completed At */
+            completed_at: string | null;
+            /** Counts */
+            counts: {
+                [key: string]: number;
+            };
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -1369,8 +1636,11 @@ export interface components {
             id: number;
             /** Client Run Uuid */
             client_run_uuid: string;
-            /** Provider */
-            provider: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            provider: "codex";
             /** Scope */
             scope: string;
             /** Manifest Digest */
@@ -2584,7 +2854,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RunResponse"][];
+                    "application/json": (components["schemas"]["RunResponse"] | components["schemas"]["GitHubRunResponse"])[];
                 };
             };
             /** @description Validation Error */
@@ -2607,7 +2877,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["RunCreate"];
+                "application/json": components["schemas"]["RunCreate"] | components["schemas"]["GitHubRunCreate"];
             };
         };
         responses: {
@@ -2617,7 +2887,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RunResponse"];
+                    "application/json": components["schemas"]["RunResponse"] | components["schemas"]["GitHubRunResponse"];
                 };
             };
             /** @description Validation Error */
@@ -2648,7 +2918,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RunResponse"];
+                    "application/json": components["schemas"]["RunResponse"] | components["schemas"]["GitHubRunResponse"];
                 };
             };
             /** @description Validation Error */
@@ -2740,7 +3010,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CollectorItem"];
+                "application/json": components["schemas"]["CollectorItem"] | components["schemas"]["GitHubCollectorItem"];
             };
         };
         responses: {
@@ -2816,7 +3086,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RunResponse"];
+                    "application/json": components["schemas"]["RunResponse"] | components["schemas"]["GitHubRunResponse"];
                 };
             };
             /** @description Validation Error */
@@ -2915,6 +3185,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PresentationResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    presentation_entries__entry_id__github_presentation_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entry_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GitHubPresentation"];
                 };
             };
             /** @description Validation Error */

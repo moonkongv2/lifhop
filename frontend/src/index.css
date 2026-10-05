@@ -198,3 +198,6 @@ details > p:first-of-type { margin-top: 12px; }
 .work-search-option { display: flex; align-items: center; gap: 8px; }
 .work-search-option input { width: auto; }
 .session-turn .history-panel { width: 100%; margin-top: 20px; }
+.github-reader, section[aria-label="GitHub historical backfills"] { overflow-wrap: anywhere; }
+.github-reader details { padding: 12px 0; border-top: 1px solid var(--border); }
+.github-reader summary { cursor: pointer; }

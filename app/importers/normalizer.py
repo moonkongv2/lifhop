@@ -7,6 +7,8 @@ from app.importers.canonical import (
     ConversationPayload,
     DocumentPayload,
     DevSessionPayload,
+    GitHubCommitPayload,
+    GitHubDocumentPayload,
 )
 from app.models.entry import EntryType
 
@@ -40,6 +42,18 @@ def dev_session_content(payload: DevSessionPayload, *, include_work: bool = True
 
 class EntryNormalizer:
     def normalize(self, item: CanonicalItem) -> NormalizedEntry:
+        if isinstance(item.payload, GitHubDocumentPayload):
+            return NormalizedEntry(type=EntryType.DOCUMENT, title=item.title, content=item.payload.content, event_at=item.event_at)
+        if isinstance(item.payload, GitHubCommitPayload):
+            payload = item.payload
+            parts = [payload.message, f"Commit: {payload.sha}",
+                "Author: " + str(payload.author.get("name", "unknown")),
+                "Parents: " + ", ".join(payload.parents)]
+            for file in payload.files:
+                parts.append(f"File ({file.status}, patch {file.patch_state}): {file.path}\n{file.patch if file.patch is not None else '[Patch unavailable]'}")
+            if payload.omissions:
+                parts.append("Collection gaps:\n" + "\n".join(payload.omissions))
+            return NormalizedEntry(type=EntryType.PROJECT_EVENT, title=item.title, content="\n\n".join(parts), event_at=item.event_at)
         if isinstance(item.payload, DocumentPayload):
             return NormalizedEntry(
                 type=EntryType.DOCUMENT,

@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Annotated, Literal
 from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, model_validator
-from app.importers.canonical import CanonicalItem, DevSessionPayload, SourceProvider
+from app.importers.canonical import CanonicalItem, DevSessionPayload, SourceProvider, GitHubCommitPayload, GitHubDocumentPayload
 
 Digest = Annotated[str, Field(pattern=r"^[a-f0-9]{64}$")]
 Scope = Annotated[str, Field(pattern=r"^mac:[a-f0-9-]{36}$")]
@@ -91,7 +91,7 @@ class Receipt(BaseModel):
 class RunResponse(BaseModel):
     id: int
     client_run_uuid: str
-    provider: str
+    provider: Literal["codex"]
     scope: str
     manifest_digest: str
     parser_version: str
@@ -103,3 +103,73 @@ class RunResponse(BaseModel):
     last_seen_at: datetime
     completed_at: datetime | None
     counts: dict[str, int]
+
+
+class GitHubBranch(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    name: str = Field(min_length=1, max_length=255)
+    head_sha: Annotated[str, Field(pattern=r"^[a-f0-9]{40}$")] | None
+    walk_complete: bool
+    commits: int = Field(ge=0)
+
+
+class GitHubHeadDocument(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    head_sha: str = Field(pattern=r"^[a-f0-9]{40}$")
+    path: str = Field(min_length=1, max_length=4096)
+    external_id: str = Field(pattern=r"^repo:[1-9][0-9]*:document:[a-f0-9]{40}:[a-f0-9]{64}$")
+
+
+GitHubGap = Literal["SOURCE_CONFLICT", "SOURCE_LIMIT", "FORMAT_UNSUPPORTED", "READ_FAILED",
+    "TIMEOUT", "PAGE_LIMIT", "RUN_LIMIT", "INVALID_ITEM", "TREE_TRUNCATED", "DOCUMENT_TYPE_OMITTED",
+    "DOCUMENT_SIZE_LIMIT", "DOCUMENT_UNAVAILABLE", "DOCUMENT_INVALID", "PATH_EXCLUDED",
+    "PATCH_UNAVAILABLE", "FILE_PAGE_LIMIT", "ITEM_TRUNCATED", "PREPARATION_INCOMPLETE",
+    "SENSITIVE_CONTENT_OMITTED", "CREDENTIAL_REDACTED", "TEXT_TRUNCATED", "DATE_UNAVAILABLE"]
+
+
+class GitHubCoverage(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    repository: str = Field(pattern=r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
+    repository_id: int = Field(gt=0)
+    branches: list[GitHubBranch] = Field(max_length=100)
+    commits: int = Field(ge=0, le=100000)
+    documents: int = Field(ge=0, le=100000)
+    lower_bound: bool
+    gaps: list[GitHubGap] = Field(default_factory=list, max_length=100)
+    head_documents: list[GitHubHeadDocument] = Field(default_factory=list, max_length=10000)
+
+
+class GitHubRunCreate(RunCreate):
+    provider: Literal["github"]
+    scope: str = Field(pattern=r"^repo:[1-9][0-9]{0,19}$")
+    coverage: GitHubCoverage
+
+    @model_validator(mode="after")
+    def valid_scope(self):
+        if self.scope != f"repo:{self.coverage.repository_id}":
+            raise ValueError("Repository scope differs from coverage")
+        return self
+
+
+class GitHubCollectorItem(CanonicalItem):
+    model_config = ConfigDict(extra="forbid")
+    provider: Literal[SourceProvider.GITHUB]
+    source_scope: str = Field(pattern=r"^repo:[1-9][0-9]{0,19}$")
+    external_id: str = Field(min_length=1, max_length=255)
+    payload: Annotated[GitHubCommitPayload | GitHubDocumentPayload, Field(discriminator="kind")]
+
+    @model_validator(mode="after")
+    def collector_bounds(self):
+        if len(json.dumps(self.model_dump(mode="json"), ensure_ascii=False, separators=(",", ":")).encode()) > 1024 * 1024:
+            raise ValueError("GitHub item exceeds the 1 MiB budget")
+        return self
+
+
+class GitHubRunResponse(RunResponse):
+    provider: Literal["github"]
+    coverage: GitHubCoverage
+
+
+AnyRunCreate = RunCreate | GitHubRunCreate
+AnyCollectorItem = CollectorItem | GitHubCollectorItem
+AnyRunResponse = Annotated[RunResponse | GitHubRunResponse, Field(discriminator="provider")]
