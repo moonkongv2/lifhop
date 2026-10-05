@@ -3,6 +3,8 @@ from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 from app.models.entry import Entry
 from app.schemas.codex_session import ArchiveItem, ArchiveResponse, SessionSummary, SessionTurnsResponse, TurnSummary
+from app.services.github_repositories import CTES as GITHUB_CTES
+from app.schemas.github_record import GitHubRepositorySummary
 
 # Group from the selected current version only. IDs from other versions do not
 # create phantom sessions or bypass owner scoping.
@@ -60,18 +62,21 @@ def summary(row):
 
 
 def archive(db: Session, owner: int, limit: int, offset: int):
-    feed = """, feed AS (
+    feed = ", " + GITHUB_CTES + """, feed AS (
       SELECT 'codex_session' AS kind, NULL::integer AS entry_id, source_scope,thread_id,sort_time,sort_id FROM summaries
+      UNION ALL SELECT 'github_repository',NULL,source_scope,NULL,sort_time,sort_id FROM gh_repositories
       UNION ALL SELECT 'entry',id,NULL,NULL,created_at,id FROM base
-      WHERE provider IS DISTINCT FROM 'codex' OR thread_id IS NULL
+      WHERE (provider IS DISTINCT FROM 'codex' OR thread_id IS NULL)
+        AND NOT coalesce(provider='github' AND source_scope ~ '^repo:[1-9][0-9]{0,19}$',false)
     ) """
     total = db.scalar(text(BASE + feed + "SELECT count(*) FROM feed"), {"owner": owner})
-    rows = db.execute(text(BASE + feed + "SELECT f.kind,f.entry_id,s.* FROM feed f LEFT JOIN summaries s USING(source_scope,thread_id) ORDER BY f.sort_time DESC,f.sort_id DESC LIMIT :limit OFFSET :offset"),
+    rows = db.execute(text(BASE + feed + "SELECT f.kind,f.entry_id,s.*,to_jsonb(r) AS repository_data FROM feed f LEFT JOIN summaries s USING(source_scope,thread_id) LEFT JOIN gh_repositories r ON f.kind='github_repository' AND r.source_scope=f.source_scope ORDER BY f.sort_time DESC,f.sort_id DESC LIMIT :limit OFFSET :offset"),
         {"owner": owner, "limit": limit, "offset": offset}).mappings().all()
     entries = {e.id: e for e in db.scalars(select(Entry).where(Entry.user_id == owner,
         Entry.id.in_([r["entry_id"] for r in rows if r["kind"] == "entry"]))) }
     items = [ArchiveItem(kind=row["kind"], entry=entries[row["entry_id"]] if row["kind"] == "entry" else None,
-        session=summary(row) if row["kind"] == "codex_session" else None) for row in rows]
+        session=summary(row) if row["kind"] == "codex_session" else None,
+        repository=GitHubRepositorySummary.model_validate(row["repository_data"]) if row["kind"] == "github_repository" else None) for row in rows]
     return ArchiveResponse(items=items, total=total, limit=limit, offset=offset)
 
 

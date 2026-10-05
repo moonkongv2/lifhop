@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Annotated
 from pydantic import BaseModel, ConfigDict, StringConstraints, field_validator
 from app.models.entry import EntrySource, EntryType
+from app.schemas.github_record import GitHubRepositoryRef
 
 EntryTitle = Annotated[
     str,
@@ -71,6 +72,7 @@ class CodexSessionRef(BaseModel):
 class EntrySearchItemResponse(EntryResponse):
     preview_text: str = ""
     session_ref: CodexSessionRef | None = None
+    repository_ref: GitHubRepositoryRef | None = None
     matched_in_commentary_only: bool = False
 
 

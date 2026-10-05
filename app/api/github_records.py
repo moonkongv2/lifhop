@@ -1,6 +1,6 @@
-from typing import Annotated
+from typing import Annotated, Literal
 from urllib.parse import quote
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import TypeAdapter, ValidationError
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -11,8 +11,43 @@ from app.models.history import EntryVersion
 from app.models.user import User
 from app.importers.canonical import GitHubCommitPayload, GitHubDocumentPayload
 from app.schemas.github_record import GitHubPresentation, GitHubRelatedRecord
+from app.schemas.github_record import (RepositoryScope, GitHubRepositorySummary,
+    GitHubRecordsResponse, GitHubDocumentsResponse)
+from app.services.github_repositories import repository_summary, repository_records, repository_documents
 
 router = APIRouter(tags=["github-records"])
+DB = Annotated[Session, Depends(get_db)]
+Owner = Annotated[User, Depends(get_current_user)]
+Scope = Annotated[RepositoryScope, Query()]
+Limit = Annotated[int, Query(ge=1, le=100)]
+Offset = Annotated[int, Query(ge=0, le=9007199254740991)]
+
+
+@router.get("/github-repositories", response_model=GitHubRepositorySummary)
+def read_repository(db: DB, owner: Owner, scope: Scope):
+    return repository_summary(db, owner.id, scope)
+
+
+@router.get("/github-repositories/records", response_model=GitHubRecordsResponse)
+def read_records(db: DB, owner: Owner, scope: Scope, kind: Literal["commit", "unclassified"] = "commit",
+                 limit: Limit = 20, offset: Offset = 0):
+    return repository_records(db, owner.id, scope, kind, limit, offset)
+
+
+@router.get("/github-repositories/documents", response_model=GitHubDocumentsResponse)
+def read_documents(db: DB, owner: Owner, scope: Scope, limit: Limit = 20, offset: Offset = 0):
+    return repository_documents(db, owner.id, scope, limit, offset)
+
+
+@router.get("/github-repositories/document-snapshots", response_model=GitHubRecordsResponse)
+def read_snapshots(db: DB, owner: Owner, scope: Scope,
+                   path: Annotated[str, Query(min_length=1, max_length=4096)], limit: Limit = 20, offset: Offset = 0):
+    # Reuse the canonical path validator without constructing a document body.
+    try:
+        GitHubDocumentPayload.relative_path(path)
+    except ValueError:
+        raise HTTPException(422, "Invalid repository-relative path")
+    return repository_records(db, owner.id, scope, "document", limit, offset, path)
 
 
 @router.get("/entries/{entry_id}/github-presentation", response_model=GitHubPresentation)

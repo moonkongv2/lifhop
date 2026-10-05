@@ -155,11 +155,51 @@ def main():
             assert current['annotation']==note and not current['external_ai_allowed']
             report.update(equivalent_preview_replay=True, annotation_and_ai_deny_preserved=True,
                 search_and_related_records=True, presentations_checked=len(presentations))
+            # Browse the actual retained records without fetching GitHub again.
+            scope = f'repo:{cfg.repository_id}'
+            aggregate = client.get('/archive').json()
+            assert aggregate['total'] == 1 and aggregate['items'][0]['kind'] == 'github_repository'
+            summary = client.get('/github-repositories', params={'scope':scope}).json()
+            commits = [e for e in records if presentations[e['id']]['payload']['kind']=='github_commit']
+            docs = [e for e in records if presentations[e['id']]['payload']['kind']=='github_document']
+            paths = {presentations[e['id']]['payload']['path'] for e in docs}
+            assert summary['commit_count']==len(commits) and summary['snapshot_count']==len(docs)
+            assert summary['document_count']==len(paths) and summary['unclassified_count']==0
+            assert search.json()['items'][0]['repository_ref']['source_scope']==scope
+            listed = []
+            for offset in range(0,len(commits),100):
+                response = client.get('/github-repositories/records',params={'scope':scope,'limit':100,'offset':offset})
+                response.raise_for_status()
+                listed.extend(response.json()['items'])
+            assert {r['id'] for r in listed}=={e['id'] for e in commits}
+            assert all('content' not in r for r in listed)
+            ordered = sorted(commits,key=lambda e:(e['event_at'] is not None,e['event_at'] or '',e['id']),reverse=True)
+            assert [r['id'] for r in listed]==[e['id'] for e in ordered]
+            grouped = []
+            for offset in range(0,len(paths),100):
+                response=client.get('/github-repositories/documents',params={'scope':scope,'limit':100,'offset':offset})
+                response.raise_for_status()
+                grouped.extend(response.json()['items'])
+            assert {r['path'] for r in grouped}==paths
+            assert sum(r['snapshot_count'] for r in grouped)==len(docs)
+            for path in paths:
+                response=client.get('/github-repositories/document-snapshots',params={'scope':scope,'path':path,'limit':100})
+                response.raise_for_status()
+                expected={e['id'] for e in docs if presentations[e['id']]['payload']['path']==path}
+                assert {r['id'] for r in response.json()['items']}==expected
+            from app.services.github_repositories import CTES
+            with Session(scoped_engine) as db:
+                verify_scope(db.connection(),schema)
+                plan=db.execute(text('EXPLAIN (ANALYZE, FORMAT JSON) WITH '+CTES+' SELECT * FROM gh_repositories'),
+                    {'owner':client.get('/auth/me').json()['id']}).scalar()
+            report.update(repository_browsing=True,repository_summary=summary,
+                repository_query_ms=plan[0]['Execution Time'])
             other_password=secrets.token_urlsafe(24)
             client.post('/auth/register',json={'email':'other-check@example.test','password':other_password}).raise_for_status()
             other=client.post('/auth/login',data={'username':'other-check@example.test','password':other_password}).json()['access_token']
             assert client.get(f"/entries/{chosen['id']}/github-presentation",headers={'Authorization':'Bearer '+other}).status_code==404
             assert client.get(f"/collection-runs/{first['id']}",headers={'Authorization':'Bearer '+other}).status_code==404
+            assert client.get('/github-repositories',params={'scope':scope},headers={'Authorization':'Bearer '+other}).status_code==404
             report['owner_boundary']=True
             if args.hold_for_browser:
                 private_write(report_dir/'access.json',dict(api_origin=origin,email=email,password=password,
@@ -178,6 +218,8 @@ def main():
             delete_run=apply_bundle(clone('after-delete',True),cfg,origin,email,**options)
             assert delete_run['counts'].get('blocked',0)==1 and totals()[0]==before[0]-1
             assert client.get(f"/entries/{chosen['id']}/github-presentation").status_code==404
+            after=client.get('/github-repositories',params={'scope':scope}).json()
+            assert after['snapshot_count']==len(docs)-1
             report['deletion_suppression']=True
             private_write(report_dir/'report.json',report,replace=True)
             print(json.dumps({'state':'verified','entries':before[0],'versions':before[1],

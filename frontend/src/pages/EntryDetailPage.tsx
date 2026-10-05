@@ -14,14 +14,17 @@ import { safeSessionReturn } from "../utils/codexSessions";
 import { invalidateRecordViews } from "../utils/recordCache";
 import CodexReader from "../components/CodexReader";
 import GitHubReader from "../components/GitHubReader";
+import { safeRepositoryContext, repositoryTarget } from "../utils/githubRepositories";
+import GitHubRepositorySidebar from "../components/GitHubRepositorySidebar";
 
 function EntryDetail() {
   const { id } = useParams();
   const location = useLocation();
   const context = resolveEntryContext(location.search, location.state);
   const sessionReturn = safeSessionReturn(new URLSearchParams(location.search).get("sessionReturn"));
-  const returnTarget = sessionReturn ?? listTarget(context);
-  const backLabel = sessionReturn ? "Back to session" : context.pathname === "/search" ? "Back to search" : "Back to entries";
+  const repository = safeRepositoryContext(new URLSearchParams(location.search).get("repositoryReturn"));
+  const returnTarget = repository ? repositoryTarget(repository) : sessionReturn ?? listTarget(context);
+  const backLabel = repository ? "Back to repository" : sessionReturn ? "Back to session" : context.pathname === "/search" ? "Back to search" : "Back to entries";
   const token = localStorage.getItem("access_token");
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -62,7 +65,7 @@ function EntryDetail() {
     <>
       <Link className="back-link" to={returnTarget}>← {backLabel}</Link>
       <div className="reader-layout">
-        <RecordSidebar selectedId={entry.id} context={context} />
+        {repository ? <GitHubRepositorySidebar selectedId={entry.id} context={repository} /> : <RecordSidebar selectedId={entry.id} context={context} />}
         <section className="panel reader-panel" aria-label="Record reader">
           {editing ? (
             <>

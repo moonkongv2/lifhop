@@ -6,6 +6,7 @@ import type { components } from "../api/generated/schema";
 import { entryTarget, listContext, validPage } from "../utils/entryNavigation";
 import { sessionTarget } from "../utils/codexSessions";
 import { formatEntryDate, sourceLabels } from "../utils/entries";
+import { repositoryLink } from "../utils/githubRepositories";
 
 export default function ArchiveResults() {
   const [params, setParams] = useSearchParams();
@@ -28,9 +29,18 @@ export default function ArchiveResults() {
     {query.isLoading && valid && <p role="status">Loading...</p>}
     {query.error && <><p role="alert">{query.error.message}</p><button onClick={() => void query.refetch()}>Retry</button></>}
     {data && valid && <>
-      <div className="records-toolbar"><p>{data.total} {data.total === 1 ? "record" : "records"} · Page {Math.floor(offset / 20) + 1}</p><span>Most recently added · Codex grouped by session</span></div>
+      <div className="records-toolbar"><p>{data.total} archive {data.total === 1 ? "item" : "items"} · Page {Math.floor(offset / 20) + 1}</p><span>Most recently added · Codex sessions · GitHub repositories</span></div>
       {!data.items.length && <div className="panel empty-state"><p>No entries yet.</p><span>Create a note or import your first records.</span></div>}
-      <div className="records-grid">{data.items.map(row => row.session ? <article className="panel record-card" key={`session:${JSON.stringify([row.session.source_scope, row.session.thread_id])}`}>
+      <div className="records-grid">{data.items.map(row => row.repository ? <article className="panel record-card" key={`repository:${row.repository.source_scope}`}>
+        <span className="badge source">GitHub repository</span>
+        <Link to={repositoryLink(row.repository.source_scope,context)}><h3>{row.repository.repository ?? row.repository.source_scope}</h3></Link>
+        <p>{row.repository.commit_count} retained commits · {row.repository.document_count} document paths · {row.repository.snapshot_count} snapshots</p>
+        {!!row.repository.unclassified_count && <p>{row.repository.unclassified_count} unclassified records</p>}
+        <p className="record-date">Source period: {formatEntryDate(row.repository.start_at)} – {formatEntryDate(row.repository.end_at)}</p>
+        {!!row.repository.unknown_date_count && <p className="help-text">{row.repository.unknown_date_count} records have an unknown source date.</p>}
+        {(row.repository.partial || row.repository.review_required) && <span className="badge">Partial evidence or version review</span>}
+        <p className="help-text">Counts cover retained records. Collection coverage is available in Sources.</p>
+      </article> : row.session ? <article className="panel record-card" key={`session:${JSON.stringify([row.session.source_scope, row.session.thread_id])}`}>
         <span className="badge source">Codex session</span>
         <Link to={sessionTarget(row.session, context)}><h3>{row.session.title}</h3></Link>
         {row.session.preview_text && <p className="entry-content session-preview">{row.session.preview_text}</p>}
@@ -44,6 +54,7 @@ export default function ArchiveResults() {
         <Link to={entryTarget(row.entry.id, context)}><h3>{row.entry.title}</h3></Link>
         {row.entry.source_state === "deleted" && <span className="badge">Deleted at source</span>}
         {row.entry.provider === "codex" && <p className="help-text">Session classification unavailable for this record.</p>}
+        {row.entry.provider === "github" && <p className="help-text">Repository classification unavailable for this record.</p>}
         <p className="entry-content">{row.entry.content ?? "No content"}</p>
         <p className="record-date">Added: {formatEntryDate(row.entry.created_at)} · Source/event date: {formatEntryDate(row.entry.event_at)} (Asia/Seoul)</p>
       </article> : null)}</div>

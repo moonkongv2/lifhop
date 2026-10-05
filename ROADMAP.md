@@ -1,6 +1,6 @@
 # lifhop Product Roadmap
 
-Last revised: 2026-10-03
+Last revised: 2026-10-06
 
 ## Purpose and release boundary
 
@@ -256,6 +256,17 @@ duplicates. In a repository with no PRs/issues, report zero rather than failure.
 **Phase exit:** ChatGPT, Codex, and GitHub records can be searched together,
 filtered by source/time, and inspected with provenance and coverage. Every
 selected source has a visible backfill result, including gaps and failures.
+
+### UI checkpoint between 2.4A and 2.4B — GitHub repository browsing
+
+Group retained GitHub Entries by numeric repository identity for browsing while
+keeping commit/document identities for search and evidence. Provide chronological
+commit lists and path-grouped historical document snapshots with page-preserving
+reader navigation. Label retained counts and document freshness accurately.
+Verify this checkpoint before collecting discussions in 2.4B.
+
+**User check:** Open a repository card, inspect a past commit/diff and document
+snapshot, return to the same page, and reach that repository from a search hit.
 
 ## Phase 3 — Answers grounded in records
 

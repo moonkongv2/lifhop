@@ -4,6 +4,15 @@ Last updated: 2026-10-06
 
 ## Current product slice
 
+GitHub repository browsing checkpoint after Phase 2.4A is implemented;
+owner browser confirmation is next. Entries groups GitHub by numeric repository
+scope before pagination. Repository pages show source-date ordered commits and
+path-grouped retained document snapshots, with separate document/snapshot pages.
+Search stays Entry-level with repository context; readers/sidebar preserve return
+URLs. Existing Entries, versions, permissions and receipts are unchanged.
+No migration, dependency, external AI call or service was added.
+Implementation plan: `GITHUB_REPOSITORY_VIEW_PLAN.md`; checks: `GITHUB_BACKFILL.md`.
+
 Phase 2.4A GitHub commits/document backfill is implemented with local checks;
 owner verification is next using `GITHUB_BACKFILL.md`. Strict run/evidence contracts,
 pinned resumable preparation, reviewed apply, Sources results and GitHub readers
@@ -17,7 +26,7 @@ preview replay, owner/policy/annotation/delete checks passed. Oldest/latest sour
 samples match fresh GitHub reads. The sealed full preview is private; no personal
 account apply was run. Evidence omissions correctly finish Partial. Owner account
 apply/browser confirmation and private/org access remain pending. Phase 2.4B starts
-after owner verification of A. Authentication/verification follow-up is committed separately.
+after owner verification of A. Authentication/verification follow-up: `48f6f52`.
 Codex plan: `bdfcd57`; session browsing: `ab40b30`; saved titles: `fd7597b`;
 conversation-only reading: `2598187`. Local checks pass. Development DB upgraded to
 `c04d8a12e673`. Phase 2.3 implementation is committed at `36de1de` with whitespace
@@ -34,7 +43,7 @@ work, followed by separating Search from recent Entries. Implementation and loca
 checks are complete. The owner requested English-control/session fixes after
 browser review and authorized committing the UI checkpoint. The broader visual
 walkthrough remains available in `frontend/README.md`.
-UI checkpoint: `19e395a`. Next implementation after owner checks: Phase 2.4B GitHub discussions.
+UI checkpoint: `19e395a`. Verify GitHub repository browsing before Phase 2.4B discussions.
 
 ## Personal-release target
 
@@ -52,6 +61,18 @@ retention, deletion suppression, and source/repository/record-level external-AI
 exclusions are implemented foundations; full collectors remain upcoming.
 
 ## What works now
+
+- GitHub repository browsing: owner-scoped grouping before archive pagination,
+  compact chronological commits, document paths and historical snapshots,
+  individual search references and reader/sidebar return preservation. Latest
+  checks: 282 backend tests, 97 frontend tests, lint/build, generated API types
+  and whitespace checks passed. Actual 415-item isolated PostgreSQL/HTTP checks
+  show one repository, 372 commits, 13 document paths and 43 snapshots, preserving
+  replay/annotation/AI-deny/deletion behavior. Real HTTP Chromium navigation,
+  reload/new-tab/search returns passed at 320/390/768/1440px with no page errors
+  or horizontal overflow. Early sandbox TCP and browser transport teardown issues
+  were resolved by the approved DB run and corrected verification cleanup.
+  Personal account apply and owner browsing confirmation remain pending.
 
 - GitHub commit/diff and historical Markdown snapshot collection: private cached
   preparation with pinned heads, quota pause/resume, immutable preview validation,
@@ -224,23 +245,33 @@ user-verifiable product slices in `ROADMAP.md`.
 
 ## Next
 
-1. Verify Phase 2.4A using `GITHUB_BACKFILL.md`: synthetic Sources/search/evidence,
+1. Confirm GitHub repository browsing in Entries → repository → Commits/Documents
+   → reader → return, and Search → Browse repository → return. Existing stored
+   GitHub Entries need no reimport for this UI. Repository browsing and the earlier
+   authentication/verification follow-up are separate commit checkpoints.
+2. Verify Phase 2.4A using `GITHUB_BACKFILL.md`: synthetic Sources/search/evidence,
    private partial preview review, explicit personal apply and same-bundle replay.
    Full source preparation and isolated actual verification are complete. Apply the
    reviewed 415-item preview in the owner terminal; confirm Sources/search/results.
    Phase 2.4B discussions follow A owner verification.
-2. Verify the owner-bound private Phase 2.3 apply run status in Sources and
+3. Verify the owner-bound private Phase 2.3 apply run status in Sources and
    Codex search/evidence, replay, annotations and disposable deletion/policy checks
    in `CODEX_BACKFILL.md`. Its checkpoint has 33 acknowledgments; completed status,
    target account and selected current versions still require confirmation.
-3. Finish Phase 2.4B before Phase 3 evaluation and record-grounded answers.
-4. Verify Phase 2.2 using `HISTORY.md`: synthetic history, annotations, source
+4. Finish Phase 2.4B before Phase 3 evaluation and record-grounded answers.
+5. Verify Phase 2.2 using `HISTORY.md`: synthetic history, annotations, source
    markers, deletion/reimport block, and Sources permissions.
-5. Follow the sequence: Codex/GitHub history → evidence-based answers/retrospectives
+6. Follow the sequence: Codex/GitHub history → evidence-based answers/retrospectives
    → scheduled collectors → private AWS release.
 
 ## Known limitations
 
+- Repository document lists show the latest retained snapshot by known event date,
+  then ID; they do not promise the current GitHub file or selected HEAD contents.
+  Unknown dates sort last. Paths renamed in Git remain separate. Counts describe
+  retained records, including source-deleted records, rather than source coverage.
+  Offset pages can shift during concurrent collection/deletion. Only bounded
+  current-version metadata is classified; invalid records remain accessible.
 - Legacy assistant phases and missing turn positions stay unknown. Same-time v2
   observations can be retained candidates requiring explicit current selection.
   Session counts describe retained turns, not full source coverage. Session-wide

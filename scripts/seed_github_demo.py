@@ -42,6 +42,7 @@ def main():
     api.request(f"/collection-runs/{run['id']}/finish",{})
     print('Created two synthetic records; no GitHub source was fetched or modified.')
     print('Open http://localhost:5173/sources, choose GitHub, and inspect the newest run.')
+    print(f'Open http://localhost:5173/repositories/github?scope=repo:{repository_id} for Commits and Documents.')
     print("Search for 'Synthetic historical README' with source GitHub; open a record and follow Records from this commit.")
     print('Original links point to a fictional repository. Every invocation creates a separate disposable source.')
 

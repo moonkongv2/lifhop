@@ -248,3 +248,55 @@ its tool reported a missing `sandboxPolicy`; standalone local Chromium supplied
 the synthetic UI checks. A build initially caught incomplete required fields in
 a new test fixture; those fields were added and the build passed. Owner account apply and actual mobile-device checks remain pending; full selected
 source preparation and isolated actual HTTP/browser checks are complete.
+## Repository browsing checkpoint (2026-10-06)
+
+Existing GitHub Entries require no recollection. Restart the API if it was started
+without `--reload`; the Vite development frontend reloads changed code.
+With PostgreSQL, API and frontend running, open `http://localhost:5173/entries`.
+The collector/import worker is not needed for browsing already stored records.
+
+1. Entries shows one card per retained repository, alongside Codex sessions and
+   ordinary notes. Counts are retained commits, document paths and snapshots.
+2. Open the card → **Commits**. Source/event dates descend, unknown dates come
+   last; open a commit, expand a recorded diff, and use **Back to repository**.
+   The selected page survives reload/new tabs and reader-sidebar navigation.
+3. **Documents** groups paths. Choose a path, then an older snapshot to read
+   its historical content. **All documents** returns to the path-list page.
+   Path-list and snapshot-list page offsets are independent.
+4. Search still finds individual records. **Browse repository** provides context
+   and **Back to search** restores the original search. Direct record reading from
+   Search retains its existing Search return.
+
+`Latest retained snapshot` is the most recent stored observation by known event
+date, not a promise of current GitHub or selected branch HEAD content. Renamed
+paths remain separate. Partial evidence/version-review/source-deleted status is
+visible; collection coverage and selected heads remain in Sources.
+
+If your account has no GitHub data, create disposable synthetic records with:
+
+```bash
+.venv/bin/python scripts/seed_github_demo.py --email YOUR_EMAIL
+```
+
+It asks for the local lifhop password in your terminal, creates a fictional source
+with one commit and one document, and prints the repository URL. Each invocation
+creates a different disposable source. Actual reviewed source apply remains an
+explicit separate command described above.
+
+Backend/API tests cover owner scoping, grouping before pagination, metadata/version
+changes, date ties/unknown dates, path/snapshot pagination and last-record deletion.
+Frontend tests cover repository/search/sidebar navigation, independent pages,
+URL validation, empty/error/retry states and cache invalidation. Actual-source
+verification uses `scripts/check_github_preview.py` in a fresh isolated test schema;
+private reports/screenshots stay under `.local/verification/github-repository-view`.
+
+Final checks: 282 backend tests, 97 frontend tests, frontend lint/build, generated
+API schema consistency and whitespace checks passed. Actual 415-item replay,
+annotation/AI-deny preservation, ownership and deletion suppression passed in a
+fresh isolated PostgreSQL schema; aggregate results show 372 commits, 13 paths,
+43 snapshots. Real HTTP Chromium browsing/search/reader/sidebar/reload/new-tab
+checks passed at 320/390/768/1440px. Disposable schemas/API processes were cleaned
+up. The initial browser transport teardown errors were verification-script issues;
+waiting for pending requests and handling navigation cancellation resolved them.
+Personal account apply, owner confirmation and actual mobile/other engines remain
+unverified. No real source fetch, user DB migration or external AI was required.

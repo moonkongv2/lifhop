@@ -382,7 +382,7 @@ describe("Dedicated Search page", () => {
     click("Record 21");
     expect((await screen.findByRole("link", { name: "← Back to entries" })).getAttribute("href")).toBe("/entries?offset=20");
     click("Delete"); click("Confirm delete");
-    await screen.findByText("20 records · Page 1");
+    await screen.findByText("20 archive items · Page 1");
     expect(requests.at(-1)?.path).toBe("/api/archive?limit=20");
   });
 

@@ -1204,3 +1204,20 @@ private preparation journal so a mode switch does not inherit the other's wait;
 never store a token or change source/config identity to bypass a saved deadline.
 Actual backfill verification uses a fresh, verified isolated PostgreSQL schema
 and real HTTP calls, preserving the original reviewed bundle and personal DB.
+
+## 2026-10-06: Derive GitHub repository browsing from retained Entries
+
+Keep commit and commit/path snapshot identities and all observed versions.
+Group browsing by owner/provider/numeric repository scope before pagination;
+renamed repositories retain one group. Counts describe current retained Entries,
+including source-deleted records; invalid metadata remains accessible separately.
+Search retains individual hits and bounded current-version repository references.
+
+Entries stays ordered by most recent registration. Within repositories, order
+commits/snapshots by known event date descending, NULL last, then Entry ID.
+Group documents by exact path with deterministic C collation for path pagination.
+Latest retained snapshot does not assert current GitHub/selected-HEAD content;
+branches/run coverage remain in Sources. No AI-generated title or new grouping
+entity, schema, infrastructure or dependency is introduced. Deletion/annotations/
+permissions remain per Entry. Safe local repository returns preserve independent
+path/snapshot pages and the original Entries/Search context.

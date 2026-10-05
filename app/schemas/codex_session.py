@@ -3,6 +3,7 @@ from typing import Literal
 from pydantic import BaseModel
 from app.importers.canonical import DevSessionPayload
 from app.schemas.entry import EntryResponse
+from app.schemas.github_record import GitHubRepositorySummary
 
 
 class SessionSummary(BaseModel):
@@ -24,9 +25,10 @@ class SessionSummary(BaseModel):
 
 
 class ArchiveItem(BaseModel):
-    kind: Literal["entry", "codex_session"]
+    kind: Literal["entry", "codex_session", "github_repository"]
     entry: EntryResponse | None = None
     session: SessionSummary | None = None
+    repository: GitHubRepositorySummary | None = None
 
 
 class ArchiveResponse(BaseModel):

@@ -4,11 +4,13 @@ import type { Entry } from "../api/entries";
 import type { components } from "../api/generated/schema";
 import { historyRequest } from "../api/history";
 import { entryTarget, resolveEntryContext } from "../utils/entryNavigation";
+import { githubEntryTarget, safeRepositoryContext } from "../utils/githubRepositories";
 
 export default function GitHubReader({ entry }: { entry: Entry }) {
   const cache = useQueryClient();
   const location = useLocation();
   const context = resolveEntryContext(location.search, location.state);
+  const repository = safeRepositoryContext(new URLSearchParams(location.search).get("repositoryReturn"));
   const query = useQuery({ queryKey: ["github-presentation", entry.id, entry.current_version_id],
     queryFn: () => historyRequest<components["schemas"]["GitHubPresentation"]>(`/entries/${entry.id}/github-presentation`) });
   if (query.isLoading) return <p role="status">Loading GitHub evidence...</p>;
@@ -40,7 +42,7 @@ export default function GitHubReader({ entry }: { entry: Entry }) {
       <p>Blob: <code>{payload.blob_sha}</code></p>
       <pre className="entry-content reader-body">{payload.content}</pre>
     </>}
-    {!!data.related.length && <><h3>Records from this commit</h3><ul>{data.related.map(record => <li key={record.id}><Link to={entryTarget(record.id, context)}>{record.title}</Link></li>)}</ul></>}
+    {!!data.related.length && <><h3>Records from this commit</h3><ul>{data.related.map(record => <li key={record.id}><Link to={repository ? githubEntryTarget(record.id,repository) : entryTarget(record.id, context)}>{record.title}</Link></li>)}</ul></>}
     {data.related_has_more && <p>More related records are available through Search.</p>}
   </div>;
 }

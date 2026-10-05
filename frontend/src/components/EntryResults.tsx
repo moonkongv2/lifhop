@@ -5,6 +5,7 @@ import { entryTarget, listContext } from "../utils/entryNavigation";
 import { formatEntryDate, sourceLabels } from "../utils/entries";
 import Icon from "./Icon";
 import { sessionTarget } from "../utils/codexSessions";
+import { repositoryLink } from "../utils/githubRepositories";
 
 export default function EntryResults({ searching }: { searching: boolean }) {
   const [rawParams, setParams] = useSearchParams();
@@ -37,6 +38,8 @@ export default function EntryResults({ searching }: { searching: boolean }) {
         <Link to={entry.session_ref ? sessionTarget(entry.session_ref, context, entry.id) : entryTarget(entry.id, context)}><h3>{entry.title}</h3></Link>
         {entry.matched_in_commentary_only && <span className="badge">Matched in work commentary</span>}
         {entry.source_state === "deleted" && <span className="badge">Deleted at source</span>}
+        {entry.repository_ref && <p className="help-text">{entry.repository_ref.repository ?? entry.repository_ref.source_scope} · {entry.repository_ref.kind}<br />
+          <Link to={repositoryLink(entry.repository_ref.source_scope,context)}>Browse repository</Link></p>}
         <p className="entry-content">{entry.preview_text ?? entry.content ?? "No content"}</p>
         <p className="record-date">Added: {formatEntryDate(entry.created_at)} · Source/event date: {formatEntryDate(entry.event_at)} (Asia/Seoul)</p>
       </article>)}</div>

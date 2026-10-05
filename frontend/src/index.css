@@ -201,3 +201,18 @@ details > p:first-of-type { margin-top: 12px; }
 .github-reader, section[aria-label="GitHub historical backfills"] { overflow-wrap: anywhere; }
 .github-reader details { padding: 12px 0; border-top: 1px solid var(--border); }
 .github-reader summary { cursor: pointer; }
+/* Repository browsing keeps history compact while long source names wrap. */
+.repository-header { padding: 24px; margin-bottom: 1rem; }
+.repository-header h2, .repository-path { overflow-wrap: anywhere; }
+.repository-tabs { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 1rem; }
+.repository-tabs button[aria-current="page"] { background: var(--accent); color: white; }
+.repository-row { display: flex; flex-direction: column; gap: .4rem; border-bottom: 1px solid var(--border); padding: 1rem 0; min-width: 0; }
+.repository-row > a { overflow-wrap: anywhere; font-weight: 600; }
+.repository-row p { margin: 0; }
+.repository-day { margin: 1.5rem 0 .25rem; font-size: .95rem; color: var(--muted); }
+.repository-browser { padding: 24px; min-width: 0; }
+.repository-browser .records-toolbar { flex-wrap: wrap; gap: .5rem; }
+.repository-browser .records-toolbar span { white-space: normal; overflow-wrap: anywhere; }
+@media (max-width: 650px) {
+  .repository-header, .repository-browser { padding: 18px; }
+}

@@ -654,6 +654,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/github-repositories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Repository */
+        get: operations["read_repository_github_repositories_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/github-repositories/records": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Records */
+        get: operations["read_records_github_repositories_records_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/github-repositories/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Documents */
+        get: operations["read_documents_github_repositories_documents_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/github-repositories/document-snapshots": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Snapshots */
+        get: operations["read_snapshots_github_repositories_document_snapshots_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/entries/{entry_id}/github-presentation": {
         parameters: {
             query?: never;
@@ -698,9 +766,10 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "entry" | "codex_session";
+            kind: "entry" | "codex_session" | "github_repository";
             entry?: components["schemas"]["EntryResponse"] | null;
             session?: components["schemas"]["SessionSummary"] | null;
+            repository?: components["schemas"]["GitHubRepositorySummary"] | null;
         };
         /** ArchiveResponse */
         ArchiveResponse: {
@@ -1138,6 +1207,7 @@ export interface components {
              */
             preview_text: string;
             session_ref?: components["schemas"]["CodexSessionRef"] | null;
+            repository_ref?: components["schemas"]["GitHubRepositoryRef"] | null;
             /**
              * Matched In Commentary Only
              * @default false
@@ -1316,6 +1386,25 @@ export interface components {
             /** Filter Version */
             filter_version: string;
         };
+        /** GitHubDocumentSummary */
+        GitHubDocumentSummary: {
+            /** Path */
+            path: string;
+            /** Snapshot Count */
+            snapshot_count: number;
+            latest: components["schemas"]["GitHubRecordSummary"];
+        };
+        /** GitHubDocumentsResponse */
+        GitHubDocumentsResponse: {
+            /** Items */
+            items: components["schemas"]["GitHubDocumentSummary"][];
+            /** Total */
+            total: number;
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+        };
         /** GitHubFile */
         GitHubFile: {
             /** Path */
@@ -1366,6 +1455,36 @@ export interface components {
             /** Related Has More */
             related_has_more: boolean;
         };
+        /** GitHubRecordSummary */
+        GitHubRecordSummary: {
+            /** Id */
+            id: number;
+            /** Title */
+            title: string;
+            /** Sha */
+            sha: string | null;
+            /** Event At */
+            event_at: string | null;
+            /** Current Version Id */
+            current_version_id: number | null;
+            /** Source State */
+            source_state: string;
+            /** Partial */
+            partial: boolean;
+            /** Review Required */
+            review_required: boolean;
+        };
+        /** GitHubRecordsResponse */
+        GitHubRecordsResponse: {
+            /** Items */
+            items: components["schemas"]["GitHubRecordSummary"][];
+            /** Total */
+            total: number;
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+        };
         /** GitHubRelatedRecord */
         GitHubRelatedRecord: {
             /** Id */
@@ -1374,6 +1493,45 @@ export interface components {
             title: string;
             /** Kind */
             kind: string;
+        };
+        /** GitHubRepositoryRef */
+        GitHubRepositoryRef: {
+            /** Source Scope */
+            source_scope: string;
+            /** Repository */
+            repository?: string | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "commit" | "document" | "unclassified";
+            /** Path */
+            path?: string | null;
+        };
+        /** GitHubRepositorySummary */
+        GitHubRepositorySummary: {
+            /** Source Scope */
+            source_scope: string;
+            /** Repository */
+            repository: string | null;
+            /** Commit Count */
+            commit_count: number;
+            /** Document Count */
+            document_count: number;
+            /** Snapshot Count */
+            snapshot_count: number;
+            /** Unclassified Count */
+            unclassified_count: number;
+            /** Unknown Date Count */
+            unknown_date_count: number;
+            /** Start At */
+            start_at: string | null;
+            /** End At */
+            end_at: string | null;
+            /** Partial */
+            partial: boolean;
+            /** Review Required */
+            review_required: boolean;
         };
         /** GitHubRunCreate */
         GitHubRunCreate: {
@@ -3185,6 +3343,138 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PresentationResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_repository_github_repositories_get: {
+        parameters: {
+            query: {
+                scope: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GitHubRepositorySummary"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_records_github_repositories_records_get: {
+        parameters: {
+            query: {
+                scope: string;
+                kind?: "commit" | "unclassified";
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GitHubRecordsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_documents_github_repositories_documents_get: {
+        parameters: {
+            query: {
+                scope: string;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GitHubDocumentsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_snapshots_github_repositories_document_snapshots_get: {
+        parameters: {
+            query: {
+                scope: string;
+                path: string;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GitHubRecordsResponse"];
                 };
             };
             /** @description Validation Error */
