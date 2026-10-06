@@ -9,7 +9,7 @@ from app.models.entry import Entry, EntrySource, EntryType
 from app.models.history import EntryVersion
 from app.schemas.entry import EntrySearchResponse, EntrySearchItemResponse
 from app.services.codex_presentation import session_ref
-from app.services.github_repositories import METADATA, repository_ref
+from app.services.github_repositories import METADATA, DISCUSSION_METADATA, METADATA_NAMES, repository_ref
 
 USER_TIMEZONE = "Asia/Seoul"
 DateField = Literal["created_at", "event_at"]
@@ -69,15 +69,15 @@ def search_entries(
     thread = case((func.jsonb_typeof(version.c.payload["thread_id"]) == "string", version.c.payload["thread_id"].astext), else_=None)
     rows = db.execute(select(Entry, thread,
         func.coalesce(searched, ""), work_only,
-        *[literal_column(column) for column in METADATA.strip().split(",\n")])
+        *[literal_column(column) for column in (METADATA.rstrip() + ",\n" + DISCUSSION_METADATA.strip()).strip().split(",\n")])
         .outerjoin(version, (version.c.id == Entry.current_version_id) & (version.c.entry_id == Entry.id))
         .where(*conditions).order_by(*order).offset(offset).limit(limit)).all()
     items = []
     for row in rows:
         entry, thread, preview, only = row[:4]
-        metadata = dict(zip(("repository_id", "repository", "sha", "payload_kind", "path"), row[4:]))
+        metadata = dict(zip(METADATA_NAMES, row[4:]))
         items.append(EntrySearchItemResponse(**EntrySearchItemResponse.model_validate(entry).model_dump(
             exclude={"preview_text", "session_ref", "repository_ref", "matched_in_commentary_only"}),
             preview_text=preview[:1000], session_ref=session_ref(entry.provider, entry.source_scope, {"thread_id": thread}),
-            repository_ref=repository_ref(entry.provider, entry.source_scope, metadata), matched_in_commentary_only=bool(only)))
+            repository_ref=repository_ref(entry.provider, entry.source_scope, metadata, entry.external_id), matched_in_commentary_only=bool(only)))
     return EntrySearchResponse(items=items, total=total, limit=limit, offset=offset, timezone=USER_TIMEZONE)

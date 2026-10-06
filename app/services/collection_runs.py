@@ -30,8 +30,12 @@ def receipt(db: Session, run: CollectionRun, identity: str):
         raise HTTPException(422, "Device identity does not match run")
     if run.provider == "github":
         import re
-        if not re.fullmatch(re.escape(run.scope) + r":(?:commit:[a-f0-9]{40}|document:[a-f0-9]{40}:[a-f0-9]{64})", identity):
+        if not re.fullmatch(re.escape(run.scope) + r":(?:commit:[a-f0-9]{40}|document:[a-f0-9]{40}:[a-f0-9]{64}|(?:pull_request|issue|issue_comment|review|review_comment):[1-9][0-9]{0,19})", identity):
             raise HTTPException(422, "Repository object identity does not match run")
+        if run.coverage.get("discussions") and identity.split(":")[2] not in run.coverage["discussions"]["records"]:
+            raise HTTPException(422, "Discussion run cannot contain commit/document records")
+        if not run.coverage.get("discussions") and identity.split(":")[2] in {"pull_request", "issue", "issue_comment", "review", "review_comment"}:
+            raise HTTPException(422, "Discussion evidence requires discussion coverage")
     return db.scalar(select(CollectionRunItem).where(CollectionRunItem.run_id == run.id,
         CollectionRunItem.external_id == identity))
 

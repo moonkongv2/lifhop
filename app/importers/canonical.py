@@ -3,6 +3,7 @@ from enum import StrEnum
 import hashlib
 from typing import Annotated, Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator, model_serializer
+from app.importers.github_discussions import GitHubDiscussionEvidence, GitHubDiscussionPayload, discussion_external_id
 
 class SourceProvider(StrEnum):
     MARKDOWN = "markdown"
@@ -22,6 +23,11 @@ class CanonicalKind(StrEnum):
     DEV_SESSION = "dev_session"
     GITHUB_COMMIT = "github_commit"
     GITHUB_DOCUMENT = "github_document"
+    GITHUB_PULL_REQUEST = "github_pull_request"
+    GITHUB_ISSUE = "github_issue"
+    GITHUB_ISSUE_COMMENT = "github_issue_comment"
+    GITHUB_REVIEW = "github_review"
+    GITHUB_REVIEW_COMMENT = "github_review_comment"
 
 
 class CanonicalMessage(BaseModel):
@@ -158,15 +164,20 @@ class GitHubDocumentPayload(BaseModel):
         return value
 
 
-def github_external_id(payload: GitHubCommitPayload | GitHubDocumentPayload):
+def github_external_id(payload: GitHubCommitPayload | GitHubDocumentPayload | GitHubDiscussionPayload):
+    if isinstance(payload, GitHubDiscussionPayload):
+        return discussion_external_id(payload)
     scope = f"repo:{payload.repository_id}"
     if isinstance(payload, GitHubCommitPayload):
         return f"{scope}:commit:{payload.sha}"
     return f"{scope}:document:{payload.sha}:{hashlib.sha256(payload.path.encode()).hexdigest()}"
 
 
+GitHubEvidence = GitHubCommitPayload | GitHubDocumentPayload | GitHubDiscussionEvidence
+GitHubEvidenceClasses = (GitHubCommitPayload, GitHubDocumentPayload, GitHubDiscussionPayload)
+
 CanonicalPayload = Annotated[
-    DocumentPayload | ConversationPayload | DevSessionPayload | GitHubCommitPayload | GitHubDocumentPayload,
+    DocumentPayload | ConversationPayload | DevSessionPayload | GitHubEvidence,
     Field(discriminator="kind"),
 ]
 
@@ -195,9 +206,9 @@ class CanonicalItem(BaseModel):
         if self.provider == SourceProvider.GITHUB:
             if self.source_scope == "default" or not self.external_id or not self.external_id.startswith(self.source_scope + ":"):
                 raise ValueError("GitHub requires stable repository scope and a repository-prefixed object identity")
-            if isinstance(self.payload, (GitHubCommitPayload, GitHubDocumentPayload)) and (
+            if isinstance(self.payload, GitHubEvidenceClasses) and (
                 self.source_scope != f"repo:{self.payload.repository_id}" or self.external_id != github_external_id(self.payload)):
                 raise ValueError("Repository/object identity does not match evidence")
-        elif isinstance(self.payload, (GitHubCommitPayload, GitHubDocumentPayload)):
+        elif isinstance(self.payload, GitHubEvidenceClasses):
             raise ValueError("GitHub evidence requires GitHub provider")
         return self

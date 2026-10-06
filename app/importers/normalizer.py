@@ -11,6 +11,7 @@ from app.importers.canonical import (
     GitHubDocumentPayload,
 )
 from app.models.entry import EntryType
+from app.importers.github_discussions import GitHubDiscussionPayload, GitHubDiscussionRoot, GitHubReviewCommentPayload
 
 class NormalizedEntry(BaseModel):
     type: EntryType
@@ -42,6 +43,23 @@ def dev_session_content(payload: DevSessionPayload, *, include_work: bool = True
 
 class EntryNormalizer:
     def normalize(self, item: CanonicalItem) -> NormalizedEntry:
+        if isinstance(item.payload, GitHubDiscussionPayload):
+            payload = item.payload
+            parts = [payload.body or ("[Body unavailable]" if payload.body_state == "unavailable" else "[Empty body]"),
+                f"GitHub {payload.kind.removeprefix('github_')}: #{payload.number}",
+                f"Author: {payload.author or 'Unknown'}"]
+            if hasattr(payload, "state"):
+                parts.append(f"State: {payload.state}")
+            if isinstance(payload, GitHubDiscussionRoot):
+                parts.insert(0, payload.title)
+            if isinstance(payload, GitHubReviewCommentPayload):
+                parts.append(f"Code location: {payload.path or 'Unavailable'}:{payload.line or 'unknown'}")
+                if payload.diff_hunk:
+                    parts.append(payload.diff_hunk)
+            if payload.omissions:
+                parts.append("Collection gaps:\n" + "\n".join(payload.omissions))
+            return NormalizedEntry(type=EntryType.PROJECT_EVENT, title=item.title,
+                content="\n\n".join(parts), event_at=item.event_at)
         if isinstance(item.payload, GitHubDocumentPayload):
             return NormalizedEntry(type=EntryType.DOCUMENT, title=item.title, content=item.payload.content, event_at=item.event_at)
         if isinstance(item.payload, GitHubCommitPayload):

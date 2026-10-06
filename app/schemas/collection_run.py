@@ -3,8 +3,10 @@ import json
 from datetime import datetime
 from typing import Annotated, Literal
 from uuid import UUID
-from pydantic import BaseModel, ConfigDict, Field, model_validator
-from app.importers.canonical import CanonicalItem, DevSessionPayload, SourceProvider, GitHubCommitPayload, GitHubDocumentPayload
+from pydantic import BaseModel, ConfigDict, Field, model_validator, model_serializer
+from app.importers.canonical import CanonicalItem, DevSessionPayload, SourceProvider
+from app.importers.canonical import GitHubEvidence
+from app.importers.github_discussions import DISCUSSION_OBJECTS, GitHubDiscussionPayload, GitHubReviewPayload
 
 Digest = Annotated[str, Field(pattern=r"^[a-f0-9]{64}$")]
 Scope = Annotated[str, Field(pattern=r"^mac:[a-f0-9-]{36}$")]
@@ -124,7 +126,31 @@ GitHubGap = Literal["SOURCE_CONFLICT", "SOURCE_LIMIT", "FORMAT_UNSUPPORTED", "RE
     "TIMEOUT", "PAGE_LIMIT", "RUN_LIMIT", "INVALID_ITEM", "TREE_TRUNCATED", "DOCUMENT_TYPE_OMITTED",
     "DOCUMENT_SIZE_LIMIT", "DOCUMENT_UNAVAILABLE", "DOCUMENT_INVALID", "PATH_EXCLUDED",
     "PATCH_UNAVAILABLE", "FILE_PAGE_LIMIT", "ITEM_TRUNCATED", "PREPARATION_INCOMPLETE",
-    "SENSITIVE_CONTENT_OMITTED", "CREDENTIAL_REDACTED", "TEXT_TRUNCATED", "DATE_UNAVAILABLE"]
+    "SENSITIVE_CONTENT_OMITTED", "CREDENTIAL_REDACTED", "TEXT_TRUNCATED", "DATE_UNAVAILABLE",
+    "MUTABLE_SOURCE_CHANGED", "PR_COMMIT_MEMBERSHIP_INCOMPLETE", "AUTH_FAILED", "ACCESS_DENIED",
+    "REF_UNAVAILABLE", "SSO_REQUIRED", "REPOSITORY_REDIRECT", "CONFLICT"]
+
+
+class GitHubDiscussionCoverage(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    records: dict[Literal["pull_request", "issue", "issue_comment", "review", "review_comment"],
+        Annotated[int, Field(ge=0, le=100000)]]
+    discovered_pull_requests: int = Field(ge=0, le=100000)
+    discovered_issues: int = Field(ge=0, le=100000)
+    walk_complete: bool
+    snapshot_atomic: Literal[False] = False
+    started_at: datetime
+    finished_at: datetime
+    failed: int = Field(ge=0, le=100000)
+    excluded: int = Field(ge=0, le=100000)
+
+    @model_validator(mode="after")
+    def valid_observation(self):
+        if set(self.records) != set(DISCUSSION_OBJECTS):
+            raise ValueError("Every discussion kind requires a declared count")
+        if self.started_at.utcoffset() is None or self.finished_at.utcoffset() is None or self.finished_at < self.started_at:
+            raise ValueError("Invalid discussion observation window")
+        return self
 
 
 class GitHubCoverage(BaseModel):
@@ -137,6 +163,14 @@ class GitHubCoverage(BaseModel):
     lower_bound: bool
     gaps: list[GitHubGap] = Field(default_factory=list, max_length=100)
     head_documents: list[GitHubHeadDocument] = Field(default_factory=list, max_length=10000)
+    discussions: GitHubDiscussionCoverage | None = None
+
+    @model_serializer(mode="wrap")
+    def compatible_metadata(self, handler):
+        data = handler(self)
+        if self.discussions is None:
+            data.pop("discussions", None)
+        return data
 
 
 class GitHubRunCreate(RunCreate):
@@ -148,6 +182,10 @@ class GitHubRunCreate(RunCreate):
     def valid_scope(self):
         if self.scope != f"repo:{self.coverage.repository_id}":
             raise ValueError("Repository scope differs from coverage")
+        discussion = self.coverage.discussions
+        if discussion is not None and (sum(discussion.records.values()) != self.expected_items or
+                self.coverage.branches or self.coverage.commits or self.coverage.documents or self.coverage.head_documents):
+            raise ValueError("Discussion-only run counts do not match manifest")
         return self
 
 
@@ -156,10 +194,14 @@ class GitHubCollectorItem(CanonicalItem):
     provider: Literal[SourceProvider.GITHUB]
     source_scope: str = Field(pattern=r"^repo:[1-9][0-9]{0,19}$")
     external_id: str = Field(min_length=1, max_length=255)
-    payload: Annotated[GitHubCommitPayload | GitHubDocumentPayload, Field(discriminator="kind")]
+    payload: Annotated[GitHubEvidence, Field(discriminator="kind")]
 
     @model_validator(mode="after")
     def collector_bounds(self):
+        if isinstance(self.payload, GitHubDiscussionPayload):
+            event = self.payload.submitted_at if isinstance(self.payload, GitHubReviewPayload) else self.payload.created_at
+            if self.event_at != event or self.source_updated_at != self.payload.updated_at:
+                raise ValueError("Discussion timestamps do not match source evidence")
         if len(json.dumps(self.model_dump(mode="json"), ensure_ascii=False, separators=(",", ":")).encode()) > 1024 * 1024:
             raise ValueError("GitHub item exceeds the 1 MiB budget")
         return self

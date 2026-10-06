@@ -129,6 +129,13 @@ def finish_run(run_id: int, db: DB, owner: Owner):
     counts = run_response(db, run).counts
     if sum(counts.values()) != run.expected_items:
         raise HTTPException(409, "Some manifest items have no durable receipt; resume collection")
+    if run.provider == "github" and run.coverage.get("discussions"):
+        declared = run.coverage["discussions"]["records"]
+        kind = func.split_part(CollectionRunItem.external_id, ":", 3)
+        actual = dict(db.execute(select(kind, func.count())
+            .where(CollectionRunItem.run_id == run.id).group_by(kind)).all())
+        if any(actual.get(kind, 0) != count for kind, count in declared.items()):
+            raise HTTPException(409, "Discussion receipt kinds differ from manifest counts")
     success = sum(counts.get(key, 0) for key in ("new", "unchanged", "updated", "retained"))
     gaps = run.coverage["gaps"] or counts.get("failed") or counts.get("blocked") or (run.provider == "github" and run.coverage["lower_bound"])
     run.status = ("partial" if success else "failed") if gaps else ("completed" if success else "empty")
