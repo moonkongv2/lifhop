@@ -28,7 +28,7 @@ class RepositoryReader:
         self.directory.mkdir(mode=0o700, exist_ok=True)
         self.directory.chmod(0o700)
 
-    def get(self, path):
+    def get(self, path, *, refresh=False):
         base = f"/repos/{self.config.repository}"
         endpoint = urllib.parse.urlsplit(path)
         if (endpoint.path != base and not endpoint.path.startswith(base + "/")) or any(ord(c) < 32 for c in path) or endpoint.fragment:
@@ -36,7 +36,7 @@ class RepositoryReader:
         if time.monotonic() >= self.deadline:
             raise Paused("RUN_LIMIT")
         cache = self.directory / (digest(path) + ".json")
-        if cache.exists():
+        if cache.exists() and not refresh:
             saved = read_json(cache, 9 * 1024 * 1024)
             return saved["body"], saved["headers"]
         if time.time() < self.retry_at:
@@ -66,7 +66,7 @@ class RepositoryReader:
                 items_size = sum(p.stat().st_size for p in self.directory.parent.glob("item-*.json"))
                 if items_size + sum(p.stat().st_size for p in self.directory.iterdir()) + len(bytes_json(saved)) > self.config.bundle_bytes:
                     raise Paused("SOURCE_LIMIT")
-                private_write(cache, saved)
+                private_write(cache, saved, replace=refresh and cache.exists())
                 if safe.get("x-ratelimit-remaining") == "0":
                     self.retry_at = float(safe.get("x-ratelimit-reset", time.time()+60))
                 return body, safe

@@ -25,14 +25,78 @@ def verify_scope(connection, schema):
         raise RuntimeError('Refusing to use a database outside the isolated GitHub check schema')
 
 
+def check_discussions(client, cfg, manifest, clone, options, origin, email, totals, report,
+                      report_dir, hold, release):
+    from app.collectors.client import apply_bundle
+    from app.collectors.bundle import private_write
+    scope = f'repo:{cfg.repository_id}'
+    before = totals()
+    equivalent = apply_bundle(clone('equivalent', True), cfg, origin, email, **options)
+    assert totals() == before and equivalent['counts'].get('new', 0) == 0
+    report['equivalent_preview_replay'] = True
+    if not before[0]:
+        assert equivalent['status'] == 'empty'
+        assert client.get('/archive').json()['total'] == 0
+        report['empty_source_verified'] = True
+    else:
+        summary = client.get('/github-repositories', params={'scope':scope})
+        summary.raise_for_status()
+        assert summary.json()['unclassified_count'] == 0
+        groups = client.get('/github-repositories/discussions', params={'scope':scope})
+        groups.raise_for_status()
+        assert groups.json()['total'] == 2
+        thread = client.get('/github-repositories/discussions/pull_request/100', params={'scope':scope})
+        thread.raise_for_status()
+        root = thread.json()['discussion']['root_entry_id']
+        search = client.get('/entries/search',params={'q':'discussion-focus-demo','source':'github'})
+        search.raise_for_status()
+        assert search.json()['total'] == 1
+        target = search.json()['items'][0]
+        assert target['repository_ref']['parent_id'] == '100'
+        focused = client.get('/github-repositories/discussions/pull_request/100',params={'scope':scope,'focus_entry_id':target['id']})
+        focused.raise_for_status()
+        assert focused.json()['offset'] == 20
+        assert target['id'] in {r['id'] for r in focused.json()['items']}
+        client.patch(f"/entries/{target['id']}/settings",json={'annotation':'Isolated check annotation','external_ai_allowed':False}).raise_for_status()
+        apply_bundle(clone('annotated',True),cfg,origin,email,**options)
+        assert client.get(f"/entries/{target['id']}").json()['annotation'] == 'Isolated check annotation'
+        other_password = 'isolated-synthetic-password'
+        client.post('/auth/register',json={'email':'other-discussion@example.test','password':other_password}).raise_for_status()
+        other = client.post('/auth/login',data={'username':'other-discussion@example.test','password':other_password}).json()['access_token']
+        assert client.get('/github-repositories/discussions/pull_request/100',params={'scope':scope,'focus_entry_id':target['id']},headers={'Authorization':'Bearer '+other}).status_code == 404
+        report.update(grouping=True, focus_page=True, owner_boundary=True, annotation_and_ai_deny_preserved=True)
+        if hold:
+            private_write(report_dir/'access.json',dict(api_origin=origin,email=email,password=options['password'],
+                scope=scope,root_id=root,focus_id=target['id'],release_file=str(release)),replace=True)
+            private_write(report_dir/'report.json',report,replace=True)
+            print(json.dumps({'state':'ready for isolated discussion browser verification','api_origin':origin,'items':before[0]}),flush=True)
+            deadline = time.monotonic()+1200
+            while not release.exists():
+                if time.monotonic()>deadline:
+                    raise RuntimeError('Browser verification deadline exceeded')
+                time.sleep(0.2)
+        client.delete(f'/entries/{root}').raise_for_status()
+        orphan = client.get('/github-repositories/discussions/pull_request/100',params={'scope':scope}).json()
+        assert orphan['discussion']['orphan'] and orphan['discussion']['root_entry_id'] is None
+        replay = apply_bundle(clone('after-delete',True),cfg,origin,email,**options)
+        assert replay['counts'].get('blocked',0) == 1 and totals()[0] == before[0]-1
+        report['parent_deletion_suppression'] = True
+    private_write(report_dir/'report.json',report,replace=True)
+    print(json.dumps({'state':'verified','entries':before[0],'versions':before[1],'empty_source':not before[0],'replay':True}),flush=True)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--run-dir', type=Path, required=True)
     parser.add_argument('--config', type=Path, default=Path('.local/github-collector.json'))
     parser.add_argument('--report-dir', type=Path, default=Path('.local/verification/github-actual'))
     parser.add_argument('--hold-for-browser', action='store_true')
+    parser.add_argument('--discussions', action='store_true')
+    parser.add_argument('--test-database-url', default='postgresql+psycopg://lifhop:lifhop@127.0.0.1:55433/lifhop_test')
     args = parser.parse_args()
     from app.collectors.github import load_config, validate_bundle
+    if args.discussions:
+        from app.collectors.github_discussions import load_config, validate_bundle
     from app.collectors.bundle import private_write, read_json, digest
     from app.collectors.client import apply_bundle, CollectorAPI
     from app.schemas.collection_run import GitHubCollectorItem, GitHubRunCreate
@@ -48,7 +112,10 @@ def main():
     if (report_dir/'access.json').exists():
         raise RuntimeError('An isolated browser check is already using this report directory')
     release = report_dir / ('release-' + uuid4().hex)
-    database = 'postgresql+psycopg://lifhop:lifhop@127.0.0.1:55433/lifhop_test'
+    database = args.test_database_url
+    from sqlalchemy.engine import make_url
+    if make_url(database).database != 'lifhop_test':
+        raise RuntimeError('Verification requires the disposable lifhop_test database')
     schema = 'github_check_' + uuid4().hex
     from sqlalchemy import create_engine, text, select, func
     from sqlalchemy.orm import Session
@@ -61,6 +128,8 @@ def main():
     report = {'source_items':manifest['expected_items'], 'coverage':manifest['coverage'], 'schema':schema}
     try:
         with admin.begin() as connection:
+            if connection.scalar(text('SELECT current_database()')) != 'lifhop_test':
+                raise RuntimeError('Verification database differs from the disposable target')
             connection.execute(text(f'CREATE SCHEMA "{schema}"'))
             created = True
             connection.execute(text(f'SET LOCAL search_path TO "{schema}"'))
@@ -139,6 +208,9 @@ def main():
                 assert data['version_id']==entry['current_version_id'] and data['payload']
                 assert data['locator'].startswith('https://github.com/'+cfg.repository+'/')
                 presentations[entry['id']]=data
+            if args.discussions:
+                check_discussions(client,cfg,manifest,clone,options,origin,email,totals,report,report_dir,args.hold_for_browser,release)
+                return
             chosen = next(e for e in records if presentations[e['id']]['payload']['kind']=='github_document')
             payload = presentations[chosen['id']]['payload']
             needle = next(line.strip() for line in payload['content'].splitlines() if line.strip())[:60]
