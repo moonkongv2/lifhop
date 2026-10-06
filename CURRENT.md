@@ -4,8 +4,9 @@ Last updated: 2026-10-06
 
 ## Current product slice
 
-Phase 2.4B GitHub discussions is implemented; owner browser confirmation is next
-using `GITHUB_DISCUSSIONS.md`. A separate manual collector prepares/seals/applies
+Phase 2.4B GitHub discussions is implemented; the owner confirmed the synthetic
+browser flow using `GITHUB_DISCUSSIONS.md`. Next implementation: Phase 3.1 private
+evaluation questions and a keyword-retrieval baseline. A separate manual collector prepares/seals/applies
 PRs/issues/comments/reviews, retaining independent versions and policy/deletion
 boundaries. Repository Discussions groups roots before pagination, reads children
 lazily, preserves missing-parent groups, and focuses Search hits on their page.
@@ -57,7 +58,8 @@ work, followed by separating Search from recent Entries. Implementation and loca
 checks are complete. The owner requested English-control/session fixes after
 browser review and authorized committing the UI checkpoint. The broader visual
 walkthrough remains available in `frontend/README.md`.
-UI checkpoint: `19e395a`. Owner confirmation of A/B repository browsing remains next.
+UI checkpoint: `19e395a`. Owner confirmed B synthetic discussion browsing;
+A repository browsing and personal apply remain separate pending checks.
 
 ## Personal-release target
 
@@ -267,9 +269,9 @@ user-verifiable product slices in `ROADMAP.md`.
 
 ## Next
 
-1. Verify Phase 2.4B with `GITHUB_DISCUSSIONS.md`: seed the disposable synthetic
-   repository, inspect PR/issue threads, review/code context, Search focus and
-   individual history/deletion. Selected actual source has no discussions.
+1. Prepare Phase 3.1: about 20 real questions with private supporting passages,
+   fixed acceptance targets and a keyword-retrieval baseline. The owner confirmed
+   the Phase 2.4B synthetic browser flow; selected actual source has no discussions.
 2. Confirm GitHub repository browsing in Entries → repository → Commits/Documents
    → reader → return, and Search → Browse repository → return. Existing stored
    GitHub Entries need no reimport for this UI. Repository browsing and the earlier
@@ -282,7 +284,7 @@ user-verifiable product slices in `ROADMAP.md`.
    Codex search/evidence, replay, annotations and disposable deletion/policy checks
    in `CODEX_BACKFILL.md`. Its checkpoint has 33 acknowledgments; completed status,
    target account and selected current versions still require confirmation.
-5. After A/B confirmation, prepare Phase 3 evaluation and record-grounded answers.
+5. Use the evaluation results to plan Phase 3.2 indexing and Phase 3.3 cited answers.
 6. Verify Phase 2.2 using `HISTORY.md`: synthetic history, annotations, source
    markers, deletion/reimport block, and Sources permissions.
 7. Follow the sequence: Codex/GitHub history → evidence-based answers/retrospectives
@@ -325,7 +327,8 @@ user-verifiable product slices in `ROADMAP.md`.
 - GitHub commit/document ingestion is implemented; owner apply remains pending; full selected actual preparation and isolated
   verification are complete. GitHub discussions are implemented with empty-source
   and synthetic checks; live nonempty/public/private/org discussion access and
-  owner browser confirmation remain unverified. Collection is a mutable observation
+  personal-account apply remain unverified. The owner confirmed synthetic discussion
+  browsing. Collection is a mutable observation
   window; edited reviews without a source clock need manual current selection.
   Discussion-wide deletion and scheduled collection are not implemented. Codex backfill
   and reading are implemented and owner screen verification is complete; final
