@@ -83,7 +83,8 @@ function EntryDetail() {
               <p className="reader-meta">Source/event date: {formatEntryDate(entry.event_at)} (Asia/Seoul)</p>
               {confirmDelete && (
                 <div className="delete-confirm">
-                  <p>Delete this entry and all versions? Imported records will be blocked from reimport. Associated originals, including shared ZIPs, will be purged.</p>
+                  <p>Delete this record and all versions? Imported records will be blocked from reimport. Associated originals, including shared ZIPs, will be purged.</p>
+                  {entry.provider === "github" && ["pull_request","issue","issue_comment","review","review_comment"].includes(entry.external_id?.split(":")[2] ?? "") && <p>Other records in the discussion remain independently preserved.</p>}
                   <div className="actions">
                     <button className="danger" disabled={remove.isPending} onClick={() => remove.mutate()}>
                       {remove.isPending ? "Deleting..." : "Confirm delete"}

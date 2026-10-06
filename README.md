@@ -252,6 +252,7 @@ Avoid introducing infrastructure purely to make the architecture look sophistica
 - `CAPTURE.md` — capture/acquisition strategy and risk register
 - `ACQUISITION.md` — Phase 2.1 read-only source checks and private preview guide
 - `HISTORY.md` — Phase 2.2 browser checks, retention policy and restore procedure
+- `GITHUB_DISCUSSIONS.md` — Phase 2.4B collector and synthetic browser verification
 
 The repository is the source of truth for the project. ChatGPT, Codex CLI, Antigravity CLI, and other coding agents should read the project documentation before making changes.
 
@@ -322,4 +323,11 @@ private resumable preparation, reviewed apply and Sources/evidence readers. Loca
 checks pass; all 415 selected-source items were prepared and verified through
 isolated PostgreSQL/HTTP/browser checks. Owner account apply and browser
 confirmation are next. See `GITHUB_BACKFILL.md` for synthetic and real-source
-commands. PR/review/issue/comment collection follows after this slice is verified.
+commands. Owner confirmation of this slice remains pending; discussion collection
+is described below.
+
+Phase 2.4B adds manual PR/issue/review/comment preparation and apply, independent
+observed versions, repository Discussions browsing and search focus. The selected
+repository currently has no PRs/issues; empty-source and synthetic HTTP/browser
+checks are complete. Owner verification and live nonempty/private source checks
+remain pending. See `GITHUB_DISCUSSIONS.md`.

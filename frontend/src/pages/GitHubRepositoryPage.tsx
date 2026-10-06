@@ -7,6 +7,7 @@ import { repositoryContext, repositoryTarget, repositoryRecordsUrl, githubEntryT
 import type { RepositorySummary, RepositoryRecords, RepositoryDocuments, RepositoryContext } from "../utils/githubRepositories";
 import { formatEntryDate } from "../utils/entries";
 import GitHubRecordStatus from "../components/GitHubRecordStatus";
+import GitHubDiscussionBrowser from "../components/GitHubDiscussionBrowser";
 
 export default function GitHubRepositoryPage() {
   const [params, setParams] = useSearchParams();
@@ -18,7 +19,7 @@ export default function GitHubRepositoryPage() {
   const url = context ? documents
     ? `/github-repositories/documents?${new URLSearchParams({scope:context.scope,limit:"20",offset:String(context.doc_offset)})}`
     : repositoryRecordsUrl(context) : "";
-  const rows = useQuery({queryKey:["github-records",url], enabled:!!context && !!summary.data,
+  const rows = useQuery({queryKey:["github-records",url], enabled:!!context && !!summary.data && context.tab !== "discussions",
     queryFn:()=>historyRequest<RepositoryRecords | RepositoryDocuments>(url)});
   const pageKey = documents ? "doc_offset" : context?.tab === "documents" ? "snapshot_offset" : "offset";
   const offset = context?.[pageKey] ?? 0;
@@ -44,6 +45,7 @@ export default function GitHubRepositoryPage() {
       {summary.error && <><p role="alert">{summary.error.message}</p><button onClick={()=>void summary.refetch()}>Retry repository</button></>}
       {repo && <>
         <p>{repo.commit_count} retained commits · {repo.document_count} document paths · {repo.snapshot_count} snapshots{repo.unclassified_count ? ` · ${repo.unclassified_count} unclassified records` : ""}</p>
+        {!!((repo.pull_request_count ?? 0)+(repo.issue_count ?? 0)+(repo.orphan_count ?? 0)) && <p>{repo.pull_request_count ?? 0} PRs · {repo.issue_count ?? 0} issues · {repo.comment_count ?? 0} comments · {repo.review_count ?? 0} reviews{repo.orphan_count ? ` · ${repo.orphan_count} discussions without a retained parent` : ""}</p>}
         <p className="record-date">Source period: {formatEntryDate(repo.start_at)} – {formatEntryDate(repo.end_at)} (Asia/Seoul)</p>
         {!!repo.unknown_date_count && <p>{repo.unknown_date_count} records have an unknown source date.</p>}
         {(repo.partial || repo.review_required) && <p className="help-text">Some retained evidence is partial or needs version review.</p>}
@@ -51,8 +53,9 @@ export default function GitHubRepositoryPage() {
       </>}
     </section>
     {repo && <section className="panel repository-browser" aria-label="Repository records">
-      <nav className="repository-tabs" aria-label="Repository views">{(["commits","documents",...(repo.unclassified_count || context.tab === "unclassified" ? ["unclassified"] : [])] as RepositoryContext["tab"][]).map(tab =>
-        <button key={tab} aria-current={context.tab === tab ? "page" : undefined} onClick={()=>change({...context,tab})}>{tab === "commits" ? "Commits" : tab === "documents" ? "Documents" : "Unclassified"}</button>)}</nav>
+      <nav className="repository-tabs" aria-label="Repository views">{(["commits","documents","discussions",...(repo.unclassified_count || context.tab === "unclassified" ? ["unclassified"] : [])] as RepositoryContext["tab"][]).map(tab =>
+        <button key={tab} aria-current={context.tab === tab ? "page" : undefined} onClick={()=>change({...context,tab})}>{tab === "commits" ? "Commits" : tab === "documents" ? "Documents" : tab === "discussions" ? "Discussions" : "Unclassified"}</button>)}</nav>
+      {context.tab === "discussions" ? <GitHubDiscussionBrowser key={`${context.scope}:${context.thread_kind}:${context.thread_id}`} context={context} change={change} /> : <>
       {context.tab === "documents" && <p className="help-text">Latest retained snapshots describe stored history. They may differ from the current GitHub files or a selected branch head.</p>}
       {context.tab === "documents" && context.path && <><button onClick={()=>change({...context,path:null,snapshot_offset:0})}>All documents</button><h3 className="repository-path">{context.path}</h3></>}
       {rows.isLoading && <p role="status">Loading records...</p>}
@@ -80,6 +83,7 @@ export default function GitHubRepositoryPage() {
         })}</div>
         <div className="actions pagination"><button disabled={rows.isFetching || !offset} onClick={()=>change({...context,[pageKey]:Math.max(0,offset-20)})}>Previous page</button>
           <button disabled={rows.isFetching || offset+20>=data.total} onClick={()=>change({...context,[pageKey]:offset+20})}>Next page</button></div>
+      </>}
       </>}
     </section>}
   </>;

@@ -4,7 +4,7 @@ import type { Entry } from "../api/entries";
 import type { components } from "../api/generated/schema";
 import { historyRequest } from "../api/history";
 import { entryTarget, resolveEntryContext } from "../utils/entryNavigation";
-import { githubEntryTarget, safeRepositoryContext } from "../utils/githubRepositories";
+import { githubEntryTarget, safeRepositoryContext, discussionTarget, repositoryTarget } from "../utils/githubRepositories";
 
 export default function GitHubReader({ entry }: { entry: Entry }) {
   const cache = useQueryClient();
@@ -22,6 +22,35 @@ export default function GitHubReader({ entry }: { entry: Entry }) {
   if (!payload) return <pre className="entry-content reader-body">{entry.content ?? "No content"}</pre>;
   // Require the expected origin even when a response is served from a stale cache.
   const safeLocator = data.locator?.startsWith("https://github.com/") ? data.locator : null;
+  if (payload.kind !== "github_commit" && payload.kind !== "github_document") {
+    const parentKind = "parent_kind" in payload ? payload.parent_kind : payload.kind === "github_pull_request" ? "pull_request" : "issue";
+    const parentId = "parent_id" in payload ? payload.parent_id : payload.object_id;
+    return <div className="github-reader">
+      {entry.source_state === "deleted" && <span className="badge">Deleted at source</span>}
+      {entry.review_required && <span className="badge">Version review needed</span>}
+      <p>Repository: {payload.repository} · {parentKind === "pull_request" ? "PR" : "Issue"} #{payload.number}</p>
+      {safeLocator && <p><a href={safeLocator} target="_blank" rel="noopener noreferrer">Open GitHub source</a></p>}
+      <p><Link to={repository?.tab === "discussions" && repository.thread_kind === parentKind && repository.thread_id === String(parentId)
+        ? repositoryTarget({...repository,focus_entry_id:entry.id})
+        : discussionTarget(`repo:${payload.repository_id}`,parentKind,String(parentId),context,entry.id)}>Browse discussion</Link></p>
+      {"state" in payload && <p>State: {payload.state}{payload.kind === "github_pull_request" && payload.merged ? " · Merged" : ""}{payload.kind === "github_pull_request" && payload.draft ? " · Draft" : ""}</p>}
+      <p>Author: {payload.author ?? "Unknown"}</p>
+      {payload.kind === "github_review" && <p className="help-text">{payload.state === "PENDING" ? "Unsubmitted draft review. " : ""}Changes without a verified edit date need explicit version selection.</p>}
+      {!!payload.omissions.length && <p className="help-text">Collection gaps: {payload.omissions.join(", ")}</p>}
+      <pre className="entry-content reader-body">{payload.body || (payload.body_state === "unavailable" ? "Body unavailable" : "Empty body")}</pre>
+      {payload.kind === "github_review_comment" && <>
+        <p>Code location: {payload.path ?? "Unavailable"}:{payload.line ?? "unknown"} ({payload.side ?? "side unknown"})
+          {payload.original_line && ` · Original line: ${payload.original_line}`}</p>
+        {payload.review_id && <p>Review ID: {payload.review_id}</p>}{payload.in_reply_to_id && <p>Reply to code comment ID: {payload.in_reply_to_id}</p>}
+        {payload.diff_hunk && <details><summary>Recorded code context</summary><pre className="entry-content">{payload.diff_hunk}</pre></details>}
+      </>}
+      {payload.kind === "github_pull_request" && !payload.commits_complete && <p className="help-text">PR commit membership is incomplete.</p>}
+      {!!data.commit_links?.length && <details><summary>Related commits</summary><ul>{data.commit_links.map(link=><li key={link.sha}>
+        {link.roles.join(", ")} · {link.entry_id ? <Link to={repository ? githubEntryTarget(link.entry_id,repository) : entryTarget(link.entry_id,context)}>{link.sha.slice(0,8)}</Link>
+          : <a href={`https://github.com/${payload.repository}/commit/${link.sha}`} target="_blank" rel="noopener noreferrer">{link.sha.slice(0,8)} · Not retained locally</a>}
+      </li>)}</ul></details>}
+    </div>;
+  }
   return <div className="github-reader">
     <p>Repository: {payload.repository} · Commit: <code>{payload.sha}</code></p>
     {safeLocator && <p><a href={safeLocator} target="_blank" rel="noopener noreferrer">Open GitHub source</a></p>}

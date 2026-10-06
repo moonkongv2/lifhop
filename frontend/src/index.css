@@ -213,6 +213,12 @@ details > p:first-of-type { margin-top: 12px; }
 .repository-browser { padding: 24px; min-width: 0; }
 .repository-browser .records-toolbar { flex-wrap: wrap; gap: .5rem; }
 .repository-browser .records-toolbar span { white-space: normal; overflow-wrap: anywhere; }
+.discussion-filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); gap: 12px; align-items: end; margin: 18px 0; }
+.discussion-root { border-bottom: 1px solid var(--border); padding: 20px 0; overflow-wrap: anywhere; }
+.discussion-browser .github-reader { min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
+.discussion-browser .reader-body { min-height: 0; margin: 16px 0; max-width: 100%; }
+.discussion-browser .entry-content { font-size: 13px; max-width: 100%; }
+.discussion-focus { background: var(--surface); box-shadow: inset 3px 0 var(--accent); padding-inline: 12px; }
 @media (max-width: 650px) {
   .repository-header, .repository-browser { padding: 18px; }
 }

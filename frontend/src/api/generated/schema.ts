@@ -722,6 +722,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/github-repositories/discussions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Discussions */
+        get: operations["read_discussions_github_repositories_discussions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/github-repositories/discussions/{parent_kind}/{parent_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Thread */
+        get: operations["read_thread_github_repositories_discussions__parent_kind___parent_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/entries/{entry_id}/github-presentation": {
         parameters: {
             query?: never;
@@ -896,7 +930,7 @@ export interface components {
             /** Event At */
             event_at?: string | null;
             /** Payload */
-            payload: components["schemas"]["DocumentPayload"] | components["schemas"]["ConversationPayload"] | components["schemas"]["DevSessionPayload"] | components["schemas"]["GitHubCommitPayload"] | components["schemas"]["GitHubDocumentPayload"];
+            payload: components["schemas"]["DocumentPayload"] | components["schemas"]["ConversationPayload"] | components["schemas"]["DevSessionPayload"] | components["schemas"]["GitHubCommitPayload"] | components["schemas"]["GitHubDocumentPayload"] | components["schemas"]["GitHubPullRequestPayload"] | components["schemas"]["GitHubIssuePayload"] | components["schemas"]["GitHubIssueCommentPayload"] | components["schemas"]["GitHubReviewPayload"] | components["schemas"]["GitHubReviewCommentPayload"];
         };
         /** CanonicalMessage */
         CanonicalMessage: {
@@ -1302,7 +1336,18 @@ export interface components {
             /** Event At */
             event_at?: string | null;
             /** Payload */
-            payload: components["schemas"]["GitHubCommitPayload"] | components["schemas"]["GitHubDocumentPayload"];
+            payload: components["schemas"]["GitHubCommitPayload"] | components["schemas"]["GitHubDocumentPayload"] | components["schemas"]["GitHubPullRequestPayload"] | components["schemas"]["GitHubIssuePayload"] | components["schemas"]["GitHubIssueCommentPayload"] | components["schemas"]["GitHubReviewPayload"] | components["schemas"]["GitHubReviewCommentPayload"];
+        };
+        /** GitHubCommitLink */
+        GitHubCommitLink: {
+            /** Sha */
+            sha: string;
+            /** Roles */
+            roles: string[];
+            /** Entry Id */
+            entry_id: number | null;
+            /** Locator */
+            locator: string;
         };
         /** GitHubCommitPayload */
         GitHubCommitPayload: {
@@ -1353,9 +1398,106 @@ export interface components {
             /** Lower Bound */
             lower_bound: boolean;
             /** Gaps */
-            gaps?: ("SOURCE_CONFLICT" | "SOURCE_LIMIT" | "FORMAT_UNSUPPORTED" | "READ_FAILED" | "TIMEOUT" | "PAGE_LIMIT" | "RUN_LIMIT" | "INVALID_ITEM" | "TREE_TRUNCATED" | "DOCUMENT_TYPE_OMITTED" | "DOCUMENT_SIZE_LIMIT" | "DOCUMENT_UNAVAILABLE" | "DOCUMENT_INVALID" | "PATH_EXCLUDED" | "PATCH_UNAVAILABLE" | "FILE_PAGE_LIMIT" | "ITEM_TRUNCATED" | "PREPARATION_INCOMPLETE" | "SENSITIVE_CONTENT_OMITTED" | "CREDENTIAL_REDACTED" | "TEXT_TRUNCATED" | "DATE_UNAVAILABLE")[];
+            gaps?: ("SOURCE_CONFLICT" | "SOURCE_LIMIT" | "FORMAT_UNSUPPORTED" | "READ_FAILED" | "TIMEOUT" | "PAGE_LIMIT" | "RUN_LIMIT" | "INVALID_ITEM" | "TREE_TRUNCATED" | "DOCUMENT_TYPE_OMITTED" | "DOCUMENT_SIZE_LIMIT" | "DOCUMENT_UNAVAILABLE" | "DOCUMENT_INVALID" | "PATH_EXCLUDED" | "PATCH_UNAVAILABLE" | "FILE_PAGE_LIMIT" | "ITEM_TRUNCATED" | "PREPARATION_INCOMPLETE" | "SENSITIVE_CONTENT_OMITTED" | "CREDENTIAL_REDACTED" | "TEXT_TRUNCATED" | "DATE_UNAVAILABLE" | "MUTABLE_SOURCE_CHANGED" | "PR_COMMIT_MEMBERSHIP_INCOMPLETE" | "AUTH_FAILED" | "ACCESS_DENIED" | "REF_UNAVAILABLE" | "SSO_REQUIRED" | "REPOSITORY_REDIRECT" | "CONFLICT")[];
             /** Head Documents */
             head_documents?: components["schemas"]["GitHubHeadDocument"][];
+            discussions?: components["schemas"]["GitHubDiscussionCoverage"] | null;
+        };
+        /** GitHubDiscussionCoverage */
+        GitHubDiscussionCoverage: {
+            /** Records */
+            records: {
+                [key: string]: number;
+            };
+            /** Discovered Pull Requests */
+            discovered_pull_requests: number;
+            /** Discovered Issues */
+            discovered_issues: number;
+            /** Walk Complete */
+            walk_complete: boolean;
+            /**
+             * Snapshot Atomic
+             * @default false
+             * @constant
+             */
+            snapshot_atomic: false;
+            /**
+             * Started At
+             * Format: date-time
+             */
+            started_at: string;
+            /**
+             * Finished At
+             * Format: date-time
+             */
+            finished_at: string;
+            /** Failed */
+            failed: number;
+            /** Excluded */
+            excluded: number;
+        };
+        /** GitHubDiscussionRecord */
+        GitHubDiscussionRecord: {
+            /** Id */
+            id: number;
+            /** Title */
+            title: string;
+            /** Sha */
+            sha: string | null;
+            /** Event At */
+            event_at: string | null;
+            /** Current Version Id */
+            current_version_id: number | null;
+            /** Source State */
+            source_state: string;
+            /** Partial */
+            partial: boolean;
+            /** Review Required */
+            review_required: boolean;
+            /** Kind */
+            kind: string;
+        };
+        /** GitHubDiscussionSummary */
+        GitHubDiscussionSummary: {
+            /**
+             * Parent Kind
+             * @enum {string}
+             */
+            parent_kind: "pull_request" | "issue";
+            /** Parent Id */
+            parent_id: string;
+            /** Number */
+            number: string;
+            /** Title */
+            title: string;
+            /** Root Entry Id */
+            root_entry_id: number | null;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "open" | "closed" | "merged" | "unknown";
+            /** Event At */
+            event_at: string | null;
+            /** Orphan */
+            orphan: boolean;
+            /** Child Count */
+            child_count: number;
+            /** Partial */
+            partial: boolean;
+            /** Review Required */
+            review_required: boolean;
+        };
+        /** GitHubDiscussionsResponse */
+        GitHubDiscussionsResponse: {
+            /** Items */
+            items: components["schemas"]["GitHubDiscussionSummary"][];
+            /** Total */
+            total: number;
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
         };
         /** GitHubDocumentPayload */
         GitHubDocumentPayload: {
@@ -1440,6 +1582,98 @@ export interface components {
             /** External Id */
             external_id: string;
         };
+        /** GitHubIssueCommentPayload */
+        GitHubIssueCommentPayload: {
+            /** Repository Id */
+            repository_id: number;
+            /** Repository */
+            repository: string;
+            /** Object Id */
+            object_id: number;
+            /** Number */
+            number: number;
+            /** Author */
+            author?: string | null;
+            /** Author Id */
+            author_id?: number | null;
+            /** Body */
+            body: string;
+            /**
+             * Body State
+             * @enum {string}
+             */
+            body_state: "available" | "empty" | "unavailable";
+            /** Created At */
+            created_at?: string | null;
+            /** Updated At */
+            updated_at?: string | null;
+            /** Omissions */
+            omissions?: string[];
+            /** Filter Version */
+            filter_version: string;
+            /**
+             * Parent Kind
+             * @enum {string}
+             */
+            parent_kind: "pull_request" | "issue";
+            /** Parent Id */
+            parent_id: number;
+            /** Parent External Id */
+            parent_external_id: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "github_issue_comment";
+        };
+        /** GitHubIssuePayload */
+        GitHubIssuePayload: {
+            /** Repository Id */
+            repository_id: number;
+            /** Repository */
+            repository: string;
+            /** Object Id */
+            object_id: number;
+            /** Number */
+            number: number;
+            /** Author */
+            author?: string | null;
+            /** Author Id */
+            author_id?: number | null;
+            /** Body */
+            body: string;
+            /**
+             * Body State
+             * @enum {string}
+             */
+            body_state: "available" | "empty" | "unavailable";
+            /** Created At */
+            created_at?: string | null;
+            /** Updated At */
+            updated_at?: string | null;
+            /** Omissions */
+            omissions?: string[];
+            /** Filter Version */
+            filter_version: string;
+            /** Title */
+            title: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "open" | "closed";
+            /** State Reason */
+            state_reason?: string | null;
+            /** Labels */
+            labels?: string[];
+            /** Closed At */
+            closed_at?: string | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "github_issue";
+        };
         /** GitHubPresentation */
         GitHubPresentation: {
             /** Entry Id */
@@ -1447,13 +1681,79 @@ export interface components {
             /** Version Id */
             version_id: number | null;
             /** Payload */
-            payload: (components["schemas"]["GitHubCommitPayload"] | components["schemas"]["GitHubDocumentPayload"]) | null;
+            payload: (components["schemas"]["GitHubCommitPayload"] | components["schemas"]["GitHubDocumentPayload"] | components["schemas"]["GitHubPullRequestPayload"] | components["schemas"]["GitHubIssuePayload"] | components["schemas"]["GitHubIssueCommentPayload"] | components["schemas"]["GitHubReviewPayload"] | components["schemas"]["GitHubReviewCommentPayload"]) | null;
             /** Locator */
             locator: string | null;
             /** Related */
             related: components["schemas"]["GitHubRelatedRecord"][];
             /** Related Has More */
             related_has_more: boolean;
+            /** Commit Links */
+            commit_links?: components["schemas"]["GitHubCommitLink"][];
+        };
+        /** GitHubPullRequestPayload */
+        GitHubPullRequestPayload: {
+            /** Repository Id */
+            repository_id: number;
+            /** Repository */
+            repository: string;
+            /** Object Id */
+            object_id: number;
+            /** Number */
+            number: number;
+            /** Author */
+            author?: string | null;
+            /** Author Id */
+            author_id?: number | null;
+            /** Body */
+            body: string;
+            /**
+             * Body State
+             * @enum {string}
+             */
+            body_state: "available" | "empty" | "unavailable";
+            /** Created At */
+            created_at?: string | null;
+            /** Updated At */
+            updated_at?: string | null;
+            /** Omissions */
+            omissions?: string[];
+            /** Filter Version */
+            filter_version: string;
+            /** Title */
+            title: string;
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "open" | "closed";
+            /** State Reason */
+            state_reason?: string | null;
+            /** Labels */
+            labels?: string[];
+            /** Closed At */
+            closed_at?: string | null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "github_pull_request";
+            /** Merged */
+            merged: boolean;
+            /** Draft */
+            draft: boolean;
+            /** Merged At */
+            merged_at?: string | null;
+            /** Base Sha */
+            base_sha?: string | null;
+            /** Head Sha */
+            head_sha?: string | null;
+            /** Merge Sha */
+            merge_sha?: string | null;
+            /** Commits */
+            commits?: string[];
+            /** Commits Complete */
+            commits_complete: boolean;
         };
         /** GitHubRecordSummary */
         GitHubRecordSummary: {
@@ -1504,9 +1804,13 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "commit" | "document" | "unclassified";
+            kind: "commit" | "document" | "discussion" | "unclassified";
             /** Path */
             path?: string | null;
+            /** Parent Kind */
+            parent_kind?: ("pull_request" | "issue") | null;
+            /** Parent Id */
+            parent_id?: string | null;
         };
         /** GitHubRepositorySummary */
         GitHubRepositorySummary: {
@@ -1532,6 +1836,152 @@ export interface components {
             partial: boolean;
             /** Review Required */
             review_required: boolean;
+            /**
+             * Pull Request Count
+             * @default 0
+             */
+            pull_request_count: number;
+            /**
+             * Issue Count
+             * @default 0
+             */
+            issue_count: number;
+            /**
+             * Comment Count
+             * @default 0
+             */
+            comment_count: number;
+            /**
+             * Review Count
+             * @default 0
+             */
+            review_count: number;
+            /**
+             * Orphan Count
+             * @default 0
+             */
+            orphan_count: number;
+        };
+        /** GitHubReviewCommentPayload */
+        GitHubReviewCommentPayload: {
+            /** Repository Id */
+            repository_id: number;
+            /** Repository */
+            repository: string;
+            /** Object Id */
+            object_id: number;
+            /** Number */
+            number: number;
+            /** Author */
+            author?: string | null;
+            /** Author Id */
+            author_id?: number | null;
+            /** Body */
+            body: string;
+            /**
+             * Body State
+             * @enum {string}
+             */
+            body_state: "available" | "empty" | "unavailable";
+            /** Created At */
+            created_at?: string | null;
+            /** Updated At */
+            updated_at?: string | null;
+            /** Omissions */
+            omissions?: string[];
+            /** Filter Version */
+            filter_version: string;
+            /**
+             * Parent Kind
+             * @enum {string}
+             */
+            parent_kind: "pull_request" | "issue";
+            /** Parent Id */
+            parent_id: number;
+            /** Parent External Id */
+            parent_external_id: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "github_review_comment";
+            /** Review Id */
+            review_id?: number | null;
+            /** In Reply To Id */
+            in_reply_to_id?: number | null;
+            /** Path */
+            path?: string | null;
+            /** Diff Hunk */
+            diff_hunk?: string | null;
+            /** Line */
+            line?: number | null;
+            /** Original Line */
+            original_line?: number | null;
+            /** Start Line */
+            start_line?: number | null;
+            /** Original Start Line */
+            original_start_line?: number | null;
+            /** Side */
+            side?: ("LEFT" | "RIGHT") | null;
+            /** Start Side */
+            start_side?: ("LEFT" | "RIGHT") | null;
+            /** Commit Id */
+            commit_id?: string | null;
+            /** Original Commit Id */
+            original_commit_id?: string | null;
+        };
+        /** GitHubReviewPayload */
+        GitHubReviewPayload: {
+            /** Repository Id */
+            repository_id: number;
+            /** Repository */
+            repository: string;
+            /** Object Id */
+            object_id: number;
+            /** Number */
+            number: number;
+            /** Author */
+            author?: string | null;
+            /** Author Id */
+            author_id?: number | null;
+            /** Body */
+            body: string;
+            /**
+             * Body State
+             * @enum {string}
+             */
+            body_state: "available" | "empty" | "unavailable";
+            /** Created At */
+            created_at?: string | null;
+            /** Updated At */
+            updated_at?: string | null;
+            /** Omissions */
+            omissions?: string[];
+            /** Filter Version */
+            filter_version: string;
+            /**
+             * Parent Kind
+             * @enum {string}
+             */
+            parent_kind: "pull_request" | "issue";
+            /** Parent Id */
+            parent_id: number;
+            /** Parent External Id */
+            parent_external_id: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "github_review";
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "APPROVED" | "CHANGES_REQUESTED" | "COMMENTED" | "DISMISSED" | "PENDING";
+            /** Submitted At */
+            submitted_at?: string | null;
+            /** Commit Id */
+            commit_id?: string | null;
         };
         /** GitHubRunCreate */
         GitHubRunCreate: {
@@ -1597,6 +2047,18 @@ export interface components {
             counts: {
                 [key: string]: number;
             };
+        };
+        /** GitHubThreadResponse */
+        GitHubThreadResponse: {
+            discussion: components["schemas"]["GitHubDiscussionSummary"];
+            /** Items */
+            items: components["schemas"]["GitHubDiscussionRecord"][];
+            /** Total */
+            total: number;
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -3475,6 +3937,81 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GitHubRecordsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_discussions_github_repositories_discussions_get: {
+        parameters: {
+            query: {
+                scope: string;
+                kind?: ("pull_request" | "issue") | null;
+                state?: ("open" | "closed" | "merged" | "unknown") | null;
+                date_from?: string | null;
+                date_to?: string | null;
+                unknown_date?: boolean;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GitHubDiscussionsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_thread_github_repositories_discussions__parent_kind___parent_id__get: {
+        parameters: {
+            query: {
+                scope: string;
+                limit?: number;
+                offset?: number;
+                focus_entry_id?: number | null;
+            };
+            header?: never;
+            path: {
+                parent_kind: "pull_request" | "issue";
+                parent_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GitHubThreadResponse"];
                 };
             };
             /** @description Validation Error */

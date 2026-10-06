@@ -1221,3 +1221,33 @@ branches/run coverage remain in Sources. No AI-generated title or new grouping
 entity, schema, infrastructure or dependency is introduced. Deletion/annotations/
 permissions remain per Entry. Safe local repository returns preserve independent
 path/snapshot pages and the original Entries/Search context.
+
+## 2026-10-06: Preserve independent GitHub discussion records and group their reading
+
+Phase 2.4B uses numeric repository/object IDs for PRs, issues, general comments,
+reviews and code-review comments. Issues API PR rows are excluded; PR identity
+uses the Pulls API ID. Parents and children remain separate Entries/versions.
+Children retain only parent identity/number/kind, not a copy of parent title/body.
+Deleting a parent suppresses its reimport and leaves independent children; orphan
+reading never reconstructs the removed body. Group before pagination using current
+owner-scoped metadata. Orphan dates use the first known retained child date with
+an explicit label; all-unknown dates remain separately filterable.
+
+Reuse SourcePolicy, owner locks, receipts, version selection and individual AI
+denies. Source-deleted state is not inferred from access/fetch failures. Reviews
+have no verified REST edit clock: changed observations remain review candidates.
+Submission or observation time never substitutes for an edit date.
+
+B has separate config/parser/preview format while reusing bounded repository GETs,
+filtering and explicit apply. Optional discussion coverage omits only its own
+absent field, preserving A v1 bytes/digests/replay. Kind counts are verified at
+seal/create/finish. Mutable pages describe an observation window, not an atomic
+snapshot; interrupted stages revalidate roots and retry once on a changed clock.
+Explicit gaps cover failed walks and capped PR commit membership. Related SHA
+roles are distinct and link only to the same owner's retained repository commits.
+No migration, dependency, external AI, queue/worker or AWS service is added.
+
+Actual selected-source inventory was empty on this date. Verify Empty via real
+HTTP and nonempty behavior with labeled synthetic evidence, without creating
+GitHub objects. Personal apply/browser confirmation and real nonempty/private
+discussion validation remain separate checks.

@@ -25,12 +25,16 @@ export default function CollectionRuns() {
     {runs.error && <><p role="alert">{runs.error.message}</p><button onClick={() => void runs.refetch()}>Retry collection results</button></>}
     {runs.data?.length === 0 && <p>No backfill runs on this page.</p>}
     {runs.data?.map(run => <article key={run.id}>
-      <h4>Backfill #{run.id} · {run.status === "empty" && run.provider === "github" ? "No selected records" : statusLabels[run.status] ?? run.status}</h4>
+      <h4>Backfill #{run.id} · {run.status === "empty" && run.provider === "github" ? run.coverage.discussions ? "No discussions found in selected scope" : "No selected records" : statusLabels[run.status] ?? run.status}</h4>
       <p>Source: {run.scope}</p>
       <p>Started: {formatEntryDate(run.started_at)}<br />Last contact: {formatEntryDate(run.last_seen_at)}<br />Finished: {formatEntryDate(run.completed_at)}</p>
       {run.provider === "github" ? <>
         <p>Repository: {run.coverage.repository} (ID {run.coverage.repository_id})</p>
-        <p>Prepared: {run.coverage.commits} commits · {run.coverage.documents} document snapshots. {run.coverage.lower_bound ? "Counts are lower bounds; see collection gaps." : "Selected traversal finished."}</p>
+        {run.coverage.discussions ? <>
+          <p>Prepared: {run.coverage.discussions.records.pull_request} PRs · {run.coverage.discussions.records.issue} issues · {run.coverage.discussions.records.issue_comment} general comments · {run.coverage.discussions.records.review} reviews · {run.coverage.discussions.records.review_comment} code review comments.</p>
+          <p>Snapshot collected over a time window: {formatEntryDate(run.coverage.discussions.started_at)} – {formatEntryDate(run.coverage.discussions.finished_at)}. {run.coverage.discussions.walk_complete ? "Selected traversal finished." : "Traversal incomplete."}</p>
+          <p>{run.coverage.discussions.failed} invalid records · {run.coverage.discussions.excluded} excluded. {run.coverage.lower_bound && "Counts are lower bounds; see collection gaps."}</p>
+        </> : <p>Prepared: {run.coverage.commits} commits · {run.coverage.documents} document snapshots. {run.coverage.lower_bound ? "Counts are lower bounds; see collection gaps." : "Selected traversal finished."}</p>}
         <ul>{run.coverage.branches.map(branch => <li key={branch.name}>{branch.name}: <code>{branch.head_sha ?? "No head"}</code> · {branch.commits} reachable commits · {branch.walk_complete ? "History walk finished" : "History walk incomplete"}</li>)}</ul>
       </> : <p>Sessions: {run.coverage.discovered} discovered · {run.coverage.selected} selected · {run.coverage.excluded} excluded · {run.coverage.read} read · {run.coverage.failed} failed · {run.coverage.deferred} deferred.</p>}
       <p>{run.provider === "github" ? "Records" : "Turns"}: {run.counts.new ?? 0} new · {run.counts.unchanged ?? 0} unchanged · {run.counts.updated ?? 0} updated · {run.counts.retained ?? 0} retained for review · {run.counts.blocked ?? 0} blocked · {run.counts.failed ?? 0} failed. Expected: {run.expected_items}.</p>

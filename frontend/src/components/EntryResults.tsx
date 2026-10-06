@@ -5,7 +5,7 @@ import { entryTarget, listContext } from "../utils/entryNavigation";
 import { formatEntryDate, sourceLabels } from "../utils/entries";
 import Icon from "./Icon";
 import { sessionTarget } from "../utils/codexSessions";
-import { repositoryLink } from "../utils/githubRepositories";
+import { repositoryLink, discussionTarget } from "../utils/githubRepositories";
 
 export default function EntryResults({ searching }: { searching: boolean }) {
   const [rawParams, setParams] = useSearchParams();
@@ -35,7 +35,10 @@ export default function EntryResults({ searching }: { searching: boolean }) {
       {data.items.length === 0 && <div className="panel empty-state"><Icon name="archive" /><p>{searching ? "No entries match your search." : "No entries yet."}</p><span>{searching ? "Try another phrase or reset your filters." : "Create a note or import your first records."}</span></div>}
       <div className="records-grid">{data.items.map((entry) => <article className="panel record-card" key={entry.id}>
         <div className="badges"><span className="badge source"><Icon name="note" />{sourceLabels[entry.source ?? "unknown"]}</span><span className="badge">{entry.type}</span></div>
-        <Link to={entry.session_ref ? sessionTarget(entry.session_ref, context, entry.id) : entryTarget(entry.id, context)}><h3>{entry.title}</h3></Link>
+        <Link to={entry.session_ref ? sessionTarget(entry.session_ref, context, entry.id)
+          : entry.repository_ref?.parent_kind && entry.repository_ref.parent_id
+          ? discussionTarget(entry.repository_ref.source_scope,entry.repository_ref.parent_kind,entry.repository_ref.parent_id,context,entry.id)
+          : entryTarget(entry.id, context)}><h3>{entry.title}</h3></Link>
         {entry.matched_in_commentary_only && <span className="badge">Matched in work commentary</span>}
         {entry.source_state === "deleted" && <span className="badge">Deleted at source</span>}
         {entry.repository_ref && <p className="help-text">{entry.repository_ref.repository ?? entry.repository_ref.source_scope} · {entry.repository_ref.kind}<br />
