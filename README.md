@@ -253,6 +253,7 @@ Avoid introducing infrastructure purely to make the architecture look sophistica
 - `ACQUISITION.md` — Phase 2.1 read-only source checks and private preview guide
 - `HISTORY.md` — Phase 2.2 browser checks, retention policy and restore procedure
 - `GITHUB_DISCUSSIONS.md` — Phase 2.4B collector and synthetic browser verification
+- `EVALUATION.md` — Phase 3.1 private question authoring and keyword-retrieval baselines
 
 The repository is the source of truth for the project. ChatGPT, Codex CLI, Antigravity CLI, and other coding agents should read the project documentation before making changes.
 
@@ -329,5 +330,11 @@ is described below.
 Phase 2.4B adds manual PR/issue/review/comment preparation and apply, independent
 observed versions, repository Discussions browsing and search focus. The selected
 repository currently has no PRs/issues; empty-source and synthetic HTTP/browser
-checks are complete. Owner verification and live nonempty/private source checks
-remain pending. See `GITHUB_DISCUSSIONS.md`.
+checks are complete; the owner confirmed synthetic browsing. Live nonempty/private
+source checks remain pending. See `GITHUB_DISCUSSIONS.md`.
+
+Phase 3.1 adds a local private evaluation CLI with fixed question/evidence revisions,
+read-only PostgreSQL snapshots, current/historical passage references, keyword search
+baselines and local reports. The owner's set has 20 unreviewed local-rule candidates;
+semantic approval and real baseline measurements remain pending. Synthetic
+verification is separate. See `EVALUATION.md` for authoring and review commands.

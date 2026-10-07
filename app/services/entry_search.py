@@ -19,8 +19,7 @@ def date_boundary(value: date) -> datetime:
     return datetime.combine(value, time.min, ZoneInfo(USER_TIMEZONE)).astimezone(timezone.utc)
 
 
-def search_entries(
-    db: Session,
+def search_components(
     *,
     user_id: int,
     q: str = "",
@@ -30,10 +29,8 @@ def search_entries(
     date_field: DateField = "created_at",
     date_from: date | None = None,
     date_to: date | None = None,
-    limit: int = 20,
-    offset: int = 0,
     include_work_commentary: bool = False,
-) -> EntrySearchResponse:
+):
     conditions = [Entry.user_id == user_id]
     if source == EntrySource.UNKNOWN:
         conditions.append(or_(Entry.provider.is_(None), ~Entry.provider.in_([source.value for source in EntrySource if source != EntrySource.UNKNOWN])))
@@ -64,6 +61,29 @@ def search_entries(
             work_only = (Entry.provider == "codex") & body_match & ~title_match & ~func.coalesce(primary.ilike(f"%{escaped}%", escape="\\"), False)
         order.append(case((Entry.title.ilike(escaped, escape="\\"), 0), (title_match, 1), else_=2))
     order.extend([Entry.created_at.desc(), Entry.id.desc()])
+    return conditions, order, searched, work_only
+
+
+def search_entries(
+    db: Session,
+    *,
+    user_id: int,
+    q: str = "",
+    source: EntrySource | None = None,
+    source_state: str | None = None,
+    entry_type: EntryType | None = None,
+    date_field: DateField = "created_at",
+    date_from: date | None = None,
+    date_to: date | None = None,
+    limit: int = 20,
+    offset: int = 0,
+    include_work_commentary: bool = False,
+) -> EntrySearchResponse:
+    conditions, order, searched, work_only = search_components(
+        user_id=user_id, q=q, source=source, source_state=source_state, entry_type=entry_type,
+        date_field=date_field, date_from=date_from, date_to=date_to,
+        include_work_commentary=include_work_commentary,
+    )
     total = db.scalar(select(func.count()).select_from(Entry).where(*conditions)) or 0
     version = EntryVersion.__table__.alias("v")
     thread = case((func.jsonb_typeof(version.c.payload["thread_id"]) == "string", version.c.payload["thread_id"].astext), else_=None)

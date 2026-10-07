@@ -1,12 +1,29 @@
 # lifhop Current Status
 
-Last updated: 2026-10-06
+Last updated: 2026-10-07
 
 ## Current product slice
 
+Phase 3.1 evaluation tooling is implemented; the real private set is not complete.
+Owner-selected account: `b@test.com`. The owner initialized the private set locally;
+revision 2 now contains 20 unreviewed local-rule candidates (13 with spans, 7 gaps,
+14 valid anchors). The retained corpus has 415 real GitHub and 33 Codex records;
+32 synthetic records were excluded. All records currently deny external AI, so
+source text was processed only locally without model transmission. Keyword matches
+do not prove factual support. Next: owner-check the questions/spans, replace
+candidate claims with checked facts, review, then freeze and run both baselines.
+No owner password was supplied to the agent; no real scored benchmark was run.
+Owner checked case-04: the linked candidate mainly identifies code location and
+does not clearly answer the worker's purpose/execution location. Keep it unapproved;
+find explicit supporting passages or record scoped insufficient evidence after review.
+The CLI uses read-only PostgreSQL snapshots, immutable private revisions, the same
+keyword search conditions/ranking as the API, versioned passage hashes and body-free
+reports. Natural questions and auxiliary keyword scores are separate. Synthetic
+20-case migrated-schema verification and Chromium reports passed; no schema,
+dependency, AI call or worker was added. Plan: `EVALUATION_PLAN.md`.
+
 Phase 2.4B GitHub discussions is implemented; the owner confirmed the synthetic
-browser flow using `GITHUB_DISCUSSIONS.md`. Next implementation: Phase 3.1 private
-evaluation questions and a keyword-retrieval baseline. A separate manual collector prepares/seals/applies
+browser flow using `GITHUB_DISCUSSIONS.md`. A separate manual collector prepares/seals/applies
 PRs/issues/comments/reviews, retaining independent versions and policy/deletion
 boundaries. Repository Discussions groups roots before pagination, reads children
 lazily, preserves missing-parent groups, and focuses Search hits on their page.
@@ -77,6 +94,20 @@ retention, deletion suppression, and source/repository/record-level external-AI
 exclusions are implemented foundations; full collectors remain upcoming.
 
 ## What works now
+
+- Private evaluation CLI: init/draft/edit/inspect/anchor/validate/review/run with explicit
+  local authentication, owner/database binding, immutable revisions and fixed queries.
+  Current-vs-historical evidence, AI eligibility, collection gaps and failed-score
+  denominators remain explicit. Synthetic fixture readiness never counts as the
+  real evaluation set. First full backend check failed 5 tests because the concurrent
+  evaluation test left committed fixture rows; fixture cleanup fixed that and the
+  rerun passed 316 tests; final checks including local candidate authoring passed
+  319 backend tests (22 evaluation tests). Reports passed 390/1440px standalone Chromium checks with
+  no page errors, outbound requests or document overflow. Real owner data/large
+  corpus benchmarks remain pending; private files stay in ignored `.local/evaluation/`.
+  Candidate claims cannot be approved unchanged. There are no explicit SHA overlaps
+  between these retained Codex turns and GitHub commits; life/PR/issue support remains
+  incomplete. Candidate relevance and adopted decisions require owner verification.
 
 - GitHub discussions: typed source IDs, immutable private previews, mutable-source
   staged resume, kind-count receipt checks and existing observed-version rules.
@@ -269,9 +300,11 @@ user-verifiable product slices in `ROADMAP.md`.
 
 ## Next
 
-1. Prepare Phase 3.1: about 20 real questions with private supporting passages,
-   fixed acceptance targets and a keyword-retrieval baseline. The owner confirmed
-   the Phase 2.4B synthetic browser flow; selected actual source has no discussions.
+1. Complete Phase 3.1's initialized private set for `b@test.com`: correct case-04's
+   inadequate candidate, check question/claim/span meaning, distinguish insufficient
+   evidence from known collection gaps, then approve about 20 real questions and
+   freeze the natural-language/keyword baselines. Candidate links alone do not
+   establish support. Owner confirmed Phase 2.4B synthetic browsing; actual source is empty.
 2. Confirm GitHub repository browsing in Entries → repository → Commits/Documents
    → reader → return, and Search → Browse repository → return. Existing stored
    GitHub Entries need no reimport for this UI. Repository browsing and the earlier
@@ -291,6 +324,13 @@ user-verifiable product slices in `ROADMAP.md`.
    → scheduled collectors → private AWS release.
 
 ## Known limitations
+
+- Phase 3.1 real question/evidence approval and owner report review remain pending.
+  The CLI reads the configured local DB and report links assume the app uses that DB.
+  Historical-only Entry hits are separate from passage retrieval; no AI answer or
+  claim-grounding/abstention test is performed. Exact natural-question substring
+  search may have low recall. Missing/invalid/timed-out cases stay visible; synthetic
+  corpora do not establish real quality. Very large corpus performance is unverified.
 
 - Repository document lists show the latest retained snapshot by known event date,
   then ID; they do not promise the current GitHub file or selected HEAD contents.

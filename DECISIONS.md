@@ -1251,3 +1251,30 @@ Actual selected-source inventory was empty on this date. Verify Empty via real
 HTTP and nonempty behavior with labeled synthetic evidence, without creating
 GitHub objects. Personal apply/browser confirmation and real nonempty/private
 discussion validation remain separate checks.
+
+## 2026-10-07: Freeze private evidence and lexical baselines before semantic retrieval
+
+Phase 3.1 uses local read-only PostgreSQL transactions and existing password
+verification; it adds no remote evaluation API or persistent application tables.
+Extract only the existing search conditions/ranking so evaluation and browser
+keyword search cannot silently diverge. Metadata projections avoid copying full
+result bodies. Evaluation never invokes policy helpers that create missing rows.
+
+Store owner/database-bound immutable dataset revisions under ignored private
+`.local/evaluation/`. Gold references pin Entry/version/hash and Unicode passage
+offsets/hash; source text is resolved in memory. Reports omit question/claim/source
+text, titles and annotations. Historical Entry hits do not prove historical passage
+retrieval. Missing, stale or failed cases stay visible in denominators/status counts.
+
+Freeze the natural question and up to three auxiliary keyword queries before each
+run. Score auxiliaries independently, average within a case then across cases,
+and keep primary/auxiliary results separate. Policy eligibility is an observation,
+not an AI response test. A synthetic fixture can verify tooling but cannot complete
+the real about-20-question set. Actual question/evidence meaning requires owner review.
+
+Local deterministic authoring may connect candidate spans without sending excluded
+source text to a model. Candidates remain drafts; `[Candidate]` claim placeholders
+are blocked from approval until the owner edits them into verified facts. A literal
+match can repeat a question without answering it. Cross-source candidates require
+explicit retained SHA overlap; missing matches are scoped candidate gaps. No source
+AI policy is changed to author an evaluation set.
