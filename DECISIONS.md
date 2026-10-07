@@ -1278,3 +1278,17 @@ are blocked from approval until the owner edits them into verified facts. A lite
 match can repeat a question without answering it. Cross-source candidates require
 explicit retained SHA overlap; missing matches are scoped candidate gaps. No source
 AI policy is changed to author an evaluation set.
+
+Owner-only local authoring previews may contain bounded, escaped pinned passages
+and alternative keyword matches. Validate ownership, content/passage hashes and
+version availability before display, honor the case filters, and never auto-edit
+gold or approvals from search matches. Save these previews privately with no remote
+resources/scripts; do not open excluded real passages in agent browser tools.
+Regeneration checks current availability, while already exported immutable files
+can retain old text. Measurement reports keep their existing body-free contract.
+
+Guided answer registration collects owner-written facts and selected pinned evidence
+locally. Each claim references its evidence group; explicit owner confirmation is
+required before immutable publication. Run both fixed baselines after registration,
+retaining the saved revision if measurement later fails. Do not treat the owner's
+confirmation that an answer exists as an identified passage or a fabricated gold claim.

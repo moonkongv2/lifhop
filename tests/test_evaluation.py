@@ -432,3 +432,121 @@ def test_cli_draft_publishes_private_revision_and_sheet(tmp_path,db_session,auth
     sheet=directory/"candidates-revision-000002.html"
     assert sheet.is_file() and sheet.stat().st_mode & 0o777==0o600
     assert main(["draft","--set",str(directory)])==1
+
+
+def test_private_review_sheet_pins_passages_and_scopes_alternatives(db_session,authenticated_user,another_user):
+    from app.evaluation.review_sheet import render_review_sheet
+    owner,_=authenticated_user
+    entry=record(db_session,owner,title="Real-shaped fixture",content="worker <script>unsafe()</script>",provider="manual")
+    alternative=record(db_session,owner,title="Another fixture",content="worker alternative",provider="manual")
+    record(db_session,owner,content="worker synthetic hidden",provider="manual")
+    record(db_session,another_user,title="Foreign",content="worker foreign hidden",provider="manual")
+    record(db_session,owner,title="Other source",content="worker wrong source hidden",provider="github")
+    case=gold(db_session,owner,entry,question="worker",keywords=["worker"])
+    case=case.model_copy(update={"status":"draft","reviewed_by":None,"reviewed_at":None,"filters":Filters(source="manual")})
+    snapshot=snap(db_session,owner)
+    data=dataset(snapshot,[case])
+    before=data.digest
+    html,stats=render_review_sheet(snapshot,data)
+    html=html.decode()
+    assert "&lt;script&gt;unsafe()&lt;/script&gt;" in html and "<script>" not in html
+    assert "worker alternative" in html and f"Entry {alternative.id}" in html
+    assert "synthetic hidden" not in html and "foreign hidden" not in html and "wrong source hidden" not in html
+    assert stats["saved_spans"]==stats["alternative_spans"]==1
+    assert data.digest==before and data.cases[0].status=="draft"
+    snapshot.owner_id=another_user.id
+    with pytest.raises(EvaluationError,match="OWNER_DATABASE_MISMATCH"):
+        render_review_sheet(snapshot,data)
+
+
+def test_private_review_sheet_hides_invalid_or_deleted_spans(db_session,authenticated_user):
+    from app.evaluation.review_sheet import render_review_sheet
+    owner,_=authenticated_user
+    entry=record(db_session,owner,content="Do not render stale evidence")
+    case=gold(db_session,owner,entry)
+    snapshot=snap(db_session,owner)
+    data=dataset(snapshot,[case])
+    entry.content="Replacement"
+    entry.current_version_id=record_version(db_session,entry).id
+    db_session.flush()
+    html,stats=render_review_sheet(snapshot,data)
+    assert b"Do not render stale evidence" not in html and b"stale_current" in html
+    assert stats["unavailable_spans"]==1
+    db_session.delete(entry)
+    db_session.flush()
+    html,_=render_review_sheet(snapshot,data)
+    assert b"Do not render stale evidence" not in html and b"unavailable" in html
+    with pytest.raises(EvaluationError,match="REVIEW_SHEET_BUDGET"):
+        render_review_sheet(snapshot,data,seconds=0)
+
+
+def test_cli_review_sheet_leaves_revision_unchanged(tmp_path,db_session,authenticated_user,monkeypatch):
+    from contextlib import contextmanager
+    import app.evaluation.cli as cli
+    owner,_=authenticated_user
+    snapshot=snap(db_session,owner)
+    directory,initial=initialize(snapshot,root=tmp_path)
+    @contextmanager
+    def mocked_snapshot(*args):
+        yield snapshot
+    monkeypatch.setattr(cli,"readonly_snapshot",mocked_snapshot)
+    monkeypatch.setattr(cli.getpass,"getpass",lambda *args:"never saved")
+    monkeypatch.setattr(cli,"PRIVATE_ROOT",tmp_path)
+    monkeypatch.setattr(cli,"load_dataset",lambda d,revision=None:load_dataset(d,revision=revision,root=tmp_path))
+    assert main(["review-sheet","--set",str(directory)])==0
+    assert load_dataset(directory,root=tmp_path).digest==initial.digest
+    files=list((directory/"reviews").glob("*.html"))
+    assert len(files)==1 and files[0].stat().st_mode & 0o777==0o600
+
+
+@pytest.mark.parametrize("confirmation",["REVIEWED","cancel"])
+def test_record_answer_local_facts_confirmation_and_both_baselines(tmp_path,db_session,authenticated_user,monkeypatch,confirmation):
+    from contextlib import contextmanager
+    import app.evaluation.cli as cli
+    owner,_=authenticated_user
+    snapshot=snap(db_session,owner)
+    directory,initial=initialize(snapshot,root=tmp_path)
+    entry=record(db_session,owner,title="Worker fixture",content="worker processes queued imports. worker runs separately.",
+        primary_content="worker processes queued imports. worker runs separately.",provider="codex")
+    case=Case(id="case-04",question="Why run the import worker?",language="en",expected_outcome="insufficient_evidence",
+        keyword_queries=["worker"],filters=Filters(source="codex"))
+    initial=replace_case(initial,case)
+    save_dataset(directory,initial,root=tmp_path)
+    @contextmanager
+    def mocked_snapshot(*args):
+        yield snapshot
+    monkeypatch.setattr(cli,"readonly_snapshot",mocked_snapshot)
+    monkeypatch.setattr(cli.getpass,"getpass",lambda *args:"never saved")
+    monkeypatch.setattr(cli,"load_dataset",lambda d,revision=None:load_dataset(d,revision=revision,root=tmp_path))
+    monkeypatch.setattr(cli,"save_dataset",lambda d,s:save_dataset(d,s,root=tmp_path))
+    monkeypatch.setattr(cli,"save_report",lambda d,r:save_report(d,r,root=tmp_path))
+    answers=iter(["case-04","1","The worker processes queued imports.","1","The worker runs separately.","",confirmation])
+    monkeypatch.setattr("builtins.input",lambda *args:next(answers))
+    assert main(["record-answer","--set",str(directory)])==(0 if confirmation=="REVIEWED" else 1)
+    final=load_dataset(directory,root=tmp_path)
+    if confirmation=="REVIEWED":
+        updated=next(c for c in final.cases if c.id=="case-04")
+        assert final.revision==3 and updated.status=="reviewed" and updated.expected_outcome=="supported"
+        assert len(updated.claims)==len(updated.evidence_groups)==2
+        assert all(g.anchors[0].entry_id==entry.id for g in updated.evidence_groups)
+        reports=list((directory/"runs").glob("*/report.html"))
+        assert len(reports)==2 and all("The worker processes" not in p.read_text() for p in reports)
+        assert evaluate(snapshot,final,mode="keywords")["summary"]["scores"]["group_recall_at_20"]==1
+    else:
+        assert final.digest==initial.digest and not (directory/"runs").exists()
+    assert entry.external_ai_allowed is False and entry.content=="worker processes queued imports. worker runs separately."
+
+
+def test_small_review_can_show_only_selected_evidence(db_session,authenticated_user,monkeypatch):
+    import app.evaluation.review_sheet as review
+    owner,_=authenticated_user
+    entry=record(db_session,owner,content="[Synthetic] Exact verified statement")
+    case=gold(db_session,owner,entry,keywords=["statement"])
+    case=case.model_copy(update={"status":"draft","reviewed_by":None,"reviewed_at":None})
+    snapshot=snap(db_session,owner)
+    def forbidden_search(*args,**kwargs):
+        pytest.fail("Selected-only review searched unrelated records")
+    monkeypatch.setattr(review,"real_records",forbidden_search)
+    html,stats=review.render_review_sheet(snapshot,dataset(snapshot,[case]),include_alternatives=False)
+    assert b"Exact verified statement" in html and stats["saved_spans"]==1 and stats["alternative_spans"]==0
+    assert case.status=="draft"

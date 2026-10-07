@@ -11,13 +11,14 @@ from sqlalchemy import func, select
 
 from app.evaluation.schemas import Case, Dataset, EvaluationError, dataset_from, now
 from app.evaluation.storage import PRIVATE_ROOT, private_directory, load_dataset, save_dataset
-from app.evaluation.evidence import approve_case, make_anchor, validate_case, version_metadata
+from app.evaluation.evidence import approve_case, make_anchor, validate_case, version_metadata, check_anchor, passage
 from app.evaluation.retrieval import check_binding, composition, evaluate, readonly_snapshot, retrieve
 from app.evaluation.report import save_report
 from app.models.entry import Entry
 from app.models.history import EntryVersion
 from app.evaluation.drafting import draft_candidates, candidate_sheet
 from app.evaluation.storage import write_private
+from app.evaluation.review_sheet import render_review_sheet, answer_candidates
 
 
 SEEDS = (
@@ -124,9 +125,51 @@ def inspect(snapshot, dataset):
         print(f"{rank}. Entry {hit['entry_id']}, current version {hit['version_id']}: http://localhost:5173/entries/{hit['entry_id']}")
 
 
+def record_answer(snapshot,case):
+    if case.status!="draft":
+        raise EvaluationError("CASE_ALREADY_REVIEWED")
+    candidates=answer_candidates(snapshot,case)
+    if not candidates:
+        raise EvaluationError("NO_ANSWER_CANDIDATES")
+    for index,anchor in enumerate(candidates,1):
+        print(f"{index}. Entry {anchor.entry_id} / version {anchor.version_id}: {anchor.field} [{anchor.start}:{anchor.end}]")
+    print("Choose evidence for each fact you verified. Blank evidence number finishes. Nothing is saved until REVIEWED.")
+    claims,groups=[],[]
+    while len(claims)<20:
+        choice=input("Evidence number (blank to finish): ").strip()
+        if not choice:
+            break
+        index=int(choice)-1
+        if not 0<=index<len(candidates):
+            raise EvaluationError("INVALID_EVIDENCE_NUMBER")
+        anchor=candidates[index]
+        if check_anchor(snapshot.db,snapshot.owner_id,anchor)["status"]!="valid":
+            raise EvaluationError("EVIDENCE_REVIEW_REQUIRED")
+        _,value=passage(snapshot.db,snapshot.owner_id,anchor.entry_id,anchor.version_id,
+            anchor.field,anchor.start,anchor.end)
+        print(display_text(value))
+        statement=input("Verified fact (one sentence supported by this passage): ").strip()
+        if not statement:
+            raise EvaluationError("EMPTY_VERIFIED_FACT")
+        group_id=f"evidence-{len(groups)+1:02d}"
+        groups.append(dict(id=group_id,anchors=[anchor.model_dump(mode="json")]))
+        claims.append(dict(id=f"claim-{len(claims)+1:02d}",statement=statement,required_group_ids=[group_id]))
+    if not claims:
+        raise EvaluationError("NO_VERIFIED_FACTS")
+    value=case.model_dump(mode="json")
+    value.update(expected_outcome="supported",claims=claims,evidence_groups=groups,
+        review_scope="Owner inspected the selected pinned passages; each factual claim names its required evidence group.",
+        review_notes="Owner entered verified facts locally and explicitly confirmed their support. Other corpus coverage was not certified.")
+    changed=Case.model_validate(value)
+    for claim in changed.claims:
+        print(display_text(claim.statement))
+    return approve_case(snapshot.db,snapshot.owner_id,changed,
+        confirmed=input("I checked every fact against its passage. Type REVIEWED: ")=="REVIEWED")
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=("init", "draft", "edit", "inspect", "anchor", "validate", "review", "run"))
+    parser.add_argument("command", choices=("init", "draft", "review-sheet", "record-answer", "edit", "inspect", "anchor", "validate", "review", "run"))
     parser.add_argument("--email", help="Local lifhop account; defaults to the dataset owner")
     parser.add_argument("--set", type=Path, dest="directory")
     parser.add_argument("--revision", type=int)
@@ -149,6 +192,16 @@ def main(argv=None):
                 directory, dataset = initialize(snapshot)
                 print(f"Private set: {directory}")
                 print("20 draft cases, including two seed questions. No case has been approved.")
+            elif args.command == "record-answer":
+                changed=record_answer(snapshot,choose_case(dataset))
+                updated=replace_case(dataset,changed)
+                save_dataset(args.directory,updated)
+                print(f"Saved immutable revision {updated.revision}; case {changed.id}: reviewed")
+                for mode in ("primary","keywords"):
+                    result=evaluate(snapshot,updated,mode=mode)
+                    path=save_report(args.directory,result)
+                    print(f"{mode} report: {path/'report.html'}")
+                    print(json.dumps(result["summary"]))
             elif args.command in {"edit", "anchor", "review"}:
                 case = choose_case(dataset)
                 if args.command == "edit":
@@ -164,6 +217,12 @@ def main(argv=None):
                 print(f"Saved immutable revision {updated.revision}; case {changed.id}: {changed.status}")
             elif args.command == "inspect":
                 inspect(snapshot, dataset)
+            elif args.command == "review-sheet":
+                html,stats=render_review_sheet(snapshot,dataset)
+                path=args.directory/"reviews"/(uuid4().hex+".html")
+                write_private(path,html,root=PRIVATE_ROOT)
+                print(f"Private evidence review: {path}")
+                print(json.dumps(stats))
             elif args.command == "draft":
                 updated, stats=draft_candidates(snapshot,dataset)
                 save_dataset(args.directory,updated)

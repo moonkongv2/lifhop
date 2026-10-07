@@ -6,16 +6,42 @@ Last updated: 2026-10-07
 
 Phase 3.1 evaluation tooling is implemented; the real private set is not complete.
 Owner-selected account: `b@test.com`. The owner initialized the private set locally;
-revision 2 now contains 20 unreviewed local-rule candidates (13 with spans, 7 gaps,
-14 valid anchors). The retained corpus has 415 real GitHub and 33 Codex records;
-32 synthetic records were excluded. All records currently deny external AI, so
-source text was processed only locally without model transmission. Keyword matches
+the original set is now revision 6 with all 20 cases draft. The owner returned
+case-04 to draft after its first registration/semantic review; revision 5's reports
+remain historical provisional results. A separate three-question private pilot
+now has three owner-approved answers in revision 2, each linked to an exact valid
+span from one retained README snapshot. Both baselines completed: natural questions
+found no results; auxiliary mean group recall@20 is 1/3 (two cases found the target
+with one of two queries each, at rank 12; the other case found neither within top 20).
+All three scored cases passed evidence checks with no failures. These are a limited
+first baseline, not a broad corpus or answer-quality guarantee.
+This smaller first check preserves the roadmap's eventual diverse about-20-question target.
+The retained
+corpus has 415 real GitHub and 33 Codex records;
+32 synthetic records were excluded. All records currently deny external AI.
+The owner explicitly authorized limited agent reads of case-04's selected claim/span
+and selected source excerpts for three pilot questions; source policy settings remain
+unchanged. These are scoped authoring permissions, not blanket source access. Keyword matches
 do not prove factual support. Next: owner-check the questions/spans, replace
 candidate claims with checked facts, review, then freeze and run both baselines.
-No owner password was supplied to the agent; no real scored benchmark was run.
+No owner password was supplied to the agent. The owner ran the provisional case-04
+baseline locally; the pilot was approved after explicit owner confirmation and
+scored in a read-only snapshot. Original reports and source AI settings remain intact.
 Owner checked case-04: the linked candidate mainly identifies code location and
-does not clearly answer the worker's purpose/execution location. Keep it unapproved;
-find explicit supporting passages or record scoped insufficient evidence after review.
+does not clearly answer the worker's purpose/execution location.
+Its old support was removed in revision 3; the tentative insufficient-evidence case
+was superseded in revision 4 after the owner reported supporting sentences.
+The owner registered revision 5 locally. On explicit one-time permission, the agent
+read only that case's entered claim and selected excerpt: the claim does not directly
+answer the question, and the selected span does not support all requested aspects.
+Hash/owner/version validation passed; semantic approval is not established by those
+checks. Case-04 is now draft and excluded from future scored denominators.
+Primary retrieval found no result; one of two auxiliary queries hit the evidence at
+rank 1, the other found none (mean group recall@20 0.5). These are retrieval measurements.
+An owner-only local review sheet shows pinned saved excerpts and up to five other
+keyword matches per case (37 alternatives in this snapshot), using saved filters.
+No candidate was automatically approved. This private HTML contains source text
+and must stay local; measurement reports continue to omit source bodies.
 The CLI uses read-only PostgreSQL snapshots, immutable private revisions, the same
 keyword search conditions/ranking as the API, versioned passage hashes and body-free
 reports. Natural questions and auxiliary keyword scores are separate. Synthetic
@@ -95,7 +121,7 @@ exclusions are implemented foundations; full collectors remain upcoming.
 
 ## What works now
 
-- Private evaluation CLI: init/draft/edit/inspect/anchor/validate/review/run with explicit
+- Private evaluation CLI: init/draft/review-sheet/record-answer/edit/inspect/anchor/validate/review/run with explicit
   local authentication, owner/database binding, immutable revisions and fixed queries.
   Current-vs-historical evidence, AI eligibility, collection gaps and failed-score
   denominators remain explicit. Synthetic fixture readiness never counts as the
@@ -108,6 +134,21 @@ exclusions are implemented foundations; full collectors remain upcoming.
   Candidate claims cannot be approved unchanged. There are no explicit SHA overlaps
   between these retained Codex turns and GitHub commits; life/PR/issue support remains
   incomplete. Candidate relevance and adopted decisions require owner verification.
+  Review previews validate owner/version/hash before displaying excerpts, omit
+  deleted/stale/invalid spans, escape source HTML and keep immutable private files.
+  Export does not edit evidence, approvals, records or policies. Regenerate after
+  changes; saved local HTML is a snapshot and may retain previously exported text.
+  Final follow-up checks: 322 backend tests (25 evaluation tests), compile/help and
+  whitespace checks passed. Synthetic review expansion/escaping passed Chromium at
+  390/768/1440px without errors, outbound requests or overflow. An initial excerpt
+  test exposed a missing first character; correcting the paragraph boundary fixed it.
+  Guided record-answer lets the owner select evidence, enter each verified fact,
+  explicitly approve, save one immutable revision and generate both baselines.
+  Canceling before approval saves nothing; benchmark failures after registration
+  leave the approved revision intact and can be retried with run.
+  Latest registration checks: 324 backend tests (27 evaluation tests), compile/help
+  and whitespace passed. Synthetic end-to-end registration confirms two claims,
+  two reports, unchanged source AI policy and cancellation without publication.
 
 - GitHub discussions: typed source IDs, immutable private previews, mutable-source
   staged resume, kind-count receipt checks and existing observed-version rules.
@@ -300,8 +341,13 @@ user-verifiable product slices in `ROADMAP.md`.
 
 ## Next
 
-1. Complete Phase 3.1's initialized private set for `b@test.com`: correct case-04's
-   inadequate candidate, check question/claim/span meaning, distinguish insufficient
+1. Plan the next retrieval improvement from the approved three-question baseline:
+   whole-question literal matching, relevance ranking and retained-snapshot handling.
+   Keyword target ranks were 12/29/30/34/39; no synthetic records occupied those top
+   20 results. Exact approved quotes recur in 7/4/11 README snapshots; inspect how
+   equivalent evidence should count without silently changing the frozen gold.
+   Case-04 remains draft. Complete the remaining questions:
+   check question/claim/span meaning, distinguish insufficient
    evidence from known collection gaps, then approve about 20 real questions and
    freeze the natural-language/keyword baselines. Candidate links alone do not
    establish support. Owner confirmed Phase 2.4B synthetic browsing; actual source is empty.

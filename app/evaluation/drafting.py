@@ -17,9 +17,11 @@ SEEDS = (
 )
 
 
-def real_records(snapshot, *, provider=None, kind=None, query="", oldest=False, limit=20):
-    conditions, order, _, _ = search_components(user_id=snapshot.owner_id,q=query,
-        source=EntrySource(provider) if provider else None)
+def real_records(snapshot, *, provider=None, kind=None, query="", oldest=False, limit=20, filters=None):
+    options=filters.model_dump() if filters else {}
+    if provider:
+        options["source"]=EntrySource(provider)
+    conditions, order, _, _ = search_components(user_id=snapshot.owner_id,q=query,**options)
     conditions.append(~Entry.title.startswith("[Synthetic]",autoescape=True))
     if kind:
         conditions.append(EntryVersion.payload["kind"].astext==kind)
@@ -53,7 +55,8 @@ def candidate_anchor(snapshot,row,query=""):
         end=start+len(prefix)
     else:
         match=content.lower().find(query.lower()) if query else -1
-        start=max(0,content.rfind("\n\n",0,match)+2) if match>=0 else 0
+        boundary=content.rfind("\n\n",0,match) if match>=0 else -1
+        start=boundary+2 if boundary>=0 else 0
         end=min(len(content),start+1500)
     return make_anchor(snapshot.db,owner_id=snapshot.owner_id,entry_id=row["id"],
         version_id=row["current_version_id"],field="content",start=start,end=end)

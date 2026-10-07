@@ -258,11 +258,135 @@ browser; owner meaning review remains pending.
 
 ## Current next step
 
+### Start with three grounded candidates
+
+The owner agreed to a smaller first check after case-04 exposed incomplete gold
+alignment. The original set is revision 6 with all 20 cases draft; existing revision
+5 reports remain historical provisional measurements. Case-04 is excluded from new
+scored runs. A separate private three-case pilot contains draft questions, concrete
+proposed answers and exact short excerpts from one retained README snapshot. These
+are claims about that snapshot, not current code or deployment behavior. The owner
+authorized reading the selected excerpts for this preparation; source AI settings
+stay unchanged and no general access permission is inferred.
+
+Open the pilot's `review.html` locally and expand the saved evidence for each of
+three questions. Check usefulness and whether the proposed fact follows directly
+from the displayed sentence. No additional code search or evidence submission is
+needed. No alternate records are included in this focused preview. The owner can
+approve the prepared facts with `review --set PILOT_PATH` after confirming them;
+then run primary and keyword modes. Approval is pending and the three-case pilot
+does not satisfy the roadmap's final about-20-question composition requirements.
+
+Preparation checks: three exact anchors validated in a read-only owner/database-bound
+snapshot; no policies or DB records changed. Existing private reports were preserved.
+Full backend **325 passed** (28 evaluation tests); selected-only preview explicitly
+tests that no additional records are searched. A first preparation guard detected
+that the owner had already edited revision 5 to 6 and aborted before writing; the
+resumed preparation preserved the owner's current revision.
+
+The owner confirmed usefulness and direct support for all three candidates. Pilot
+revision 2 now records that approval; both runs completed with three clean scored
+cases and zero evidence/timeout failures. Primary queries all returned zero results.
+Auxiliary mean group recall@20 is **1/3**: pilot-01 and pilot-03 each find the pinned
+record at rank 12 with one of two queries, while pilot-02's queries rank it 29/30.
+The other failed auxiliaries rank it 39/34. This averages individual auxiliary
+queries; it does not merge their results or measure generated-answer accuracy.
+
+Read-only diagnostics found zero synthetic records in these top-20 results. Exact
+approved quotes also occur in 7/4/11 retained README snapshots respectively; those
+other versions were counted locally using literal equality, with no additional
+source text exposed. The frozen gold pins one selected version and was not expanded
+after seeing scores. Whole-question literal matching and ranking need investigation;
+equivalent snapshot evidence needs an explicit acceptance rule. All questions use
+one English README, so the pilot does not establish broader corpus quality, Korean
+source quality, cross-source coverage or a need for embeddings by itself. The final
+20-question readiness remains false and source AI policies remain unchanged.
+
+### Register a checked answer and measure retrieval
+
+```sh
+.venv/bin/python scripts/evaluate_retrieval.py record-answer --set .local/evaluation/SET_ID
+```
+
+Enter the local password, choose the case ID, and select an evidence number from
+the printed Entry/version/character ranges. The pinned passage is displayed only
+in your own terminal. Enter one factual sentence supported by that passage; repeat
+for each claim (up to 20), choosing its evidence independently. For case-04, record
+the worker's role and execution location as separate facts; the same excerpt may
+support both. A blank evidence number ends entry. Check the displayed facts and
+type `REVIEWED` to save. No JSON editing is required.
+
+Each fact names its required evidence group. Registration replaces this draft's
+old claims/anchors, marks it supported/reviewed, saves a new immutable revision,
+and runs both primary and keyword baselines against the same read-only snapshot.
+Other cases stay unchanged. Before confirmation, cancellation/invalid input saves
+nothing. If measurement fails after registration, the printed saved revision remains
+valid; use `run --mode primary` and `run --mode keywords` to retry reports.
+Reports omit facts/passages. Share only their paths or score summary in chat;
+the terminal's passage/answer text can remain local. Already-reviewed cases require
+explicit `edit` to return to draft before replacing their answers.
+
+### Inspect passages locally
+
+```sh
+.venv/bin/python scripts/evaluate_retrieval.py review-sheet --set .local/evaluation/SET_ID
+```
+
+Enter the local password. Open the printed HTML path in your own browser. Each
+question shows proposed facts, review notes, expandable pinned passages, and up
+to five alternate records from the frozen keyword queries and case filters.
+Alternatives exclude `[Synthetic]` records and use up to five hits per keyword.
+These bounded searches do not establish corpus-wide absence. Expansion works
+without the backend; original-record links need the backend/frontend and owner login.
+The original app link shows the current record; the excerpt identifies its exact
+version and character range. Invalid, stale-current or lifhop-deleted references
+show an unavailable status without source text. No approval or evidence is changed
+by export. Use `edit`/`anchor`/`review` only after checking actual supporting facts.
+
+Unlike the measurement artifact, this owner-only authoring file contains private
+source excerpts. It is saved under ignored `.local/evaluation/` with mode 0600,
+has no scripts or remote resources, and must not be uploaded to AI tools or Git.
+Each export creates a new file. Old local snapshots retain their exported passages;
+re-export after changes/deletion and manage obsolete files locally.
+
 The owner checked case-04 and found mainly code-location information rather than
 an explicit explanation of the worker's purpose/execution location. Its candidate
 is not approved support. Search for explicit answer passages; if the declared
 reviewed scope lacks them, record insufficient evidence. Only classify a collection
-gap when missing source coverage is known. The saved revision remains draft.
+gap when missing source coverage is known. Revision 3 removes that candidate's
+claims/anchors and marks insufficient evidence tentatively; it remains draft with
+an explicit limited review scope. The current local sheet has 13 saved spans and
+37 exploratory alternatives; no factual answer has been automatically approved.
+
+The owner subsequently found sentences explaining the role/execution location.
+Revision 4 records this follow-up and restores the proposed outcome to supported;
+exact evidence/claim registration and approval still await the local command above.
+Revision 3 remains available as immutable history.
+
+Registration checks: full backend **324 passed** (27 evaluation tests), compile/help
+and whitespace passed. Synthetic CLI coverage registers two facts with their own
+evidence groups, generates both body-free reports, preserves source AI policy, and
+confirms that canceled approval publishes no revision/report. Real owner gold and
+baseline measurements remain pending local fact entry and confirmation.
+
+Owner-run follow-up: revision 5 has one reviewed case and 19 drafts. Case-04's one
+claim/group/current anchor validates, and both modes completed. Primary found zero
+results; one auxiliary found the evidence at rank 1 and another found none, averaging
+recall@20 to 0.5. With explicit one-time permission, the agent checked only the entered
+claim and selected passage and found incomplete question/claim/evidence alignment.
+The recorded approval is not yet suitable as final ground truth. Correct it with
+edit/anchor/review (editing returns it to draft), or record scoped insufficient
+evidence. Existing reports remain immutable provisional measurements; scores do not
+establish answer correctness. Source AI policy was not changed.
+
+Follow-up checks: full backend **322 passed** (25 evaluation tests), compile/help
+and whitespace passed. The initial excerpt test failed because a missing paragraph
+boundary dropped the first character; the corrected boundary passed the rerun.
+Owner/synthetic/source-filter isolation, stale/deleted span omission, private CLI
+export and unchanged dataset revisions are covered. Synthetic excerpts with escaped
+script text and a long line passed Chromium expansion/layout at 390/768/1440px,
+with 20 cases and no page errors, outbound requests or overflow. In-app browser
+bootstrap failed, so standalone Chromium was used; real private HTML was not opened.
 
 Open the private candidate sheet locally as `b@test.com`. Start with one question:
 check its usefulness, linked original record and pinned span; distinguish mentions
