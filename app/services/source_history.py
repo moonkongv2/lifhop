@@ -75,6 +75,9 @@ def select_version(db: Session, entry: Entry, version: EntryVersion) -> None:
     entry.review_required = False
     invalidate_context(db, entry.user_id)
 
+    from app.services.passage_index import sync_current_passages
+    sync_current_passages(db, entry)
+
 
 def markdown_identity(content: str) -> str:
     return "sha256:" + hashlib.sha256(content.encode("utf-8")).hexdigest()

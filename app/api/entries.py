@@ -9,6 +9,7 @@ from app.models.user import User
 from app.schemas.entry import EntryCreate, EntryResponse, EntrySearchResponse, EntryUpdate
 from app.services.entry_search import DateField, date_boundary, search_entries
 from app.auth import get_current_user
+from app.services.passage_index import sync_current_passages
 
 from app.models.history import EntryVersion
 from app.schemas.history import VersionResponse, RecordSettings, SourceStateUpdate
@@ -42,6 +43,7 @@ def create_entry(
     check_collection(db, current_user.id, "manual")
     db.add(entry)
     entry.current_version_id = record_version(db, entry).id
+    sync_current_passages(db, entry)
     db.commit()
     db.refresh(entry)
 
@@ -151,6 +153,8 @@ def update_entry(
     if content_hash(entry) != old_hash:
         entry.current_version_id = record_version(db, entry).id
         invalidate_context(db, current_user.id)
+
+    sync_current_passages(db, entry)
 
     db.commit()
     db.refresh(entry)

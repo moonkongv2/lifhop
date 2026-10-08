@@ -8,6 +8,7 @@ from app.importers.normalizer import EntryNormalizer
 from app.models.entry import Entry
 from app.models.history import EntryVersion
 from app.services.source_history import check_collection, content_hash, record_version, select_version, link_material
+from app.services.passage_index import sync_current_passages
 
 
 @dataclass
@@ -47,6 +48,7 @@ def upsert_external_entry_with_outcome(db: Session, *, user_id: int, item: Canon
     if current is None:
         current = record_version(db, entry)
         entry.current_version_id = current.id
+        sync_current_passages(db, entry)
     digest = content_hash(candidate, {"data": item.payload.model_dump(mode="json"), "completeness": item.completeness})
     # Replay is a no-op, including a formerly retained candidate. Preserve deny/annotation/state.
     replay = db.scalar(select(EntryVersion).where(EntryVersion.entry_id == entry.id,
@@ -57,6 +59,7 @@ def upsert_external_entry_with_outcome(db: Session, *, user_id: int, item: Canon
         # A later unchanged observation advances freshness without adding a version.
         if replay.id == current.id and item.source_updated_at and (frontier is None or item.source_updated_at > frontier):
             entry.latest_source_updated_at = item.source_updated_at
+        sync_current_passages(db, entry)
         return UpsertResult(entry, "unchanged")
     candidate.id = entry.id
     # Capture candidate values without mutating the current Entry.
