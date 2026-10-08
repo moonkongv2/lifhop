@@ -14,10 +14,11 @@ def render_report(result: dict) -> bytes:
     for case in result["cases"]:
         queries = []
         for query in case["queries"]:
-            labels = [(hit, f'{rank}: Entry {int(hit["entry_id"])} / v{escape(str(hit["version_id"]))}')
+            labels = [(hit, f'{rank}: Entry {int(hit["entry_id"])} / v{escape(str(hit["version_id"]))}' +
+                (f' / Passage {int(hit["passage_id"])}' if "passage_id" in hit else ""))
                       for rank, hit in enumerate(query["hits"], 1)]
             links = " ".join(label if synthetic else
-                f'<a href="http://localhost:5173/entries/{int(hit["entry_id"])}" target="_blank" rel="noopener noreferrer">{label}</a>'
+                f'<a href="http://localhost:5173/{"passages" if "passage_id" in hit else "entries"}/{int(hit.get("passage_id", hit["entry_id"]))}" target="_blank" rel="noopener noreferrer">{label}</a>'
                 for hit, label in labels)
             queries.append(f'<p>Query {query["query_index"]+1}: {query["total"]} results · {query["elapsed_ms"]} ms</p><div>{links}</div>')
         values = case["scores"]
@@ -44,7 +45,7 @@ invalid scored cases: {summary["invalid_scored_cases"]}.</p>
 <p>Group recall@20: {score(scores.get("group_recall_at_20"))}; all groups@20:
 {score(scores.get("all_groups_hit_at_20"))}; MRR@20: {score(scores.get("mrr_at_20"))}.</p>
 <p>Targets: group recall@20 ≥ 0.80, all groups@20 ≥ 0.70. Low baselines are valid measurements.</p>
-<p>Entry-level current-version retrieval. Historical Entry hits do not prove historical passage retrieval.
+<p>{"Passage-level current-version retrieval; complete pinned gold spans are required." if manifest.get("retriever") == "passages" else "Entry-level current-version retrieval."} Historical Entry hits do not prove historical passage retrieval.
 AI eligibility is a policy observation; no AI answer was generated or sent.</p>
 <p>Question/claim text and source bodies are kept out of this report. See the private dataset for questions.
 Real record links require the local app using the same database and login as the dataset owner. Old results describe the observation time,

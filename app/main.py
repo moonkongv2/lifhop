@@ -14,6 +14,7 @@ from app.api.sources import router as sources_router
 from app.api.collection_runs import router as collection_runs_router
 from app.api.codex_sessions import router as codex_sessions_router
 from app.api.github_records import router as github_records_router
+from app.api.passages import router as passages_router
 
 app = FastAPI(title="Lifhop")
 app.add_middleware(ImportUploadLimit)
@@ -29,6 +30,7 @@ app.include_router(sources_router)
 app.include_router(collection_runs_router)
 app.include_router(codex_sessions_router)
 app.include_router(github_records_router)
+app.include_router(passages_router)
 
 @app.get("/health")
 def health() -> dict[str, str]:

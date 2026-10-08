@@ -54,6 +54,40 @@ def dataset(snapshot, cases):
         created_at=now(), cases=[c.model_dump(mode="json") for c in cases]))
 
 
+def test_passage_evaluation_same_api_rank_and_complete_span(db_session, authenticated_user, client):
+    from app.services.passage_index import sync_current_passages
+    owner, headers = authenticated_user
+    entry = record(db_session, owner, content="[Synthetic] The worker runs on the deployment server.", provider="manual")
+    sync_current_passages(db_session, entry)
+    db_session.commit()
+    snapshot = snap(db_session, owner)
+    case = gold(db_session, owner, entry, question="where does the deployment worker run", keywords=["deployment worker"])
+    data = dataset(snapshot, [case])
+    result = evaluate(snapshot, data, retriever="passages")
+    assert result["summary"]["scores"]["group_recall_at_5"] == 1
+    hit = result["cases"][0]["queries"][0]["hits"][0]
+    found = client.get("/passages/search", headers=headers, params={"q": case.question}).json()
+    assert hit["passage_id"] == found["items"][0]["id"]
+    assert entry.content not in json.dumps(result) and case.question not in json.dumps(result)
+    rendered = render_report(result).decode()
+    assert "Passage-level" in rendered and f'/passages/{hit["passage_id"]}' in rendered
+
+
+def test_passage_deadline_keeps_failed_case_in_denominator(db_session, authenticated_user, monkeypatch):
+    from fastapi import HTTPException
+    owner, _ = authenticated_user
+    entry = record(db_session, owner, provider="manual")
+    snapshot = snap(db_session, owner)
+    data = dataset(snapshot, [gold(db_session, owner, entry)])
+    def expired(*args, **kwargs):
+        raise HTTPException(503, "search_timeout")
+    monkeypatch.setattr("app.evaluation.passage_retrieval.retrieve_passages", expired)
+    result = evaluate(snapshot, data, retriever="passages")
+    assert result["manifest"]["status"] == "partial"
+    assert result["summary"]["failed_scored_cases"] == result["summary"]["scored_cases"] == 1
+    assert result["summary"]["scores"]["group_recall_at_20"] == 0
+
+
 @pytest.mark.parametrize("phrase", ["제주 여행","Alice Kim","120 RPM","3.5 km","use_state","100%",r"C:\notes","foo::bar()"])
 def test_retrieval_same_as_api_and_owner_scope(db_session, client, authenticated_user, another_user, phrase):
     owner, headers = authenticated_user

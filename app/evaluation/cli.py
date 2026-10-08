@@ -174,6 +174,7 @@ def main(argv=None):
     parser.add_argument("--set", type=Path, dest="directory")
     parser.add_argument("--revision", type=int)
     parser.add_argument("--mode", choices=("primary", "keywords"), default="primary")
+    parser.add_argument("--retriever", choices=("literal", "passages"), default="literal")
     args = parser.parse_args(argv)
     if args.command == "init" and (not args.email or args.directory or args.revision):
         parser.error("init requires --email and creates a new private set")
@@ -233,7 +234,7 @@ def main(argv=None):
                 results = [validate_case(snapshot.db, snapshot.owner_id, case) for case in dataset.cases]
                 print(json.dumps(dict(composition=composition(dataset), cases=results), ensure_ascii=False, indent=2))
             elif args.command == "run":
-                result = evaluate(snapshot, dataset, mode=args.mode)
+                result = evaluate(snapshot, dataset, mode=args.mode, retriever=args.retriever)
                 run = save_report(args.directory, result)
                 print(f"Report: {run/'report.html'}")
                 print(json.dumps(result["summary"], ensure_ascii=False, indent=2))

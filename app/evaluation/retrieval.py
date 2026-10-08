@@ -7,6 +7,7 @@ import time
 from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import DBAPIError
+from fastapi import HTTPException
 
 from app.evaluation.evidence import validate_case
 from app.evaluation.metrics import average_scores, query_metrics, summarize
@@ -130,26 +131,45 @@ def git_revision() -> dict:
         root = Path(__file__).resolve().parents[2]
         commit = subprocess.run(["git", "rev-parse", "HEAD"], cwd=root, capture_output=True, text=True, timeout=5, check=True).stdout.strip()
         dirty = bool(subprocess.run(["git", "status", "--porcelain"], cwd=root, capture_output=True, text=True, timeout=5, check=True).stdout)
-        files = sorted((root/"app/evaluation").glob("*.py")) + [root/"app/services/entry_search.py"]
+        files = sorted((root/"app/evaluation").glob("*.py")) + [root/"app/services/entry_search.py"] + sorted((root/"app/services").glob("passage*.py"))
         return dict(commit=commit, dirty=dirty, implementation_digest=digest([hashlib.sha256(p.read_bytes()).hexdigest() for p in files]))
     except (OSError, subprocess.SubprocessError):
         return dict(commit=None, dirty=True, implementation_digest=None)
 
 
-def evaluate(snapshot: Snapshot, dataset: Dataset, *, mode: str = "primary", seconds: float = 300) -> dict:
+def evaluate(snapshot: Snapshot, dataset: Dataset, *, mode: str = "primary", seconds: float = 300, retriever: str = "literal") -> dict:
     if mode not in {"primary", "keywords"}:
         raise EvaluationError("INVALID_MODE")
+    if retriever not in {"literal", "passages"}:
+        raise EvaluationError("INVALID_RETRIEVER")
+    from app.evaluation.passage_metrics import passage_metrics
+    from app.evaluation.passage_retrieval import retrieve_passages
+    from app.services.passage_search import SEARCH_VERSION as PASSAGE_SEARCH_VERSION, CONFIGURATION_HASH
+    metrics = passage_metrics if retriever == "passages" else query_metrics
     check_binding(snapshot, dataset)
     started = time.monotonic()
     deadline = started + seconds
     results = []
     manifest = dict(dataset_digest=dataset.digest, revision=dataset.revision, set_id=dataset.set_id,
         owner_id=dataset.owner_id, database_fingerprint=dataset.database_fingerprint, material_kind=dataset.material_kind,
-        observed_at=snapshot.started_at, mode=mode, search_version=SEARCH_VERSION,
+        observed_at=snapshot.started_at, mode=mode, search_version=PASSAGE_SEARCH_VERSION if retriever == "passages" else SEARCH_VERSION,
+        retriever=retriever, ranking_configuration_hash=CONFIGURATION_HASH if retriever == "passages" else None,
         query_configuration_digest=digest([dict(case_id=c.id, question=c.question, keywords=c.keyword_queries,
             filters=c.filters.model_dump(mode="json")) for c in dataset.cases]),
         git=git_revision(), policy_revision=snapshot.db.scalar(select(User.policy_revision).where(User.id == snapshot.owner_id)),
         corpus=corpus_manifest(snapshot.db, snapshot.owner_id, deadline=deadline if seconds > 0 else None), composition=composition(dataset))
+    if retriever == "passages":
+        from app.models.passage import EntryPassage, PassageIndexState
+        from app.services.passage_search import coverage
+        states = snapshot.db.execute(select(PassageIndexState.entry_id, PassageIndexState.indexed_version_id,
+            PassageIndexState.projection_version, PassageIndexState.content_hash, PassageIndexState.status,
+            PassageIndexState.passage_count, PassageIndexState.gap_codes).join(Entry, Entry.id == PassageIndexState.entry_id)
+            .where(Entry.user_id == snapshot.owner_id).order_by(PassageIndexState.entry_id)).all()
+        size = snapshot.db.execute(select(func.count(), func.coalesce(func.sum(func.octet_length(EntryPassage.text)), 0))
+            .select_from(EntryPassage).join(EntryVersion, EntryVersion.id == EntryPassage.version_id)
+            .join(Entry, Entry.id == EntryVersion.entry_id).where(Entry.user_id == snapshot.owner_id)).one()
+        manifest["passage_index"] = dict(state_digest=digest([list(row) for row in states]),
+            coverage=coverage(snapshot.db, snapshot.owner_id), passages=size[0], text_bytes=size[1])
     for case in dataset.cases:
         item = dict(case_id=case.id, language=case.language, tags=case.tags, expected_outcome=case.expected_outcome,
             status="draft" if case.status == "draft" else "ready", has_keywords=bool(case.keyword_queries),
@@ -186,8 +206,9 @@ def evaluate(snapshot: Snapshot, dataset: Dataset, *, mode: str = "primary", sec
                     if time.monotonic() >= deadline:
                         raise EvaluationError("RUN_BUDGET")
                     before = time.monotonic()
-                    found = retrieve(snapshot.db, owner_id=snapshot.owner_id, q=query, filters=case.filters)
-                    scores = query_metrics(found["hits"], groups)
+                    found = (retrieve_passages(snapshot.db, owner_id=snapshot.owner_id, q=query, filters=case.filters, groups=groups)
+                        if retriever == "passages" else retrieve(snapshot.db, owner_id=snapshot.owner_id, q=query, filters=case.filters))
+                    scores = metrics(found["hits"], groups)
                     if not current:
                         scores.update({key:None for key in scores if key not in {"historical_entry_hit", "group_ranks"}})
                     item["queries"].append(dict(query_index=index, query_digest=digest(query),
@@ -200,6 +221,10 @@ def evaluate(snapshot: Snapshot, dataset: Dataset, *, mode: str = "primary", sec
         except EvaluationError as error:
             item["status"] = str(error).lower()
         except DBAPIError:
+            item["status"] = "database_timeout_or_error"
+        except HTTPException:
+            # The shared retrieval deadline is a failed scored case, not a
+            # reason to drop its denominator or abort the remaining dataset.
             item["status"] = "database_timeout_or_error"
     manifest["elapsed_ms"] = round((time.monotonic()-started)*1000,2)
     manifest["status"] = "partial" if any(c["status"] in {"run_budget", "database_timeout_or_error", "evidence_invalid"} for c in results) else "completed"

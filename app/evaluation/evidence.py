@@ -65,6 +65,7 @@ def check_anchor(db: Session, owner_id: int, anchor: Anchor) -> dict:
                    SourcePolicy.scope == row["source_scope"])).first()
         # Read missing policies as deny; do not call source_policy(), which inserts rows.
         return dict(status="valid", entry_id=anchor.entry_id, version_id=anchor.version_id,
+            field=anchor.field, start=anchor.start, end=anchor.end,
             selection=anchor.selection, external_ai_eligible=bool(policy and policy[0] and
                 row["external_ai_allowed"] and row["source_state"] != "deleted"),
             collection_enabled=policy[1] if policy else True, source_state=row["source_state"],
