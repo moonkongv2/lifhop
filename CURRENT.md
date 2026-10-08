@@ -1,8 +1,43 @@
 # lifhop Current Status
 
-Last updated: 2026-10-07
+Last updated: 2026-10-08
 
 ## Current product slice
+
+Phase 3.2A local passage retrieval is implemented and owner browser checks 1–5
+are confirmed, including disposable note create/edit/delete search updates.
+The passage reader now has dedicated desktop/mobile inner padding.
+Search keeps Exact phrase and adds Passages with current-version source offsets,
+bounded original readers, lazy retained-snapshot locations and preserved return URLs.
+PostgreSQL simple FTS ranks body matches; identical verified GitHub document chunks
+group before representative-Entry quotas and pagination. Source-deleted records are
+excluded by default and can be explicitly included locally. No embedding, answer,
+external AI request, dependency, queue or worker was added.
+
+Migration `d15e8a02b731` is applied to development. Create/edit/select/reimport and
+delete synchronize disposable current passages in the source transaction; historical
+versions remain unchanged. The authenticated `scripts/index_passages.py` resumes
+bounded owner-scoped backfill. The selected `b@test.com` account has 480 ready records
+(448 real and 32 synthetic); backfill took 3.73 seconds and preserved the source/policy
+manifest. Existing records in other accounts may still need backfill.
+
+The owner authorized necessary real-record reads by the current Codex for this
+development/verification. This does not change application AI policies, authorize
+embedding/answer API transmission or share private sources with Antigravity.
+The frozen three-question pilot remains revision 2. Same-snapshot literal versus
+passage checks found natural-question support in 0/3 versus 1/3 cases; the two Korean
+questions still fail. Auxiliary mean recall@20 was 1/3 versus 1, scoring complete
+gold spans and verified snapshot aliases for passages. This is one English README,
+not broad semantic-search quality. Original dataset/baseline reports remain intact.
+
+Disposable migrated PostgreSQL/HTTP/Chromium checks cover owner/current boundaries,
+edit/delete/restore, Codex primary/work mapping, snapshot filters/grouping, pinned
+readers and 390/768/1440px returns/layout; no external browser requests occurred.
+Plan: `PASSAGE_SEARCH_PLAN.md`; operations: `PASSAGE_SEARCH.md`. In-app browser
+connection failed; separate Chromium provided the synthetic browser verification.
+Final checks: 339 backend tests, 110 frontend tests, lint/build, migration upgrade,
+OpenAPI alignment and tracked/untracked whitespace checks passed. The 42 targeted
+passage/evaluation tests include source rollback on projection failure.
 
 Phase 3.1 evaluation tooling is implemented; the real private set is not complete.
 Owner-selected account: `b@test.com`. The owner initialized the private set locally;
@@ -21,9 +56,10 @@ corpus has 415 real GitHub and 33 Codex records;
 32 synthetic records were excluded. All records currently deny external AI.
 The owner explicitly authorized limited agent reads of case-04's selected claim/span
 and selected source excerpts for three pilot questions; source policy settings remain
-unchanged. These are scoped authoring permissions, not blanket source access. Keyword matches
-do not prove factual support. Next: owner-check the questions/spans, replace
-candidate claims with checked facts, review, then freeze and run both baselines.
+unchanged. Those were scoped authoring permissions; the later development-read
+authorization is described above. Keyword matches do not prove factual support.
+The three-question pilot was owner-approved and both fixed baselines were run;
+the original 20-case set still needs verified facts and evidence.
 No owner password was supplied to the agent. The owner ran the provisional case-04
 baseline locally; the pilot was approved after explicit owner confirmation and
 scored in a read-only snapshot. Original reports and source AI settings remain intact.
@@ -341,11 +377,9 @@ user-verifiable product slices in `ROADMAP.md`.
 
 ## Next
 
-1. Plan the next retrieval improvement from the approved three-question baseline:
-   whole-question literal matching, relevance ranking and retained-snapshot handling.
-   Keyword target ranks were 12/29/30/34/39; no synthetic records occupied those top
-   20 results. Exact approved quotes recur in 7/4/11 README snapshots; inspect how
-   equivalent evidence should count without silently changing the frozen gold.
+1. Plan 3.2B: compare embeddings on explicitly
+   AI-allowed samples within the cost budget; necessary Codex development reads do
+   not enable those transmissions. Preserve the failed Korean→English cases.
    Case-04 remains draft. Complete the remaining questions:
    check question/claim/span meaning, distinguish insufficient
    evidence from known collection gaps, then approve about 20 real questions and
@@ -363,7 +397,8 @@ user-verifiable product slices in `ROADMAP.md`.
    Codex search/evidence, replay, annotations and disposable deletion/policy checks
    in `CODEX_BACKFILL.md`. Its checkpoint has 33 acknowledgments; completed status,
    target account and selected current versions still require confirmation.
-5. Use the evaluation results to plan Phase 3.2 indexing and Phase 3.3 cited answers.
+5. Expand retrieval evaluation across sources/languages and plan Phase 3.3 cited answers
+   after the 3.2B semantic-search decision.
 6. Verify Phase 2.2 using `HISTORY.md`: synthetic history, annotations, source
    markers, deletion/reimport block, and Sources permissions.
 7. Follow the sequence: Codex/GitHub history → evidence-based answers/retrospectives
@@ -397,9 +432,11 @@ user-verifiable product slices in `ROADMAP.md`.
   synthetic API responses; other browser engines and actual mobile devices remain
   unverified. Theme is light; a dark theme is not implemented.
   OS file-picker dialogs and browser-owned menus can use the device language.
-- Search is literal case-insensitive substring matching; no word stemming, fuzzy
-  matching, relevance model, attachment text extraction, or LLM answers. Large
-  real-corpus performance is unverified; ranked searches/counts scan owned rows.
+- Exact phrase is literal case-insensitive substring search. Passages uses local
+  simple FTS/lexical ranking; no translation, embeddings, fuzzy matching, attachment
+  extraction or LLM answers. Cross-language pilot questions still fail. Backfill is
+  required for old records; 8 MiB input/512 passage limits and unverifiable Codex
+  mapping surface as partial coverage. Very large corpus performance is unverified.
 - Offset pages can shift when records change concurrently. Timezone is initially
   fixed to Asia/Seoul; changing it in user settings is not available.
 - Recent job history shows the latest 20 jobs; Entry lists/job results paginate.

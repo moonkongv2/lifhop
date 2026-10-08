@@ -1292,3 +1292,30 @@ locally. Each claim references its evidence group; explicit owner confirmation i
 required before immutable publication. Run both fixed baselines after registration,
 retaining the saved revision if measurement later fails. Do not treat the owner's
 confirmation that an answer exists as an identified passage or a fabricated gold claim.
+
+## 2026-10-08: Keep local passages disposable and anchored to source versions
+
+Phase 3.2A adds PostgreSQL simple FTS over bounded current-version passages, retaining
+Exact phrase search. Source Unicode ranges/hash identify original title/body text;
+Codex canonical order maps primary messages separately from work evidence. Unverified
+mapping and input/passage budgets produce visible partial indexes, not fabricated text.
+
+Synchronize current selection and derived rows in one transaction, using existing
+owner-before-record locking. Remove previous projections when current changes; restore
+rebuilds new passage IDs while immutable source versions remain. Stale/deleted/foreign
+passage links return 404. Authenticated owner backfill is resumable and does not mutate
+source bodies, annotations, receipt history or AI policy. Migration does not backfill text.
+
+Group only exactly equal GitHub document chunks with verified numeric repository/path
+identity. DB grouping precedes representative-Entry quotas and pagination; aliases retain
+exact version/offsets and are read in bounded pages. Current retained snapshots do not
+assert live GitHub HEAD. API shared owner locks stabilize each read against existing
+exclusive writers; statement/lock limits and a shared retrieval deadline bound work.
+
+Passage evaluation reuses ranking/filter conditions and freezes existing gold revisions.
+Success requires complete same-version/field gold coverage; rank is the first top-K that
+covers the full span. Validated aliases are checked independently of card preview limits.
+Reports remain body-free. Local retrieval is available for external-AI-denied records;
+future external embeddings/answers still require application policy and budget checks.
+The owner's necessary current-Codex development-read authorization is separate from
+application AI permission and does not extend to other review providers.

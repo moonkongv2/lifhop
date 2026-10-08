@@ -254,6 +254,7 @@ Avoid introducing infrastructure purely to make the architecture look sophistica
 - `HISTORY.md` — Phase 2.2 browser checks, retention policy and restore procedure
 - `GITHUB_DISCUSSIONS.md` — Phase 2.4B collector and synthetic browser verification
 - `EVALUATION.md` — Phase 3.1 private question authoring and keyword-retrieval baselines
+- `PASSAGE_SEARCH.md` — Phase 3.2A local passage search, backfill and verification
 
 The repository is the source of truth for the project. ChatGPT, Codex CLI, Antigravity CLI, and other coding agents should read the project documentation before making changes.
 
@@ -335,6 +336,14 @@ source checks remain pending. See `GITHUB_DISCUSSIONS.md`.
 
 Phase 3.1 adds a local private evaluation CLI with fixed question/evidence revisions,
 read-only PostgreSQL snapshots, current/historical passage references, keyword search
-baselines and local reports. The owner's set has 20 unreviewed local-rule candidates;
-semantic approval and real baseline measurements remain pending. Synthetic
-verification is separate. See `EVALUATION.md` for authoring and review commands.
+baselines and local reports. A separate approved three-question pilot is measured;
+the original about-20-question diverse set remains incomplete. Synthetic verification
+is separate. See `EVALUATION.md` for authoring and review commands.
+
+Phase 3.2A adds local PostgreSQL passage retrieval beside Exact phrase search,
+source-version ranges, grouped identical document snapshots and original passage
+readers. Current-record changes synchronize the derived index atomically; old
+accounts use authenticated resumable backfill. No embeddings or generated answers
+are added, and external-AI-denied records remain locally searchable. See
+`PASSAGE_SEARCH.md`; owner browser checks, including note create/edit/delete search
+updates, are confirmed.

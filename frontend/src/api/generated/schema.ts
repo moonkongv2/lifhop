@@ -773,6 +773,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/passages/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search */
+        get: operations["search_passages_search_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/passages/{passage_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read */
+        get: operations["read_passages__passage_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/passages/{passage_id}/snapshots": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Snapshots */
+        get: operations["snapshots_passages__passage_id__snapshots_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -2132,6 +2183,118 @@ export interface components {
              * @enum {string}
              */
             error_code: "INVALID_ITEM" | "REIMPORT_BLOCKED" | "COLLECTION_DISABLED";
+        };
+        /** PassageLocation */
+        PassageLocation: {
+            /** Id */
+            id: number;
+            /** Entry Id */
+            entry_id: number;
+            /** Version Id */
+            version_id: number;
+            /** Field */
+            field: string;
+            /** Start */
+            start: number;
+            /** End */
+            end: number;
+            /** Passage Hash */
+            passage_hash: string;
+            /** Event At */
+            event_at?: string | null;
+        };
+        /** PassageResponse */
+        PassageResponse: {
+            /** Id */
+            id: number;
+            /** Entry Id */
+            entry_id: number;
+            /** Version Id */
+            version_id: number;
+            /** Field */
+            field: string;
+            /** Start */
+            start: number;
+            /** End */
+            end: number;
+            /** Passage Hash */
+            passage_hash: string;
+            /** Event At */
+            event_at?: string | null;
+            /** Title */
+            title: string;
+            /** Text */
+            text: string;
+            /** Source */
+            source: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Source State */
+            source_state: string;
+            /** Completeness */
+            completeness: string;
+            /** Index Status */
+            index_status: string;
+            /** Gap Codes */
+            gap_codes: string[];
+            /** Work Only */
+            work_only: boolean;
+            /** Projection Version */
+            projection_version: string;
+            session_ref?: components["schemas"]["CodexSessionRef"] | null;
+            repository_ref?: components["schemas"]["GitHubRepositoryRef"] | null;
+            /**
+             * Snapshot Count
+             * @default 1
+             */
+            snapshot_count: number;
+            /** Aliases */
+            aliases?: components["schemas"]["PassageLocation"][];
+            /**
+             * Alias Total
+             * @default 1
+             */
+            alias_total: number;
+        };
+        /** PassageSearchResponse */
+        PassageSearchResponse: {
+            /** Items */
+            items: components["schemas"]["PassageResponse"][];
+            /** Total */
+            total: number;
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+            /** Coverage */
+            coverage: {
+                [key: string]: number;
+            };
+            /**
+             * Timezone
+             * @default Asia/Seoul
+             */
+            timezone: string;
+            /** Search Version */
+            search_version: string;
+            /** Projection Version */
+            projection_version: string;
+            /** Configuration Hash */
+            configuration_hash: string;
+        };
+        /** PassageSnapshotsResponse */
+        PassageSnapshotsResponse: {
+            /** Items */
+            items: components["schemas"]["PassageLocation"][];
+            /** Total */
+            total: number;
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
         };
         /** PolicyResponse */
         PolicyResponse: {
@@ -4043,6 +4206,119 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GitHubPresentation"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_passages_search_get: {
+        parameters: {
+            query: {
+                q: string;
+                limit?: number;
+                offset?: number;
+                source?: components["schemas"]["EntrySource"] | null;
+                source_state?: ("available" | "deleted" | "unavailable" | "unknown") | null;
+                type?: components["schemas"]["EntryType"] | null;
+                date_field?: "created_at" | "event_at";
+                date_from?: string | null;
+                date_to?: string | null;
+                include_work_commentary?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PassageSearchResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_passages__passage_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                passage_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PassageResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    snapshots_passages__passage_id__snapshots_get: {
+        parameters: {
+            query: {
+                q: string;
+                limit?: number;
+                offset?: number;
+                source?: components["schemas"]["EntrySource"] | null;
+                source_state?: ("available" | "deleted" | "unavailable" | "unknown") | null;
+                type?: components["schemas"]["EntryType"] | null;
+                date_field?: "created_at" | "event_at";
+                date_from?: string | null;
+                date_to?: string | null;
+                include_work_commentary?: boolean;
+            };
+            header?: never;
+            path: {
+                passage_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PassageSnapshotsResponse"];
                 };
             };
             /** @description Validation Error */

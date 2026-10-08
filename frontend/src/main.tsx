@@ -16,6 +16,7 @@ import EntryCreatePage from "./pages/EntryCreatePage";
 import EntryDetailPage from "./pages/EntryDetailPage";
 import CodexSessionPage from "./pages/CodexSessionPage";
 import GitHubRepositoryPage from "./pages/GitHubRepositoryPage";
+import PassagePage from "./pages/PassagePage";
 
 const queryClient = new QueryClient();
 
@@ -24,6 +25,7 @@ const router = createBrowserRouter([
     path: "/",
     element: <App />,
     children: [
+      { path: "passages/:id", element: <PassagePage /> },
       { path: "repositories/github", element: <GitHubRepositoryPage /> },
       { path: "sessions/codex", element: <CodexSessionPage /> },
       { path: "search", element: <EntrySearchPage /> },

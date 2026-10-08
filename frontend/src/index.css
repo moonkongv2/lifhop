@@ -219,6 +219,11 @@ details > p:first-of-type { margin-top: 12px; }
 .discussion-browser .reader-body { min-height: 0; margin: 16px 0; max-width: 100%; }
 .discussion-browser .entry-content { font-size: 13px; max-width: 100%; }
 .discussion-focus { background: var(--surface); box-shadow: inset 3px 0 var(--accent); padding-inline: 12px; }
+.passage-reader { padding: 28px 34px; }
+.passage-text { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; line-height: 1.7; margin: 28px 0; }
+.passage-snapshots { margin-top: 16px; }
+.passage-snapshots ul { padding-left: 20px; overflow-wrap: anywhere; }
 @media (max-width: 650px) {
   .repository-header, .repository-browser { padding: 18px; }
+  .passage-reader { padding: 20px; }
 }

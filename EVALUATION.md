@@ -396,3 +396,15 @@ primary and keyword modes. There is no explicit retained Codex/GitHub SHA overla
 in this corpus; life and real PR/issue candidates still lack connected support.
 After that, complete about 20 verified questions together and freeze the real baseline
 before implementing Phase 3.2 retrieval improvements or Phase 3.3 AI answers.
+
+## Phase 3.2A passage comparison
+
+A separate three-question pilot is now owner-approved at revision 2. Preserve its
+questions, anchors and existing Entry-level reports. `run --retriever passages`
+uses the same local filters/ranking as the new browser mode and measures full
+same-version gold span coverage, including verified exact snapshot aliases.
+`--retriever literal` remains the default; primary and auxiliary modes remain separate.
+Timeouts keep scored denominators. Passage reports link bounded pinned readers and
+record projection coverage/size/configuration; they contain no source bodies.
+Operations are in `PASSAGE_SEARCH.md`. Diverse about-20-question validation remains
+unfinished, and this three-question pilot does not prove general search quality.
