@@ -13,12 +13,12 @@ dependencies = [
     "pyjwt",
     "python-multipart",
     "boto3",
+    "httpx",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest",
-    "httpx",
     "alembic",
 ]
 

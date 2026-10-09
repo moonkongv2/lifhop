@@ -1,8 +1,37 @@
 # lifhop Current Status
 
-Last updated: 2026-10-08
+Last updated: 2026-10-09
 
 ## Current product slice
+
+Phase 3.2B1 tooling and the first owner-approved real OpenAI experiment are complete.
+The provider defaults off; the owner's ignored local configuration enables OpenAI.
+A body-only current-passage gate, explicit query consent, durable project-wide
+cost reservations/reconciliation and authenticated dry-run/run CLI are available.
+Vectors remain in bounded memory; reports/manifests contain no source/query bodies.
+Development migration `e26b9c13a842` is applied. Synthetic integration checks cover
+durable dispatch, timeout accounting, owner-lock serialization, empty-month budget
+races, CLI comparison and stale manifests.
+
+On 2026-10-09 the owner approved transmission of 43 GitHub documents/267 body
+passages and three frozen pilot questions for `b@test.com`, `repo:1228467402`.
+The repository source policy and those 43 record permissions were enabled and
+remain enabled; other record permissions were not changed. A fresh explicit-ID
+manifest estimated at most USD 0.007779. Run `b438d06014304c9ea8c5ddb6dc2b5741`
+completed 28 calls (25 document batches/3 questions), 81,572 tokens, in 16.13s.
+All usage is settled as spent: USD 0.001643 in the conservatively rounded app ledger.
+The two Korean questions failed complete gold-span coverage at top 20 in all
+three methods. The English gold span ranked lexical 1, semantic 19, hybrid 4.
+There were 171 non-gold groups; the B2 benefit gate is `criteria_not_met`.
+Existing search remains unchanged. Next: inspect chunk selection, grouping and
+ranking against the frozen questions before authorizing another paid comparison.
+The private report contains IDs/scores/usage only; vectors remain memory-only.
+B1 omits commit diffs, LOGs and work passages by default. B2 pgvector/worker/browser
+semantic modes are not implemented and await demonstrated B1 benefit and owner confirmation.
+Plan: `SEMANTIC_SEARCH_PLAN.md`; commands: `SEMANTIC_SEARCH.md`.
+Final B1 checks: 357 backend tests passed, including 18 focused semantic tests;
+migration upgrade, CLI integration and whitespace checks passed. Earlier CLI vector
+unwrapping and committed synthetic-fixture cleanup failures were corrected.
 
 Phase 3.2A local passage retrieval is implemented and owner browser checks 1–5
 are confirmed, including disposable note create/edit/delete search updates.
@@ -377,9 +406,10 @@ user-verifiable product slices in `ROADMAP.md`.
 
 ## Next
 
-1. Plan 3.2B: compare embeddings on explicitly
-   AI-allowed samples within the cost budget; necessary Codex development reads do
-   not enable those transmissions. Preserve the failed Korean→English cases.
+1. Diagnose the measured 3.2B1 Korean retrieval failures and English rank regression
+   before another paid comparison or B2 implementation. Local API setup and the
+   scoped 43-document/3-question transmission grant are complete. Preserve the
+   frozen Korean→English cases and exact gold-span scoring.
    Case-04 remains draft. Complete the remaining questions:
    check question/claim/span meaning, distinguish insufficient
    evidence from known collection gaps, then approve about 20 real questions and

@@ -1319,3 +1319,22 @@ Reports remain body-free. Local retrieval is available for external-AI-denied re
 future external embeddings/answers still require application policy and budget checks.
 The owner's necessary current-Codex development-read authorization is separate from
 application AI permission and does not extend to other review providers.
+
+## 2026-10-08: Measure semantic retrieval before persistent vector storage
+
+B1 uses an authenticated, owner/database-bound dry-run manifest and frozen approved
+questions to compare lexical/vector/RRF retrieval on the same AI-allowed corpus.
+Only current body passages from NOTE/DOCUMENT/CONVERSATION are sent; work evidence,
+annotations and complete source versions are excluded. The bounded passage gate
+retains the existing owner lock until dispatch completes; query consent is separate.
+The provider defaults off. `httpx` moves from development to runtime dependencies;
+fixed-origin requests have no redirects, environment proxies or automatic retries.
+
+Record reservations before dispatch using a body-free AiUsageAttempt ledger and
+billing-scope advisory locks across users/months. Uncertain attempts retain their
+maximum exposure until authenticated reconciliation, preserving the original month.
+API success costs survive source/quality failures. B1 vectors live only in bounded
+memory and a repeated run may incur repeated cost. Neither current Codex development
+reads nor implementation authorization changes application AI policy or initiates
+paid experiments. pgvector and background/browser integration await measured benefit
+and owner confirmation at the B1 checkpoint.

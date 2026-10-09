@@ -408,3 +408,12 @@ Timeouts keep scored denominators. Passage reports link bounded pinned readers a
 record projection coverage/size/configuration; they contain no source bodies.
 Operations are in `PASSAGE_SEARCH.md`. Diverse about-20-question validation remains
 unfinished, and this three-question pilot does not prove general search quality.
+
+## Phase 3.2B1 experiment
+
+`scripts/check_semantic_retrieval.py` provides authenticated dry-run/run comparison
+of local lexical, in-memory cosine and hybrid retrieval on the same AI-allowed
+current body corpus. The original immutable dataset/baselines remain untouched.
+Reports omit question/claim/source text and vectors; invalidation and policy exclusions
+remain visible. See `SEMANTIC_SEARCH.md` for the concrete commands and usage accounting.
+Provider off and missing source/record permission never cause hidden API calls.
