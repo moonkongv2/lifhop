@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from app.evaluation.evidence import make_anchor, approve_case
 from app.evaluation.retrieval import Snapshot, database_identity
 from app.evaluation.schemas import Case, dataset_from, now
-from app.evaluation.semantic import prepare, compare, filtered_rows, group_rank, fuse
+from app.evaluation.semantic import prepare, compare, filtered_rows, group_rank, fuse, ranking_diagnostics
 from app.models.entry import Entry, EntryType
 from app.models.history import SourcePolicy
 from app.models.passage import EntryPassage
@@ -166,6 +166,38 @@ def test_group_before_quota_and_fusion():
     assert len(hits) == 6 and hits[0]["entry_id"] == 4
     assert len(hits[0]["gold_locations"]) == 4
     assert len(fuse(hits, hits)) == 6
+
+
+def test_diagnostics_distinguish_quota_removal_from_top20_cutoff():
+    rows = [dict(id=i, group_id=f"p:{i}", entry_id=1 if i <= 3 else i,
+        version_id=i, field="content", start=0, end=10, event_at=None,
+        text="Synthetic private text") for i in range(1, 25)]
+    anchors = {str(i):[dict(rows[i-1], status="valid", selection="current")] for i in (3, 24)}
+    ordered = [r["id"] for r in rows]
+    before = group_rank(rows, ordered)
+    result = ranking_diagnostics(rows, ordered, anchors)
+    assert result["raw"]["group_ranks"] == {"3":3, "24":24}
+    assert result["grouped"]["group_ranks"] == {"3":3, "24":24}
+    assert result["entry_quota"]["group_ranks"] == {"3":None, "24":23}
+    assert result["candidates"]["group_ranks"]["24"] == 23
+    assert result["top20"]["group_ranks"] == {"3":None, "24":None}
+    assert before == group_rank(rows, ordered)
+    assert "Synthetic private text" not in json.dumps(result)
+
+
+def test_diagnostics_preserve_aliases_and_complete_span_coverage():
+    rows = [dict(id=1, group_id="same", entry_id=1, version_id=1, field="content",
+                 start=0, end=5, event_at=None),
+            dict(id=2, group_id="same", entry_id=2, version_id=2, field="content",
+                 start=0, end=5, event_at=None),
+            dict(id=3, group_id="next", entry_id=1, version_id=1, field="content",
+                 start=5, end=10, event_at=None)]
+    gold = {"g":[dict(rows[0], end=10, status="valid", selection="current")]}
+    result = ranking_diagnostics(rows, [2, 1, 3], gold)
+    assert result["raw"]["group_ranks"]["g"] == 3
+    assert result["grouped"]["group_ranks"]["g"] == 2
+    assert result["top20"]["group_ranks"]["g"] == 2
+    assert ranking_diagnostics(rows, [1, 2], gold)["top20"]["group_ranks"]["g"] is None
 
 
 def committed_fixture(db_session):

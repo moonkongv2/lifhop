@@ -23,8 +23,8 @@ All usage is settled as spent: USD 0.001643 in the conservatively rounded app le
 The two Korean questions failed complete gold-span coverage at top 20 in all
 three methods. The English gold span ranked lexical 1, semantic 19, hybrid 4.
 There were 171 non-gold groups; the B2 benefit gate is `criteria_not_met`.
-Existing search remains unchanged. Next: inspect chunk selection, grouping and
-ranking against the frozen questions before authorizing another paid comparison.
+Existing search remains unchanged. The diagnostic follow-up below identifies the
+failed ranking stages; a revised chunking experiment is the next proposal.
 The private report contains IDs/scores/usage only; vectors remain memory-only.
 B1 omits commit diffs, LOGs and work passages by default. B2 pgvector/worker/browser
 semantic modes are not implemented and await demonstrated B1 benefit and owner confirmation.
@@ -32,6 +32,22 @@ Plan: `SEMANTIC_SEARCH_PLAN.md`; commands: `SEMANTIC_SEARCH.md`.
 Final B1 checks: 357 backend tests passed, including 18 focused semantic tests;
 migration upgrade, CLI integration and whitespace checks passed. Earlier CLI vector
 unwrapping and committed synthetic-fixture cleanup failures were corrected.
+
+Follow-up diagnostics now record gold coverage ranks after raw ordering, exact
+grouping, the two-results-per-Entry quota, the 100-candidate cap and top-20 cutoff.
+They contain counts/ranks only and do not affect ranking or gold scoring. Approved
+same-scope run `e5487232da5b43daaeac88f2794ece14` reproduced all first-run method
+scores and passage lists: Korean pilot-01 ranked 46 raw / 25 grouped / 24 after
+quota, then missed top 20; pilot-02 ranked 61 / 38 and was dropped by the quota.
+English ranked 27 raw / 19 grouped and retained rank 19. Each gold span fits in
+one chunk, so split evidence is not the cause. Removing the quota alone cannot
+recover either Korean case at top 20. The repeat used 28 successful calls and
+USD 0.001643 in ledger cost (both runs total USD 0.003286); no uncertain attempts.
+Next proposal: compare smaller section-aware chunks with the same frozen gold,
+model and document scope; investigate mixed-topic chunks and near-duplicate
+snapshots without relaxing acceptance thresholds. B2 remains gated.
+Follow-up checks: 359 backend tests passed (20 semantic tests); first/repeat method
+scores and passage lists matched exactly, and whitespace checks passed.
 
 Phase 3.2A local passage retrieval is implemented and owner browser checks 1–5
 are confirmed, including disposable note create/edit/delete search updates.
@@ -406,8 +422,8 @@ user-verifiable product slices in `ROADMAP.md`.
 
 ## Next
 
-1. Diagnose the measured 3.2B1 Korean retrieval failures and English rank regression
-   before another paid comparison or B2 implementation. Local API setup and the
+1. Design the next bounded B1 chunking experiment using the measured rank-stage
+   failures; B2 remains blocked on demonstrated retrieval benefit. Local API setup and the
    scoped 43-document/3-question transmission grant are complete. Preserve the
    frozen Korean→English cases and exact gold-span scoring.
    Case-04 remains draft. Complete the remaining questions:

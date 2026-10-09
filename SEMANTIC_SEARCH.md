@@ -64,6 +64,38 @@ duplicate grouping and ranking limits; do not weaken gold coverage or silently
 repeat paid calls. Vectors were not retained, so complete pre-quota vector ranks
 cannot be recovered from the persisted report.
 
+## Ranking diagnosis — 2026-10-09
+
+The comparison now reports `diagnostics.lexical` and `diagnostics.semantic` for
+each case. Stages are `raw`, `grouped`, `entry_quota`, `candidates`, and `top20`.
+Each stage contains result counts and complete gold-span coverage ranks only.
+Gold is inspected after candidate selection and never changes ordering. No body,
+question, answer or vector is added to the report. Existing method scores retain
+their original top-20 semantics; larger diagnostic ranks are not passing scores.
+
+The same approved 43 documents, 267 passages and three questions were sent once
+more using the same manifest/model under the existing USD 0.25 allowance. Report:
+`.local/evaluation/pilot-c9b91fbf392d477989eaeb6ce4a5b44e/semantic-runs/e5487232da5b43daaeac88f2794ece14.json`.
+
+| Case | Raw semantic rank | After exact grouping | After Entry quota | Outcome |
+| --- | --- | --- | --- | --- |
+| pilot-01 | 46 | 25 | 24 | Below top 20 |
+| pilot-02 | 61 | 38 | Removed | Quota removes an already low-ranked chunk |
+| pilot-03 | 27 | 19 | 19 | Within top 20 |
+
+Both Korean gold chunks were absent from lexical candidates altogether. All
+method scores and final passage lists matched the first run. The two gold spans
+fit in individual chunks: 138 characters within a 1,230-character chunk, and 145
+within a 1,244-character chunk. There is no split-span defect. Dropping the Entry
+quota alone would leave the gold at grouped ranks 25 and 38, so it cannot satisfy
+the checkpoint. Mixed topics within chunks and near-duplicate snapshot content
+are hypotheses to examine in a smaller, section-aware chunking experiment.
+
+The diagnostic repeat completed 28 successful calls/81,572 tokens in 12.17s,
+ledger cost USD 0.001643. Both runs together cost USD 0.003286 in the app ledger;
+there are no uncertain attempts in either report. This diagnosis does not establish
+that different chunking will improve retrieval, and B2 remains gated.
+
 ## Explicit live experiment
 
 1. Review the scoped document IDs in the manifest. Source AND individual record AI

@@ -8,7 +8,7 @@ import time
 from uuid import uuid4
 from sqlalchemy import case, func, select, String, cast, literal
 from app.evaluation.evidence import validate_case
-from app.evaluation.passage_metrics import passage_metrics
+from app.evaluation.passage_metrics import passage_metrics, coverage_rank
 from app.evaluation.retrieval import check_binding, corpus_manifest
 from app.evaluation.schemas import digest, canonical_bytes
 from app.evaluation.storage import MAX_DATASET_BYTES
@@ -37,7 +37,7 @@ def bounded_memory():
         raise EmbeddingError("EXPERIMENT_MEMORY_LIMIT")
 
 
-def group_rank(rows, ordered_ids, limit=100):
+def group_rank(rows, ordered_ids, limit=100, *, per_entry_limit=2):
     by_id = {r["id"]: r for r in rows}
     groups, order = {}, []
     for pid in ordered_ids:
@@ -51,13 +51,34 @@ def group_rank(rows, ordered_ids, limit=100):
     for gid in order:
         aliases = sorted(groups[gid], key=lambda r: (r["event_at"] or "", r["entry_id"]), reverse=True)
         rep = aliases[0]
-        if counts[rep["entry_id"]] >= 2:
+        if per_entry_limit is not None and counts[rep["entry_id"]] >= per_entry_limit:
             continue
         counts[rep["entry_id"]] += 1
         result.append(dict(rep, gold_locations=[{k:r[k] for k in
             ("entry_id", "version_id", "field", "start", "end")} for r in aliases]))
         if len(result) == limit:
             break
+    return result
+
+
+def ranking_diagnostics(rows, ordered_ids, groups):
+    """Score frozen evidence after ranking; never use it to choose candidates."""
+    by_id = {r["id"]: r for r in rows}
+    raw = [dict(by_id[pid], gold_locations=[{k:by_id[pid][k] for k in
+        ("entry_id", "version_id", "field", "start", "end")}]) for pid in ordered_ids]
+    grouped = group_rank(rows, ordered_ids, limit=MAX_PASSAGES, per_entry_limit=None)
+    quota = group_rank(rows, ordered_ids, limit=MAX_PASSAGES)
+    stages = dict(raw=raw, grouped=grouped, entry_quota=quota,
+                  candidates=quota[:100], top20=quota[:20])
+    result = {}
+    for name, hits in stages.items():
+        locations = [dict(location, rank=rank) for rank, hit in enumerate(hits, 1)
+            for location in hit["gold_locations"]]
+        result[name] = dict(result_count=len(hits), group_ranks={
+            gid:min((rank for anchor in anchors
+                if anchor["status"] == "valid" and anchor["selection"] == "current"
+                and (rank := coverage_rank(locations, anchor)) is not None), default=None)
+            for gid, anchors in groups.items()})
     return result
 
 
@@ -203,6 +224,9 @@ def compare(experiment, embed_documents, embed_query):
             results.append(dict(case_id=c.id, language=c.language,
                 status="measured" if valid and eligible else "evidence_invalid" if not valid else "policy_excluded",
                 elapsed_ms=round((time.monotonic()-before)*1000, 2),
+                diagnostics={"lexical":ranking_diagnostics(rows,
+                    [pid for pid in experiment.lexical[c.id] if pid in row_ids], groups),
+                    "semantic":ranking_diagnostics(rows, ids, groups)},
                 methods={name:dict(scores=passage_metrics(hits, groups), passage_ids=[h["id"] for h in hits])
                     for name,hits in methods.items()}))
     else:
