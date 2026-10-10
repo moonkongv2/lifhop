@@ -327,6 +327,10 @@ def test_cli_dry_run_paid_mock_and_stale_manifest(db_session, tmp_path, monkeypa
     sender.assert_not_called()
     replay_report = json.loads(next((directory/"semantic-replays").glob("*.json")).read_text())
     assert set(replay_report["variants"]) == {"A","B","C","D"}
+    assert cli.main(["--fusion-replay",str(capture),*common]) == 0
+    sender.assert_not_called()
+    fusion_report=json.loads(next((directory/"fusion-replays").glob("*/report.json")).read_text())
+    assert set(fusion_report["variants"])=={"B0","R","P","S"}
     with Session(engine) as db:
         policy = db.scalar(select(SourcePolicy).where(SourcePolicy.user_id == values["owner_id"]))
         policy.external_ai_allowed = False
@@ -334,6 +338,8 @@ def test_cli_dry_run_paid_mock_and_stale_manifest(db_session, tmp_path, monkeypa
     assert cli.main(args) == 1
     assert "MANIFEST_CHANGED_REPEAT_DRY_RUN" in capsys.readouterr().out
     assert cli.main(["--replay",str(capture),*common]) == 1
+    assert "CAPTURE_STALE" in capsys.readouterr().out
+    assert cli.main(["--fusion-replay",str(capture),*common]) == 1
     assert "CAPTURE_STALE" in capsys.readouterr().out
 
 

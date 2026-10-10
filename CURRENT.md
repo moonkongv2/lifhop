@@ -124,6 +124,32 @@ review fusion and the final Entry quota in a separate plan; if this held-out set
 is used for further tuning, a new validation set is required. No further paid
 experiment or B2 implementation has started. This completes the approved round.
 
+The next B1 fusion tooling is implemented: separate B0/R/P/S replay rules,
+protected top-five leaders from both lanes, bounded body-free rank traces,
+legacy baseline equivalence checks and freeze/validation helpers. Synthetic
+checks cover quota loss, protection, aliases, ties, report integrity, policy
+changes and no-provider replay. Browser ranking remains unchanged.
+Fresh independent validation drafts are prepared at
+`.local/evaluation/fusion-review-b7a96801f0474c19901d9f5cdc7159b6/review.html`:
+eight supported questions (four Korean-to-English, four English), two negative
+candidates and four previously unused gold-document paths. The owner approved
+all ten; validation revision 2 was fixed before opening the new tuning results.
+Private HTML, dataset composition, exact positive anchors and file permissions
+were checked. `protocol-v2-draft.json` records the current pre-review settings.
+Checks: 385 backend tests passed; CLI help and tracked/untracked whitespace checks
+passed. No frontend, schema or dependency change was needed.
+Both old captures were replayed locally as twenty tuning cases (18 supported,
+two negative). B0/R/P/S complete @20 hits were 14/13/14/17 out of 18. R/P failed
+recall >=0.80; S lost two B0 @5 successes, exceeding the allowed one. No candidate
+qualified; `freeze.json` records `no_candidate`. The round stops without a new
+provider call, independent capture or B2. Six non-gold candidate excerpts were
+inspected: related snapshots, title-only chunks and introductory paragraphs can
+rank ahead of direct evidence. This is a limited relevance review, not full labeling.
+Private `results.html` contains the comparison and early-rank losses. Related tests:
+7 passed after real replay; report integrity/private permission checks passed.
+Next: propose a separate context/reranking or chunk-composition plan. Preserve
+these failed results and the approved, still-unmeasured ten-case held-out set.
+
 Phase 3.2A local passage retrieval is implemented and owner browser checks 1–5
 are confirmed, including disposable note create/edit/delete search updates.
 The passage reader now has dedicated desktop/mobile inner padding.
@@ -497,7 +523,9 @@ user-verifiable product slices in `ROADMAP.md`.
 
 ## Next
 
-1. Review fusion and the final Entry quota after the failed expanded B1 round.
+1. Review the completed B1 fusion results linked above: no candidate qualified.
+   Propose the next focused plan for candidate context/reranking or chunk composition.
+   Preserve the approved ten-case validation set; its retrieval is still unmeasured.
    Rank capture/replay and the approved twenty-question experiment are complete.
    Preserve its failed frozen-B result and use a new held-out set if the old
    validation cases guide further tuning. B2 awaits independent retrieval benefit.

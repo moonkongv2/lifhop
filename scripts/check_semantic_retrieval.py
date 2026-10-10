@@ -16,6 +16,7 @@ from app.evaluation.schemas import EvaluationError, digest
 from app.evaluation.semantic import prepare, compare
 from app.evaluation.semantic_chunks import CHUNKING, embedding_anchor
 from app.evaluation.rank_replay import RankCapture, load_capture, replay
+from app.evaluation.fusion_replay import replay_fusion, write_fusion_report
 from app.services.ai_usage import call_slot, reconcile, usage_summary
 from app.services.embedding_call import embed
 from app.services.embedding_transport import EmbeddingError
@@ -28,6 +29,7 @@ def main(argv=None):
     mode.add_argument("--run", action="store_true")
     mode.add_argument("--usage", action="store_true")
     mode.add_argument("--replay", type=Path, metavar="CAPTURE")
+    mode.add_argument("--fusion-replay", type=Path, metavar="CAPTURE")
     mode.add_argument("--settle-max", metavar="ATTEMPT")
     mode.add_argument("--confirm-no-charge", metavar="ATTEMPT")
     parser.add_argument("--email")
@@ -41,13 +43,16 @@ def main(argv=None):
     parser.add_argument("--confirm-external-ai", action="store_true")
     parser.add_argument("--confirm-settlement", action="store_true")
     parser.add_argument("--capture-ranks", action="store_true")
+    parser.add_argument("--family-map",type=Path)
     args = parser.parse_args(argv)
-    if (args.run or args.dry_run or args.replay) and not args.directory:
+    if (args.run or args.dry_run or args.replay or args.fusion_replay) and not args.directory:
         parser.error("--set is required")
     if args.run and (not args.manifest or not args.confirm_external_ai):
         parser.error("--run requires --manifest and --confirm-external-ai")
     if args.capture_ranks and not args.run:
         parser.error("--capture-ranks requires --run")
+    if args.family_map and not args.fusion_replay:
+        parser.error("--family-map requires --fusion-replay")
     if (args.settle_max or args.confirm_no_charge) and not args.confirm_settlement:
         parser.error("Verify provider billing and stopped dispatch first; --confirm-settlement is required")
     engine = create_engine(settings.database_url, pool_timeout=2)
@@ -76,7 +81,8 @@ def main(argv=None):
         limit = Decimal(args.max_cost_usd) * 1000000
         if not limit.is_finite() or limit != limit.to_integral() or not 0 < limit <= 250000:
             parser.error("--max-cost-usd must be a positive micro-USD amount up to 0.25")
-        capture_header = read_private(args.replay, PRIVATE_ROOT) if args.replay else None
+        replay_path = args.replay or args.fusion_replay
+        capture_header = read_private(replay_path, PRIVATE_ROOT) if replay_path else None
         expected = capture_header["manifest"] if capture_header else read_private(args.manifest, PRIVATE_ROOT) if args.run else None
         if args.run and expected and expected.get("digest") != digest({k:v for k,v in expected.items() if k != "digest"}):
             raise EmbeddingError("MANIFEST_INVALID")
@@ -94,8 +100,18 @@ def main(argv=None):
             scope = scopes.pop()
         with readonly_snapshot(engine, email, password) as snapshot:
             experiment = prepare(snapshot, dataset, provider=provider, scope=scope, entry_ids=ids, chunking=chunking)
-            if args.replay:
-                header,captures = load_capture(args.replay, experiment, root=PRIVATE_ROOT)
+            if replay_path:
+                header,captures = load_capture(replay_path, experiment, root=PRIVATE_ROOT)
+                if args.fusion_replay:
+                    families=read_private(args.family_map,PRIVATE_ROOT) if args.family_map else {}
+                    if not isinstance(families,dict) or any(not isinstance(k,str) or not isinstance(v,str)
+                        or len(k)!=64 or len(v)!=64 or set(k+v)-set("0123456789abcdef") for k,v in families.items()):
+                        raise EvaluationError("FAMILY_MAP_INVALID")
+                    result=replay_fusion(experiment,header,captures,family_map=families)
+                    path=write_fusion_report(args.directory/"fusion-replays"/uuid4().hex,result,root=PRIVATE_ROOT)
+                    print(f"Fusion replay: {path}")
+                    print("B0/R/S matched legacy results; B0/R/P/S compared; provider calls: 0")
+                    return 0
                 result = replay(experiment, header, captures)
                 path = args.directory / "semantic-replays" / (uuid4().hex + ".json")
                 write_private(path, result, root=PRIVATE_ROOT)

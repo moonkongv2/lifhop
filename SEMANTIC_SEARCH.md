@@ -143,6 +143,39 @@ an improvement. No automatic paid run or persistent/browser semantic rollout
 is authorized by this failed validation. Backend checks: 378 tests passed,
 CLI help and whitespace checks passed; no frontend behavior changed.
 
+Next-round proposal: `SEMANTIC_FUSION_PLAN.md`. It compares the frozen baseline,
+RRF without the final quota, protected top-five candidates from each lane and
+semantic-only retrieval. Existing captures become tuning inputs. Freeze a new
+owner-reviewed validation set before viewing new tuning scores, then freeze one
+selected rule before a separately approved validation capture. This proposal
+is now implemented as separate experiment tooling. Synthetic captures verify
+B0/R/P/S, protected lane leaders, legacy baseline equivalence and a frozen
+selection/validation rule. The completed local tuning replay follows below;
+no new provider call was made.
+
+`--fusion-replay CAPTURE --set DIRECTORY --email b@test.com` reuses an authenticated,
+current-policy-checked capture. Optional `--family-map PRIVATE_JSON` pins opaque
+document-family aliases for diagnostics. The new rule digest is separate from the
+legacy capture digest; `--replay` retains its original behavior. Reports publish
+bounded per-case traces and an index under `fusion-replays/`; traces contain
+IDs, ranges, ranks and exclusion reasons, without questions or document text.
+`load_fusion_report` verifies the index and case digests before decision helpers
+combine reports. `select_fusion` requires fresh validation review before the first
+tuning replay; `validate_fusion` evaluates the frozen candidate without reselection.
+
+The owner approved the fresh ten cases, fixed as validation revision 2 before
+replaying the old twenty cases. `protocol.json` pins the reviewed set and rules;
+the earlier drafts remain. Complete @20 hits B0/R/P/S are 14/13/14/17 out of 18
+supported cases. R/P fail recall >=0.80; S fails the B0 @5 preservation limit
+(two losses, maximum one). `freeze.json` records `no_candidate`, ending this round
+with zero provider calls. Six non-gold excerpts were inspected locally: related
+snapshots, title-only chunks and introductory context do not directly prove gold.
+Private `.local/evaluation/fusion-review-b7a96801f0474c19901d9f5cdc7159b6/results.html`
+contains the table, lost ranks and limited excerpt review. The fresh ten-case set
+is still unmeasured. No new validation manifest/capture or browser/B2 change was
+made. Next propose a focused candidate-context/reranking or chunk-composition plan;
+do not adjust the frozen thresholds after seeing these scores.
+
 ## Dry-run without sending data
 
 ```bash
