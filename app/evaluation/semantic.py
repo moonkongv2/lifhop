@@ -62,13 +62,13 @@ def group_rank(rows, ordered_ids, limit=100, *, per_entry_limit=2):
     return result
 
 
-def ranking_diagnostics(rows, ordered_ids, groups):
+def ranking_diagnostics(rows, ordered_ids, groups, *, per_entry_limit=2):
     """Score frozen evidence after ranking; never use it to choose candidates."""
     by_id = {r["id"]: r for r in rows}
     raw = [dict(by_id[pid], gold_locations=[{k:by_id[pid][k] for k in
         ("entry_id", "version_id", "field", "start", "end")}]) for pid in ordered_ids]
     grouped = group_rank(rows, ordered_ids, limit=MAX_PASSAGES, per_entry_limit=None)
-    quota = group_rank(rows, ordered_ids, limit=MAX_PASSAGES)
+    quota = group_rank(rows, ordered_ids, limit=MAX_PASSAGES, per_entry_limit=per_entry_limit)
     stages = dict(raw=raw, grouped=grouped, entry_quota=quota,
                   candidates=quota[:100], top20=quota[:20])
     result = {}
@@ -83,7 +83,7 @@ def ranking_diagnostics(rows, ordered_ids, groups):
     return result
 
 
-def fuse(lexical, semantic):
+def fuse(lexical, semantic, *, per_entry_limit=2, limit=20):
     scores, representatives = {}, {}
     for lane in (lexical, semantic):
         for rank, hit in enumerate(lane, 1):
@@ -93,10 +93,10 @@ def fuse(lexical, semantic):
     counts, result = Counter(), []
     for gid in sorted(scores, key=lambda g: (-scores[g], g)):
         hit = representatives[gid]
-        if counts[hit["entry_id"]] < 2:
+        if per_entry_limit is None or counts[hit["entry_id"]] < per_entry_limit:
             counts[hit["entry_id"]] += 1
             result.append(hit)
-    return result[:20]
+    return result[:limit]
 
 
 def prepare(snapshot, dataset, *, provider, scope, entry_ids=None, chunking="indexed"):
@@ -196,7 +196,7 @@ def filtered_rows(rows, filters):
     return result
 
 
-def compare(experiment, embed_documents, embed_query):
+def compare(experiment, embed_documents, embed_query, *, rank_sink=None):
     run_id, started = uuid4().hex, time.monotonic()
     vectors = {}
     batch, size = [], 0
@@ -232,11 +232,15 @@ def compare(experiment, embed_documents, embed_query):
             lexical = group_rank(rows, [pid for pid in experiment.lexical[c.id] if pid in row_ids])
             groups = experiment.gold[c.id]
             methods = {"lexical":lexical[:20], "semantic":semantic[:20], "hybrid":fuse(lexical, semantic)}
+            if rank_sink is not None:
+                rank_sink(c.id, [pid for pid in experiment.lexical[c.id] if pid in row_ids], ids, methods)
             valid = all(a["status"] == "valid" for anchors in groups.values() for a in anchors)
             eligible = bool(groups) and all(any(a["external_ai_eligible"] and a["selection"] == "current"
                 for a in anchors) for anchors in groups.values())
+            negative = c.expected_outcome in {"insufficient_evidence", "coverage_gap"} and not groups
             results.append(dict(case_id=c.id, language=c.language,
-                status="measured" if valid and eligible else "evidence_invalid" if not valid else "policy_excluded",
+                expected_outcome=c.expected_outcome,
+                status="negative_review_required" if negative else "measured" if valid and eligible else "evidence_invalid" if not valid else "policy_excluded",
                 elapsed_ms=round((time.monotonic()-before)*1000, 2),
                 diagnostics={"lexical":ranking_diagnostics(rows,
                     [pid for pid in experiment.lexical[c.id] if pid in row_ids], groups),

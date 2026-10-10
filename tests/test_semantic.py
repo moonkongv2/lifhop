@@ -315,17 +315,26 @@ def test_cli_dry_run_paid_mock_and_stale_manifest(db_session, tmp_path, monkeypa
     assert cli.main(["--dry-run",*common]) == 0
     manifest = next((directory/"semantic-manifests").glob("*.json"))
     assert "No API calls" in capsys.readouterr().out
-    args = ["--run",*common,"--manifest",str(manifest),"--confirm-external-ai"]
+    args = ["--run",*common,"--manifest",str(manifest),"--confirm-external-ai","--capture-ranks"]
     assert cli.main(args) == 0
     report = json.loads(next((directory/"semantic-runs").glob("*.json")).read_text())
     assert report["status"] == "measured" and report["b2_gate"] == "criteria_not_met"
     assert len(report["usage"]) == 2 and all(r["status"] == "spent" for r in report["usage"])
+    capture = next((directory/"semantic-captures").glob("*/capture.json"))
+    sender = Mock(side_effect=AssertionError("Replay must never call a provider"))
+    monkeypatch.setattr(cli,"embed",sender)
+    assert cli.main(["--replay",str(capture),*common]) == 0
+    sender.assert_not_called()
+    replay_report = json.loads(next((directory/"semantic-replays").glob("*.json")).read_text())
+    assert set(replay_report["variants"]) == {"A","B","C","D"}
     with Session(engine) as db:
         policy = db.scalar(select(SourcePolicy).where(SourcePolicy.user_id == values["owner_id"]))
         policy.external_ai_allowed = False
         db.commit()
     assert cli.main(args) == 1
     assert "MANIFEST_CHANGED_REPEAT_DRY_RUN" in capsys.readouterr().out
+    assert cli.main(["--replay",str(capture),*common]) == 1
+    assert "CAPTURE_STALE" in capsys.readouterr().out
 
 
 def test_live_owner_lock_blocks_revoke_during_dispatch(db_session):

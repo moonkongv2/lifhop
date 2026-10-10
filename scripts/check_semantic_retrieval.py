@@ -15,6 +15,7 @@ from app.evaluation.storage import PRIVATE_ROOT, load_dataset, read_private, wri
 from app.evaluation.schemas import EvaluationError, digest
 from app.evaluation.semantic import prepare, compare
 from app.evaluation.semantic_chunks import CHUNKING, embedding_anchor
+from app.evaluation.rank_replay import RankCapture, load_capture, replay
 from app.services.ai_usage import call_slot, reconcile, usage_summary
 from app.services.embedding_call import embed
 from app.services.embedding_transport import EmbeddingError
@@ -26,6 +27,7 @@ def main(argv=None):
     mode.add_argument("--dry-run", action="store_true")
     mode.add_argument("--run", action="store_true")
     mode.add_argument("--usage", action="store_true")
+    mode.add_argument("--replay", type=Path, metavar="CAPTURE")
     mode.add_argument("--settle-max", metavar="ATTEMPT")
     mode.add_argument("--confirm-no-charge", metavar="ATTEMPT")
     parser.add_argument("--email")
@@ -38,11 +40,14 @@ def main(argv=None):
     parser.add_argument("--max-cost-usd", default="0.25")
     parser.add_argument("--confirm-external-ai", action="store_true")
     parser.add_argument("--confirm-settlement", action="store_true")
+    parser.add_argument("--capture-ranks", action="store_true")
     args = parser.parse_args(argv)
-    if (args.run or args.dry_run) and not args.directory:
+    if (args.run or args.dry_run or args.replay) and not args.directory:
         parser.error("--set is required")
     if args.run and (not args.manifest or not args.confirm_external_ai):
         parser.error("--run requires --manifest and --confirm-external-ai")
+    if args.capture_ranks and not args.run:
+        parser.error("--capture-ranks requires --run")
     if (args.settle_max or args.confirm_no_charge) and not args.confirm_settlement:
         parser.error("Verify provider billing and stopped dispatch first; --confirm-settlement is required")
     engine = create_engine(settings.database_url, pool_timeout=2)
@@ -71,8 +76,9 @@ def main(argv=None):
         limit = Decimal(args.max_cost_usd) * 1000000
         if not limit.is_finite() or limit != limit.to_integral() or not 0 < limit <= 250000:
             parser.error("--max-cost-usd must be a positive micro-USD amount up to 0.25")
-        expected = read_private(args.manifest, PRIVATE_ROOT) if args.run else None
-        if expected and expected.get("digest") != digest({k:v for k,v in expected.items() if k != "digest"}):
+        capture_header = read_private(args.replay, PRIVATE_ROOT) if args.replay else None
+        expected = capture_header["manifest"] if capture_header else read_private(args.manifest, PRIVATE_ROOT) if args.run else None
+        if args.run and expected and expected.get("digest") != digest({k:v for k,v in expected.items() if k != "digest"}):
             raise EmbeddingError("MANIFEST_INVALID")
         scope = expected["scope"] if expected else args.scope
         provider = expected["provider"] if expected else args.provider
@@ -88,6 +94,14 @@ def main(argv=None):
             scope = scopes.pop()
         with readonly_snapshot(engine, email, password) as snapshot:
             experiment = prepare(snapshot, dataset, provider=provider, scope=scope, entry_ids=ids, chunking=chunking)
+            if args.replay:
+                header,captures = load_capture(args.replay, experiment, root=PRIVATE_ROOT)
+                result = replay(experiment, header, captures)
+                path = args.directory / "semantic-replays" / (uuid4().hex + ".json")
+                write_private(path, result, root=PRIVATE_ROOT)
+                print(f"Replay: {path}")
+                print("Four fixed variants; baseline matched exactly; provider calls: 0")
+                return 0
         if args.dry_run:
             path = args.directory / "semantic-manifests" / (uuid4().hex + ".json")
             write_private(path, experiment.manifest, root=PRIVATE_ROOT)
@@ -109,7 +123,8 @@ def main(argv=None):
             runtime["run_id"] = run_id
             return embed(engine, settings, owner_id=owner_id, run_id=run_id, run_limit=int(limit),
                 inputs=[value], confirm_external_ai=args.confirm_external_ai)[0]
-        result = compare(experiment, documents, query)
+        capture = RankCapture(experiment) if args.capture_ranks else None
+        result = compare(experiment, documents, query, rank_sink=capture.collect if capture else None)
         with readonly_snapshot(engine, email, password) as snapshot:
             refreshed = prepare(snapshot, dataset, provider=provider, scope=scope, entry_ids=ids, chunking=chunking)
         if refreshed.manifest != experiment.manifest:
@@ -118,12 +133,15 @@ def main(argv=None):
                 c["status"] = "invalidated"
         with Session(engine) as db:
             result["usage"] = usage_summary(db, owner_id=owner_id, run_id=result["run_id"])
+        if capture and result["status"] == "measured":
+            capture_path = capture.publish(args.directory / "semantic-captures" / result["run_id"], result, root=PRIVATE_ROOT)
+            print(f"Capture: {capture_path}")
         path = args.directory / "semantic-runs" / (result["run_id"] + ".json")
         write_private(path, result, root=PRIVATE_ROOT)
         print(f"Report: {path}")
         print(json.dumps({k:result[k] for k in ("status", "non_gold_groups", "b2_gate")}))
         return 0 if result["status"] == "measured" else 1
-    except (EmbeddingError, EvaluationError, HTTPException, SQLAlchemyError, ValueError, KeyError) as error:
+    except (EmbeddingError, EvaluationError, HTTPException, SQLAlchemyError, ValueError, KeyError, OSError, TypeError) as error:
         code = str(error) if isinstance(error, (EmbeddingError, EvaluationError)) else "EXPERIMENT_FAILED"
         print(code)
         if runtime and dataset:

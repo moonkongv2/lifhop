@@ -1,10 +1,13 @@
 # lifhop Current Status
 
-Last updated: 2026-10-09
+Last updated: 2026-10-10
 
 ## Current product slice
 
 Phase 3.2B1 tooling and the first owner-approved real OpenAI experiment are complete.
+The expanded two-capture follow-up is complete and failed held-out validation;
+B2 remains deferred. The frozen condition removes the early Entry quota and keeps
+the final quota. It is experimental only; browser search has not changed.
 The provider defaults off; the owner's ignored local configuration enables OpenAI.
 A body-only current-passage gate, explicit query consent, durable project-wide
 cost reservations/reconciliation and authenticated dry-run/run CLI are available.
@@ -24,7 +27,7 @@ The two Korean questions failed complete gold-span coverage at top 20 in all
 three methods. The English gold span ranked lexical 1, semantic 19, hybrid 4.
 There were 171 non-gold groups; the B2 benefit gate is `criteria_not_met`.
 Existing search remains unchanged. The diagnostic follow-up below identifies the
-failed ranking stages; a revised chunking experiment is the next proposal.
+failed ranking stages; the smaller-chunk experiment below is also measured.
 The private report contains IDs/scores/usage only; vectors remain memory-only.
 B1 omits commit diffs, LOGs and work passages by default. B2 pgvector/worker/browser
 semantic modes are not implemented and await demonstrated B1 benefit and owner confirmation.
@@ -43,9 +46,8 @@ English ranked 27 raw / 19 grouped and retained rank 19. Each gold span fits in
 one chunk, so split evidence is not the cause. Removing the quota alone cannot
 recover either Korean case at top 20. The repeat used 28 successful calls and
 USD 0.001643 in ledger cost (both runs total USD 0.003286); no uncertain attempts.
-Next proposal: compare smaller section-aware chunks with the same frozen gold,
-model and document scope; investigate mixed-topic chunks and near-duplicate
-snapshots without relaxing acceptance thresholds. B2 remains gated.
+The section-aware experiment below tests smaller chunks with the same frozen
+gold, model and document scope. B2 remains gated.
 Follow-up checks: 359 backend tests passed (20 semantic tests); first/repeat method
 scores and passage lists matched exactly, and whitespace checks passed.
 
@@ -67,6 +69,60 @@ The run took 33.86s, 68 successful calls/81,584 tokens, USD 0.001668 in ledger c
 three-run total is USD 0.004954, with no uncertain attempts. Checks: 369 backend
 tests passed (30 semantic/chunk tests), CLI help and whitespace passed. An initial
 test-module import error was corrected before these successful runs.
+
+Follow-up plan reviewed on 2026-10-09: `SEMANTIC_EXPERIMENT_PLAN.md` is the next
+B1 work plan. Implement private candidate-rank capture/replay, predeclare four
+quota-placement comparisons, and prepare about 20 questions split into 10 tuning
+and 10 validation cases before another capture. The existing pilot is tuning data,
+not independent validation; 43 snapshots cover 13 document paths. Additional
+questions require their own scoped transmission consent. Review itself made no
+API call or policy change.
+
+The follow-up tools are implemented: `--capture-ranks` saves
+private complete ranks after a successful run, and authenticated `--replay`
+compares fixed A–D quota conditions without a provider call. Replay checks live
+owner/database/dataset/corpus/policy/config bindings, rejects damaged inputs,
+and requires exact A ordering/coverage/score reproduction. Reports include
+document-family concentration; insufficient-evidence cases remain manual review
+and do not enter positive recall scores. B2 still requires independent validation.
+Private review folder `quota-review-72a1f8146022447ea30215fdd527f0f6` under
+`.local/evaluation/` contains `review.html`, two ten-case datasets and body-private
+review metadata. All twenty cases are now owner-approved in revision 2 (the three
+pilot cases, fifteen additional supported cases and two insufficient-evidence
+cases). The document paths are split between
+tuning and validation; validation includes four Korean-to-English and four
+English supported questions. The two-capture estimate was USD 0.016279 and was
+confirmed against fresh approved manifests before dispatch. Completed capture,
+freeze and validation results follow below. The private review must not be committed.
+Checkpoint checks: 375 backend tests passed, CLI help and whitespace checks passed.
+The first full-suite attempt hit the 256MiB process-peak guard in nine experiment
+tests after unrelated tests accumulated memory. Experiment tests now use a
+controlled RSS fixture and separately verify over-limit failure; the production
+guard is unchanged. Private datasets, split membership, HTML parsing and 0600
+file permissions were checked. Synthetic integration uses a mocked provider;
+owner-authorized real capture/replay results are recorded below.
+
+On 2026-10-10 the owner approved the seventeen new cases and transmission of the
+same 43 documents/all twenty questions for two captures. Both private datasets
+are revision 2; `consent.json` and pre-run `protocol.json` record the grant and
+selection policy. No DB AI policy was changed. Tuning capture
+`9abebf70107b4e7f9b529df874572149` measured A/B/C/D at 8/9/8/7 complete hits out
+of ten. Only B satisfied the selection requirements without losing a lexical
+success; immutable `freeze.json` pins B and the validation dataset before its run.
+Validation capture `83810bb5b61e4278ac9629adb10fac83` found complete evidence in
+5/8 positive cases with frozen B hybrid (lexical 5/8, semantic 7/8). It lost one
+lexical success and recovered one Korean miss. B2 is `criteria_not_met`.
+Two negative cases keep null recall and manual review flags; no generated answer
+or abstention assessment exists. Private result files preserve the failed result;
+the earlier draft review HTML remains an immutable historical preview.
+Each run made 75 calls, costing USD 0.001675/0.001676 and taking 33.83/30.86s.
+Total USD 0.003351; cumulative experiment cost USD 0.008305, no uncertain attempts.
+Both A replays matched original IDs/order/aliases/scores, with zero provider calls.
+Checks: 378 backend tests passed, CLI help/whitespace checks passed. No frontend,
+schema, dependency or persistent vector change was made. Next: report failures,
+review fusion and the final Entry quota in a separate plan; if this held-out set
+is used for further tuning, a new validation set is required. No further paid
+experiment or B2 implementation has started. This completes the approved round.
 
 Phase 3.2A local passage retrieval is implemented and owner browser checks 1–5
 are confirmed, including disposable note create/edit/delete search updates.
@@ -441,15 +497,12 @@ user-verifiable product slices in `ROADMAP.md`.
 
 ## Next
 
-1. Design the next bounded B1 chunking experiment using the measured rank-stage
-   failures; B2 remains blocked on demonstrated retrieval benefit. Local API setup and the
-   scoped 43-document/3-question transmission grant are complete. Preserve the
-   frozen Korean→English cases and exact gold-span scoring.
-   Case-04 remains draft. Complete the remaining questions:
-   check question/claim/span meaning, distinguish insufficient
-   evidence from known collection gaps, then approve about 20 real questions and
-   freeze the natural-language/keyword baselines. Candidate links alone do not
-   establish support. Owner confirmed Phase 2.4B synthetic browsing; actual source is empty.
+1. Review fusion and the final Entry quota after the failed expanded B1 round.
+   Rank capture/replay and the approved twenty-question experiment are complete.
+   Preserve its failed frozen-B result and use a new held-out set if the old
+   validation cases guide further tuning. B2 awaits independent retrieval benefit.
+   The original authoring set's case-04 remains draft; the approved GitHub set is
+   separate and does not establish quality across Codex or ordinary life records.
 2. Confirm GitHub repository browsing in Entries → repository → Commits/Documents
    → reader → return, and Search → Browse repository → return. Existing stored
    GitHub Entries need no reimport for this UI. Repository browsing and the earlier
@@ -471,7 +524,8 @@ user-verifiable product slices in `ROADMAP.md`.
 
 ## Known limitations
 
-- Phase 3.1 real question/evidence approval and owner report review remain pending.
+- Twenty GitHub questions/evidence are approved and the expanded B1 round is
+  measured; broader source coverage and original authoring-set review remain pending.
   The CLI reads the configured local DB and report links assume the app uses that DB.
   Historical-only Entry hits are separate from passage retrieval; no AI answer or
   claim-grounding/abstention test is performed. Exact natural-question substring

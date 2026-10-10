@@ -5,18 +5,143 @@ The experiment CLI is implemented. The first real comparison was measured on
 The browser still offers Exact phrase and Passages. B2 adds persistent vectors and
 Semantic/Hybrid browser modes only after the B1 checkpoint is reviewed.
 
+The next experiment sequence is specified in `SEMANTIC_EXPERIMENT_PLAN.md`:
+private rank capture/replay, four fixed quota comparisons, and separate tuning/
+validation cases. Rank capture/replay and A–D comparisons are implemented; the
+expanded private cases were approved and both captures completed on 2026-10-10.
+The frozen B condition failed held-out validation; B2 remains deferred.
+
 ## What is implemented
 
 - Body-only current passages, live source AND record AI permission, explicit query consent.
 - A durable shared USD ledger with run/month limits, uncertain exposure and reconciliation.
 - Same-corpus lexical, cosine and RRF comparison with exact version/offset gold coverage.
 - Body-free immutable manifests/reports. Experimental float32 vectors are memory-only.
+- Private complete lexical/semantic rank capture, authenticated live-state replay
+  without provider calls, and four fixed early/final Entry-quota comparisons.
 - Defaults: provider off, USD 0.25/run, USD 1/month, 300 seconds, 256MiB,
   5,000 passages, 16 inputs and 16,000 UTF-8 bytes/request. No automatic retries.
 
 No embedding worker is required for B1. The CLI needs PostgreSQL; existing browser
 inspection uses the ordinary backend/frontend. The development migration is already
 applied. On a different checkout/database, run `.venv/bin/alembic upgrade head` first.
+
+## Capture once, compare locally
+
+After approving a dataset and a fresh dry-run manifest, add `--capture-ranks` to
+the existing `--run --manifest ... --confirm-external-ai` command. The CLI prints
+`semantic-captures/<run-id>/capture.json` after successful measurement. Capture
+files store ranks, IDs, offsets, hashes, baseline scores and billing metadata;
+they omit document/query bodies and vectors. Each file is limited to 2MiB and
+the capture to 16MiB; immutable private case files are published before the index.
+
+Replay uses the same private dataset and local account password:
+
+```bash
+.venv/bin/python scripts/check_semantic_retrieval.py --set YOUR_PRIVATE_SET --replay YOUR_CAPTURE_JSON
+```
+
+Replay rechecks the owner/database, dataset, document state, permissions and
+configuration in a read-only snapshot. It rejects stale or damaged captures.
+No OpenAI call or API key is required. A must reproduce the original result
+ordering, complete gold coverage and scores exactly, or replay fails.
+
+| Variant | Before fusion: results per Entry | After fusion: results per Entry |
+| --- | --- | --- |
+| A: baseline | 2 | 2 |
+| B | Unlimited | 2 |
+| C | 2 | Unlimited |
+| D: diagnostic only | Unlimited | Unlimited |
+
+Exact grouping, 100 candidates per lane, equal RRF weights, k=60 and 20 final
+results remain fixed. Reports include coverage at 5/10/20, ranking-stage losses
+and document-family concentration. Negative cases keep their retrieved candidates
+for review and receive no positive recall score; a related result is not proof.
+Replay always leaves B2 at `independent_validation_required`.
+
+The prepared private review folder is
+`.local/evaluation/quota-review-72a1f8146022447ea30215fdd527f0f6`.
+`review.html` contains questions, proposed answers and exact saved excerpts;
+`tuning/` and `validation/` each contain ten cases. Only the three original pilot
+cases retained their prior approval; the seventeen new cases were owner-approved
+on 2026-10-10. Both datasets are now immutable revision 2. Tuning and validation
+use disjoint document paths (both translated review-guide paths stay on the
+validation side, preventing a translated-fact split leak).
+Validation has eight supported questions and two proposed insufficient-evidence
+cases, with four Korean-to-English and four English supported questions.
+The proposed two-capture conservative estimate is USD 0.016279; fresh manifests
+were checked again after owner approval. The two authorized captures and local
+replays are complete; see the result below. Existing browser search is unchanged.
+
+## Expanded experiment result — 2026-10-10
+
+The private folder above contains `consent.json`, the pre-run `protocol.json`,
+`tuning-replay.json`, immutable `freeze.json`, `validation-replay.json` and
+`validation-result.json`. Consent covers exactly the original 43 document IDs
+and 20 approved questions across two captures. Source/record AI policies stayed
+unchanged. Fresh estimates were USD 0.008140/0.008139, with USD 0.01/run limits.
+
+The selection policy was fixed before capture: apply the 0.80 recall@20 / 0.70
+complete-evidence requirements, retain lexical successes and recover a Korean
+lexical miss. Select among eligible A–C by recall@20, complete coverage, recall@10,
+then recall@5, preferring A, C, B on ties. D remains diagnostic only.
+
+| Tuning condition | Complete evidence @20 | Recall @5 / @10 | Lost lexical successes | Recovered Korean misses |
+| --- | --- | --- | --- | --- |
+| A | 8/10 | 0.50 / 0.60 | 1 | 4 |
+| B: selected | 9/10 | 0.70 / 0.70 | 0 | 3 |
+| C | 8/10 | 0.50 / 0.60 | 1 | 4 |
+| D: diagnostic | 7/10 | 0.70 / 0.70 | 0 | 1 |
+
+B removes the per-Entry quota from each candidate lane, retaining the final
+two-per-Entry quota. It was frozen before the validation capture. The tuning
+failure `pilot-01` remains outside hybrid top 20. B's tuning top 20 averaged seven
+document families, with up to twelve results from one family across snapshots.
+
+| Held-out B method | Complete evidence @20 | Recall @5 | Recall @10 |
+| --- | --- | --- | --- |
+| Lexical | 5/8 | 0.375 | 0.625 |
+| Semantic | 7/8 | 0.750 | 0.875 |
+| Hybrid: frozen product candidate | 5/8 | 0.500 | 0.625 |
+
+The frozen candidate fails the 0.80 / 0.70 thresholds and loses lexical success
+`valid-06`. It recovers one Korean miss (`valid-07`). No other condition was
+selected after validation, and B2 stays `criteria_not_met`. Semantic-only success
+is diagnostic evidence for a later plan, not an independently selected candidate.
+
+| Failed validation case | Semantic coverage rank | Fusion before final quota | Final hybrid |
+| --- | --- | --- | --- |
+| valid-03 | 2 | 21 | Removed by final quota; also beyond top 20 before quota |
+| valid-05 | 36 after grouping | 59 | Removed by final quota; initial ordering also too low |
+| valid-06 | 2 (lexical 9) | 3 | Removed by final quota |
+
+The final quota clearly removes useful evidence, while `valid-03` also shows
+fusion pushing a high semantic result below top 20. Quota changes alone do not
+explain every failure. Gold spans, scoring, chunking, weights and model stayed
+fixed. Negative cases `valid-09`/`valid-10` retained related candidates with
+`negative_review_required` and null positive recall; no answer was generated.
+This does not test hallucination or answer abstention. B's held-out hybrid top 20
+averaged 5.875 document families, with up to twelve results from one family.
+These concentration metrics use document paths as family keys, combining
+snapshots but counting distinct translation paths separately; they do not prove
+independent topic diversity.
+
+| Capture | Run ID | Calls / tokens | Ledger cost | Capture time |
+| --- | --- | --- | --- | --- |
+| Tuning | 9abebf70107b4e7f9b529df874572149 | 75 / 81,809 | USD 0.001675 | 33.83s |
+| Validation | 83810bb5b61e4278ac9629adb10fac83 | 75 / 81,801 | USD 0.001676 | 30.86s |
+
+Each capture used 65 document batches and ten query calls. All 150 attempts are
+settled as spent; two-run total is USD 0.003351, cumulative five-run cost USD
+0.008305. Four-condition local rank processing took about 262/267ms for the two
+sets and made zero provider calls; these times exclude DB preparation/loading.
+A reproduced original ordering, alias ranges and scores exactly in both sets.
+
+Stop this round. Next, propose a focused fusion/final-quota experiment using
+the existing captures for tuning; procure a new held-out set before asserting
+an improvement. No automatic paid run or persistent/browser semantic rollout
+is authorized by this failed validation. Backend checks: 378 tests passed,
+CLI help and whitespace checks passed; no frontend behavior changed.
 
 ## Dry-run without sending data
 
