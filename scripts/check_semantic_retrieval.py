@@ -14,6 +14,7 @@ from app.evaluation.retrieval import readonly_snapshot
 from app.evaluation.storage import PRIVATE_ROOT, load_dataset, read_private, write_private
 from app.evaluation.schemas import EvaluationError, digest
 from app.evaluation.semantic import prepare, compare
+from app.evaluation.semantic_chunks import CHUNKING, embedding_anchor
 from app.services.ai_usage import call_slot, reconcile, usage_summary
 from app.services.embedding_call import embed
 from app.services.embedding_transport import EmbeddingError
@@ -33,6 +34,7 @@ def main(argv=None):
     parser.add_argument("--provider", choices=("github", "codex", "manual", "markdown", "chatgpt"), default="github")
     parser.add_argument("--scope")
     parser.add_argument("--entries", help="Comma-separated explicit Entry IDs; omitted selects the scoped corpus")
+    parser.add_argument("--chunking", choices=("indexed", CHUNKING), default="indexed")
     parser.add_argument("--max-cost-usd", default="0.25")
     parser.add_argument("--confirm-external-ai", action="store_true")
     parser.add_argument("--confirm-settlement", action="store_true")
@@ -74,6 +76,7 @@ def main(argv=None):
             raise EmbeddingError("MANIFEST_INVALID")
         scope = expected["scope"] if expected else args.scope
         provider = expected["provider"] if expected else args.provider
+        chunking = expected.get("chunking", "indexed") if expected else args.chunking
         ids = expected["entry_ids"] if expected else ([int(v) for v in args.entries.split(",")] if args.entries else None)
         if ids is not None and (not ids or len(ids) > 5000 or any(v <= 0 for v in ids)):
             raise EmbeddingError("ENTRY_ALLOWLIST_LIMIT")
@@ -84,7 +87,7 @@ def main(argv=None):
                 raise EmbeddingError("EXPLICIT_SCOPE_REQUIRED")
             scope = scopes.pop()
         with readonly_snapshot(engine, email, password) as snapshot:
-            experiment = prepare(snapshot, dataset, provider=provider, scope=scope, entry_ids=ids)
+            experiment = prepare(snapshot, dataset, provider=provider, scope=scope, entry_ids=ids, chunking=chunking)
         if args.dry_run:
             path = args.directory / "semantic-manifests" / (uuid4().hex + ".json")
             write_private(path, experiment.manifest, root=PRIVATE_ROOT)
@@ -100,7 +103,7 @@ def main(argv=None):
         def documents(batch, run_id):
             runtime["run_id"] = run_id
             return embed(engine, settings, owner_id=owner_id, run_id=run_id, run_limit=int(limit),
-                inputs=[r["text"] for r in batch], passages=[dict(id=r["id"], passage_hash=r["passage_hash"]) for r in batch],
+                inputs=[r["text"] for r in batch], passages=[embedding_anchor(r) for r in batch],
                 revision=experiment.manifest["policy_revision"])
         def query(value, run_id):
             runtime["run_id"] = run_id
@@ -108,7 +111,7 @@ def main(argv=None):
                 inputs=[value], confirm_external_ai=args.confirm_external_ai)[0]
         result = compare(experiment, documents, query)
         with readonly_snapshot(engine, email, password) as snapshot:
-            refreshed = prepare(snapshot, dataset, provider=provider, scope=scope, entry_ids=ids)
+            refreshed = prepare(snapshot, dataset, provider=provider, scope=scope, entry_ids=ids, chunking=chunking)
         if refreshed.manifest != experiment.manifest:
             result.update(status="invalidated", b2_gate="criteria_not_met")
             for c in result["cases"]:

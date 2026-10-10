@@ -10,6 +10,7 @@ from app.models.history import EntryVersion
 from app.services.source_history import owner_lock, source_policy
 from app.services.passage_search import read_passage
 from app.models.history import SourcePolicy
+from app.services.passage_index import text_hash
 
 Purpose = Literal["embedding", "rerank", "summary", "answer", "telemetry"]
 
@@ -79,7 +80,17 @@ def embedding_inputs(db: Session, *, user_id: int, passages: list[dict], revisio
                 select(Entry.source_scope).where(Entry.id == p.entry_id))))
         if not allowed or not db.scalar(select(Entry.external_ai_allowed).where(Entry.id == p.entry_id)):
             raise HTTPException(403, "EMBEDDING_POLICY_DENIED")
-        inputs.append(p.text)
+        value = p.text
+        slice_keys = {"start", "end", "slice_hash"}
+        if slice_keys.intersection(anchor):
+            if (not slice_keys.issubset(anchor) or type(anchor["start"]) is not int
+                    or type(anchor["end"]) is not int
+                    or not p.start <= anchor["start"] < anchor["end"] <= p.end):
+                raise HTTPException(409, "EMBEDDING_SLICE_INVALID")
+            value = p.text[anchor["start"] - p.start:anchor["end"] - p.start]
+            if text_hash(value) != anchor["slice_hash"]:
+                raise HTTPException(409, "EMBEDDING_SLICE_INVALID")
+        inputs.append(value)
     return inputs
 
 

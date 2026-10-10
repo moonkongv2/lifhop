@@ -18,6 +18,7 @@ from app.models.passage import EntryPassage as P, PassageIndexState
 from app.models.user import User
 from app.services.embedding_transport import CONFIG, MODEL, DIMENSIONS, EmbeddingError, cost_micro
 from app.services.passage_search import eligible_conditions, candidate_query, score_order
+from app.evaluation.semantic_chunks import CHUNKING, split_rows, lexical_order
 
 MAX_PASSAGES = 5000
 
@@ -98,7 +99,9 @@ def fuse(lexical, semantic):
     return result[:20]
 
 
-def prepare(snapshot, dataset, *, provider, scope, entry_ids=None):
+def prepare(snapshot, dataset, *, provider, scope, entry_ids=None, chunking="indexed"):
+    if chunking not in {"indexed", CHUNKING}:
+        raise EmbeddingError("CHUNKING_UNSUPPORTED")
     check_binding(snapshot, dataset)
     filters = dict(source=EntrySource(provider), source_state=None, entry_type=None, date_field="created_at",
         date_from=None, date_to=None, include_work_commentary=False)
@@ -108,6 +111,8 @@ def prepare(snapshot, dataset, *, provider, scope, entry_ids=None):
         Entry.provider, Entry.source_scope, Entry.type, Entry.event_at, Entry.created_at, Entry.source_state,
         allow.label("allowed"), func.octet_length(P.text).label("bytes"),
         case((allow, P.text), else_=None).label("text")]
+    if chunking != "indexed":
+        fields.append(case((P.group_key.is_not(None), EntryVersion.payload["path"].astext), else_=None).label("document_path"))
     query = select(*fields).select_from(P).join(EntryVersion, EntryVersion.id == P.version_id).join(
         Entry, Entry.id == EntryVersion.entry_id).join(PassageIndexState, PassageIndexState.entry_id == Entry.id).outerjoin(
         SourcePolicy, (SourcePolicy.user_id == Entry.user_id) & (SourcePolicy.provider == Entry.provider) &
@@ -125,6 +130,8 @@ def prepare(snapshot, dataset, *, provider, scope, entry_ids=None):
         row["type"] = row["type"].value
     metadata = [{k:v for k,v in r.items() if k != "text"} for r in rows]
     allowed = [r for r in rows if r["allowed"] and 0 < r["bytes"] <= 8000 and r["text"].strip()]
+    if chunking != "indexed":
+        allowed = split_rows(allowed, MAX_PASSAGES)
     allowed_ids = {r["id"] for r in allowed}
     cases = [c for c in dataset.cases if c.status == "reviewed"]
     if not cases:
@@ -134,8 +141,11 @@ def prepare(snapshot, dataset, *, provider, scope, entry_ids=None):
         checked = validate_case(snapshot.db, snapshot.owner_id, c)
         required = {g.id for g in c.required_groups()}
         gold[c.id] = {name:anchors for name, anchors in checked["groups"].items() if name in required}
-        base = candidate_query(snapshot.owner_id, c.question, c.filters.model_dump()).where(P.id.in_(allowed_ids)).cte()
-        ids = list(snapshot.db.scalars(select(base.c.id).order_by(*score_order(base.c))))
+        if chunking == "indexed":
+            base = candidate_query(snapshot.owner_id, c.question, c.filters.model_dump()).where(P.id.in_(allowed_ids)).cte()
+            ids = list(snapshot.db.scalars(select(base.c.id).order_by(*score_order(base.c))))
+        else:
+            ids = lexical_order(snapshot.db, filtered_rows(allowed, c.filters), c.question)
         lexical[c.id] = ids
     document_bound = sum(r["bytes"] for r in allowed)
     # Conservative rounding assumes every document/query occupies its own request.
@@ -152,6 +162,10 @@ def prepare(snapshot, dataset, *, provider, scope, entry_ids=None):
             sum(cost_micro(len(c.question.encode())) for c in cases),
         input_upper_bound=document_bound, query_count=len(cases), query_digests=[digest(c.question) for c in cases],
         estimated_max_micro_usd=upper_cost, external_query_transmission=True)
+    if chunking != "indexed":
+        manifest.update(chunking=chunking, configuration_hash=digest([CONFIG, chunking]),
+            chunks=[{k:v for k,v in r.items() if k != "text"} for r in allowed],
+            proposed_max_micro_usd=upper_cost)
     manifest["digest"] = digest(manifest)
     if len(canonical_bytes(manifest)) > MAX_DATASET_BYTES:
         raise EmbeddingError("EXPERIMENT_MANIFEST_LIMIT")
@@ -246,7 +260,9 @@ def compare(experiment, embed_documents, embed_query):
         len(measured) == len(results) and len(measured) >= 3 and
         distractors >= 20 and ko_recovered and preserved) else "criteria_not_met"
     return dict(schema="lifhop-semantic-report-v1", run_id=run_id, manifest_digest=experiment.manifest["digest"],
-        dataset_digest=experiment.manifest["dataset_digest"], model=MODEL, configuration_hash=digest(CONFIG),
+        dataset_digest=experiment.manifest["dataset_digest"], model=MODEL,
+        configuration_hash=experiment.manifest["configuration_hash"],
+        chunking=experiment.manifest.get("chunking", "indexed"),
         status="measured" if vectors else "no_allowed_corpus", cases=results, non_gold_groups=distractors,
         elapsed_ms=round((time.monotonic()-started)*1000, 2),
         b2_gate=gate)

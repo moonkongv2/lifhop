@@ -49,6 +49,25 @@ snapshots without relaxing acceptance thresholds. B2 remains gated.
 Follow-up checks: 359 backend tests passed (20 semantic tests); first/repeat method
 scores and passage lists matched exactly, and whitespace checks passed.
 
+The `sections-600-v1` B1 option now splits allowed parent passages into exact
+subranges of at most 600 characters, preferring Markdown headings/paragraphs.
+It does not modify the live index. Each send rechecks the parent ID/hash, owner,
+AI permission and exact subrange/hash; lexical scores use PostgreSQL simple FTS
+on the same experimental slices. Metadata maps experimental IDs to parent readers.
+Same-scope run `715294e643b14fe99f7baa74fb53f29f` processed 1,031 subranges from
+the same 43 documents/267 parent passages and three frozen questions. Semantic
+gold ranks improved to 16/11 for Korean; hybrid recovered only pilot-02 at 15.
+English remained lexical rank 1 but was lost in semantic/hybrid: its complete
+gold chunk ranked 14 after grouping, then was removed by the Entry quota.
+All three gold spans still fit within individual chunks. The B2 gate remains
+`criteria_not_met`; smaller chunks alone are insufficient. Next proposal: examine
+candidate quotas and fusion with the same frozen evidence, preserving the English
+lexical success before considering B2. No automatic next paid run is scheduled.
+The run took 33.86s, 68 successful calls/81,584 tokens, USD 0.001668 in ledger cost;
+three-run total is USD 0.004954, with no uncertain attempts. Checks: 369 backend
+tests passed (30 semantic/chunk tests), CLI help and whitespace passed. An initial
+test-module import error was corrected before these successful runs.
+
 Phase 3.2A local passage retrieval is implemented and owner browser checks 1–5
 are confirmed, including disposable note create/edit/delete search updates.
 The passage reader now has dedicated desktop/mobile inner padding.

@@ -28,6 +28,24 @@ from app.security import hash_password
 
 
 @pytest.fixture(autouse=True)
+def bounded_test_process(monkeypatch):
+    from types import SimpleNamespace
+    from app.evaluation import semantic
+    # Suite-wide peak RSS measures unrelated tests, not this experiment's input.
+    size = 64 * 1024 * 1024 // (1 if semantic.sys.platform == "darwin" else 1024)
+    monkeypatch.setattr(semantic.resource, "getrusage", lambda _:SimpleNamespace(ru_maxrss=size))
+
+
+def test_experiment_aborts_above_process_memory_limit(monkeypatch):
+    from types import SimpleNamespace
+    from app.evaluation import semantic
+    size = 257 * 1024 * 1024 // (1 if semantic.sys.platform == "darwin" else 1024)
+    monkeypatch.setattr(semantic.resource, "getrusage", lambda _:SimpleNamespace(ru_maxrss=size))
+    with pytest.raises(EmbeddingError,match="EXPERIMENT_MEMORY_LIMIT"):
+        semantic.bounded_memory()
+
+
+@pytest.fixture(autouse=True)
 def cleanup_committed_synthetic_rows(db_session):
     yield
     # Separate connections prove durability, so their fixture writes need explicit cleanup.
@@ -273,7 +291,8 @@ def test_empty_month_budget_serializes_multiple_connections(db_session):
         assert sorted(f.result(timeout=10) for f in futures) == ["budget_blocked", "reserved"]
 
 
-def test_cli_dry_run_paid_mock_and_stale_manifest(db_session, tmp_path, monkeypatch, capsys):
+@pytest.mark.parametrize("chunking", ["indexed", "sections-600-v1"])
+def test_cli_dry_run_paid_mock_and_stale_manifest(db_session, tmp_path, monkeypatch, capsys, chunking):
     from scripts import check_semantic_retrieval as cli
     from app.evaluation.storage import save_dataset, load_dataset
     engine, settings, values = committed_fixture(db_session)
@@ -292,7 +311,7 @@ def test_cli_dry_run_paid_mock_and_stale_manifest(db_session, tmp_path, monkeypa
     monkeypatch.setattr(cli, "settings", settings)
     original = cli.embed
     monkeypatch.setattr(cli, "embed", lambda *a, **k: original(*a, **k, transport=lambda inputs: response(len(inputs))))
-    common = ["--email",email,"--set",str(directory),"--provider","manual","--scope","default"]
+    common = ["--email",email,"--set",str(directory),"--provider","manual","--scope","default","--chunking",chunking]
     assert cli.main(["--dry-run",*common]) == 0
     manifest = next((directory/"semantic-manifests").glob("*.json"))
     assert "No API calls" in capsys.readouterr().out

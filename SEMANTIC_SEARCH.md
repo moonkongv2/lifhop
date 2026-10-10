@@ -96,6 +96,58 @@ ledger cost USD 0.001643. Both runs together cost USD 0.003286 in the app ledger
 there are no uncertain attempts in either report. This diagnosis does not establish
 that different chunking will improve retrieval, and B2 remains gated.
 
+## Smaller-section experiment — 2026-10-09
+
+Use `--chunking sections-600-v1` on a fresh dry-run to compare smaller exact
+slices. The default `indexed` keeps the original behavior. Paragraph and Markdown
+heading boundaries are preferred; long blocks are split at line boundaries or
+600 characters. Splits stay inside existing parent passages, without overlap or
+added titles. Only already eligible, AI-allowed parents are split. The experiment
+retains the 5,000-input/256MiB/time/cost limits and does not rewrite the live index.
+
+Before dispatch, the existing owner lock protects revalidation of parent
+currentness/hash, permissions, subrange bounds and slice hash. No other parent
+text is sent. Questions, model/dimensions and gold spans remain unchanged. The
+manifest pins the chunking configuration and contains parent metadata plus
+body-free `chunks`. Exact child text from verified identical repository/path
+identities groups together. PostgreSQL simple FTS scores these same slices for
+the lexical comparison. Denied/oversized counts refer to original parent passages;
+`allowed_passages` counts the actual smaller embedding inputs.
+
+```bash
+.venv/bin/python scripts/check_semantic_retrieval.py --dry-run --email b@test.com --set .local/evaluation/pilot-c9b91fbf392d477989eaeb6ce4a5b44e --chunking sections-600-v1
+```
+
+The existing run command takes the new manifest; it restores the pinned chunking
+choice from that manifest. A dry-run does not transmit anything. Experimental
+result IDs have the form `parent_id:start:end` and are not browser passage IDs.
+To inspect a result, open `/passages/<parent_id>` and use the manifest's exact
+start/end positions within the pinned version. The browser shows the parent
+passage, so it may include surrounding text outside the embedded child slice.
+
+Report: `.local/evaluation/pilot-c9b91fbf392d477989eaeb6ce4a5b44e/semantic-runs/715294e643b14fe99f7baa74fb53f29f.json`.
+The same 43 documents/267 parent passages yielded 1,031 small chunks; the frozen
+three questions were unchanged. The estimate was USD 0.008121.
+
+| Case | Indexed semantic/hybrid ranks | Small-chunk lexical | Small-chunk semantic | Small-chunk hybrid |
+| --- | --- | --- | --- | --- |
+| pilot-01, Korean | Missing / missing | Missing | 16 | Missing |
+| pilot-02, Korean | Missing / missing | Missing | 11 | 15 |
+| pilot-03, English | 19 / 4 | 1 | Missing | Missing |
+
+Missing means complete gold coverage was absent from the top 20. All gold spans
+still fit within individual child chunks. English evidence ranked 14 after exact
+grouping but was removed by the two-results-per-Entry quota in the semantic lane.
+Its lexical rank-1 candidate was not retained in the final hybrid top 20 either.
+The smaller representation recovers Korean semantic retrieval, but the frozen
+B2 gate fails because hybrid does not preserve the English success. Inspect
+candidate quotas/fusion next; do not relax the gate or rewrite approved gold.
+
+The run completed 68 calls (65 document batches/3 queries), 81,584 tokens in
+33.86 seconds. All calls settled as spent; ledger cost USD 0.001668. Total across
+the three experiments is USD 0.004954. Vectors remain memory-only. Backend checks:
+369 passed, including 30 semantic/chunk tests; CLI help and whitespace passed.
+
 ## Explicit live experiment
 
 1. Review the scoped document IDs in the manifest. Source AND individual record AI
