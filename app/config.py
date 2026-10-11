@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     sqs_import_queue_url: str | None = None
     queue_mode: Literal["local", "aws"] = "local"
     embedding_mode: Literal["off", "openai"] = "off"
+    rerank_mode: Literal["off", "openai"] = "off"
     openai_api_key: SecretStr | None = None
     embedding_billing_scope: str = Field(default="lifhop-openai", min_length=1, max_length=100)
     embedding_monthly_limit_micro_usd: int = Field(default=1000000, ge=0, le=1000000)

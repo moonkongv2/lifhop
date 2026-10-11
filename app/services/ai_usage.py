@@ -33,13 +33,17 @@ def call_slot(engine, scope):
 
 
 def reserve(db, *, scope, owner_id, run_id, purpose, upper, monthly_limit, run_limit, at=None):
-    if purpose not in {"document", "query"} or not 0 < upper <= 16000 or not 0 < run_limit <= 250000:
+    rerank = purpose == "rerank"
+    if purpose not in {"document", "query", "rerank"} or not 0 < upper <= (525312 if rerank else 16000) or not 0 < run_limit <= (1000000 if rerank else 250000):
         raise EmbeddingError("INVALID_RESERVATION")
     billing_lock(db, scope)
     month = (at or datetime.now(timezone.utc)).strftime("%Y-%m")
     charge = case((Attempt.status == "spent", Attempt.spent_micro_usd), else_=Attempt.reserved_micro_usd)
     active = Attempt.status != "released"
     amount = cost_micro(upper)
+    if rerank:
+        from app.services import rerank_transport as rt
+        amount = rt.cost_micro(upper, rt.OUTPUT_LIMIT)
     monthly = db.scalar(select(func.coalesce(func.sum(charge), 0)).where(Attempt.billing_scope == scope, active,
         (Attempt.month == month) | Attempt.status.in_(["reserved", "uncertain"])))
     run = db.scalar(select(func.coalesce(func.sum(charge), 0)).where(Attempt.billing_scope == scope,
@@ -49,12 +53,16 @@ def reserve(db, *, scope, owner_id, run_id, purpose, upper, monthly_limit, run_l
     row = Attempt(id=uuid4().hex, billing_scope=scope, owner_id=owner_id, run_id=run_id, month=month,
         purpose=purpose, model=MODEL, configuration_hash=hashlib.sha256(CONFIG.encode()).hexdigest(),
         input_upper_bound=upper, reserved_micro_usd=amount, status="reserved")
+    if rerank:
+        row.model, row.configuration_hash = rt.MODEL, rt.CONFIG_HASH
+        row.output_upper_bound = rt.OUTPUT_LIMIT
+        row.input_price_micro, row.output_price_micro, row.price_hash = rt.INPUT_PRICE, rt.OUTPUT_PRICE, rt.PRICE_HASH
     db.add(row)
     db.flush()
     return row.id
 
 
-def settle(db, attempt_id, *, status, tokens=None, error_code=None):
+def settle(db, attempt_id, *, status, tokens=None, input_tokens=None, output_tokens=None, error_code=None):
     row = db.get(Attempt, attempt_id)
     if row is None:
         raise EmbeddingError("ATTEMPT_UNAVAILABLE")
@@ -65,9 +73,18 @@ def settle(db, attempt_id, *, status, tokens=None, error_code=None):
     if status not in {"uncertain", "spent", "released"}:
         raise EmbeddingError("INVALID_SETTLEMENT")
     if status == "spent":
-        if type(tokens) is not int or not 0 < tokens <= row.input_upper_bound:
-            raise EmbeddingError("INVALID_USAGE")
-        row.usage_tokens, row.spent_micro_usd = tokens, cost_micro(tokens)
+        if row.purpose == "rerank":
+            if (type(input_tokens) is not int or type(output_tokens) is not int
+                    or not 0 < input_tokens <= row.input_upper_bound
+                    or not 0 <= output_tokens <= row.output_upper_bound):
+                raise EmbeddingError("INVALID_USAGE")
+            row.input_usage_tokens, row.output_usage_tokens = input_tokens, output_tokens
+            row.usage_tokens = input_tokens + output_tokens
+            row.spent_micro_usd = (input_tokens*row.input_price_micro + output_tokens*row.output_price_micro + 999999)//1000000
+        else:
+            if type(tokens) is not int or not 0 < tokens <= row.input_upper_bound:
+                raise EmbeddingError("INVALID_USAGE")
+            row.usage_tokens, row.spent_micro_usd = tokens, cost_micro(tokens)
     row.status, row.error_code = status, error_code
     row.settled_at = datetime.now(timezone.utc)
 
@@ -80,6 +97,8 @@ def reconcile(db, *, owner_id, scope, attempt_id, assume_max_spent=False, confir
         raise EmbeddingError("CONFIRM_SETTLEMENT")
     settle(db, attempt_id, status="spent" if assume_max_spent else "released",
         tokens=row.input_upper_bound if assume_max_spent else None,
+        input_tokens=row.input_upper_bound if assume_max_spent and row.purpose=="rerank" else None,
+        output_tokens=row.output_upper_bound if assume_max_spent and row.purpose=="rerank" else None,
         error_code="MANUAL_MAX_SETTLEMENT" if assume_max_spent else "MANUAL_NO_CHARGE")
 
 
@@ -89,5 +108,6 @@ def usage_summary(db, *, owner_id, run_id=None):
         conditions.append(Attempt.run_id == run_id)
     return [dict(id=r.id, run_id=r.run_id, month=r.month, status=r.status, purpose=r.purpose,
         reserved_micro_usd=r.reserved_micro_usd, spent_micro_usd=r.spent_micro_usd,
-        usage_tokens=r.usage_tokens, error_code=r.error_code) for r in db.scalars(
+        usage_tokens=r.usage_tokens, model=r.model, input_usage_tokens=r.input_usage_tokens,
+        output_usage_tokens=r.output_usage_tokens, error_code=r.error_code) for r in db.scalars(
             select(Attempt).where(*conditions).order_by(Attempt.created_at).limit(1000))]

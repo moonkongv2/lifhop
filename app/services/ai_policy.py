@@ -109,3 +109,14 @@ def send_query_embedding(db: Session, *, user_id: int, query: str, confirm_exter
         raise HTTPException(403, "OWNER_UNAVAILABLE")
     input_bound([query], query=True)
     return transport([query])
+
+
+def send_passage_rerank(db: Session, *, user_id: int, passages: list[dict], revision: int,
+                       query: str, confirm_external_ai: bool, transport):
+    """Validate the combined question and exact current slices under one owner lock."""
+    from app.services.rerank_transport import payload
+    if confirm_external_ai is not True:
+        raise HTTPException(403, "QUERY_CONSENT_REQUIRED")
+    inputs = embedding_inputs(db, user_id=user_id, passages=passages, revision=revision)
+    payload(query, inputs)
+    return transport(inputs)
