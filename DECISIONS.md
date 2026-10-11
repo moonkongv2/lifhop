@@ -1338,3 +1338,55 @@ memory and a repeated run may incur repeated cost. Neither current Codex develop
 reads nor implementation authorization changes application AI policy or initiates
 paid experiments. pgvector and background/browser integration await measured benefit
 and owner confirmation at the B1 checkpoint.
+
+## 2026-10-10: Bound reranking separately while sharing AI billing and policy locks
+
+The B1 rerank experiment reuses verified section candidates and unchanged gold;
+it does not change product search. Model input contains one approved question and
+exact current body slices with opaque IDs. Strict model output is candidate grades
+only; registered claims and gold never enter the request. No answer or model
+reasoning is collected. Rerank defaults off and transmission needs a fresh scoped
+manifest and explicit consent, independent of DB permissions and previous grants.
+
+Extend the existing body-free AiUsageAttempt ledger with output reservations,
+separate actual input/output usage and pinned per-model prices. Keep old embedding
+rows and reconciliation semantics. Both callers share billing scope/month budget
+and call-slot/owner locks. Record uncertain before dispatch; release proven
+pre-send failures, settle valid usage even when grade parsing fails, and count
+only actual cost after settlement so unused output headroom returns to the budget.
+Unknown usage stays conservatively reserved. Migration `e37c2d14b953` preserves
+existing rows. No separate service, queue, dependency or product vector store is added.
+
+An immutable attempt marker prevents automatic duplicate runs for the same manifest.
+Private bounded grade captures enable zero-provider replay. The held-out set remains
+unmeasured until a tuning candidate passes and a separate validation grant is given.
+Quality, actual cost and added latency must be reviewed before proposing B2 usage.
+
+## 2026-10-11: End B1 tuning and deliver optional Semantic search incrementally
+
+The owner approved moving from repeated experiments to a usable optional Semantic
+mode. Preserve the previous failed gates, model settings, captures and unresolved
+rerank response failure. Semantic-only 17/18 complete hits on reused tuning cases
+justify a limited trial, not independent validation or a replacement for local
+search. Hybrid and paid reranking remain deferred. Do not select a new model or
+reinterpret old failures to claim success.
+
+Build pgvector storage/lifecycle first, then explicitly activated bounded indexing,
+then the Semantic API/UI. Existing keyword and passage search remain default.
+Retain the measured `sections-600-v1` exact subranges without rebuilding the local
+passage index: each persisted vector references its parent passage, parent hash,
+absolute source offsets, slice hash and model/config. This needs multiple vectors
+per parent, replacing the earlier one-vector-per-parent schema proposal.
+Use exact cosine search initially. pgvector is the PostgreSQL extension; the
+pgvector Python adapter supplies SQLAlchemy's vector type and distance operators.
+Current owner/source/record permissions and source version must be checked both
+when publishing a vector and when reading it. Revocation/current selection/deletion
+remove invalid derivatives in the source transaction. Reallow does not restore
+old vectors, and an in-flight result cannot cross a policy revision change.
+
+After the product flow works, run one separately authorized fresh ten-case
+evaluation. Preserve the result and decide 3.3 scope from quality, usability, cost
+and latency. Further tuning requires a new explicit decision. Functional isolation,
+prohibited-transmission prevention, deletion correctness and budget bounds remain
+delivery requirements. This implementation approval grants no new paid API calls
+or changes to record permissions.

@@ -1,5 +1,11 @@
 # Phase 3.2B1 — Local semantic retrieval experiment
 
+**2026-10-11:** B1 experiments are closed by owner decision. Their failed results
+below remain historical. The active sequence is `SEMANTIC_PRODUCT_PLAN.md`;
+storage setup/checks are in `SEMANTIC_PRODUCT.md`. Optional Semantic search is
+approved for implementation; Hybrid/reranking are deferred. These old CLI
+instructions are not authorization to rerun a paid experiment.
+
 The experiment CLI is implemented. The first real comparison was measured on
 2026-10-09; it did not meet the retrieval-benefit checkpoint.
 The browser still offers Exact phrase and Passages. B2 adds persistent vectors and

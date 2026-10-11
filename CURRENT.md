@@ -1,8 +1,46 @@
 # lifhop Current Status
 
-Last updated: 2026-10-10
+Last updated: 2026-10-11
 
 ## Current product slice
+
+**2026-10-11 direction change:** The owner ended B1 model/ranking experiments
+and approved optional Semantic search in B2. Earlier failed promotion decisions
+remain failed. Semantic-only 17/18 on reused tuning cases supports trying an
+optional feature, not a claim of independently validated quality. Hybrid and
+reranking are deferred. The rerank response failure remains unresolved and its
+diagnostic work is no longer a prerequisite for B2. No further paid run is scheduled.
+Implement storage/lifecycle first, durable indexing next, then Semantic API/UI;
+the first checkpoint is complete. Keep existing local search as the default.
+After product integration, measure the untouched ten-case validation set once
+under separate transmission/cost approval. Review those results and usability
+before defining 3.3. Policy/ownership/deletion/budget failures still block delivery.
+See `SEMANTIC_PRODUCT_PLAN.md` for the current implementation sequence. The
+following B1 notes are historical results, not the active next-task instruction.
+
+**B2 storage checkpoint:** pgvector `0.8.7` / PostgreSQL `17.11` on Debian trixie
+is pinned by image digest in both compose files. The existing development volume
+is retained; migration `f48d3e25c064` is applied. `PassageEmbedding` stores 1536-d
+vectors with exact section offsets/hashes/config and a parent-passage cascade.
+Internal publication rechecks current source/owner/policy revision under the
+owner lock; reads independently join current permissions/index state. Existing
+source invalidation removes disallowed derivatives in the same transaction.
+Reallow cannot resurrect removed vectors. Shared section splitting preserves B1
+behavior. No new HTTP endpoint, worker activation, real vector or paid call exists.
+
+Checks: all 424 backend tests passed on the final pinned image, including 15 new
+storage tests for exact Unicode ranges, idempotence/cosine ordering, invalid
+vectors, ownership, edit/restore/delete, source/record denial, stale publication,
+and upgrade/downgrade preservation. Original table fingerprints matched through
+backup/restore and development upgrade (15 data tables; Alembic head changed).
+Extension/vector dump/restore passed. Private 0600 backups and verification
+metadata are under `.local/backups/semantic-storage-20261011/`. The first image
+checked used a different PostgreSQL patch/OS base; the final image matches the
+existing 17.11/trixie environment and the full suite was rerun on it successfully.
+CLI migration/head and whitespace checks passed. No frontend files changed.
+Next: bounded, explicitly activated indexing jobs and embedding worker, then
+Semantic API/UI. There is no new browser behavior to verify at this checkpoint.
+Setup and reproducible checks: `SEMANTIC_PRODUCT.md`.
 
 Phase 3.2B1 tooling and the first owner-approved real OpenAI experiment are complete.
 The expanded two-capture follow-up is complete and failed held-out validation;
@@ -147,8 +185,52 @@ inspected: related snapshots, title-only chunks and introductory paragraphs can
 rank ahead of direct evidence. This is a limited relevance review, not full labeling.
 Private `results.html` contains the comparison and early-rank losses. Related tests:
 7 passed after real replay; report integrity/private permission checks passed.
-Next: propose a separate context/reranking or chunk-composition plan. Preserve
-these failed results and the approved, still-unmeasured ten-case held-out set.
+The `SEMANTIC_RERANK_PLAN.md` local tools and guarded caller are implemented;
+the owner-approved real round stopped on its first invalid grade response, as
+recorded below. Candidate union uses semantic/lexical top 50 each,
+opaque IDs in group order, one bounded strict-grade request per question and
+grade/RRF/group ordering. Private capture/replay, T freeze/validation helpers,
+owner-locked exact-slice egress, shared billing locks and separate input/output
+reservations are available. Rerank defaults off. Migration `e37c2d14b953` is applied
+to development; upgrade preserves old embedding records and their cost semantics.
+Existing browser ranking, section chunks, gold and old captures remain unchanged.
+Real local preflight verified both old captures/current policy: all 18 positive
+questions have full gold coverage in the fixed candidates, including valid-05.
+Twenty questions select 51–86 candidates each, 1,331 total from 37 representative
+documents within the existing 43-document scope. Estimated maximum is USD 0.411324;
+proposed round cap USD 0.75, maximum 20 calls, no document re-embedding in tuning.
+Private review: `.local/evaluation/rerank-review-2731b5483d014a0b8d259b68efd95210/review-v2.html`.
+Both manifests and `protocol-draft.json` pin the rules/price/dataset/requests. Existing
+monthly cap remains USD 1; exposure at preflight USD 0.008305. Preflight made no
+consent or .env change; the later explicit run grant is recorded below. The ten
+approved held-out cases remain unmeasured.
+Checks: 409 backend tests passed, CLI help/whitespace checks and private file/digest
+checks passed. Synthetic coverage includes malformed grades, Unicode payloads,
+spent/uncertain/released accounting, no-provider replay, immutable attempt markers,
+owner policy locks, shared call slots, freeze/no-reselection and migration preservation.
+The first new CLI fixture used the wrong private root; it was corrected and the
+full suite rerun successfully. Account model access and the actual response failure
+were subsequently verified in the owner-approved round below.
+Preserve these failed results and the approved, still-unmeasured ten-case held-out set.
+
+On 2026-10-11 the owner approved one rerank round: the old twenty questions and
+1,331 candidate placements, at most twenty calls and USD 0.75. Fresh manifests,
+live policies, unchanged rules/prices and snapshot model access passed preflight.
+Run `12aa580dbb7545278e4d9234118cd79a` sent only `pilot-01` and its 74 candidate
+bodies. Valid model/usage metadata was received, but grade validation failed with
+`RERANK_GRADES_INVALID`; execution stopped without retry or remaining dispatches.
+The single paid call used 8,532 input/30 output tokens and settled USD 0.003461 as
+spent, with no uncertain reservation. Cumulative experiment spend is USD 0.011766.
+Private `failure.json`, `usage.json`, the immutable attempt marker and failed
+zero-case capture preserve the result under the rerank review folder above.
+No retrieval-quality score or T selection is available; this is an execution
+failure, not measured recall failure. The discarded response is not retained, and
+the generic error cannot distinguish refusal, shape or candidate-ID errors.
+If reranking is revisited, add body-free failure diagnostics and test the rejection
+branches before proposing a new paid attempt. Do not rerun this round or alter the frozen prompt
+to optimize unseen quality. The fresh ten-case set has not been sent or measured;
+B2/browser ranking remains unchanged. Focused rerank checks: 24 passed after the
+real failure; the prior full implementation suite passed all 409 tests.
 
 Phase 3.2A local passage retrieval is implemented and owner browser checks 1–5
 are confirmed, including disposable note create/edit/delete search updates.
@@ -523,8 +605,10 @@ user-verifiable product slices in `ROADMAP.md`.
 
 ## Next
 
-1. Review the completed B1 fusion results linked above: no candidate qualified.
-   Propose the next focused plan for candidate context/reranking or chunk composition.
+1. Continue the optional B2 Semantic flow in `SEMANTIC_PRODUCT_PLAN.md`: storage
+   and lifecycle are complete; implement durable indexing, then API/UI. B1 tuning is closed; preserve its
+   failed captures. Fresh held-out transmission follows product integration and
+   requires separate scope/cost approval.
    Preserve the approved ten-case validation set; its retrieval is still unmeasured.
    Rank capture/replay and the approved twenty-question experiment are complete.
    Preserve its failed frozen-B result and use a new held-out set if the old

@@ -286,8 +286,17 @@ comparing implementations; never use invented answers as ground truth.
 ### 3.2 Index text within policy and cost limits
 
 Split searchable text into passages anchored to Entry versions and source
-locations. Add embeddings/pgvector if evaluation shows a retrieval benefit;
-retain exact keyword search. Estimate tokens and cost before historical
+locations. On 2026-10-11 the owner ended B1 tuning and approved a limited B2
+Semantic mode alongside existing keyword/passage search. Semantic-only retrieval
+found complete evidence in 17/18 old tuning cases, but the frozen promotion gate
+was not passed; this is evidence to build an optional feature, not broad quality
+validation. Preserve failed experiments and defer Hybrid/reranking. Implement
+vector storage/lifecycle, then bounded indexing jobs, then Semantic API/UI.
+Keep the fresh ten-case set unmeasured until the product flow is ready, then run
+one separately approved evaluation and review quality/cost/latency before 3.3.
+Do not repeatedly tune against that validation set. Owner isolation, AI policy,
+deletion/current-version correctness and budget controls remain required gates.
+Estimate tokens and cost before historical
 embedding backfill, batch within the monthly allowance, and support resumption.
 Avoid embedding every large tool log or diff by default.
 
