@@ -54,7 +54,7 @@ def setup_database() -> Generator[None, None, None]:
         dbapi_connection.autocommit = True
         try:
             with dbapi_connection.cursor() as cursor:
-                cursor.execute(f'SET search_path TO "{schema}"')
+                cursor.execute(f'SET search_path TO "{schema}", public')
         finally:
             dbapi_connection.autocommit = previous
 
