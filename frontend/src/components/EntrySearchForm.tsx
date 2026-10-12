@@ -15,11 +15,11 @@ export default function EntrySearchForm({ params, onApply }: { params: URLSearch
   const [to, setTo] = useState(params.get("date_to") ?? "");
   const [validation, setValidation] = useState("");
   const [includeWork, setIncludeWork] = useState(params.get("include_work_commentary") === "true");
-  const [mode, setMode] = useState(params.get("mode") === "passages" ? "passages" : "exact");
+  const [mode, setMode] = useState(["passages", "semantic"].includes(params.get("mode") ?? "") ? params.get("mode")! : "exact");
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (mode === "passages" && !q.trim()) { setValidation("Enter a query to search passages."); return; }
+    if (mode !== "exact" && !q.trim()) { setValidation("Enter a query to search passages."); return; }
     if ((from && !validDate(from)) || (to && !validDate(to))) { setValidation("Enter a valid date in YYYY-MM-DD format."); return; }
     if (from && to && from > to) { setValidation("Start date must be on or before end date."); return; }
     setValidation("");
@@ -27,18 +27,19 @@ export default function EntrySearchForm({ params, onApply }: { params: URLSearch
     for (const [key, value] of Object.entries({ q: q.trim(), source, source_state: sourceState, type, date_field: dateField, date_from: from, date_to: to })) {
       if (value && !(key === "date_field" && value === "created_at")) next.set(key, value);
     }
-    if (includeWork) next.set("include_work_commentary", "true");
-    if (mode === "passages") next.set("mode", "passages");
+    if (includeWork && mode !== "semantic") next.set("include_work_commentary", "true");
+    if (mode !== "exact") next.set("mode", mode);
     onApply(next);
   }
 
   const activeFilters = [source, sourceState, type, dateField === "event_at" ? dateField : "", from, to].filter(Boolean).length;
   return (
     <form noValidate className="search-form panel" onSubmit={submit}>
-      <label>Search mode<select aria-label="Search mode" value={mode} onChange={e => setMode(e.target.value)}><option value="exact">Exact phrase</option><option value="passages">Passages</option></select></label>
+      <label>Search mode<select aria-label="Search mode" value={mode} onChange={e => setMode(e.target.value)}><option value="exact">Exact phrase</option><option value="passages">Passages</option><option value="semantic">Semantic</option></select></label>
       {mode === "passages" && <p className="help-text">Find related words in original passages. Translation and AI answers are not available yet.</p>}
+      {mode === "semantic" && <p className="help-text">Find passages by meaning. Review index availability first, then explicitly approve a paid question request.</p>}
       <label htmlFor="search-q">Search query</label>
-      <div className="search-query-row"><input id="search-q" value={q} maxLength={256} onChange={(event) => setQ(event.target.value)} placeholder="Search titles and content for phrases, names, numbers, or code" /><button className="primary" type="submit"><Icon name="search" />Search</button></div>
+      <div className="search-query-row"><input id="search-q" value={q} maxLength={256} onChange={(event) => setQ(event.target.value)} placeholder="Search titles and content for phrases, names, numbers, or code" /><button className="primary" type="submit"><Icon name="search" />{mode === "semantic" ? "Review index" : "Search"}</button></div>
       <details className="search-filter-details" open={activeFilters > 0}>
         <summary>Filters{activeFilters > 0 ? ` · ${activeFilters} active` : ""}</summary>
         <div className="search-filters">
@@ -47,7 +48,7 @@ export default function EntrySearchForm({ params, onApply }: { params: URLSearch
             {Object.entries(sourceLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
           </select></label>
           <label>Source status<select aria-label="Source status" value={sourceState} onChange={e => setSourceState(e.target.value)}>
-            <option value="">{mode === "passages" ? "Exclude source-deleted records" : "All retained records"}</option>
+            <option value="">{mode !== "exact" ? "Exclude source-deleted records" : "All retained records"}</option>
             {["available", "deleted", "unavailable", "unknown"].map(value => <option key={value} value={value}>{value}</option>)}
           </select></label>
           <label>Type<select aria-label="Type" value={type} onChange={(event) => setType(event.target.value)}>
@@ -62,7 +63,7 @@ export default function EntrySearchForm({ params, onApply }: { params: URLSearch
         </div>
         <p className="help-text">Date ranges use Asia/Seoul and include the end date. Records without a source/event date are excluded when filtering by that date.</p>
       </details>
-      <label className="work-search-option"><input type="checkbox" checked={includeWork} onChange={event => setIncludeWork(event.target.checked)} />{mode === "passages" ? "Include Codex commands, results, diffs and commentary" : "Include work commentary from Codex"}</label>
+      {mode !== "semantic" && <label className="work-search-option"><input type="checkbox" checked={includeWork} onChange={event => setIncludeWork(event.target.checked)} />{mode === "passages" ? "Include Codex commands, results, diffs and commentary" : "Include work commentary from Codex"}</label>}
       <button className="search-reset" type="button" onClick={() => onApply(new URLSearchParams())}>Reset</button>
       {validation && <p role="alert">{validation}</p>}
     </form>

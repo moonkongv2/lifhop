@@ -910,6 +910,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/semantic/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Status */
+        get: operations["status_semantic_status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/semantic/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Search */
+        post: operations["search_semantic_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/semantic/slices/{embedding_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read */
+        get: operations["read_semantic_slices__embedding_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/semantic/slices/{embedding_id}/locations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Aliases */
+        get: operations["aliases_semantic_slices__embedding_id__locations_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -2719,6 +2787,109 @@ export interface components {
             counts: {
                 [key: string]: number;
             };
+        };
+        /** SemanticCoverage */
+        SemanticCoverage: {
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "disabled" | "unavailable" | "indexing" | "unindexed" | "available";
+            /** Matched Records */
+            matched_records: number;
+            /** Allowed Records */
+            allowed_records: number;
+            /** Indexed Records */
+            indexed_records: number;
+            /** Ready Slices */
+            ready_slices: number;
+            /** Jobs */
+            jobs: {
+                [key: string]: number;
+            };
+            /** Policy Revision */
+            policy_revision: number;
+        };
+        /** SemanticHit */
+        SemanticHit: {
+            /** Embedding Id */
+            embedding_id: number;
+            /** Distance */
+            distance: number;
+            passage: components["schemas"]["PassageResponse"];
+        };
+        /** SemanticLocation */
+        SemanticLocation: {
+            /** Embedding Id */
+            embedding_id: number;
+            /** Entry Id */
+            entry_id: number;
+            /** Version Id */
+            version_id: number;
+            /** Start */
+            start: number;
+            /** End */
+            end: number;
+            /** Event At */
+            event_at: string | null;
+        };
+        /** SemanticLocations */
+        SemanticLocations: {
+            /** Items */
+            items: components["schemas"]["SemanticLocation"][];
+            /** Total */
+            total: number;
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+        };
+        /** SemanticRequest */
+        SemanticRequest: {
+            /** Q */
+            q: string;
+            /** Request Id */
+            request_id: string;
+            /**
+             * Confirm External Ai
+             * @default false
+             */
+            confirm_external_ai: boolean;
+            source?: components["schemas"]["EntrySource"] | null;
+            /** Source State */
+            source_state?: ("available" | "deleted" | "unavailable" | "unknown") | null;
+            type?: components["schemas"]["EntryType"] | null;
+            /**
+             * Date Field
+             * @default created_at
+             * @enum {string}
+             */
+            date_field: "created_at" | "event_at";
+            /** Date From */
+            date_from?: string | null;
+            /** Date To */
+            date_to?: string | null;
+        };
+        /** SemanticResponse */
+        SemanticResponse: {
+            /** Items */
+            items: components["schemas"]["SemanticHit"][];
+            coverage: components["schemas"]["SemanticCoverage"];
+            /**
+             * Limit
+             * @default 20
+             */
+            limit: number;
+            /**
+             * Truncated
+             * @default false
+             */
+            truncated: boolean;
+            /**
+             * Search Version
+             * @default semantic-sections-v1
+             */
+            search_version: string;
         };
         /** SessionSummary */
         SessionSummary: {
@@ -4775,6 +4946,148 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["IndexingJobResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    status_semantic_status_get: {
+        parameters: {
+            query?: {
+                source?: components["schemas"]["EntrySource"] | null;
+                source_state?: ("available" | "deleted" | "unavailable" | "unknown") | null;
+                type?: components["schemas"]["EntryType"] | null;
+                date_field?: "created_at" | "event_at";
+                date_from?: string | null;
+                date_to?: string | null;
+                include_work_commentary?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SemanticCoverage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_semantic_search_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SemanticRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SemanticResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_semantic_slices__embedding_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                embedding_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PassageResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    aliases_semantic_slices__embedding_id__locations_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+                source?: components["schemas"]["EntrySource"] | null;
+                source_state?: ("available" | "deleted" | "unavailable" | "unknown") | null;
+                type?: components["schemas"]["EntryType"] | null;
+                date_field?: "created_at" | "event_at";
+                date_from?: string | null;
+                date_to?: string | null;
+                include_work_commentary?: boolean;
+            };
+            header?: never;
+            path: {
+                embedding_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SemanticLocations"];
                 };
             };
             /** @description Validation Error */

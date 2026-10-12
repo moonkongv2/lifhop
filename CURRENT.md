@@ -1,6 +1,6 @@
 # lifhop Current Status
 
-Last updated: 2026-10-11
+Last updated: 2026-10-12
 
 ## Current product slice
 
@@ -11,7 +11,7 @@ optional feature, not a claim of independently validated quality. Hybrid and
 reranking are deferred. The rerank response failure remains unresolved and its
 diagnostic work is no longer a prerequisite for B2. No further paid run is scheduled.
 Implement storage/lifecycle first, durable indexing next, then Semantic API/UI;
-the first checkpoint is complete. Keep existing local search as the default.
+storage, indexing and Semantic API/UI are implemented. Keep existing local search as the default.
 After product integration, measure the untouched ten-case validation set once
 under separate transmission/cost approval. Review those results and usability
 before defining 3.3. Policy/ownership/deletion/budget failures still block delivery.
@@ -26,7 +26,8 @@ Internal publication rechecks current source/owner/policy revision under the
 owner lock; reads independently join current permissions/index state. Existing
 source invalidation removes disallowed derivatives in the same transaction.
 Reallow cannot resurrect removed vectors. Shared section splitting preserves B1
-behavior. No new HTTP endpoint, worker activation, real vector or paid call exists.
+behavior. At that checkpoint no indexing endpoint/worker existed and no real vector
+or paid call was produced.
 
 Checks: all 424 backend tests passed on the final pinned image, including 15 new
 storage tests for exact Unicode ranges, idempotence/cosine ordering, invalid
@@ -38,9 +39,68 @@ metadata are under `.local/backups/semantic-storage-20261011/`. The first image
 checked used a different PostgreSQL patch/OS base; the final image matches the
 existing 17.11/trixie environment and the full suite was rerun on it successfully.
 CLI migration/head and whitespace checks passed. No frontend files changed.
-Next: bounded, explicitly activated indexing jobs and embedding worker, then
-Semantic API/UI. There is no new browser behavior to verify at this checkpoint.
+The storage-only notes above describe the first checkpoint. The indexing checkpoint
+below supersedes its statement about endpoints/worker availability.
 Setup and reproducible checks: `SEMANTIC_PRODUCT.md`.
+
+**B2 indexing checkpoint:** Migration `g59e4f36d175` is applied to development.
+Authenticated scope/cost preview and explicit activation create body-free
+`EmbeddingRun`/`EmbeddingJob` rows. The separate embedding worker publishes current
+vectors through the existing policy/cost boundary, at most 16 inputs/16,000 UTF-8
+bytes per call. No activation means no dispatch. Future edits/new records require
+the separate `follow_changes` option; default activation covers the current snapshot.
+Pause/resume retains cumulative cost/call limits and resuming follow scopes catches
+up eligible edits. Possible dispatch or lost paid results never retry automatically;
+uncertain costs require reconciliation before an explicit job retry. Overlapping
+follow scopes, including paused scopes, are rejected. Import workers are unchanged.
+
+Checks: all 453 backend tests passed, including 29 indexing tests; all 110 frontend
+tests, lint/build and generated OpenAPI types passed. Concurrent workers, pre-send
+pause, post-send revocation, crash/lease recovery, timeout settlement, default denial,
+future enrollment, cumulative limits and migration upgrade/downgrade were checked
+with synthetic data/mock provider calls. Initial new-test import/budget fixture and
+old-schema fixture errors were corrected before the successful final suite.
+Development upgrade preserved all 16 existing data-table fingerprints. Metadata-only
+preflight of the previously allowed 43 GitHub documents found 1,031 pending slices,
+zero stored vectors, and an estimated conservative maximum of USD 0.008113; its
+proposed run cap is USD 0.05 / 100 calls with future changes disabled. Private
+manifests are in `.local/indexing/`; preservation metadata is in
+`.local/verification/embedding-indexing-20261011/`. No real run/job was activated,
+no permission changed and no new OpenAI request was made. CI now uses the same
+pinned pgvector image; remote workflow execution remains unverified.
+The indexing-only notes above describe the previous checkpoint.
+
+**B2 Semantic API/UI checkpoint:** Search now offers optional Semantic alongside
+Exact phrase and Passages. Review index shows local filtered coverage; a separate
+checkbox/button explicitly sends one question embedding POST. Empty/disabled/
+unconfigured indexes send nothing. The provider/cost gate is reused, and a
+domain-separated request ID with a durable one-call limit prevents paid replay.
+Query vectors stay in memory. Current allowed slices rank by exact cosine distance,
+with up to 20 grouped results and no Entry quota. Verified GitHub slices group by
+repository/path/hash even with different parent boundaries. Exact slice readers and
+lazy locations independently recheck current owner/policy and do not require query
+word matching. Permission revision changes before/after dispatch suppress results;
+completed charges survive. Return/reload/filter changes never automatically POST.
+
+Checks: full backend 474 passed; focused Semantic HTTP 21 passed; frontend 122,
+lint/build and generated API types passed. Synthetic live HTTP Chromium checks
+passed at 390/768/1440px for consent/query/exact reader/return/reload, no overflow,
+browser errors or external requests. Demo login and the separate Vite proxy also
+passed after correcting a harness wait for login completion. Failed local status
+or reader revalidation hides cached evidence. In-app browser startup failed due to environment
+sandbox metadata; standalone Chromium was used instead. Initial fixture-return and
+TypeScript DOM iteration errors were corrected. Remote CI remains unverified.
+`scripts/preview_semantic.py` serves two synthetic records and a mock provider in
+a fresh schema of the separate test DB. It uses a separate JWT secret and drops
+the schema on normal shutdown. Owner demo: API 8002, frontend 5174 proxy; login
+`demo@example.test` / `demo-password`. Demo calls establish behavior, not quality.
+Hard termination can leave a disposable schema; no development DB is used by it.
+
+The owner confirmed the Semantic browser flow on 2026-10-12.
+No real indexing/paid search or fresh-ten-case evaluation was run. Next:
+separately scoped real indexing and one untouched
+ten-case quality/cost/latency check before deciding Phase 3.3. Hybrid, reranking
+and answer generation remain deferred.
 
 Phase 3.2B1 tooling and the first owner-approved real OpenAI experiment are complete.
 The expanded two-capture follow-up is complete and failed held-out validation;
@@ -606,13 +666,15 @@ user-verifiable product slices in `ROADMAP.md`.
 ## Next
 
 1. Continue the optional B2 Semantic flow in `SEMANTIC_PRODUCT_PLAN.md`: storage
-   and lifecycle are complete; implement durable indexing, then API/UI. B1 tuning is closed; preserve its
+   and lifecycle, durable indexing and API/UI are implemented; confirm the owner
+   browser flow before actual scoped indexing/evaluation. B1 tuning is closed; preserve its
    failed captures. Fresh held-out transmission follows product integration and
    requires separate scope/cost approval.
    Preserve the approved ten-case validation set; its retrieval is still unmeasured.
    Rank capture/replay and the approved twenty-question experiment are complete.
    Preserve its failed frozen-B result and use a new held-out set if the old
-   validation cases guide further tuning. B2 awaits independent retrieval benefit.
+   validation cases guide further tuning. The former B1 promotion gate remains failed;
+   optional B2 proceeds under the current direction above.
    The original authoring set's case-04 remains draft; the approved GitHub set is
    separate and does not establish quality across Codex or ordinary life records.
 2. Confirm GitHub repository browsing in Entries → repository → Commits/Documents

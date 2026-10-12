@@ -1390,3 +1390,56 @@ and latency. Further tuning requires a new explicit decision. Functional isolati
 prohibited-transmission prevention, deletion correctness and budget bounds remain
 delivery requirements. This implementation approval grants no new paid API calls
 or changes to record permissions.
+
+## 2026-10-11: Explicit bounded indexing uses PostgreSQL jobs and a separate worker
+
+Keep approved indexing scopes and per-slice jobs in PostgreSQL, alongside the
+existing durable AI usage ledger. No Redis, new SQS queue or additional dependency
+is required for this local bounded flow. Authenticated preview returns body-free
+owner/database/policy-bound anchors and a conservative byte-based cost estimate;
+only explicit activation creates jobs. Existing AI permission and configured
+OpenAI credentials do not activate indexing. API source writes never call OpenAI.
+
+Activation defaults to the current snapshot. Separately choosing follow changes
+permits future eligible content only within that provider/scope or explicit Entry
+selector and the same cumulative cost/call limits. Reject overlapping follow
+selectors even while paused. Pausing prevents further dispatch checks; a request
+already dispatched can finish. Resuming catches up current eligible content without
+resetting limits. Record/source permission checks still apply to every send and
+publication. A grant to follow changes is distinct from granting AI permission.
+
+Link a durable dispatch token to the shared usage reservation before HTTP. A
+60-second work lease exceeds the bounded 10-second provider request. Recover
+expired jobs automatically only when no dispatch attempt exists or it was proven
+released before sending. Uncertain attempts remain uncertain; settled paid results
+lost before publication remain failed. Neither state automatically sends again.
+Explicit retry rechecks current policy/anchors and requires unresolved usage to
+be settled first. Run budgets/counts span billing-scope configuration changes and
+never reset on pause/resume/retry. Stored vectors can be reused only from currently
+allowed exact same-owner slices. The embedding worker is separate from the existing
+import/purge worker; AWS worker supervision remains a later deployment decision.
+
+## 2026-10-11: Semantic queries require an explicit POST and ephemeral results
+
+Keep local index coverage and slice/location reads as GETs that never send a
+question to OpenAI. The Search form first reviews the index; a separate consent
+checkbox and action makes one paid question embedding POST. No eligible vectors
+means no paid request. Recheck policy revision/current eligible corpus under the
+query dispatch owner lock, then again before returning locally ranked evidence.
+Query vectors are never stored, source text is not sent by the query route, and
+successful provider cost remains settled even when later policy/ranking checks fail.
+
+Hash owner/request ID with a Semantic-query domain before using the ledger run ID,
+so requests cannot share indexing caps. The existing cumulative one-call limit
+blocks possible paid replay for that ID across processes/billing-scope changes;
+proven pre-send releases remain safe. No additional persistent request table is
+needed. A new explicit user action creates a new request ID and can incur new cost.
+
+Use exact cosine ordering, grouping identical validated GitHub document slices by
+repository/path/hash/length before the top-20 cutoff and without an Entry quota.
+Location reads do not depend on lexical question matches and independently apply
+owner/current-policy/filter checks. Semantic result bodies are ephemeral in the
+screen; navigating back or reloading preserves filters but never resends the paid
+query automatically. Local status refresh hides results after a revision change.
+Synthetic browser/HTTP demos test behavior only; actual retrieval quality remains
+subject to the separately approved fresh validation check.

@@ -197,6 +197,9 @@ details > p:first-of-type { margin-top: 12px; }
 .work-details { padding: 14px 0; border-top: 1px solid var(--border); overflow-wrap: anywhere; }
 .work-search-option { display: flex; align-items: center; gap: 8px; }
 .work-search-option input { width: auto; }
+.semantic-controls { padding: 24px; display: grid; gap: 12px; }
+.semantic-controls h3, .semantic-controls p { margin: 0; }
+.semantic-controls button { justify-self: start; }
 .session-turn .history-panel { width: 100%; margin-top: 20px; }
 .github-reader, section[aria-label="GitHub historical backfills"] { overflow-wrap: anywhere; }
 .github-reader details { padding: 12px 0; border-top: 1px solid var(--border); }

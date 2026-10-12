@@ -26,6 +26,7 @@ const router = createBrowserRouter([
     element: <App />,
     children: [
       { path: "passages/:id", element: <PassagePage /> },
+      { path: "semantic/slices/:id", element: <PassagePage semantic /> },
       { path: "repositories/github", element: <GitHubRepositoryPage /> },
       { path: "sessions/codex", element: <CodexSessionPage /> },
       { path: "search", element: <EntrySearchPage /> },

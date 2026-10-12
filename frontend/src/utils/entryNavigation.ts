@@ -10,7 +10,7 @@ export function listParams(params: URLSearchParams, pathname: EntryListContext["
   const result = new URLSearchParams();
   for (const key of pathname === "/search" ? [...filterKeys, "offset"] : ["offset"]) {
     const value = params.get(key)?.trim();
-    if (key === "mode" && value !== "passages") continue;
+    if (key === "mode" && value !== "passages" && value !== "semantic") continue;
     if (value) result.set(key, value);
   }
   return result;

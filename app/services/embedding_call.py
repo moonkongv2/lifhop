@@ -8,7 +8,8 @@ from app.services.embedding_transport import EmbeddingError, input_bound, reques
 
 
 def embed(engine, settings, *, owner_id, run_id, run_limit, inputs, passages=None, revision=None,
-          confirm_external_ai=False, transport=None, dispatch_id=None, call_limit=None, before_send=None):
+          confirm_external_ai=False, transport=None, dispatch_id=None, call_limit=None, before_send=None,
+          query_check=None):
     query = passages is None
     if query and confirm_external_ai is not True:
         raise EmbeddingError("QUERY_CONSENT_REQUIRED")
@@ -32,6 +33,8 @@ def embed(engine, settings, *, owner_id, run_id, run_limit, inputs, passages=Non
                 nonlocal sent
                 if checked != inputs:
                     raise EmbeddingError("EMBEDDING_CONTEXT_CHANGED")
+                if query and query_check is not None:
+                    query_check(db)
                 sent = True
                 raw = (transport(checked) if transport else asyncio.run(request_embeddings(
                     checked, settings.openai_api_key.get_secret_value())))
