@@ -4,17 +4,17 @@ Last updated: 2026-10-12
 
 ## Current product slice
 
-**2026-10-11 direction change:** The owner ended B1 model/ranking experiments
+**2026-10-11 direction change; 2026-10-12 measurement:** The owner ended B1 model/ranking experiments
 and approved optional Semantic search in B2. Earlier failed promotion decisions
 remain failed. Semantic-only 17/18 on reused tuning cases supports trying an
 optional feature, not a claim of independently validated quality. Hybrid and
 reranking are deferred. The rerank response failure remains unresolved and its
 diagnostic work is no longer a prerequisite for B2. No further paid run is scheduled.
-Implement storage/lifecycle first, durable indexing next, then Semantic API/UI;
-storage, indexing and Semantic API/UI are implemented. Keep existing local search as the default.
-After product integration, measure the untouched ten-case validation set once
-under separate transmission/cost approval. Review those results and usability
-before defining 3.3. Policy/ownership/deletion/budget failures still block delivery.
+Storage, indexing and Semantic API/UI are implemented. Keep existing local search
+as the default. The untouched ten-case validation set was measured once under its
+separate transmission/cost approval. Review the observed results and real-index
+browser usability before defining 3.3. Policy/ownership/deletion/budget failures
+still block delivery.
 See `SEMANTIC_PRODUCT_PLAN.md` for the current implementation sequence. The
 following B1 notes are historical results, not the active next-task instruction.
 
@@ -96,29 +96,57 @@ the schema on normal shutdown. Owner demo: API 8002, frontend 5174 proxy; login
 `demo@example.test` / `demo-password`. Demo calls establish behavior, not quality.
 Hard termination can leave a disposable schema; no development DB is used by it.
 
-The owner confirmed the Semantic browser flow on 2026-10-12.
-No real indexing/paid search or fresh-ten-case evaluation was run. Next:
-separately scoped real indexing and one untouched
-ten-case quality/cost/latency check before deciding Phase 3.3. Hybrid, reranking
-and answer generation remain deferred.
+The owner confirmed the Semantic browser flow on 2026-10-12. The separately
+approved real indexing and one untouched ten-case product-path evaluation are
+complete; results are below. Next: review the observed limitation and choose the
+Phase 3.3 scope. Hybrid, reranking and answer generation remain deferred.
 
-**2026-10-12 product evaluation preflight:** The reviewed validation revision 2
+**2026-10-12 product evaluation preflight (before activation):** The reviewed validation revision 2
 still contains eight supported and two insufficient-evidence cases. A new local-only
 preview binds its digest/question hashes to the current 43-document allowlist,
 policy revision 483 and fixed product configuration. Current anchors and permissions
-passed; no retrieval results were opened. There are still zero real runs/jobs/vectors.
+passed; no retrieval results were opened. At this checkpoint there were zero real runs/jobs/vectors.
 The combined conservative estimate is USD 0.008139. Proposed hard limits are
 USD 0.05/100 indexing calls plus USD 0.01/10 question calls (USD 0.06 total),
 one validation pass, no follow changes or automatic retry. Fresh transmission
-approval is pending; previous experiment grants do not activate this queue.
-The preview tool is implemented; the paid product evaluation and result report
-remain pending. No quality outcome is implied by this preflight.
+was then given explicitly for this exact scope. Previous experiment grants did not
+activate the queue. No quality outcome was implied by the preflight alone.
 Checks: full backend 483 passed; the final focused preview suite has nine passing
 tests; frontend lint and whitespace checks passed. The first full run exposed a
 new test's assumption that the shared usage table was empty; it now checks that
 the preflight leaves pre-existing counts unchanged, and the full rerun passed.
 Local metadata checks used a read-only transaction; the interactive password
 prompt was checked via CLI help rather than a real authenticated CLI invocation.
+
+**2026-10-12 real B2 measurement:** The explicitly approved snapshot run indexed
+all 1,031 slices from 43 permitted GitHub documents in 65 OpenAI calls, spending
+878 micro-USD. Ten distinct reviewed questions were sent once each through
+`POST /semantic/search` (10 calls, 11 micro-USD). Total spent: USD 0.000889,
+below the USD 0.06/110-call authorization. All attempts settled as spent; no
+uncertain attempt or retry. Independent ledger read confirmed 1,031 ready jobs and
+1,031 current vectors. The authenticated local status endpoint for GitHub documents
+reports 44 matched, 43 allowed/indexed, 1,031 ready, policy revision 483.
+
+On the eight supported cases, exact gold-range coverage in the first 20 grouped
+results was Semantic 7/8 and current Passages 5/8. Semantic met the planned
+0.80 recall and 0.70 complete-evidence reference levels at 0.875 each. Both
+insufficient-evidence cases were diagnostic only; the product does not yet make
+answers or abstain. Semantic lost one Passages success at rank 5 (holdout-02 moved
+from rank 1 to rank 6), none at ranks 10/20. One Korean question, holdout-01,
+missed the exact support span in both methods: Semantic ranked a title slice from
+the correct Entry at 5, but its required content range was outside the top 20.
+Another Korean case, holdout-07, found its support only at rank 17. Among four
+supported Korean questions, Semantic found 3/4 by rank 20 and 1/4 by rank 5.
+The earlier B0 early-loss criterion is retained only as historical context;
+Passages here is the actual local comparison, not a reproduced B0 run.
+
+The in-process authenticated Semantic POST median was 0.605 seconds, maximum
+0.812 seconds for these ten calls. Timing excludes browser rendering and separate
+evidence-reader requests. The complete private body-free per-case report is under
+`.local/verification/semantic-product-20261012/report.json`. This is a small,
+single-repository validation set; it supports a limited B2 result, not a general
+search quality guarantee or automatic Phase 3.3 answer rollout. The owner has not
+yet checked the newly populated real index in the browser.
 
 Phase 3.2B1 tooling and the first owner-approved real OpenAI experiment are complete.
 The expanded two-capture follow-up is complete and failed held-out validation;

@@ -276,11 +276,16 @@ omitted. The test DB uses a separate port and tmpfs; development records are not
 test fixtures. Current schema can be checked with `.venv/bin/alembic current`;
 expected revision after this checkpoint is `g59e4f36d175 (head)`.
 
-The owner confirmed browser behavior on 2026-10-12.
-Next: separately approved real indexing, then the
-untouched ten-case check and a Phase 3.3 scope decision.
-The untouched ten-case quality check follows product integration under a separate
-paid-transmission approval. Rerank diagnostics remain deferred.
+The owner confirmed synthetic browser behavior on 2026-10-12. The separately
+approved real indexing and ten-case check are complete. The real index now has
+1,031 ready slices from 43 allowed GitHub documents; the ten-question product
+POST check found exact support by rank 20 in 7/8 supported cases, compared with
+5/8 for current Passages. Total OpenAI cost was USD 0.000889 (65 document calls,
+10 question calls). One Korean case missed its exact support by rank 20, and
+another found it only at rank 17. See the private body-free
+`.local/verification/semantic-product-20261012/report.json` for case scores,
+ranks and usage. The owner has yet to check the populated real index in the
+browser; Phase 3.3 scope is to be decided after reviewing the limits.
 
 ## Local-only product evaluation preview
 
@@ -302,10 +307,10 @@ cases (eight supported, two insufficient), 43 documents, 1,031 pending slices,
 zero ready slices, total conservative estimate 8,139 micro-USD, and proposed hard
 caps of 60,000 micro-USD / 110 calls. The monthly remaining amount is dynamic.
 The `product-preflight/` protocol has `approved: false` and `provider_calls: 0`.
-These are proposed limits, not a transmission grant or a measured quality result.
-Future changes and automatic retries remain disabled. Paid activation/evaluation
-require separate explicit approval; incomplete indexing blocks the question run.
-Actual evaluation/report execution remains pending.
+These were the limits proposed before the separate 2026-10-12 owner approval.
+The approved run completed within them. Future changes and automatic retries
+remain disabled. Re-running the old preview now reports a stale manifest because
+the index has been filled; it must not be used to activate another run.
 
 Verify the preview safeguards with:
 
