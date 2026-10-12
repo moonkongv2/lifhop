@@ -12,6 +12,7 @@ class AiUsageAttempt(Base):
     month: Mapped[str] = mapped_column(String(7))
     owner_id: Mapped[int] = mapped_column(Integer)
     run_id: Mapped[str] = mapped_column(String(32))
+    dispatch_id: Mapped[str | None] = mapped_column(String(32))
     purpose: Mapped[str] = mapped_column(String(16))
     model: Mapped[str] = mapped_column(String(64))
     configuration_hash: Mapped[str] = mapped_column(String(64))
@@ -32,6 +33,7 @@ class AiUsageAttempt(Base):
     __table_args__ = (
         Index("ix_ai_usage_billing_month", "billing_scope", "month"),
         Index("ix_ai_usage_owner_run", "owner_id", "run_id"),
+        Index("ix_ai_usage_dispatch", "dispatch_id"),
         CheckConstraint("reserved_micro_usd >= 0 AND spent_micro_usd >= 0 AND input_upper_bound > 0"),
         CheckConstraint("status IN ('reserved','uncertain','spent','released')"),
     )

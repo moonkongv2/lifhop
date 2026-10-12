@@ -20,6 +20,8 @@ def invalidate_context(db: Session, user_id: int) -> None:
     db.execute(update(User).where(User.id == user_id).values(policy_revision=User.policy_revision + 1))
     from app.services.embedding_store import prune_embeddings
     prune_embeddings(db, user_id)
+    from app.services.embedding_jobs import invalidate_jobs
+    invalidate_jobs(db, user_id)
 
 
 def source_policy(db: Session, user_id: int, provider: str, scope: str = "default") -> SourcePolicy:

@@ -220,6 +220,9 @@ def settings(entry_id: int, data: RecordSettings, db: Annotated[Session, Depends
             raise HTTPException(422, "AI permission cannot be null")
         setattr(entry, key, value)
     invalidate_context(db, current_user.id)
+    if "external_ai_allowed" in data.model_fields_set and entry.external_ai_allowed:
+        from app.services.embedding_jobs import enqueue_current
+        enqueue_current(db, entry)
     db.commit()
     return entry
 
@@ -234,5 +237,8 @@ def source_state(entry_id: int, data: SourceStateUpdate, db: Annotated[Session, 
     entry.source_state = data.state
     entry.source_state_observed_at = datetime.now(timezone.utc)
     invalidate_context(db, current_user.id)
+    if entry.source_state != "deleted":
+        from app.services.embedding_jobs import enqueue_current
+        enqueue_current(db, entry)
     db.commit()
     return entry

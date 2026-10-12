@@ -32,10 +32,14 @@ def call_slot(engine, scope):
             connection.commit()
 
 
-def reserve(db, *, scope, owner_id, run_id, purpose, upper, monthly_limit, run_limit, at=None):
+def reserve(db, *, scope, owner_id, run_id, purpose, upper, monthly_limit, run_limit, at=None,
+            dispatch_id=None, call_limit=None):
     rerank = purpose == "rerank"
     if purpose not in {"document", "query", "rerank"} or not 0 < upper <= (525312 if rerank else 16000) or not 0 < run_limit <= (1000000 if rerank else 250000):
         raise EmbeddingError("INVALID_RESERVATION")
+    # A scope configuration change must not reset an existing run's limits.
+    db.execute(text("SELECT pg_advisory_xact_lock(13034, :key)"),
+        {"key": lock_key(str(owner_id) + ":" + run_id)})
     billing_lock(db, scope)
     month = (at or datetime.now(timezone.utc)).strftime("%Y-%m")
     charge = case((Attempt.status == "spent", Attempt.spent_micro_usd), else_=Attempt.reserved_micro_usd)
@@ -46,11 +50,19 @@ def reserve(db, *, scope, owner_id, run_id, purpose, upper, monthly_limit, run_l
         amount = rt.cost_micro(upper, rt.OUTPUT_LIMIT)
     monthly = db.scalar(select(func.coalesce(func.sum(charge), 0)).where(Attempt.billing_scope == scope, active,
         (Attempt.month == month) | Attempt.status.in_(["reserved", "uncertain"])))
-    run = db.scalar(select(func.coalesce(func.sum(charge), 0)).where(Attempt.billing_scope == scope,
+    run = db.scalar(select(func.coalesce(func.sum(charge), 0)).where(
         Attempt.owner_id == owner_id, Attempt.run_id == run_id, active))
+    if call_limit is not None:
+        if type(call_limit) is not int or not 1 <= call_limit <= 5000:
+            raise EmbeddingError("INVALID_RESERVATION")
+        calls = db.scalar(select(func.count()).select_from(Attempt).where(
+            Attempt.owner_id == owner_id, Attempt.run_id == run_id, active))
+        if calls >= call_limit:
+            raise EmbeddingError("EMBEDDING_CALL_LIMIT")
     if monthly + amount > monthly_limit or run + amount > run_limit:
         raise EmbeddingError("EMBEDDING_BUDGET_EXHAUSTED")
     row = Attempt(id=uuid4().hex, billing_scope=scope, owner_id=owner_id, run_id=run_id, month=month,
+        dispatch_id=dispatch_id,
         purpose=purpose, model=MODEL, configuration_hash=hashlib.sha256(CONFIG.encode()).hexdigest(),
         input_upper_bound=upper, reserved_micro_usd=amount, status="reserved")
     if rerank:
@@ -111,3 +123,12 @@ def usage_summary(db, *, owner_id, run_id=None):
         usage_tokens=r.usage_tokens, model=r.model, input_usage_tokens=r.input_usage_tokens,
         output_usage_tokens=r.output_usage_tokens, error_code=r.error_code) for r in db.scalars(
             select(Attempt).where(*conditions).order_by(Attempt.created_at).limit(1000))]
+
+
+def budget_summary(db, *, scope, monthly_limit):
+    month = datetime.now(timezone.utc).strftime("%Y-%m")
+    charge = case((Attempt.status == "spent", Attempt.spent_micro_usd), else_=Attempt.reserved_micro_usd)
+    exposure = db.scalar(select(func.coalesce(func.sum(charge), 0)).where(Attempt.billing_scope == scope,
+        Attempt.status != "released", (Attempt.month == month) | Attempt.status.in_(["reserved", "uncertain"])))
+    return dict(month=month, monthly_limit_micro_usd=monthly_limit, exposure_micro_usd=exposure,
+        remaining_micro_usd=max(0, monthly_limit-exposure))

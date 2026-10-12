@@ -824,6 +824,92 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/indexing/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Preview */
+        post: operations["preview_indexing_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/indexing/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Runs */
+        get: operations["list_runs_indexing_runs_get"];
+        put?: never;
+        /** Activate */
+        post: operations["activate_indexing_runs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/indexing/runs/{run_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Run */
+        patch: operations["update_run_indexing_runs__run_id__patch"];
+        trace?: never;
+    };
+    "/indexing/runs/{run_id}/jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Jobs */
+        get: operations["jobs_indexing_runs__run_id__jobs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/indexing/jobs/{job_id}/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Retry */
+        post: operations["retry_indexing_jobs__job_id__retry_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -2171,6 +2257,186 @@ export interface components {
             /** Job Id */
             job_id: number;
             status: components["schemas"]["ImportJobStatus"];
+        };
+        /** IndexingActivateRequest */
+        IndexingActivateRequest: {
+            manifest: components["schemas"]["IndexingManifest"];
+            /**
+             * Confirm External Ai
+             * @default false
+             */
+            confirm_external_ai: boolean;
+        };
+        /** IndexingBudget */
+        IndexingBudget: {
+            /** Month */
+            month: string;
+            /** Monthly Limit Micro Usd */
+            monthly_limit_micro_usd: number;
+            /** Exposure Micro Usd */
+            exposure_micro_usd: number;
+            /** Remaining Micro Usd */
+            remaining_micro_usd: number;
+        };
+        /** IndexingItem */
+        IndexingItem: {
+            /** Id */
+            id: number;
+            /** Passage Hash */
+            passage_hash: string;
+            /** Start */
+            start: number;
+            /** End */
+            end: number;
+            /** Slice Hash */
+            slice_hash: string;
+            /** Entry Id */
+            entry_id: number;
+            /** Version Id */
+            version_id: number;
+            /** Input Bytes */
+            input_bytes: number;
+        };
+        /** IndexingJobResponse */
+        IndexingJobResponse: {
+            /** Id */
+            id: string;
+            /** Run Id */
+            run_id: string;
+            /** Entry Id */
+            entry_id: number;
+            /** Status */
+            status: string;
+            /** Error Code */
+            error_code: string | null;
+        };
+        /** IndexingManifest */
+        IndexingManifest: {
+            /**
+             * Schema
+             * @constant
+             */
+            schema: "lifhop-indexing-v1";
+            /** Owner Id */
+            owner_id: number;
+            /** Database */
+            database: string;
+            /**
+             * Provider
+             * @enum {string}
+             */
+            provider: "github" | "codex" | "manual" | "markdown" | "chatgpt" | "unknown";
+            /** Scope */
+            scope: string;
+            /** Selector Ids */
+            selector_ids: number[] | null;
+            /** Entry Ids */
+            entry_ids: number[];
+            /** Follow Changes */
+            follow_changes: boolean;
+            /** Policy Revision */
+            policy_revision: number;
+            /** Config */
+            config: string;
+            /** Max Micro Usd */
+            max_micro_usd: number;
+            /** Max Calls */
+            max_calls: number;
+            /** Selected Records */
+            selected_records: number;
+            /** Allowed Records */
+            allowed_records: number;
+            /** Indexed Records */
+            indexed_records: number;
+            /** Ready Slices */
+            ready_slices: number;
+            /** Pending Slices */
+            pending_slices: number;
+            /** Items */
+            items: components["schemas"]["IndexingItem"][];
+            /** Estimated Max Micro Usd */
+            estimated_max_micro_usd: number;
+            /** Digest */
+            digest: string;
+        };
+        /** IndexingPreviewRequest */
+        IndexingPreviewRequest: {
+            /**
+             * Provider
+             * @enum {string}
+             */
+            provider: "github" | "codex" | "manual" | "markdown" | "chatgpt" | "unknown";
+            /** Scope */
+            scope: string;
+            /** Entry Ids */
+            entry_ids?: number[] | null;
+            /**
+             * Follow Changes
+             * @default false
+             */
+            follow_changes: boolean;
+            /**
+             * Max Micro Usd
+             * @default 250000
+             */
+            max_micro_usd: number;
+            /**
+             * Max Calls
+             * @default 1000
+             */
+            max_calls: number;
+        };
+        /** IndexingPreviewResponse */
+        IndexingPreviewResponse: {
+            manifest: components["schemas"]["IndexingManifest"];
+            budget: components["schemas"]["IndexingBudget"];
+        };
+        /** IndexingRetryRequest */
+        IndexingRetryRequest: {
+            /**
+             * Confirm External Ai
+             * @default false
+             */
+            confirm_external_ai: boolean;
+        };
+        /** IndexingRunResponse */
+        IndexingRunResponse: {
+            /** Id */
+            id: string;
+            /** Provider */
+            provider: string;
+            /** Scope */
+            scope: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "active" | "paused" | "completed";
+            /** Follow Changes */
+            follow_changes: boolean;
+            /** Scope All */
+            scope_all: boolean;
+            /** Entry Ids */
+            entry_ids: number[];
+            /** Max Micro Usd */
+            max_micro_usd: number;
+            /** Max Calls */
+            max_calls: number;
+            /** Counts */
+            counts: {
+                [key: string]: number;
+            };
+            /** Spent Micro Usd */
+            spent_micro_usd: number;
+            /** Outstanding Micro Usd */
+            outstanding_micro_usd: number;
+            /** Error Code */
+            error_code: string | null;
+        };
+        /** IndexingRunUpdate */
+        IndexingRunUpdate: {
+            /** Active */
+            active: boolean;
         };
         /** OutcomeReport */
         OutcomeReport: {
@@ -4319,6 +4585,196 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PassageSnapshotsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_indexing_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IndexingPreviewRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IndexingPreviewResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_runs_indexing_runs_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IndexingRunResponse"][];
+                };
+            };
+        };
+    };
+    activate_indexing_runs_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IndexingActivateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IndexingRunResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_run_indexing_runs__run_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IndexingRunUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IndexingRunResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    jobs_indexing_runs__run_id__jobs_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IndexingJobResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    retry_indexing_jobs__job_id__retry_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IndexingRetryRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IndexingJobResponse"];
                 };
             };
             /** @description Validation Error */

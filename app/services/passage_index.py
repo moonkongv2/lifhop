@@ -136,4 +136,6 @@ def sync_current_passages(db: Session, entry: Entry) -> PassageIndexState:
     from datetime import datetime, timezone
     state.indexed_at = datetime.now(timezone.utc)
     db.flush()
+    from app.services.embedding_jobs import enqueue_current
+    enqueue_current(db, entry)
     return state

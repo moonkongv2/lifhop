@@ -8,7 +8,7 @@ from app.services.embedding_transport import EmbeddingError, input_bound, reques
 
 
 def embed(engine, settings, *, owner_id, run_id, run_limit, inputs, passages=None, revision=None,
-          confirm_external_ai=False, transport=None):
+          confirm_external_ai=False, transport=None, dispatch_id=None, call_limit=None, before_send=None):
     query = passages is None
     if query and confirm_external_ai is not True:
         raise EmbeddingError("QUERY_CONSENT_REQUIRED")
@@ -22,7 +22,8 @@ def embed(engine, settings, *, owner_id, run_id, run_limit, inputs, passages=Non
         with Session(connection) as db:
             attempt = reserve(db, scope=settings.embedding_billing_scope, owner_id=owner_id, run_id=run_id,
                 purpose="query" if query else "document", upper=upper,
-                monthly_limit=settings.embedding_monthly_limit_micro_usd, run_limit=run_limit)
+                monthly_limit=settings.embedding_monthly_limit_micro_usd, run_limit=run_limit,
+                dispatch_id=dispatch_id, call_limit=call_limit)
             db.commit()
             # Persist uncertain BEFORE dispatch so a kill cannot lose possible charges.
             settle(db, attempt, status="uncertain", error_code="DISPATCH_PENDING")
@@ -36,6 +37,8 @@ def embed(engine, settings, *, owner_id, run_id, run_limit, inputs, passages=Non
                     checked, settings.openai_api_key.get_secret_value())))
                 return validate_response(raw, len(checked), upper)
             try:
+                if before_send is not None:
+                    before_send()
                 db.execute(text("SET LOCAL lock_timeout = '2s'"))
                 db.execute(text("SET LOCAL statement_timeout = '5s'"))
                 result = (send_query_embedding(db, user_id=owner_id, query=inputs[0],

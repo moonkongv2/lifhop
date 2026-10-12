@@ -29,6 +29,9 @@ def update_policy(source_id: int, data: PolicyUpdate, db: DB, current_user: Owne
     policy.collection_enabled = data.collection_enabled
     policy.external_ai_allowed = data.external_ai_allowed
     invalidate_context(db, current_user.id)
+    if policy.external_ai_allowed:
+        from app.services.embedding_jobs import enqueue_scope
+        enqueue_scope(db, owner_id=current_user.id, provider=policy.provider, scope=policy.scope)
     db.commit()
     return policy
 
