@@ -102,6 +102,24 @@ separately scoped real indexing and one untouched
 ten-case quality/cost/latency check before deciding Phase 3.3. Hybrid, reranking
 and answer generation remain deferred.
 
+**2026-10-12 product evaluation preflight:** The reviewed validation revision 2
+still contains eight supported and two insufficient-evidence cases. A new local-only
+preview binds its digest/question hashes to the current 43-document allowlist,
+policy revision 483 and fixed product configuration. Current anchors and permissions
+passed; no retrieval results were opened. There are still zero real runs/jobs/vectors.
+The combined conservative estimate is USD 0.008139. Proposed hard limits are
+USD 0.05/100 indexing calls plus USD 0.01/10 question calls (USD 0.06 total),
+one validation pass, no follow changes or automatic retry. Fresh transmission
+approval is pending; previous experiment grants do not activate this queue.
+The preview tool is implemented; the paid product evaluation and result report
+remain pending. No quality outcome is implied by this preflight.
+Checks: full backend 483 passed; the final focused preview suite has nine passing
+tests; frontend lint and whitespace checks passed. The first full run exposed a
+new test's assumption that the shared usage table was empty; it now checks that
+the preflight leaves pre-existing counts unchanged, and the full rerun passed.
+Local metadata checks used a read-only transaction; the interactive password
+prompt was checked via CLI help rather than a real authenticated CLI invocation.
+
 Phase 3.2B1 tooling and the first owner-approved real OpenAI experiment are complete.
 The expanded two-capture follow-up is complete and failed held-out validation;
 B2 remains deferred. The frozen condition removes the early Entry quota and keeps

@@ -276,10 +276,42 @@ omitted. The test DB uses a separate port and tmpfs; development records are not
 test fixtures. Current schema can be checked with `.venv/bin/alembic current`;
 expected revision after this checkpoint is `g59e4f36d175 (head)`.
 
-Next: owner browser confirmation, separately approved real indexing, then the
+The owner confirmed browser behavior on 2026-10-12.
+Next: separately approved real indexing, then the
 untouched ten-case check and a Phase 3.3 scope decision.
 The untouched ten-case quality check follows product integration under a separate
 paid-transmission approval. Rerank diagnostics remain deferred.
+
+## Local-only product evaluation preview
+
+This authenticates locally, checks the immutable reviewed dataset, current evidence
+and fixed indexing allowlist, and writes a private body-free protocol. It never
+activates jobs, opens retrieval results or calls OpenAI. Questions appear only as
+hashes and byte counts; answers/evidence are checked locally and never become
+provider inputs. A stale indexing manifest requires another indexing dry-run.
+
+```bash
+.venv/bin/python scripts/prepare_semantic_validation.py \
+  --email b@test.com \
+  --set .local/evaluation/fusion-review-b7a96801f0474c19901d9f5cdc7159b6/validation \
+  --index-manifest .local/indexing/preview-9d266e657ef73a77e415121d052eea4c6f544478d5a3d7a291069acf7eb89a1f.json
+```
+
+Enter the local account password at the terminal prompt. Expected: ten reviewed
+cases (eight supported, two insufficient), 43 documents, 1,031 pending slices,
+zero ready slices, total conservative estimate 8,139 micro-USD, and proposed hard
+caps of 60,000 micro-USD / 110 calls. The monthly remaining amount is dynamic.
+The `product-preflight/` protocol has `approved: false` and `provider_calls: 0`.
+These are proposed limits, not a transmission grant or a measured quality result.
+Future changes and automatic retries remain disabled. Paid activation/evaluation
+require separate explicit approval; incomplete indexing blocks the question run.
+Actual evaluation/report execution remains pending.
+
+Verify the preview safeguards with:
+
+```bash
+TEST_DATABASE_URL=postgresql+psycopg://lifhop:lifhop@localhost:55433/lifhop_test .venv/bin/pytest tests/test_semantic_validation.py -q
+```
 
 Sources checked during implementation:
 [pgvector Docker/install documentation](https://github.com/pgvector/pgvector#docker),
