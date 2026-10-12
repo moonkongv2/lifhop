@@ -95,10 +95,12 @@ Refresh index status rechecks local permissions and hides stale results. Failed 
 or reader revalidation also hides cached evidence. Budget/disabled/busy/timeout states
 are distinct; a dispatched request may have been charged even when results fail.
 
-The real development account still has zero vectors at this checkpoint. On
-`http://localhost:5173/search`, selecting Semantic and reviewing the index should
-show zero stored slices and a disabled paid button. Real indexing and the fresh
-ten-case evaluation need separate scope/cost approval.
+Before the approved real run, the development account had zero vectors. It now
+has 1,031 ready slices from 43 allowed GitHub documents. On
+`http://localhost:5173/search`, log in as `b@test.com`, choose Semantic, filter
+Source to GitHub and Type to Document, and select Review index. Expected:
+44 matched records, 43 allowed/indexed records and 1,031 ready slices. The
+separate paid question action remains optional and incurs a new call.
 
 ### Synthetic demo with no OpenAI transmission
 
@@ -173,7 +175,8 @@ Metadata-only verification of the previously allowed 43 GitHub documents found
 43 allowed/indexed records, zero ready slices, 1,031 pending slices, and an estimate
 of 8,113 micro-USD (USD 0.008113). This is a conservative reservation estimate, not
 an actual provider bill. The explicit 43-ID manifest is stored privately in
-`.local/indexing/`. No real run/job exists at the implementation checkpoint.
+`.local/indexing/`. This paragraph describes the pre-activation checkpoint;
+the approved run has since completed and should not be activated again.
 
 After separately approving the exact scope and budget, activation is:
 
