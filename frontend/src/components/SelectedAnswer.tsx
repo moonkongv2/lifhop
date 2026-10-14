@@ -4,10 +4,10 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { fetchAnswerStatus, requestAnswer } from "../api/answers";
 import { listContext, listTarget } from "../utils/entryNavigation";
 
-export default function SelectedAnswer({ question, selected, params }: { question: string; selected: number[]; params: URLSearchParams }) {
+export default function SelectedAnswer({ question, selected, params, kind }: { question: string; selected: number[]; params: URLSearchParams; kind: "embedding" | "passage" }) {
   const [consent, setConsent] = useState(false);
   const status = useQuery({ queryKey: ["answer-status"], queryFn: ({signal}) => fetchAnswerStatus(signal), retry: false, gcTime: 0 });
-  const answer = useMutation({ mutationFn: () => requestAnswer(question, selected), retry: false,
+  const answer = useMutation({ mutationFn: () => requestAnswer(question, selected, kind), retry: false,
     onSettled: () => { setConsent(false); void status.refetch(); } });
   const result = !status.isFetching && !status.error && status.data && answer.data?.policy_revision === status.data.policy_revision ? answer.data : undefined;
   const returnTo = listTarget(listContext("/search", params));
@@ -27,7 +27,7 @@ export default function SelectedAnswer({ question, selected, params }: { questio
     {result && <div className="answer-result"><h4>{result.status === "supported" ? "Draft answer" : "Insufficient evidence"}</h4>
       <p>{result.answer}</p>
       {result.citations.length > 0 && <ul>{result.citations.map(c =>
-        <li key={c.embedding_id}><Link to={`/semantic/slices/${c.embedding_id}?${new URLSearchParams({ returnTo })}`}>
+        <li key={`${c.kind}-${c.source_id}`}><Link to={`${c.kind === "embedding" ? "/semantic/slices" : "/passages"}/${c.source_id}?${new URLSearchParams({ returnTo })}`}>
           {c.passage.title} · Version {c.passage.version_id} · Characters {c.passage.start+1}–{c.passage.end}
         </Link></li>)}</ul>}
     </div>}

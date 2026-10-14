@@ -7,6 +7,7 @@ import { entryTarget, listContext, listTarget, validPage } from "../utils/entryN
 import { formatEntryDate, sourceLabels } from "../utils/entries";
 import { sessionTarget } from "../utils/codexSessions";
 import { repositoryLink } from "../utils/githubRepositories";
+import SelectedAnswer from "./SelectedAnswer";
 
 function passageTarget(id: number, params: URLSearchParams) {
   return `/passages/${id}?${new URLSearchParams({ returnTo: listTarget(listContext("/search", params)) })}`;
@@ -29,6 +30,7 @@ function SnapshotLinks({ passage, params }: { passage: Passage; params: URLSearc
 
 export default function PassageResults({ params }: { params: URLSearchParams }) {
   const [, setParams] = useSearchParams();
+  const [selected, setSelected] = useState<number[]>([]);
   const serialized = params.toString();
   const offset = Number(params.get("offset") ?? 0);
   const valid = validPage(params);
@@ -60,11 +62,16 @@ export default function PassageResults({ params }: { params: URLSearchParams }) 
         <div className="badges"><span className="badge source">{sourceLabels[p.source as keyof typeof sourceLabels] ?? p.source}</span><span className="badge">{p.field === "title" ? "Title match" : "Original passage"}</span>{p.work_only && <span className="badge">Work details</span>}{p.source_state === "deleted" && <span className="badge">Deleted at source</span>}{p.index_status === "partial" && <span className="badge">Partial index</span>}</div>
         {p.completeness !== "complete" && <span className="badge">Incomplete source</span>}
         <h3>{p.title}</h3><p className="entry-content">{p.text}</p>
+        {p.field === "content" && !p.work_only && p.source_state !== "deleted" && <label className="work-search-option"><input type="checkbox"
+          checked={selected.includes(p.id)} disabled={!selected.includes(p.id) && selected.length >= 5}
+          onChange={e => setSelected(current => e.target.checked ? [...current, p.id] : current.filter(id => id !== p.id))} />Use this passage for an answer</label>}
         <p className="help-text">{p.repository_ref?.repository ?? p.session_ref?.thread_id ?? ""}{p.repository_ref?.path ? ` · ${p.repository_ref.path}` : ""}</p>
         <p className="record-date">Source/event date: {formatEntryDate(p.event_at)} · Added: {formatEntryDate(p.created_at)}<br />Version {p.version_id} · {p.snapshot_count} retained {p.snapshot_count === 1 ? "snapshot" : "snapshots"}</p>
         <div className="actions"><Link to={passageTarget(p.id, params)}>View passage</Link><Link to={p.session_ref ? sessionTarget(p.session_ref, context, p.entry_id) : entryTarget(p.entry_id, context)}>Open record</Link>{p.repository_ref && <Link to={repositoryLink(p.repository_ref.source_scope, context)}>Browse repository</Link>}</div>
         <SnapshotLinks passage={p} params={params} />
       </article>)}</div>
+      {!error && <><p className="help-text">Answer requests use only selected content passages. Source or record AI exclusions are checked again before sending.</p>
+        <SelectedAnswer key={selected.join(",")} question={params.get("q") ?? ""} selected={selected} params={params} kind="passage" /></>}
       <div className="actions pagination"><button disabled={offset === 0 || isFetching} onClick={() => page(Math.max(0, offset-20))}>Previous page</button><button disabled={offset+20 >= data.total || isFetching} onClick={() => page(offset+20)}>Next page</button></div>
     </>}
   </section>;

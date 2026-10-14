@@ -11,6 +11,10 @@ const messages: Record<string,string> = {
   ANSWER_REQUEST_ALREADY_USED: "This answer request was already attempted.",
   ANSWER_CONTEXT_CHANGED: "The selected records or permissions changed. A sent request may have been charged.",
   ANSWER_SLICE_UNAVAILABLE: "A selected passage is no longer available.",
+  ANSWER_INPUT_LIMIT: "The selected text is too long for one answer. Select fewer passages.",
+  EMBEDDING_POLICY_DENIED: "A selected passage is excluded from external AI. Choose another passage.",
+  EMBEDDING_INPUT_TYPE_EXCLUDED: "A selected passage type cannot be sent to external AI.",
+  EMBEDDING_CONTEXT_CHANGED: "A selected passage changed. Run the search again.",
   PROVIDER_TIMEOUT_OR_NETWORK: "The request timed out or lost its connection. It may have been charged.",
 };
 
@@ -31,6 +35,7 @@ async function request<T>(path: string, body?: unknown, signal?: AbortSignal): P
 }
 
 export const fetchAnswerStatus = (signal?: AbortSignal) => request<AnswerStatus>("/status", undefined, signal);
-export const requestAnswer = (q: string, ids: number[]) => request<AnswerResponse>("", {
-  q, embedding_ids: ids, request_id: crypto.randomUUID().replaceAll("-", ""), confirm_external_ai: true,
+export const requestAnswer = (q: string, ids: number[], kind: "embedding" | "passage") => request<AnswerResponse>("", {
+  q, [kind === "embedding" ? "embedding_ids" : "passage_ids"]: ids,
+  request_id: crypto.randomUUID().replaceAll("-", ""), confirm_external_ai: true,
 });

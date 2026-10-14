@@ -1,8 +1,21 @@
 # lifhop Current Status
 
-Last updated: 2026-10-13
+Last updated: 2026-10-14
 
 ## Current product slice
+
+**2026-10-14 Phase 3.3 local-passage answer extension:** Search → Passages now
+lets the owner choose one to five current content passages and request a cited
+draft through the same separate answer consent. This works without Semantic
+vectors or a paid question embedding. The server accepts either local Passage
+IDs or Semantic slice IDs, never a mixture, and rechecks current exact text,
+owner, source/record AI permission and deletion under the owner lock before and
+after the answer call. Full local passages are bounded at 2,000 characters each
+and 14 KiB per request. `ANSWER_MODE=off` remains the normal default. Synthetic
+HTTP search → answer → citation and durable replay checks passed with no real
+OpenAI transmission. Full backend 493 and frontend 125 tests, lint and build
+passed. The owner still needs to verify this Passages UI extension; real answer
+quality, automatic evidence selection and period retrospectives remain open.
 
 **2026-10-13 Phase 3.3 first slice:** The existing Semantic result screen now lets
 the owner select up to five exact current passages and request one cited draft
@@ -11,7 +24,8 @@ immediately before sending, then rechecks current permissions before returning
 citations. It uses the shared durable monthly usage ledger with a USD 0.01 and
 one-call cap per request. The UI requires a second explicit consent; neither the
 question nor the draft answer is persisted. `ANSWER_MODE=off` is the default.
-The synthetic demo mocks the answer provider; personal answer generation and
+The owner confirmed this first synthetic answer flow on 2026-10-14. The demo
+mocks the answer provider; personal answer generation and
 answer-quality evaluation have not run. This slice supports selected current
 passages only. Historical versions, date-range retrospectives and automatically
 assembled multi-source context remain later Phase 3.3 work. The real populated

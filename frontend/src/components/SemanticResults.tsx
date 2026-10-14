@@ -71,7 +71,7 @@ export default function SemanticResults({ params }: { params: URLSearchParams })
         <div className="actions"><Link to={target(hit.embedding_id, params)}>View passage</Link><Link to={entryTarget(p.entry_id, listContext("/search", params))}>Open record</Link></div>
         <Locations hit={hit} params={params} />
       </article>; })}</div>
-      <SelectedAnswer key={`${search.submittedAt}-${selected.join(",")}`} question={params.get("q") ?? ""} selected={selected} params={params} />
+      <SelectedAnswer key={`${search.submittedAt}-${selected.join(",")}`} question={params.get("q") ?? ""} selected={selected} params={params} kind="embedding" />
     </>}
   </section>;
 }

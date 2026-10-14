@@ -1,9 +1,11 @@
-# Phase 3.3 first slice: selected-passage answers
+# Phase 3.3 selected-passage answers
 
-After a Semantic search, select up to five displayed passages. The screen shows
-exact text and source/version links before a separate answer consent. The answer
-request sends the question and those passages to OpenAI, then shows a draft with
-links back to the exact retained slices. It may say evidence is insufficient.
+After a Semantic or local Passages search, select up to five displayed passages.
+The screen shows exact text and source/version links before a separate answer
+consent. The answer request sends the question and those passages to OpenAI, then
+shows a draft with links back to the retained text. It may say evidence is
+insufficient. Passages mode searches locally and does not need a stored vector or
+a paid question embedding; Semantic mode still needs one paid question embedding.
 This is a first answer flow, not a complete date-range retrospective or general
 automatic RAG answerer. The owner must check whether each cited passage supports
 every claim.
@@ -14,9 +16,12 @@ every claim.
   indexing approval do not enable real answer generation. The separate checkbox
   and button are required for each paid answer.
 - `POST /answers` accepts a question of at most 256 characters, one to five
-  distinct current stored slice IDs, a fresh request ID and explicit consent.
-  Only the selected exact slices are sent. Work-only text, source-deleted records,
-  old versions and AI-excluded records fail the current policy check.
+  distinct current Semantic slice IDs **or** local passage IDs, a fresh request
+  ID and explicit consent. Only the selected exact text is sent. Work-only text,
+  title matches, source-deleted records, old versions and AI-excluded records
+  fail the current policy check. A local passage can be up to 2,000 characters;
+  the combined request is capped at 14 KiB, so a long selection may need fewer
+  passages.
 - The server holds the owner policy lock through the provider call and rechecks
   citations afterward. A stale or revoked citation suppresses the answer even
   when the provider call has already been charged.
@@ -41,19 +46,25 @@ docker compose -f compose.test.yaml up -d --wait test-db
 TEST_DATABASE_URL=postgresql+psycopg://lifhop:lifhop@localhost:55433/lifhop_test .venv/bin/pytest tests/test_answers.py -q
 ```
 
-Expected: seven backend tests pass, including owner/policy refusal, one-call
+Expected: ten backend tests pass, including policy refusal, one-call
 replay, revocation before/after dispatch, insufficient evidence and invalid
-model citations. Frontend checks: `cd frontend`, then `npm test`, `npm run lint`
+model citations, plus an answer from a local passage without a Semantic vector.
+Frontend checks: `cd frontend`, then `npm test`, `npm run lint`
 and `npm run build`.
 
-For browser verification, start `.venv/bin/python scripts/preview_semantic.py`
+For browser verification, start `.venv/bin/python scripts/preview_semantic.py --port 8003`
 in one terminal. In another terminal, run `cd frontend` and
-`LIFHOP_API_PROXY_TARGET=http://127.0.0.1:8002 npm run dev -- --host 127.0.0.1 --port 5174 --strictPort`.
-Open `http://127.0.0.1:5174/search` and log in with
+`LIFHOP_API_PROXY_TARGET=http://127.0.0.1:8003 npm run dev -- --host 127.0.0.1 --port 5175 --strictPort`.
+These ports avoid older 8002/5174 previews; stop an older process or choose
+another matching API/proxy pair if either port is occupied. Open
+`http://127.0.0.1:5175/search` and log in with
 `demo@example.test` / `demo-password`. Choose Semantic and ask where the worker
 runs. Review index, consent to the synthetic search and submit. Select the worker
 passage, then consent to the answer and press Generate cited answer. Expected:
-one synthetic draft answer and a citation opening the same exact passage. The
+one synthetic draft answer and a citation opening the same exact passage. Switch
+to Passages and search for `worker`, then select the worker passage and generate
+an answer after the separate consent. This route makes no question-embedding
+request; its synthetic answer cites the local passage reader. The
 demo uses an isolated test schema and mocked providers; normal shutdown drops
 the schema. `http://localhost:5173/search` is the real development account,
 where answer generation remains disabled by default.

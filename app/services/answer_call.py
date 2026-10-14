@@ -24,7 +24,7 @@ def answer(engine, settings, *, owner_id, request_id, question, anchors, revisio
             db.execute(text("SET LOCAL lock_timeout = '2s'"))
             db.execute(text("SET LOCAL statement_timeout = '5s'"))
             texts=embedding_inputs(db,user_id=owner_id,passages=anchors,revision=revision)
-            value,upper=payload(question,[dict(id=a["embedding_id"],text=t) for a,t in zip(anchors,texts)])
+            value,upper=payload(question,[dict(id=a["reference_id"],text=t) for a,t in zip(anchors,texts)])
             db.rollback()
             attempt=reserve(db,scope=settings.embedding_billing_scope,owner_id=owner_id,
                 run_id=request_id,purpose="answer",upper=upper,
@@ -36,7 +36,7 @@ def answer(engine, settings, *, owner_id, request_id, question, anchors, revisio
                 db.execute(text("SET LOCAL lock_timeout = '2s'"))
                 db.execute(text("SET LOCAL statement_timeout = '5s'"))
                 checked=embedding_inputs(db,user_id=owner_id,passages=anchors,revision=revision)
-                checked_value,_=payload(question,[dict(id=a["embedding_id"],text=t) for a,t in zip(anchors,checked)])
+                checked_value,_=payload(question,[dict(id=a["reference_id"],text=t) for a,t in zip(anchors,checked)])
                 if checked_value!=value:
                     raise EmbeddingError("ANSWER_CONTEXT_CHANGED")
                 sent=True
@@ -45,7 +45,7 @@ def answer(engine, settings, *, owner_id, request_id, question, anchors, revisio
                 db.rollback()
                 settle(db,attempt,status="spent",input_tokens=tokens[0],output_tokens=tokens[1])
                 db.commit()
-                return parse(raw,{a["embedding_id"] for a in anchors})
+                return parse(raw,{a["reference_id"] for a in anchors})
             except BaseException:
                 db.rollback()
                 # Output validation can fail after a valid usage settlement.

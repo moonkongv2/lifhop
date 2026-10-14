@@ -25,7 +25,7 @@ beforeEach(() => {
     const coverage = { state, policy_revision: revision, matched_records: 3, allowed_records: 2, indexed_records: 1, ready_slices: 1, jobs: {} };
     if (url.endsWith("/answers/status")) return Response.json({ enabled: answerEnabled, policy_revision: revision, selected_limit: 5, max_input_characters: 3000, output_limit_tokens: 512 });
     if (url.endsWith("/answers")) return Response.json({ status: "supported", answer: "Synthetic grounded draft.",
-      citations: [{ embedding_id: 10, passage }], policy_revision: revision });
+      citations: [{ kind: "embedding", source_id: 10, passage }], policy_revision: revision });
     if (url.includes("/status?")) return statusFailure ? new Response(null, { status: statusFailure }) : Response.json(coverage);
     if (url.endsWith("/search")) return failure ? Response.json({ detail: "PROVIDER_TIMEOUT_OR_NETWORK" }, { status: failure }) : Response.json({ items: [{ embedding_id: 10, distance: 0.1, passage }], coverage, truncated: false, limit: 20 });
     if (url.includes("/locations?")) return Response.json({ items: [{ embedding_id: 11, entry_id: 5, version_id: 8, start: 100, end: 120, event_at: null }], total: 1, limit: 20, offset: 0 });

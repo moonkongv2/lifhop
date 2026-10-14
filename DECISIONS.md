@@ -1464,3 +1464,16 @@ older transmission approval does not activate answer generation. The synthetic
 demo provides a mock response for browser checks. No new database or dependency
 is needed. Historical evidence, automatic context selection, retrospectives and
 real answer quality are separate later slices.
+
+## 2026-10-14: Allow local Passages as selected answer evidence
+
+Use the same consented answer endpoint and policy/cost boundary for either
+Semantic slice IDs or local Passage IDs. A request must choose exactly one kind;
+the response identifies its citation kind and source ID. This lets the owner
+answer from records that have a local passage but no Semantic vector, without a
+paid question-embedding call. Passage text remains bounded at the existing
+2,000-character projection limit, with a 14 KiB total answer request cap.
+Current-version, source/record AI permission, work-only and deleted-source checks
+run under the owner lock before sending and again before returning citations.
+The answer model stays off by default; no personal records are transmitted by
+this implementation check.

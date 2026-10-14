@@ -1035,8 +1035,13 @@ export interface components {
     schemas: {
         /** AnswerCitation */
         AnswerCitation: {
-            /** Embedding Id */
-            embedding_id: number;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "embedding" | "passage";
+            /** Source Id */
+            source_id: number;
             passage: components["schemas"]["PassageResponse"];
         };
         /** AnswerRequest */
@@ -1046,7 +1051,9 @@ export interface components {
             /** Request Id */
             request_id: string;
             /** Embedding Ids */
-            embedding_ids: number[];
+            embedding_ids?: number[] | null;
+            /** Passage Ids */
+            passage_ids?: number[] | null;
             /**
              * Confirm External Ai
              * @default false
@@ -1080,7 +1087,7 @@ export interface components {
             selected_limit: number;
             /**
              * Max Input Characters
-             * @default 3000
+             * @default 10000
              */
             max_input_characters: number;
             /**

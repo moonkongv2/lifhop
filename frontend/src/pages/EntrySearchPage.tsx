@@ -14,6 +14,6 @@ export default function EntrySearchPage() {
   return <>
     <header className="page-header"><div><p className="eyebrow">Find your context</p><h2>Search</h2><p className="subtitle">Find a phrase, a decision, or a detail you want to return to.</p></div></header>
     <EntrySearchForm key={params.toString()} params={params} onApply={next => setParams(hasSearchConditions(next) ? next : new URLSearchParams())} />
-    {active ? params.get("mode") === "semantic" ? <SemanticResults key={params.toString()} params={params} /> : params.get("mode") === "passages" ? <PassageResults params={params} /> : <EntryResults searching /> : <section className="panel empty-state"><Icon name="search" /><h3>What would you like to find?</h3><p>Search titles and content, or use filters to narrow your archive.</p></section>}
+    {active ? params.get("mode") === "semantic" ? <SemanticResults key={`results-${params.toString()}`} params={params} /> : params.get("mode") === "passages" ? <PassageResults key={`results-${params.toString()}`} params={params} /> : <EntryResults searching /> : <section className="panel empty-state"><Icon name="search" /><h3>What would you like to find?</h3><p>Search titles and content, or use filters to narrow your archive.</p></section>}
   </>;
 }

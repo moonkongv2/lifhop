@@ -68,7 +68,8 @@ def test_cited_answer_is_consent_based_and_durable_once(answer_client):
     result=client.post("/answers",headers=headers,json=data)
     assert result.status_code==200,result.text
     body=result.json()
-    assert body["status"]=="supported" and body["citations"][0]["embedding_id"]==vector_id
+    assert body["status"]=="supported" and body["citations"][0]["source_id"]==vector_id
+    assert body["citations"][0]["kind"]=="embedding"
     assert body["citations"][0]["passage"]["text"]=="A synthetic recorded answer."
     assert json.loads(sender.call_args.args[0]["input"])["excerpts"]==[
         dict(id=vector_id,text="A synthetic recorded answer.")]
@@ -161,3 +162,47 @@ def test_output_validator_rejects_unselected_citation():
     value,_=payload("Synthetic question?",[dict(id=4,text="Synthetic evidence")])
     with pytest.raises(EmbeddingError,match="ANSWER_OUTPUT_INVALID"):
         parse(response(value,ids=[99]),{4})
+
+
+def test_local_passage_answer_needs_no_semantic_vector(answer_client):
+    client,headers,sender,vector_id,bind,owner,_=answer_client
+    with Session(bind) as db:
+        vector=db.get(PassageEmbedding,vector_id)
+        passage_id=vector.passage_id
+        db.delete(vector)
+        db.commit()
+    data=ask(vector_id)
+    data.pop("embedding_ids")
+    data["passage_ids"]=[passage_id]
+    result=client.post("/answers",headers=headers,json=data)
+    assert result.status_code==200,result.text
+    assert result.json()["citations"][0]["kind"]=="passage"
+    assert result.json()["citations"][0]["source_id"]==passage_id
+    assert json.loads(sender.call_args.args[0]["input"])["excerpts"]==[
+        dict(id=passage_id,text="A synthetic recorded answer.")]
+    assert client.post("/answers",headers=headers,json=data).status_code==409
+    assert sender.call_count==1
+    with Session(bind) as db:
+        row=db.scalar(select(AiUsageAttempt).where(AiUsageAttempt.owner_id==owner,
+            AiUsageAttempt.purpose=="answer"))
+        assert row.status=="spent"
+
+
+def test_local_passage_answer_refuses_ai_exclusion(answer_client):
+    client,headers,sender,vector_id,bind,_,entry_id=answer_client
+    with Session(bind) as db:
+        passage_id=db.get(PassageEmbedding,vector_id).passage_id
+        db.get(Entry,entry_id).external_ai_allowed=False
+        db.commit()
+    data=ask(vector_id)
+    data.pop("embedding_ids")
+    data["passage_ids"]=[passage_id]
+    assert client.post("/answers",headers=headers,json=data).status_code==403
+    sender.assert_not_called()
+
+
+def test_answer_excerpts_are_bounded_for_full_passages():
+    value, upper=payload("Synthetic question?",[dict(id=4,text="x"*2000)])
+    assert upper<=16000 and len(json.loads(value["input"])["excerpts"][0]["text"])==2000
+    with pytest.raises(EmbeddingError,match="ANSWER_INPUT_LIMIT"):
+        payload("Synthetic question?",[dict(id=4,text="x"*2001)])
