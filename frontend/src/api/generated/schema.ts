@@ -978,6 +978,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/answers/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Status */
+        get: operations["status_answers_status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/answers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create */
+        post: operations["create_answers_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -999,6 +1033,62 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AnswerCitation */
+        AnswerCitation: {
+            /** Embedding Id */
+            embedding_id: number;
+            passage: components["schemas"]["PassageResponse"];
+        };
+        /** AnswerRequest */
+        AnswerRequest: {
+            /** Q */
+            q: string;
+            /** Request Id */
+            request_id: string;
+            /** Embedding Ids */
+            embedding_ids: number[];
+            /**
+             * Confirm External Ai
+             * @default false
+             */
+            confirm_external_ai: boolean;
+        };
+        /** AnswerResponse */
+        AnswerResponse: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "supported" | "insufficient";
+            /** Answer */
+            answer: string;
+            /** Citations */
+            citations: components["schemas"]["AnswerCitation"][];
+            /** Policy Revision */
+            policy_revision: number;
+        };
+        /** AnswerStatus */
+        AnswerStatus: {
+            /** Enabled */
+            enabled: boolean;
+            /** Policy Revision */
+            policy_revision: number;
+            /**
+             * Selected Limit
+             * @default 5
+             */
+            selected_limit: number;
+            /**
+             * Max Input Characters
+             * @default 3000
+             */
+            max_input_characters: number;
+            /**
+             * Output Limit Tokens
+             * @default 512
+             */
+            output_limit_tokens: number;
+        };
         /** ArchiveItem */
         ArchiveItem: {
             /**
@@ -5088,6 +5178,59 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SemanticLocations"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    status_answers_status_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnswerStatus"];
+                };
+            };
+        };
+    };
+    create_answers_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnswerRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnswerResponse"];
                 };
             };
             /** @description Validation Error */

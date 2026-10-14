@@ -1,8 +1,29 @@
 # lifhop Current Status
 
-Last updated: 2026-10-12
+Last updated: 2026-10-13
 
 ## Current product slice
+
+**2026-10-13 Phase 3.3 first slice:** The existing Semantic result screen now lets
+the owner select up to five exact current passages and request one cited draft
+answer. The separate answer POST rechecks owner, version and external-AI permission
+immediately before sending, then rechecks current permissions before returning
+citations. It uses the shared durable monthly usage ledger with a USD 0.01 and
+one-call cap per request. The UI requires a second explicit consent; neither the
+question nor the draft answer is persisted. `ANSWER_MODE=off` is the default.
+The synthetic demo mocks the answer provider; personal answer generation and
+answer-quality evaluation have not run. This slice supports selected current
+passages only. Historical versions, date-range retrospectives and automatically
+assembled multi-source context remain later Phase 3.3 work. The real populated
+index still awaits owner browser confirmation. See `ANSWER_SLICE.md` for the
+exact demo flow and remaining checks.
+
+Checks: seven new backend answer tests, including before/after revocation,
+durable paid replay and invalid citation handling; full backend 490 passed.
+Frontend 124 passed, lint/build passed. Official OpenAI Responses/Structured
+Outputs documentation and the pinned GPT-4.1 mini model page were checked.
+The synthetic HTTP demo confirmed search, answer, exact citation and replay
+rejection without an external request.
 
 **2026-10-11 direction change; 2026-10-12 measurement:** The owner ended B1 model/ranking experiments
 and approved optional Semantic search in B2. Earlier failed promotion decisions

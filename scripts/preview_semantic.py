@@ -1,5 +1,6 @@
 """Disposable Semantic demo: isolated test schema, synthetic records, mock OpenAI."""
 import argparse
+import json
 from types import SimpleNamespace
 from uuid import uuid4
 from pathlib import Path
@@ -20,6 +21,8 @@ from app.services.source_history import record_version, select_version, source_p
 from app.services.embedding_jobs import prepare_indexing, activate_indexing
 from app.services.embedding_call import embed
 from app.services.embedding_transport import MODEL
+from app.services.answer_call import answer as paid_answer
+from app.services.answer_transport import MODEL as ANSWER_MODEL
 from app.evaluation.storage import write_private
 from app.workers.embedding_worker import process_one
 
@@ -32,6 +35,15 @@ def fake_provider(inputs):
         vector[axis] = 1.0
         values.append(dict(index=i, embedding=vector))
     return dict(model=MODEL, data=values, usage=dict(prompt_tokens=len(inputs), total_tokens=len(inputs)))
+
+
+def fake_answer(value):
+    excerpts = json.loads(value["input"])["excerpts"]
+    result = dict(status="supported", answer="[Synthetic] This answer cites the selected passage.",
+                  citation_ids=[excerpts[0]["id"]])
+    return dict(model=ANSWER_MODEL, status="completed",
+                output=[dict(type="message", content=[dict(type="output_text", text=json.dumps(result))])],
+                usage=dict(input_tokens=10, output_tokens=10, total_tokens=20))
 
 
 def main(argv=None):
@@ -62,7 +74,7 @@ def main(argv=None):
     try:
         # Demo tokens cannot authenticate against the real application.
         settings.jwt_secret_key = "disposable-semantic-demo-" + uuid4().hex
-        runtime = SimpleNamespace(embedding_mode="openai", openai_api_key=SecretStr("synthetic-key"),
+        runtime = SimpleNamespace(embedding_mode="openai", answer_mode="openai", openai_api_key=SecretStr("synthetic-key"),
             embedding_monthly_limit_micro_usd=1000000, embedding_billing_scope="demo-" + uuid4().hex)
         with Session(bind) as db:
             user = User(email="demo@example.test", password_hash=hash_password("demo-password"))
@@ -85,6 +97,9 @@ def main(argv=None):
         import app.api.semantic as api
         api.engine, api.settings = bind, runtime
         api.embed = lambda *a, **kw: embed(*a, **kw, transport=fake_provider)
+        import app.api.answers as answers_api
+        answers_api.engine, answers_api.settings = bind, runtime
+        answers_api.answer = lambda *a, **kw: paid_answer(*a, **kw, transport=fake_answer)
         def demo_db():
             with Session(bind) as db:
                 yield db

@@ -34,8 +34,8 @@ def call_slot(engine, scope):
 
 def reserve(db, *, scope, owner_id, run_id, purpose, upper, monthly_limit, run_limit, at=None,
             dispatch_id=None, call_limit=None):
-    rerank = purpose == "rerank"
-    if purpose not in {"document", "query", "rerank"} or not 0 < upper <= (525312 if rerank else 16000) or not 0 < run_limit <= (1000000 if rerank else 250000):
+    priced = purpose in {"rerank", "answer"}
+    if purpose not in {"document", "query", "rerank", "answer"} or not 0 < upper <= (525312 if purpose == "rerank" else 16000) or not 0 < run_limit <= (1000000 if priced else 250000):
         raise EmbeddingError("INVALID_RESERVATION")
     # A scope configuration change must not reset an existing run's limits.
     db.execute(text("SELECT pg_advisory_xact_lock(13034, :key)"),
@@ -45,9 +45,11 @@ def reserve(db, *, scope, owner_id, run_id, purpose, upper, monthly_limit, run_l
     charge = case((Attempt.status == "spent", Attempt.spent_micro_usd), else_=Attempt.reserved_micro_usd)
     active = Attempt.status != "released"
     amount = cost_micro(upper)
-    if rerank:
+    if priced:
         from app.services import rerank_transport as rt
-        amount = rt.cost_micro(upper, rt.OUTPUT_LIMIT)
+        from app.services import answer_transport as at
+        pricing = rt if purpose == "rerank" else at
+        amount = pricing.cost_micro(upper, pricing.OUTPUT_LIMIT)
     monthly = db.scalar(select(func.coalesce(func.sum(charge), 0)).where(Attempt.billing_scope == scope, active,
         (Attempt.month == month) | Attempt.status.in_(["reserved", "uncertain"])))
     run = db.scalar(select(func.coalesce(func.sum(charge), 0)).where(
@@ -65,10 +67,10 @@ def reserve(db, *, scope, owner_id, run_id, purpose, upper, monthly_limit, run_l
         dispatch_id=dispatch_id,
         purpose=purpose, model=MODEL, configuration_hash=hashlib.sha256(CONFIG.encode()).hexdigest(),
         input_upper_bound=upper, reserved_micro_usd=amount, status="reserved")
-    if rerank:
-        row.model, row.configuration_hash = rt.MODEL, rt.CONFIG_HASH
-        row.output_upper_bound = rt.OUTPUT_LIMIT
-        row.input_price_micro, row.output_price_micro, row.price_hash = rt.INPUT_PRICE, rt.OUTPUT_PRICE, rt.PRICE_HASH
+    if priced:
+        row.model, row.configuration_hash = pricing.MODEL, pricing.CONFIG_HASH
+        row.output_upper_bound = pricing.OUTPUT_LIMIT
+        row.input_price_micro, row.output_price_micro, row.price_hash = pricing.INPUT_PRICE, pricing.OUTPUT_PRICE, pricing.PRICE_HASH
     db.add(row)
     db.flush()
     return row.id
@@ -85,7 +87,7 @@ def settle(db, attempt_id, *, status, tokens=None, input_tokens=None, output_tok
     if status not in {"uncertain", "spent", "released"}:
         raise EmbeddingError("INVALID_SETTLEMENT")
     if status == "spent":
-        if row.purpose == "rerank":
+        if row.purpose in {"rerank", "answer"}:
             if (type(input_tokens) is not int or type(output_tokens) is not int
                     or not 0 < input_tokens <= row.input_upper_bound
                     or not 0 <= output_tokens <= row.output_upper_bound):
@@ -109,8 +111,8 @@ def reconcile(db, *, owner_id, scope, attempt_id, assume_max_spent=False, confir
         raise EmbeddingError("CONFIRM_SETTLEMENT")
     settle(db, attempt_id, status="spent" if assume_max_spent else "released",
         tokens=row.input_upper_bound if assume_max_spent else None,
-        input_tokens=row.input_upper_bound if assume_max_spent and row.purpose=="rerank" else None,
-        output_tokens=row.output_upper_bound if assume_max_spent and row.purpose=="rerank" else None,
+        input_tokens=row.input_upper_bound if assume_max_spent and row.purpose in {"rerank", "answer"} else None,
+        output_tokens=row.output_upper_bound if assume_max_spent and row.purpose in {"rerank", "answer"} else None,
         error_code="MANUAL_MAX_SETTLEMENT" if assume_max_spent else "MANUAL_NO_CHARGE")
 
 

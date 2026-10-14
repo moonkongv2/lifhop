@@ -5,6 +5,7 @@ import { fetchSemanticLocations, fetchSemanticStatus, searchSemantic } from "../
 import type { SemanticResponse } from "../api/semantic";
 import { entryTarget, listContext, listTarget } from "../utils/entryNavigation";
 import { formatEntryDate, sourceLabels } from "../utils/entries";
+import SelectedAnswer from "./SelectedAnswer";
 
 function target(id: number, params: URLSearchParams) {
   return `/semantic/slices/${id}?${new URLSearchParams({ returnTo: listTarget(listContext("/search", params)) })}`;
@@ -36,8 +37,10 @@ const states = {
 export default function SemanticResults({ params }: { params: URLSearchParams }) {
   const serialized = params.toString();
   const [consent, setConsent] = useState(false);
+  const [selected, setSelected] = useState<number[]>([]);
   const status = useQuery({ queryKey: ["semantic-status", serialized], queryFn: ({ signal }) => fetchSemanticStatus(new URLSearchParams(serialized), signal), retry: false, gcTime: 0 });
   const search = useMutation({ mutationFn: () => searchSemantic(new URLSearchParams(serialized)), retry: false,
+    onMutate: () => setSelected([]),
     onSettled: () => { setConsent(false); void status.refetch(); } });
   const coverage = status.data;
   const result = !search.isPending && !status.isFetching && !status.error && search.data && coverage?.policy_revision === search.data.coverage.policy_revision ? search.data : undefined;
@@ -61,10 +64,14 @@ export default function SemanticResults({ params }: { params: URLSearchParams })
       <div className="records-grid">{result.items.map(hit => { const p = hit.passage; return <article className="panel record-card" key={hit.embedding_id}>
         <div className="badges"><span className="badge source">{sourceLabels[p.source as keyof typeof sourceLabels] ?? p.source}</span><span className="badge">Semantic match</span>{(p.index_status === "partial" || p.completeness !== "complete") && <span className="badge">Incomplete coverage</span>}</div>
         <h3>{p.title}</h3><p className="entry-content">{p.text}</p>
+        <label className="work-search-option"><input type="checkbox" checked={selected.includes(hit.embedding_id)}
+          disabled={!selected.includes(hit.embedding_id) && selected.length >= 5}
+          onChange={e => setSelected(current => e.target.checked ? [...current, hit.embedding_id] : current.filter(id => id !== hit.embedding_id))} />Use this passage for an answer</label>
         <p className="record-date">Source/event date: {formatEntryDate(p.event_at)} · Version {p.version_id} · Characters {p.start+1}–{p.end}</p>
         <div className="actions"><Link to={target(hit.embedding_id, params)}>View passage</Link><Link to={entryTarget(p.entry_id, listContext("/search", params))}>Open record</Link></div>
         <Locations hit={hit} params={params} />
       </article>; })}</div>
+      <SelectedAnswer key={`${search.submittedAt}-${selected.join(",")}`} question={params.get("q") ?? ""} selected={selected} params={params} />
     </>}
   </section>;
 }

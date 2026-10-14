@@ -15,13 +15,17 @@ let failure: number;
 let revision: number;
 let statusFailure: number;
 let readerFailure: number;
+let answerEnabled: boolean;
 let sent: { url: string; options: RequestInit }[];
 beforeEach(() => {
   localStorage.clear(); localStorage.setItem("access_token", "test-token");
-  state = "available"; failure = 0; revision = 1; statusFailure = 0; readerFailure = 0; sent = [];
+  state = "available"; failure = 0; revision = 1; statusFailure = 0; readerFailure = 0; answerEnabled = false; sent = [];
   vi.stubGlobal("fetch", vi.fn(async (url: string, options: RequestInit) => {
     sent.push({ url, options });
     const coverage = { state, policy_revision: revision, matched_records: 3, allowed_records: 2, indexed_records: 1, ready_slices: 1, jobs: {} };
+    if (url.endsWith("/answers/status")) return Response.json({ enabled: answerEnabled, policy_revision: revision, selected_limit: 5, max_input_characters: 3000, output_limit_tokens: 512 });
+    if (url.endsWith("/answers")) return Response.json({ status: "supported", answer: "Synthetic grounded draft.",
+      citations: [{ embedding_id: 10, passage }], policy_revision: revision });
     if (url.includes("/status?")) return statusFailure ? new Response(null, { status: statusFailure }) : Response.json(coverage);
     if (url.endsWith("/search")) return failure ? Response.json({ detail: "PROVIDER_TIMEOUT_OR_NETWORK" }, { status: failure }) : Response.json({ items: [{ embedding_id: 10, distance: 0.1, passage }], coverage, truncated: false, limit: 20 });
     if (url.includes("/locations?")) return Response.json({ items: [{ embedding_id: 11, entry_id: 5, version_id: 8, start: 100, end: 120, event_at: null }], total: 1, limit: 20, offset: 0 });
@@ -57,6 +61,29 @@ it("loads only local coverage and requires explicit consent before one POST", as
   expect(body.request_id).toMatch(/^[a-f0-9]{32}$/);
   expect(body.q).toBe("where is the worker");
   expect((screen.getByRole("checkbox", { name: "Send this question to OpenAI for this search" }) as HTMLInputElement).checked).toBe(false);
+});
+it("reviews a selected passage before a separate answer POST", async () => {
+  answerEnabled = true; mount(); await submit(); await screen.findByText("Synthetic worker");
+  await screen.findByText("0 of 5 passages selected");
+  expect(paid()).toHaveLength(1);
+  fireEvent.click(screen.getByRole("checkbox", { name: "Use this passage for an answer" }));
+  await screen.findByText("1 of 5 passages selected");
+  expect((screen.getByRole("button", { name: "Generate cited answer" }) as HTMLButtonElement).disabled).toBe(true);
+  fireEvent.click(screen.getByRole("checkbox", { name: "Send this question and the selected passages to OpenAI for an answer" }));
+  fireEvent.click(screen.getByRole("button", { name: "Generate cited answer" }));
+  await screen.findByText("Synthetic grounded draft.");
+  expect(paid()).toHaveLength(2);
+  const body = JSON.parse(paid()[1].options.body as string);
+  expect(body.embedding_ids).toEqual([10]); expect(body.confirm_external_ai).toBe(true);
+  expect(body.request_id).toMatch(/^[a-f0-9]{32}$/);
+  expect((screen.getByRole("checkbox", { name: "Send this question and the selected passages to OpenAI for an answer" }) as HTMLInputElement).checked).toBe(false);
+});
+it("keeps the answer action disabled by default", async () => {
+  mount(); await submit(); await screen.findByText("Synthetic worker");
+  await screen.findByText("Answer generation is disabled on this server.");
+  fireEvent.click(screen.getByRole("checkbox", { name: "Use this passage for an answer" }));
+  expect((screen.getByRole("button", { name: "Generate cited answer" }) as HTMLButtonElement).disabled).toBe(true);
+  expect(paid()).toHaveLength(1);
 });
 it.each(["unindexed", "indexing", "disabled", "unavailable"])("does not send when %s", async mode => {
   state = mode; mount();

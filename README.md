@@ -258,6 +258,7 @@ Avoid introducing infrastructure purely to make the architecture look sophistica
 - `SEMANTIC_SEARCH.md` — Phase 3.2B1 scoped embedding comparison and usage accounting
 - `SEMANTIC_PRODUCT_PLAN.md` — approved optional Semantic implementation sequence after closing B1 tuning
 - `SEMANTIC_PRODUCT.md` — Semantic search UI/demo, pgvector setup, explicit indexing and worker verification
+- `ANSWER_SLICE.md` — selected-passage cited-answer demo, policy/cost boundary and verification
 
 The repository is the source of truth for the project. ChatGPT, Codex CLI, Antigravity CLI, and other coding agents should read the project documentation before making changes.
 

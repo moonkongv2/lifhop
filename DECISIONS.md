@@ -1443,3 +1443,24 @@ screen; navigating back or reloading preserves filters but never resends the pai
 query automatically. Local status refresh hides results after a revision change.
 Synthetic browser/HTTP demos test behavior only; actual retrieval quality remains
 subject to the separately approved fresh validation check.
+
+## 2026-10-13: Begin cited answers from user-selected current passages
+
+The first Phase 3.3 answer action follows the optional Semantic result screen.
+The owner selects one to five exact slices and separately consents to sending the
+question and those slice bodies to OpenAI. This makes the transmitted evidence
+visible before the paid action and avoids a second question embedding request.
+The server rechecks current owner/source/record policy, version and exact slice
+hash under the owner lock before dispatch and again before returning citations.
+Answer output cites only IDs from the submitted set; an insufficient result has
+no citation. The output remains a draft for human review, since structural
+validation cannot prove that a sentence is supported by its cited text.
+
+Use the existing Responses transport pattern, pinned GPT-4.1 mini snapshot,
+structured JSON output and shared usage ledger. One request permits one paid
+call with at most USD 0.01 reservation and 512 output tokens; retries are not
+automatic. `ANSWER_MODE=off` by default means an embedding configuration or an
+older transmission approval does not activate answer generation. The synthetic
+demo provides a mock response for browser checks. No new database or dependency
+is needed. Historical evidence, automatic context selection, retrospectives and
+real answer quality are separate later slices.
