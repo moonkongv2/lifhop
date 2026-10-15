@@ -1,8 +1,54 @@
 # lifhop Current Status
 
-Last updated: 2026-10-14
+Last updated: 2026-10-15
 
 ## Current product slice
+
+**2026-10-15 local answer diagnosis:** Saved anchor comparison places complete
+gold support at rank 6 for both holdout-03 and holdout-02, outside the pilot's
+top-three context (and outside top five). The product's manual passage selection
+does not impose that pilot rule. Synthetic checks reproduce schema-valid but
+parser-invalid citation/status/length combinations, plus incomplete/refused/
+malformed output. The actual holdout-02 rejected field remains unknown because
+its raw response was not retained. No provider request, DB write, model/prompt
+or ranking change was made. Next: align output instructions with parser rules
+and add body-free failure diagnostics, then separately review a sufficient-context
+answer check. Preserve the failed run; these inspected cases are diagnostic data,
+not fresh validation for tuning. Details: `ANSWER_SLICE.md` local diagnosis.
+
+**2026-10-15 actual answer pilot:** The owner approved the fixed three-question/
+nine-excerpt protocol, one run, at most three calls/USD 0.03. The run sent two
+questions/six excerpts, then stopped without retry: holdout-03 returned
+`insufficient` because its selected top-three snippets omit the location answer;
+holdout-02 returned `ANSWER_OUTPUT_INVALID` after valid usage settlement.
+holdout-10 was not sent. Both attempts are spent, totaling USD 0.000528; no
+uncertain charge remains. HTTP times were 3.862 and 2.405 seconds. The first
+abstention is appropriate for the sent context but does not satisfy the supported
+question's end-to-end target. The second response's raw output was not retained
+in this first run, so the rejected field cannot be diagnosed conclusively.
+The pilot did not pass; no model/ranking setting changed and normal answers stay
+off. New runner code prevents replay with an exclusive run marker and captures
+bounded private provider output for future explicitly approved runs. A temporary
+ledger-summary field-name error was corrected by a read-only ledger lookup;
+there was no retransmission. Private output: the approved preflight's `run/`.
+Next: inspect the selected-context gap and local validator diagnostics before
+proposing another bounded check; this completed authorization does not permit a
+second run. Actual unsupported/negative-case quality remains unverified.
+Checks: final backend suite 500 passed, including preflight and durable-run
+tests; both CLI help commands and whitespace checks passed. No frontend change.
+
+**Phase 3.3 answer-quality preparation:** A local-only preflight now freezes up
+to three reviewed questions and the top three saved Semantic hits per question,
+checks current exact source ranges and AI policy, and writes a private HTML
+transmission review plus a body-free protocol. The actual preview selects
+holdout-03/02/10: three questions, nine excerpts, one run, three-call/USD 0.03
+cap, conservative USD 0.006260 estimate. No new embedding, answer call, usage
+reservation or DB permission change occurred. Four synthetic preflight tests
+pass; the final full backend suite passed all 497 tests.
+The exact review remains private under the validation dataset's
+`answer-preflight/e2c9f60c69552f2a548b5876884a9c66f7e1ff0011f64fa74a742444b691b69d/`.
+This is the preparation checkpoint; the approved actual run and runner now
+supersede its pending-approval status. Criteria and results are in `ANSWER_SLICE.md`.
 
 **2026-10-14 Phase 3.3 local-passage answer extension:** Search → Passages now
 lets the owner choose one to five current content passages and request a cited
