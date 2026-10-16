@@ -42,7 +42,7 @@ def fake_answer(value):
     result = dict(status="supported", answer="[Synthetic] This answer cites the selected passage.",
                   citation_ids=[excerpts[0]["id"]])
     return dict(model=ANSWER_MODEL, status="completed",
-                output=[dict(type="message", content=[dict(type="output_text", text=json.dumps(result))])],
+                output=[dict(type="message", content=[dict(type="output_text", text=json.dumps(dict(result=result)))])],
                 usage=dict(input_tokens=10, output_tokens=10, total_tokens=20))
 
 

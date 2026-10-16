@@ -26,7 +26,7 @@ def response(value, *, status="supported", ids=None):
     data=dict(status=status, answer="Synthetic answer from the selected passage.",
         citation_ids=ids if ids is not None else ([excerpts[0]["id"]] if status=="supported" else []))
     return dict(model=MODEL,status="completed",output=[dict(type="message",content=[
-        dict(type="output_text",text=json.dumps(data))])],
+        dict(type="output_text",text=json.dumps(dict(result=data)))])],
         usage=dict(input_tokens=10,output_tokens=10,total_tokens=20))
 
 
@@ -206,3 +206,35 @@ def test_answer_excerpts_are_bounded_for_full_passages():
     assert upper<=16000 and len(json.loads(value["input"])["excerpts"][0]["text"])==2000
     with pytest.raises(EmbeddingError,match="ANSWER_INPUT_LIMIT"):
         payload("Synthetic question?",[dict(id=4,text="x"*2001)])
+
+
+def test_local_passage_insufficient_has_no_citations(answer_client):
+    client,headers,sender,vector_id,bind,_,_=answer_client
+    with Session(bind) as db:
+        passage_id=db.get(PassageEmbedding,vector_id).passage_id
+    sender.side_effect=lambda value:response(value,status="insufficient")
+    data=ask(vector_id)
+    data.pop("embedding_ids");data["passage_ids"]=[passage_id]
+    result=client.post("/answers",headers=headers,json=data)
+    assert result.status_code==200 and result.json()["status"]=="insufficient"
+    assert result.json()["citations"]==[] and sender.call_count==1
+
+
+@pytest.mark.parametrize('kind',['embedding','passage'])
+def test_inconsistent_insufficient_output_stays_rejected_and_spent(answer_client,kind):
+    client,headers,sender,vector_id,bind,owner,_=answer_client
+    data=ask(vector_id)
+    if kind=='passage':
+        with Session(bind) as db:
+            passage_id=db.get(PassageEmbedding,vector_id).passage_id
+        data.pop('embedding_ids');data['passage_ids']=[passage_id]
+    sender.side_effect=lambda value:response(value,status='insufficient',
+        ids=[json.loads(value['input'])['excerpts'][0]['id']])
+    result=client.post('/answers',headers=headers,json=data)
+    assert result.status_code==503 and result.json()==dict(detail='ANSWER_OUTPUT_INVALID')
+    with Session(bind) as db:
+        row=db.scalar(select(AiUsageAttempt).where(AiUsageAttempt.owner_id==owner,
+            AiUsageAttempt.purpose=='answer'))
+        assert row.status=='spent' and row.spent_micro_usd>0
+    assert client.post('/answers',headers=headers,json=data).status_code==409
+    assert sender.call_count==1

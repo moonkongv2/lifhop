@@ -1,11 +1,12 @@
 """One consented answer call; selected slices are rechecked under the owner lock."""
 import asyncio
+import logging
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from app.models.ai_usage import AiUsageAttempt
 from app.services.ai_usage import call_slot, reserve, settle
 from app.services.ai_policy import embedding_inputs
-from app.services.answer_transport import payload, request, usage, parse
+from app.services.answer_transport import payload, request, usage, parse, AnswerOutputError, AnswerProviderError
 from app.services.embedding_transport import EmbeddingError
 
 
@@ -45,12 +46,22 @@ def answer(engine, settings, *, owner_id, request_id, question, anchors, revisio
                 db.rollback()
                 settle(db,attempt,status="spent",input_tokens=tokens[0],output_tokens=tokens[1])
                 db.commit()
-                return parse(raw,{a["reference_id"] for a in anchors})
-            except BaseException:
+                try:
+                    return parse(raw,{a["reference_id"] for a in anchors})
+                except AnswerOutputError as error:
+                    logging.getLogger(__name__).warning("answer_output_rejected",
+                        extra={"run_id":request_id, "reason":error.reason})
+                    raise
+            except BaseException as error:
                 db.rollback()
                 # Output validation can fail after a valid usage settlement.
                 if db.get(AiUsageAttempt,attempt).status != "spent":
                     settle(db,attempt,status="uncertain" if sent else "released",
                         error_code="DISPATCH_FAILED" if sent else "PRE_SEND_BLOCKED")
                     db.commit()
+                if isinstance(error, AnswerProviderError):
+                    logging.getLogger(__name__).warning(
+                        "answer_provider_rejected run_id=%s http_status=%s error_type=%s error_code=%s error_param=%s",
+                        request_id, error.http_status, error.error_type, error.error_code, error.error_param,
+                        extra={"run_id":request_id, "provider":error.diagnostic()})
                 raise
