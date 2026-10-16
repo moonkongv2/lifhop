@@ -1,8 +1,117 @@
 # lifhop Current Status
 
-Last updated: 2026-10-15
+Last updated: 2026-10-16
 
 ## Current product slice
+
+**2026-10-16 commit/preflight checkpoint:** Core output-contract and safe-provider
+diagnostics are committed as `b3f76ac`; explicit evidence-selection/capture tooling,
+synthetic tests and run history form a separate tooling checkpoint. A new diagnostic
+preview is ready for holdout-10 with the same three excerpts and unchanged model/
+schema, now acknowledging the last closed provider-rejection run. Protocol:
+`d51d005ac86f7f251df0787a706de8320c3f5cd72fc6300b6ac85d2905fb4e73`.
+Its `review-complete.html` is under the private validation answer-preflight tree.
+Estimate USD 0.002267, one call/USD 0.01, no retry. The agent has checked input
+scope and privacy locally. No new provider dispatch or usage reservation occurred;
+the earlier uncertain USD 0.002267 remains untouched. Next: obtain separate
+approval for this exact new protocol before any real request. This next check
+either confirms insufficient/empty-citation output or preserves safe upstream
+error metadata; it does not establish independent retrieval quality.
+
+**2026-10-16 safe provider-rejection diagnostics:** Non-200 answer responses now
+retain HTTP status plus allowlisted error type/code/parameter. Error bodies are
+read only within 8 KiB and two seconds; invalid JSON, HTML, oversized bodies and
+read failures retain status alone. Raw upstream messages/headers and unknown
+field values are discarded. The public API still returns only
+`ANSWER_PROVIDER_REJECTED`; readable local logs and private pilot rejection
+sidecars expose the sanitized metadata. Pilot reports verify the sidecar run ID
+and safe fields before joining them. Sidecar-write failure preserves the
+original API error. Provider rejection keeps conservative uncertain usage and
+one-call replay protection; no model, prompt/schema, policy or ledger migration
+change was made. No real provider request occurred. The earlier USD 0.002267
+uncertain reservation and closed run markers remain untouched; its lost rejection
+cannot be reconstructed. Next: commit the coherent local changes, then decide
+whether a separately approved minimal provider check is needed. User repetition
+of mock/ledger/privacy verification is unnecessary. Actual provider acceptance
+and the prior real rejection's precise cause remain unverified.
+
+**2026-10-16 approved one-call contract check, closed:** The owner approved
+protocol `8954d9ec5080887d68301b84be1dc5adbe2859680f066f432ccd5e8d7b08492e`
+(one question/three excerpts, at most one call/USD 0.01). Current preflight was
+identical to the reviewed protocol. The single dispatch returned lifhop HTTP 503
+`ANSWER_PROVIDER_REJECTED` after 0.707s, with no answer. No retry occurred.
+The transport discarded the upstream rejection's status/error body, so the
+precise reason cannot be established. Do not assume schema incompatibility,
+model unavailability or a billing issue from this generic code. Actual schema
+acceptance and insufficient-answer behavior remain unmeasured.
+The ledger retains one uncertain attempt with USD 0.002267 reserved, USD 0
+settled; actual billing is unknown. Preserve the reservation until authenticated
+reconciliation. The run marker/approval, HTTP result, ledger and private assessment
+are retained under the protocol's `run/`; `results-review.html` needs no server.
+Next: add safe upstream-rejection diagnostics and verify them synthetically before
+proposing another paid request. No code/model/ranking/permission change occurred
+in this execution; prior implementation checks remain 538 backend tests passed.
+All three answer runs are closed. Further paid attempts need separate approval.
+
+**2026-10-16 structural answer output contract:** Provider output now wraps a
+`result` object with a nested `anyOf`: supported requires 1–5 citations;
+insufficient requires zero. The parser unwraps the result into the existing
+public API shape and still rejects invalid IDs, duplicates, malformed output
+and overlong/empty answers. This uses the official Structured Outputs subset
+(object root, nested union and array size bounds). The pinned model is unchanged.
+Synthetic fixtures and the preview provider use the new format. The config hash
+changed, so completed protocols cannot authorize new dispatches. Prior raw
+responses stay in their original format and are not rewritten or accepted by the
+new parser. No paid request, embedding or policy change was made in this slice.
+Agent local checks include both API evidence kinds and spent-cost/replay behavior;
+no owner repetition of those checks is needed. A new private preview is limited to
+holdout-10 and its three previously selected snippets; estimate USD 0.002267,
+ceiling one call/USD 0.01. Protocol:
+`8954d9ec5080887d68301b84be1dc5adbe2859680f066f432ccd5e8d7b08492e`.
+Next: separately approve this minimal real contract check if desired. API schema
+acceptance for the pinned snapshot and real-model behavior remain unmeasured;
+local tests do not establish them. Both earlier answer runs remain closed.
+
+**2026-10-16 approved selected-context diagnostic, closed:** Protocol
+`ddfd55c3054e58123361d80b0b65bba9c22f68439a714cfae2b05995097d11b1`
+sent the approved three questions/five excerpts in three answer calls. The agent
+checked both supported answers against returned citations and registered claims:
+holdout-03 and holdout-02 pass (HTTP 200; slices 34 and 187). holdout-10 correctly
+said the excerpts lack composer information, but returned citation IDs with
+`insufficient`; strict parsing rejected it (HTTP 503,
+`status_citation_mismatch`). Raw capture now confirms this precise cause for this
+new attempt; the previous pilot's lost response remains undiagnosed.
+The overall gate failed, the run is closed, and no retry occurred. All three
+attempts are spent, totaling USD 0.000726; none is uncertain. HTTP times were
+3.420/1.238/1.113 seconds. This demonstrates two known-context answers, not
+automatic retrieval quality. Agent evidence checks are complete; owner review
+is optional via the new protocol's `run/results-review.html`.
+Next: plan a structural output-contract improvement for insufficient/citation
+consistency; avoid repeated prompt-only paid attempts. Normal answers remain
+off. No implementation/model/ranking change or new test run in this execution;
+the prior local implementation passed 532 backend tests. All changes remain
+uncommitted, with diagnostics and explicit-selection tooling as recommended units.
+
+**2026-10-15 selected-context answer reliability:** Answer instructions now spell
+out empty citations for insufficient output, distinct supplied IDs for supported
+output and the 1,500-character answer limit. Strict parsing reports bounded
+reason codes through local structured logs while the public error stays
+`ANSWER_OUTPUT_INVALID`. Approved pilot tooling stores private raw responses and
+safe reason sidecars; capture-write failure preserves conservative accounting,
+and diagnostic-write failure preserves the original settled rejection.
+Explicit manifests freeze one-to-five saved slice IDs per case, their order,
+current hashes/policy, changed prompt configuration and acknowledgement of the
+closed prior protocol. Case-count/order checks and durable markers prevent
+automatic restart; reports identify unsent cases. No new provider call, embedding,
+DB write or policy change occurred. A new private preview has three questions and
+five excerpts (supporting slices 34/187 and the negative case's saved top three),
+estimate USD 0.005896, hard ceiling three calls/USD 0.03. Protocol:
+`ddfd55c3054e58123361d80b0b65bba9c22f68439a714cfae2b05995097d11b1`.
+Review `review-complete.html` in its private answer-preflight directory. It shows
+required claims and pass criteria; these are never part of provider input.
+Next: owner preview review, then separate exact-protocol transmission approval.
+This known-context diagnostic will not establish automatic retrieval quality.
+Implementation plan: `ANSWER_RELIABILITY_PLAN.md`; final checks: `ANSWER_SLICE.md`.
 
 **2026-10-15 local answer diagnosis:** Saved anchor comparison places complete
 gold support at rank 6 for both holdout-03 and holdout-02, outside the pilot's

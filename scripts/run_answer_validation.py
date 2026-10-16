@@ -1,6 +1,5 @@
 """Execute one explicitly approved fixed answer protocol through the product API."""
 import argparse
-import asyncio
 from getpass import getpass
 import hashlib
 from pathlib import Path
@@ -14,12 +13,10 @@ from app.main import app
 from app.models.ai_usage import AiUsageAttempt
 from app.security import create_access_token
 from app.evaluation.answer_preflight import prepare_answers
-from app.evaluation.answer_run import run_answers
+from app.evaluation.answer_run import run_answers, capturing_answer
 from app.evaluation.retrieval import readonly_snapshot
 from app.evaluation.schemas import EvaluationError, digest
 from app.evaluation.storage import PRIVATE_ROOT, load_dataset, read_private, write_private
-from app.services.answer_call import answer as paid_answer
-from app.services.answer_transport import request
 import app.api.answers as api
 
 
@@ -30,6 +27,7 @@ def main(argv=None):
     parser.add_argument("--capture-dir", type=Path, required=True)
     parser.add_argument("--protocol", type=Path, required=True)
     parser.add_argument("--approve-digest", required=True)
+    parser.add_argument("--closed-protocol", help="Explicit acknowledgement of the closed prior pilot")
     args = parser.parse_args(argv)
     original_settings, original_answer = api.settings, api.answer
     try:
@@ -39,8 +37,13 @@ def main(argv=None):
         root = PRIVATE_ROOT.parent / "verification"
         captures = {i:read_private(args.capture_dir / f"{i}.json",root) for i in ids}
         binding = read_private(args.capture_dir.parent / "approval.json",root)
+        selection = frozen.get("selection_manifest")
+        if frozen.get("selection") == "selected-manifest":
+            if args.closed_protocol != frozen.get("closed_protocol"):
+                raise EvaluationError("ANSWER_VALIDATION_CLOSED_PROTOCOL_REQUIRED")
         with readonly_snapshot(engine,args.email,getpass("Local lifhop password: ")) as snapshot:
-            protocol,review = prepare_answers(snapshot,dataset,captures,ids,settings,capture_binding=binding)
+            protocol,review = prepare_answers(snapshot,dataset,captures,ids,settings,capture_binding=binding,
+                selection=selection,closed_protocol=args.closed_protocol)
         if protocol != frozen or args.approve_digest != protocol["digest"]:
             raise EvaluationError("ANSWER_VALIDATION_APPROVAL_INVALID")
         output = args.protocol.parent / "run"
@@ -50,13 +53,7 @@ def main(argv=None):
             run_id = hashlib.sha256(f'answer-v1:{dataset.owner_id}:{request_id}'.encode()).hexdigest()[:32]
             case_runs[run_id] = i
         runtime = settings.model_copy(update={"answer_mode":"openai"})
-        def captured_answer(*a, **kw):
-            def transport(value):
-                raw = asyncio.run(request(value,runtime.openai_api_key.get_secret_value()))
-                # Private bounded output enables diagnosis after validation rejects it.
-                write_private(output / (case_runs[kw["request_id"]] + "-provider.json"),raw,root=PRIVATE_ROOT)
-                return raw
-            return paid_answer(*a,**kw,transport=transport)
+        captured_answer = capturing_answer(runtime, output, case_runs)
         api.settings, api.answer = runtime, captured_answer
         with TestClient(app) as client:
             client.headers["Authorization"] = "Bearer " + create_access_token(dataset.owner_id)

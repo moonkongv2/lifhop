@@ -18,14 +18,18 @@ def main(argv=None):
     parser.add_argument("--set", type=Path, required=True)
     parser.add_argument("--capture-dir", type=Path, required=True)
     parser.add_argument("--cases", nargs="+", required=True)
+    parser.add_argument("--selection", type=Path, help="Private ordered case-to-slice-ID manifest")
+    parser.add_argument("--closed-protocol", help="Digest of the closed previous pilot")
     args = parser.parse_args(argv)
     try:
         dataset = load_dataset(args.set)
         binding = read_private(args.capture_dir.parent / "approval.json", PRIVATE_ROOT.parent / "verification")
         captures = {case_id: read_private(args.capture_dir / f"{case_id}.json",
             PRIVATE_ROOT.parent / "verification") for case_id in args.cases}
+        selection = read_private(args.selection, PRIVATE_ROOT) if args.selection else None
         with readonly_snapshot(engine, args.email, getpass("Local lifhop password: ")) as snapshot:
-            protocol, review = prepare_answers(snapshot, dataset, captures, args.cases, settings, capture_binding=binding)
+            protocol, review = prepare_answers(snapshot, dataset, captures, args.cases, settings, capture_binding=binding,
+                selection=selection, closed_protocol=args.closed_protocol)
         directory = args.set / "answer-preflight" / protocol["digest"]
         for name, value in [("protocol.json", protocol), ("review.html", review_html(protocol, review))]:
             path = directory / name
