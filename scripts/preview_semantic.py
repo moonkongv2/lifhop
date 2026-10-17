@@ -1,6 +1,7 @@
 """Disposable Semantic demo: isolated test schema, synthetic records, mock OpenAI."""
 import argparse
 import json
+from datetime import datetime, timezone
 from types import SimpleNamespace
 from uuid import uuid4
 from pathlib import Path
@@ -41,6 +42,11 @@ def fake_answer(value):
     excerpts = json.loads(value["input"])["excerpts"]
     result = dict(status="supported", answer="[Synthetic] This answer cites the selected passage.",
                   citation_ids=[excerpts[0]["id"]])
+    if 'newline-separated items' in value['instructions']:
+        def summary(item):
+            category = 'Proposal' if 'proposal' in item['text'].lower() else 'Completed work' if 'completed' in item['text'].lower() else 'Recorded activity'
+            return f'[{item["id"]}] {category}: [Synthetic] {item["text"]}'
+        result.update(answer='\n'.join(summary(item) for item in excerpts), citation_ids=[item['id'] for item in excerpts])
     return dict(model=ANSWER_MODEL, status="completed",
                 output=[dict(type="message", content=[dict(type="output_text", text=json.dumps(dict(result=result)))])],
                 usage=dict(input_tokens=10, output_tokens=10, total_tokens=20))
@@ -82,10 +88,13 @@ def main(argv=None):
             db.flush()
             assert db.scalar(text("SELECT current_schema()")) == schema
             source_policy(db, user.id, "manual").external_ai_allowed = True
-            for title, body in [("[Synthetic] Worker location", "The import worker runs on the deployment server, separately from the API."),
-                    ("[Synthetic] Backup procedure", "The backup is stored privately and restored in a separate database.")]:
+            for day, (title, body) in enumerate([("[Synthetic] Worker location", "The import worker runs on the deployment server, separately from the API."),
+                    ("[Synthetic] Backup procedure", "The backup is stored privately and restored in a separate database."),
+                    ("[Synthetic] Backup proposal", "Proposal: add a scheduled backup check. This has not been implemented."),
+                    ("[Synthetic] Recorded completion", "Completed work recorded in this synthetic fixture: a disposable backup restore was checked.")], 10):
                 entry = Entry(user_id=user.id, provider="manual", type=EntryType.NOTE,
-                    title=title, content=body, external_ai_allowed=True)
+                    title=title, content=body, external_ai_allowed=True,
+                    event_at=datetime(2026, 1, day, 3, tzinfo=timezone.utc))
                 db.add(entry)
                 select_version(db, entry, record_version(db, entry))
             manifest = prepare_indexing(db, owner_id=user.id, provider="manual", scope="default")

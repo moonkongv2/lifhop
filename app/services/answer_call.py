@@ -8,10 +8,24 @@ from app.services.ai_usage import call_slot, reserve, settle
 from app.services.ai_policy import embedding_inputs
 from app.services.answer_transport import payload, request, usage, parse, AnswerOutputError, AnswerProviderError
 from app.services.embedding_transport import EmbeddingError
+from app.services.passage_search import read_passage
+
+
+def answer_excerpts(db, owner_id, anchors, texts, retrospective):
+    excerpts = []
+    for a, value in zip(anchors, texts):
+        item = dict(id=a["reference_id"], text=value)
+        if retrospective:
+            p = read_passage(db, owner_id, a["id"])
+            item.update(event_at=p.event_at.isoformat() if p.event_at else None,
+                added_at=p.created_at.isoformat(), completeness=p.completeness,
+                source=p.source, source_kind=p.repository_ref.kind if p.repository_ref else p.source)
+        excerpts.append(item)
+    return excerpts
 
 
 def answer(engine, settings, *, owner_id, request_id, question, anchors, revision,
-           confirm_external_ai=False, transport=None):
+           confirm_external_ai=False, transport=None, retrospective=False):
     if confirm_external_ai is not True:
         raise EmbeddingError("ANSWER_CONSENT_REQUIRED")
     if settings.answer_mode != "openai" or settings.embedding_monthly_limit_micro_usd == 0:
@@ -25,7 +39,7 @@ def answer(engine, settings, *, owner_id, request_id, question, anchors, revisio
             db.execute(text("SET LOCAL lock_timeout = '2s'"))
             db.execute(text("SET LOCAL statement_timeout = '5s'"))
             texts=embedding_inputs(db,user_id=owner_id,passages=anchors,revision=revision)
-            value,upper=payload(question,[dict(id=a["reference_id"],text=t) for a,t in zip(anchors,texts)])
+            value,upper=payload(question,answer_excerpts(db,owner_id,anchors,texts,retrospective), retrospective=retrospective)
             db.rollback()
             attempt=reserve(db,scope=settings.embedding_billing_scope,owner_id=owner_id,
                 run_id=request_id,purpose="answer",upper=upper,
@@ -37,7 +51,7 @@ def answer(engine, settings, *, owner_id, request_id, question, anchors, revisio
                 db.execute(text("SET LOCAL lock_timeout = '2s'"))
                 db.execute(text("SET LOCAL statement_timeout = '5s'"))
                 checked=embedding_inputs(db,user_id=owner_id,passages=anchors,revision=revision)
-                checked_value,_=payload(question,[dict(id=a["reference_id"],text=t) for a,t in zip(anchors,checked)])
+                checked_value,_=payload(question,answer_excerpts(db,owner_id,anchors,checked,retrospective), retrospective=retrospective)
                 if checked_value!=value:
                     raise EmbeddingError("ANSWER_CONTEXT_CHANGED")
                 sent=True
@@ -47,7 +61,7 @@ def answer(engine, settings, *, owner_id, request_id, question, anchors, revisio
                 settle(db,attempt,status="spent",input_tokens=tokens[0],output_tokens=tokens[1])
                 db.commit()
                 try:
-                    return parse(raw,{a["reference_id"] for a in anchors})
+                    return parse(raw,{a["reference_id"] for a in anchors}, retrospective=retrospective)
                 except AnswerOutputError as error:
                     logging.getLogger(__name__).warning("answer_output_rejected",
                         extra={"run_id":request_id, "reason":error.reason})

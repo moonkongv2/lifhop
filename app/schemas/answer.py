@@ -10,6 +10,7 @@ class AnswerRequest(BaseModel):
     passage_ids: list[int] | None = Field(default=None, min_length=1, max_length=5)
     confirm_external_ai: bool = False
     policy_revision: int | None = Field(default=None, strict=True, ge=0)
+    retrospective: bool = False
     model_config = ConfigDict(extra="forbid")
 
     @model_validator(mode="after")

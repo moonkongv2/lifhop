@@ -4,6 +4,29 @@ Last updated: 2026-10-17
 
 ## Current product slice
 
+**2026-10-17 bounded period retrospective implemented:** Search offers **Period
+retrospective** for up to 92 days, defaulting to source/event dates with an Added
+date option. Local preview counts scope/AI eligibility/current body coverage,
+groups repeated document parents and samples across time (at most twenty
+candidates, five complete first-body Passages within the actual request limit).
+Unknown event dates, unindexed/partial records, omitted sections and byte skips
+remain visible. It always labels the view partial and uses current retained
+versions, without reconstructing past state. One consented summary call reuses
+the existing answer ledger/caps; no query embedding or index change is needed.
+The preview digest binds current scope/owner/revision/anchors/dates/config and
+is recomputed before dispatch. Date/source metadata is checked again by the
+common caller. Every supported item requires an allowed source marker and a
+category; plans/commits alone must not be presented as proof of completion.
+Format is mechanically checked; factual support/classification still require
+review. Existing normal answer payloads retain their behavior; the configuration
+hash includes the new retrospective contract. No migration/dependency/activation
+change. Full backend 613 passed, frontend 162 passed, lint/build and generated
+OpenAPI types passed. Synthetic Chromium checked one mocked summary, per-item
+citations, date-basis changes and return/reload without replay. Actual OpenAI
+calls: zero. Owner authorized the commit checkpoint; owner usability and real
+model quality remain unverified. See RETROSPECTIVES.md. The synthetic demo now has four dated
+records, including an explicit proposal and recorded completion.
+
 **2026-10-17 unified question flow implemented:** Search now offers **Answer with
 sources**. After reviewing question/filters and one combined consent, **Ask from
 my records** runs existing Semantic retrieval → local parent recommendation →
@@ -1015,10 +1038,12 @@ user-verifiable product slices in `ROADMAP.md`.
 
 ## Next
 
-1. Plan bounded Phase 3.3 date-range retrospectives with cited events/decisions,
-   source-event time separated from collection time, proposals separated from
-   completed work, and explicit coverage gaps. The unified question flow is the
-   completed implementation checkpoint; owner usability feedback remains welcome.
+1. Scope a Phase 3.3 citation freshness checkpoint: distinguish cited versions
+   from updated, deleted or unavailable originals without silently replacing the
+   evidence. Then scope historical-version selection and a small cross-source
+   acceptance check. Owner usability review of the retrospective remains pending.
+   Current retained-version samples do not establish historical
+   reconstruction or general real-answer quality. Do not mark Phase 3.3 complete.
    Paid tuning is stopped; no further OpenAI calls or
    reindexing are authorized by these implementation checks. Preserve all closed
    evaluation protocols, failures and uncertain reservations. Broader quality

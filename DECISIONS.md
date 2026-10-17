@@ -1551,3 +1551,28 @@ reservations remain. Manual evidence review is optional advanced UI; ordinary
 answers show citations and expandable original context. Models/indexing and
 off-by-default activation are unchanged. This implementation authorizes no new
 paid provider experiment or personal-data transmission.
+
+## 2026-10-17: Start period retrospectives with bounded local temporal sampling
+
+Use a local, owner-scoped date preview rather than a similarity query for the
+first period summary. Source/event dates are the default; Added dates explicitly
+mean collection time. Require a range of at most 92 days in Asia/Seoul. Keep one
+first eligible body Passage per record, group verified identical document parents,
+sample at most twenty positions across chronological rank and select at most five
+complete parents within the existing serialized answer limit. Display counts and
+all scope/coverage limitations; never describe this sample as the whole period.
+Current retained versions are used initially; historical reconstruction is deferred.
+
+Bind the reviewed scope, counts, owner/revision, exact source versions/ranges/
+hashes/date metadata and configuration in a body-free preview digest; recompute
+under the existing shared read lock/search deadline before dispatch. Reuse one
+existing answer call/USD 0.01 and its conservative ledger; no query embedding,
+new purpose, table, dependency or worker is needed. Add retrospective instructions
+and per-item source/category validation to the common transport, with date/source
+metadata rechecked under the dispatch lock. Include the task contract in the
+configuration hash, preserving historical attempt prices and closed protocols.
+Every supported line must cite an allowed source and use a fixed category. Format
+validation does not establish factual grounding or prove a Completed work label.
+Stop/scope/account/revision changes reject stale output, and no automatic retry
+repairs an invalid paid response. Synthetic verification grants no new real-provider
+transmission or change to application AI permissions.

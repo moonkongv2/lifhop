@@ -18,6 +18,7 @@ from app.api.passages import router as passages_router
 from app.api.indexing import router as indexing_router
 from app.api.semantic import router as semantic_router
 from app.api.answers import router as answers_router
+from app.api.retrospectives import router as retrospectives_router
 
 app = FastAPI(title="Lifhop")
 app.add_middleware(ImportUploadLimit)
@@ -37,6 +38,7 @@ app.include_router(passages_router)
 app.include_router(indexing_router)
 app.include_router(semantic_router)
 app.include_router(answers_router)
+app.include_router(retrospectives_router)
 
 @app.get("/health")
 def health() -> dict[str, str]:

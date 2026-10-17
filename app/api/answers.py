@@ -82,7 +82,8 @@ def create(data: AnswerRequest, db: DB, owner: Owner):
         db.rollback()
         run_id=hashlib.sha256(f"answer-v1:{owner_id}:{data.request_id}".encode()).hexdigest()[:32]
         result=answer(engine,settings,owner_id=owner_id,request_id=run_id,question=data.q,
-            anchors=anchors,revision=revision,confirm_external_ai=True)
+            anchors=anchors,revision=revision,confirm_external_ai=True,
+            **(dict(retrospective=True) if data.retrospective else {}))
         with search_budget(db):
             try:
                 embedding_inputs(db,user_id=owner_id,passages=anchors,revision=revision)

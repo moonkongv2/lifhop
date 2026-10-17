@@ -1029,6 +1029,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/retrospectives/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Review */
+        get: operations["review_retrospectives_preview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/retrospectives": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create */
+        post: operations["create_retrospectives_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -1078,6 +1112,11 @@ export interface components {
             confirm_external_ai: boolean;
             /** Policy Revision */
             policy_revision?: number | null;
+            /**
+             * Retrospective
+             * @default false
+             */
+            retrospective: boolean;
         };
         /** AnswerResponse */
         AnswerResponse: {
@@ -2869,6 +2908,100 @@ export interface components {
         RefreshRequest: {
             /** Refresh Token */
             refresh_token: string;
+        };
+        /** RetrospectivePreview */
+        RetrospectivePreview: {
+            scope: components["schemas"]["RetrospectiveScope"];
+            /** Policy Revision */
+            policy_revision: number;
+            /** Preview Digest */
+            preview_digest: string;
+            /** Matched Records */
+            matched_records: number;
+            /** Allowed Records */
+            allowed_records: number;
+            /** Ready Records */
+            ready_records: number;
+            /** Unique Records */
+            unique_records: number;
+            /** Candidate Records */
+            candidate_records: number;
+            /** Selected Records */
+            selected_records: number;
+            /** Byte Skipped */
+            byte_skipped: number;
+            /** Missing Event Dates */
+            missing_event_dates: number;
+            /** Incomplete Selected */
+            incomplete_selected: number;
+            /** Passages */
+            passages: components["schemas"]["PassageResponse"][];
+            /**
+             * Partial
+             * @default true
+             */
+            partial: boolean;
+            /**
+             * Timezone
+             * @default Asia/Seoul
+             */
+            timezone: string;
+        };
+        /** RetrospectiveRequest */
+        RetrospectiveRequest: {
+            /**
+             * Date From
+             * Format: date
+             */
+            date_from: string;
+            /**
+             * Date To
+             * Format: date
+             */
+            date_to: string;
+            /**
+             * Date Field
+             * @default event_at
+             * @enum {string}
+             */
+            date_field: "created_at" | "event_at";
+            source?: components["schemas"]["EntrySource"] | null;
+            type?: components["schemas"]["EntryType"] | null;
+            /** Preview Digest */
+            preview_digest: string;
+            /** Request Id */
+            request_id: string;
+            /**
+             * Confirm External Ai
+             * @default false
+             */
+            confirm_external_ai: boolean;
+        };
+        /** RetrospectiveResult */
+        RetrospectiveResult: {
+            preview: components["schemas"]["RetrospectivePreview"];
+            answer: components["schemas"]["AnswerResponse"];
+        };
+        /** RetrospectiveScope */
+        RetrospectiveScope: {
+            /**
+             * Date From
+             * Format: date
+             */
+            date_from: string;
+            /**
+             * Date To
+             * Format: date
+             */
+            date_to: string;
+            /**
+             * Date Field
+             * @default event_at
+             * @enum {string}
+             */
+            date_field: "created_at" | "event_at";
+            source?: components["schemas"]["EntrySource"] | null;
+            type?: components["schemas"]["EntryType"] | null;
         };
         /** RunCreate */
         RunCreate: {
@@ -5330,6 +5463,74 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AnswerResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    review_retrospectives_preview_get: {
+        parameters: {
+            query: {
+                date_from: string;
+                date_to: string;
+                date_field?: "created_at" | "event_at";
+                source?: components["schemas"]["EntrySource"] | null;
+                type?: components["schemas"]["EntryType"] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RetrospectivePreview"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_retrospectives_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RetrospectiveRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RetrospectiveResult"];
                 };
             };
             /** @description Validation Error */
