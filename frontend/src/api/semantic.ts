@@ -42,11 +42,11 @@ export function semanticFilters(params: URLSearchParams) {
   return query;
 }
 export const fetchSemanticStatus = (params: URLSearchParams, signal?: AbortSignal) => request<SemanticCoverage>(`/status?${semanticFilters(params)}`, signal);
-export function searchSemantic(params: URLSearchParams, signal?: AbortSignal) {
+export function searchSemantic(params: URLSearchParams, signal?: AbortSignal, requestId?: string) {
   const filters: Record<string, string> = {};
   semanticFilters(params).forEach((value, key) => { filters[key] = value; });
   return request<SemanticResponse>("/search", signal, { ...filters,
-    q: params.get("q") ?? "", request_id: crypto.randomUUID().replaceAll("-", ""), confirm_external_ai: true });
+    q: params.get("q") ?? "", request_id: requestId ?? crypto.randomUUID().replaceAll("-", ""), confirm_external_ai: true });
 }
 export const fetchSemanticSlice = (id: string, signal?: AbortSignal) => request<Passage>(`/slices/${encodeURIComponent(id)}`, signal);
 export function fetchSemanticLocations(id: number, params: URLSearchParams, offset: number, signal?: AbortSignal) {

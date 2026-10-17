@@ -5,7 +5,7 @@ import DateInput from "./DateInput";
 import { validDate } from "../utils/dates";
 import Icon from "./Icon";
 
-export default function EntrySearchForm({ params, onApply }: { params: URLSearchParams; onApply: (params: URLSearchParams) => void }) {
+export default function EntrySearchForm({ params, onApply, onDraftChange }: { params: URLSearchParams; onApply: (params: URLSearchParams) => void; onDraftChange?: () => void }) {
   const [q, setQ] = useState(params.get("q") ?? "");
   const [source, setSource] = useState(params.get("source") ?? "");
   const [sourceState, setSourceState] = useState(params.get("source_state") ?? "");
@@ -15,7 +15,7 @@ export default function EntrySearchForm({ params, onApply }: { params: URLSearch
   const [to, setTo] = useState(params.get("date_to") ?? "");
   const [validation, setValidation] = useState("");
   const [includeWork, setIncludeWork] = useState(params.get("include_work_commentary") === "true");
-  const [mode, setMode] = useState(["passages", "semantic"].includes(params.get("mode") ?? "") ? params.get("mode")! : "exact");
+  const [mode, setMode] = useState(["passages", "semantic", "answer"].includes(params.get("mode") ?? "") ? params.get("mode")! : "exact");
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -27,19 +27,20 @@ export default function EntrySearchForm({ params, onApply }: { params: URLSearch
     for (const [key, value] of Object.entries({ q: q.trim(), source, source_state: sourceState, type, date_field: dateField, date_from: from, date_to: to })) {
       if (value && !(key === "date_field" && value === "created_at")) next.set(key, value);
     }
-    if (includeWork && mode !== "semantic") next.set("include_work_commentary", "true");
+    if (includeWork && !["semantic", "answer"].includes(mode)) next.set("include_work_commentary", "true");
     if (mode !== "exact") next.set("mode", mode);
     onApply(next);
   }
 
   const activeFilters = [source, sourceState, type, dateField === "event_at" ? dateField : "", from, to].filter(Boolean).length;
   return (
-    <form noValidate className="search-form panel" onSubmit={submit}>
-      <label>Search mode<select aria-label="Search mode" value={mode} onChange={e => setMode(e.target.value)}><option value="exact">Exact phrase</option><option value="passages">Passages</option><option value="semantic">Semantic</option></select></label>
+    <form noValidate className="search-form panel" onSubmit={submit} onChange={onDraftChange}>
+      <label>Search mode<select aria-label="Search mode" value={mode} onChange={e => setMode(e.target.value)}><option value="exact">Exact phrase</option><option value="passages">Passages</option><option value="semantic">Semantic</option><option value="answer">Answer with sources</option></select></label>
       {mode === "passages" && <p className="help-text">Find related words in original passages. Translation and AI answers are not available yet.</p>}
       {mode === "semantic" && <p className="help-text">Find passages by meaning. Review index availability first, then explicitly approve a paid question request.</p>}
+      {mode === "answer" && <p className="help-text">Ask a question and receive a draft with original sources. Review the filters and transmission consent before running.</p>}
       <label htmlFor="search-q">Search query</label>
-      <div className="search-query-row"><input id="search-q" value={q} maxLength={256} onChange={(event) => setQ(event.target.value)} placeholder="Search titles and content for phrases, names, numbers, or code" /><button className="primary" type="submit"><Icon name="search" />{mode === "semantic" ? "Review index" : "Search"}</button></div>
+      <div className="search-query-row"><input id="search-q" value={q} maxLength={256} onChange={(event) => setQ(event.target.value)} placeholder="Search titles and content for phrases, names, numbers, or code" /><button className="primary" type="submit"><Icon name="search" />{mode === "answer" ? "Review question" : mode === "semantic" ? "Review index" : "Search"}</button></div>
       <details className="search-filter-details" open={activeFilters > 0}>
         <summary>Filters{activeFilters > 0 ? ` · ${activeFilters} active` : ""}</summary>
         <div className="search-filters">
@@ -63,7 +64,7 @@ export default function EntrySearchForm({ params, onApply }: { params: URLSearch
         </div>
         <p className="help-text">Date ranges use Asia/Seoul and include the end date. Records without a source/event date are excluded when filtering by that date.</p>
       </details>
-      {mode !== "semantic" && <label className="work-search-option"><input type="checkbox" checked={includeWork} onChange={event => setIncludeWork(event.target.checked)} />{mode === "passages" ? "Include Codex commands, results, diffs and commentary" : "Include work commentary from Codex"}</label>}
+      {!["semantic", "answer"].includes(mode) && <label className="work-search-option"><input type="checkbox" checked={includeWork} onChange={event => setIncludeWork(event.target.checked)} />{mode === "passages" ? "Include Codex commands, results, diffs and commentary" : "Include work commentary from Codex"}</label>}
       <button className="search-reset" type="button" onClick={() => onApply(new URLSearchParams())}>Reset</button>
       {validation && <p role="alert">{validation}</p>}
     </form>

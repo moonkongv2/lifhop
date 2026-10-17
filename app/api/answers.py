@@ -42,7 +42,8 @@ def status(db: DB, owner: Owner):
     try:
         current_read(db,owner.id)
         return AnswerStatus(enabled=settings.answer_mode=="openai" and bool(settings.openai_api_key)
-            and settings.embedding_monthly_limit_micro_usd>0, policy_revision=db.get(User,owner.id).policy_revision)
+            and settings.embedding_monthly_limit_micro_usd>0,
+            policy_revision=db.scalar(select(User.policy_revision).where(User.id==owner.id)))
     except SQLAlchemyError:
         raise HTTPException(503,"ANSWER_DATABASE_UNAVAILABLE") from None
 
@@ -61,7 +62,9 @@ def create(data: AnswerRequest, db: DB, owner: Owner):
     try:
         current_read(db,owner_id)
         with search_budget(db):
-            revision=db.get(User,owner_id).policy_revision
+            revision=db.scalar(select(User.policy_revision).where(User.id==owner_id))
+            if data.policy_revision is not None and data.policy_revision != revision:
+                raise HTTPException(409,"ANSWER_CONTEXT_CHANGED")
             anchors=[]
             for source_id in ids:
                 if kind == "embedding":

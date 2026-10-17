@@ -4,6 +4,11 @@ Status: implemented after the passing local gate, 2026-10-17. The owner authoriz
 the checkpoint commit after discussing the interim UI; a separate owner browser
 check was not reported. No new real-provider transmission was authorized or performed.
 
+The subsequent unified answer flow now runs this recommender internally after
+Semantic retrieval; ordinary users do not need to invoke the steps below.
+Separate recommendation/review is retained under optional advanced controls.
+See `UNIFIED_ANSWER.md` for the current one-action flow and consent boundary.
+
 ## Implementation result
 
 - Local `POST /answers/recommendations` accepts one to twenty ordered unique

@@ -1,5 +1,10 @@
 # Phase 3.3 selected-passage answers
 
+Current simple flow: Search → **Answer with sources** runs retrieval, local
+evidence selection and cited answering with one combined consent/action. See
+`UNIFIED_ANSWER.md` for current limits and synthetic verification. The selected-
+passage flow below remains available as optional advanced evidence review.
+
 After a Semantic or local Passages search, select up to five displayed passages.
 The screen shows exact text and source/version links before a separate answer
 consent. The answer request sends the question and those passages to OpenAI, then

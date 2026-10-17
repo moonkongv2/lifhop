@@ -1076,6 +1076,8 @@ export interface components {
              * @default false
              */
             confirm_external_ai: boolean;
+            /** Policy Revision */
+            policy_revision?: number | null;
         };
         /** AnswerResponse */
         AnswerResponse: {

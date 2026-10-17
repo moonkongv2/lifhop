@@ -43,7 +43,9 @@ export const recommendPassages = (params: URLSearchParams, ids: number[], revisi
   request<RecommendationResponse>(`/recommendations?${semanticFilters(params)}`, {
     q: params.get("q") ?? "", embedding_ids: ids, policy_revision: revision,
   }, signal);
-export const requestAnswer = (q: string, ids: number[], kind: "embedding" | "passage") => request<AnswerResponse>("", {
+export const requestAnswer = (q: string, ids: number[], kind: "embedding" | "passage",
+  options?: { signal?: AbortSignal; requestId?: string; revision?: number }) => request<AnswerResponse>("", {
   q, [kind === "embedding" ? "embedding_ids" : "passage_ids"]: ids,
-  request_id: crypto.randomUUID().replaceAll("-", ""), confirm_external_ai: true,
-});
+  request_id: options?.requestId ?? crypto.randomUUID().replaceAll("-", ""), confirm_external_ai: true,
+  ...(options?.revision !== undefined ? { policy_revision: options.revision } : {}),
+}, options?.signal);

@@ -4,6 +4,24 @@ Last updated: 2026-10-17
 
 ## Current product slice
 
+**2026-10-17 unified question flow implemented:** Search now offers **Answer with
+sources**. After reviewing question/filters and one combined consent, **Ask from
+my records** runs existing Semantic retrieval → local parent recommendation →
+cited answer. Manual selection is optional under an advanced action. At most
+one query and one answer call (USD 0.011 combined); the browser freezes session,
+parameters and revision, uses a shared action ID in separate ledger domains,
+and never retries or resumes automatically. Stop, draft/filter/account/policy
+changes and a 60-second deadline prevent subsequent stages. Already dispatched
+requests may still finish/be charged. Answers now optionally check an observed
+policy revision before reservation, while retaining existing current-source
+dispatch/result guards. No database migration, model, index, dependency or activation change.
+Final checks: 589 backend tests, 150 frontend tests, frontend lint/build and diff
+whitespace passed. Synthetic Chromium verified one-action execution,
+original-passage review, citation return/reload without replay and advanced mode.
+No real OpenAI call occurred; general answer quality remains unverified. The owner
+authorized this checkpoint's commit; separate owner browser confirmation was not
+reported. See UNIFIED_ANSWER.md.
+
 **2026-10-17 local evidence recommendations implemented:** Phase 3.3 now supports
 Semantic results → local original-passage recommendation → full-text review and
 selection adjustment → separate consented cited answer. The new local POST checks
@@ -997,13 +1015,10 @@ user-verifiable product slices in `ROADMAP.md`.
 
 ## Next
 
-1. Plan a unified Phase 3.3 question action: retrieve → recommend bounded context
-   → generate a cited answer, with explicit consent covering both the question
-   and automatically selected allowed source text. The current manual evidence
-   review stays available as an optional advanced flow. Separate-step buttons
-   are an interim verification UI, not the intended final required workflow.
-   Define consent, cumulative cost limits and interruption/no-replay behavior
-   before implementation; date-range retrospectives follow that integration.
+1. Plan bounded Phase 3.3 date-range retrospectives with cited events/decisions,
+   source-event time separated from collection time, proposals separated from
+   completed work, and explicit coverage gaps. The unified question flow is the
+   completed implementation checkpoint; owner usability feedback remains welcome.
    Paid tuning is stopped; no further OpenAI calls or
    reindexing are authorized by these implementation checks. Preserve all closed
    evaluation protocols, failures and uncertain reservations. Broader quality

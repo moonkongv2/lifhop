@@ -1528,3 +1528,26 @@ not be mandatory in the final product. Next plan one question action that runs
 these stages within explicit source-transmission consent and cost limits; keep
 manual evidence review as an optional advanced flow. The current implementation
 retains separate actions until that integrated flow is implemented and verified.
+
+## 2026-10-17: Orchestrate one consented question through existing bounded APIs
+
+The integrated answer mode freezes the question/filters/session/revision and
+sequentially awaits the existing Semantic, local recommendation and answer APIs
+in the browser. No new server workflow, queue or persistent answer table is
+needed. One action's consent explicitly includes the question for search/answer
+and up to five automatically selected eligible parent Passages. The combined
+maximum is the sum of existing per-stage guards: one query/USD 0.001 and one
+answer/USD 0.01. Shared monthly accounting continues to apply to each dispatch.
+
+Reuse one action UUID in the existing distinct query/answer ledger domains so
+each stage retains its durable one-call limit. A spent/uncertain stage cannot
+replay automatically; a new explicit action can incur new cost. Stop/navigation/
+draft/filter/account/revision changes and a 60-second browser deadline prevent
+later stages, while already sent requests may still finish/be charged. Query
+cost survives an answer-stage failure. Add an optional observed policy revision
+to the answer request; integrated calls supply it, and mismatch blocks before
+reservation. Existing exact source/policy checks and conservative uncertain
+reservations remain. Manual evidence review is optional advanced UI; ordinary
+answers show citations and expandable original context. Models/indexing and
+off-by-default activation are unchanged. This implementation authorizes no new
+paid provider experiment or personal-data transmission.
