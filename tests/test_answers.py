@@ -238,3 +238,35 @@ def test_inconsistent_insufficient_output_stays_rejected_and_spent(answer_client
         assert row.status=='spent' and row.spent_micro_usd>0
     assert client.post('/answers',headers=headers,json=data).status_code==409
     assert sender.call_count==1
+
+
+def test_luna_usage_ledger_pins_new_pricing(answer_client):
+    from app.services.answer_transport import CONFIG_HASH
+    client,headers,_,vector_id,bind,owner,_=answer_client
+    result=client.post('/answers',headers=headers,json=ask(vector_id))
+    assert result.status_code==200
+    with Session(bind) as db:
+        row=db.scalar(select(AiUsageAttempt).where(AiUsageAttempt.owner_id==owner,
+            AiUsageAttempt.purpose=='answer'))
+        assert row.model=='gpt-6-luna' and row.configuration_hash==CONFIG_HASH
+        assert row.input_price_micro==100000 and row.output_price_micro==500000
+        assert row.input_usage_tokens==10 and row.output_usage_tokens==10
+        assert row.spent_micro_usd==6
+
+
+def test_historical_attempt_settles_using_its_stored_prices(answer_client):
+    from app.services.ai_usage import settle
+    client,headers,_,vector_id,bind,owner,_=answer_client
+    assert client.post('/answers',headers=headers,json=ask(vector_id)).status_code==200
+    with Session(bind) as db:
+        row=db.scalar(select(AiUsageAttempt).where(AiUsageAttempt.owner_id==owner,
+            AiUsageAttempt.purpose=='answer'))
+        # Represent an unresolved attempt retained from before the model migration.
+        row.model='gpt-4.1-mini-2025-04-14'
+        row.input_price_micro=400000;row.output_price_micro=1600000
+        row.status='uncertain';row.spent_micro_usd=0
+        row.input_usage_tokens=None;row.output_usage_tokens=None
+        db.commit()
+        settle(db,row.id,status='spent',input_tokens=10,output_tokens=10)
+        db.commit()
+        assert row.spent_micro_usd==20 and row.model=='gpt-4.1-mini-2025-04-14'

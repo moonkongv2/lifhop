@@ -25,8 +25,9 @@ every claim.
 - The server holds the owner policy lock through the provider call and rechecks
   citations afterward. A stale or revoked citation suppresses the answer even
   when the provider call has already been charged.
-- The pinned model is `gpt-4.1-mini-2025-04-14`; each Responses request uses
-  structured output, no API-side storage, at most 512 output tokens, and the
+- The answer model is `gpt-6-luna`, with explicit reasoning effort `none` and
+  no prompt caching (explicit mode without breakpoints). Each Responses request
+  uses structured output, no API-side response storage, at most 512 output tokens, and the
   existing monthly AI budget. Its durable request cap is one call and USD 0.01.
   Uncertain charges and invalid responses are not retried automatically.
 - Answer text and question vectors are not stored by lifhop. The response remains
@@ -36,8 +37,9 @@ every claim.
 The Responses request and structured output shape follow the
 [OpenAI text generation guide](https://developers.openai.com/api/docs/guides/text)
 and [Structured Outputs guide](https://developers.openai.com/api/docs/guides/structured-outputs).
-The pinned model and published input/output rates are listed in the
-[GPT-4.1 mini model page](https://developers.openai.com/api/docs/models/gpt-4.1-mini).
+The current model and published input/output rates are listed in the
+[GPT-6 Luna model page](https://developers.openai.com/api/docs/models/gpt-6-luna).
+Earlier run records below preserve the model/configuration used at that time.
 
 ## Verify without external transmission
 
@@ -419,3 +421,149 @@ unchanged implementation's latest full backend run passed 549 tests. New preview
 digest/configuration/scope, private permissions, inert HTML, Git ignore and
 absence of a new run marker were verified. `git diff --check` passed. No frontend
 change or external provider request occurred while preparing this checkpoint.
+
+### 2026-10-17 approved diagnostic run: upstream authentication rejected
+
+The owner approved new protocol
+`d51d005ac86f7f251df0787a706de8320c3f5cd72fc6300b6ac85d2905fb4e73`.
+Current preflight matched exactly. One dispatch sent the one approved question
+and three excerpts, under the one-call/USD 0.01 cap, with no retry. It returned
+lifhop HTTP 503 `ANSWER_PROVIDER_REJECTED` after 0.799 seconds.
+
+The safe rejection capture now records upstream **HTTP 401**, error type
+`invalid_request_error`; allowlisted error code/parameter are null. This identifies
+an authentication rejection, not a demonstrated schema failure. The exact key,
+project/organization or access cause cannot be determined from retained metadata.
+The [official error guide](https://developers.openai.com/api/docs/guides/error-codes)
+lists several authentication/access causes for HTTP 401. Do not attribute this
+new status retroactively to the earlier rejection whose status was lost.
+
+Local, zero-network checks confirm the API key is present, matches the .env value,
+has no process-environment override and has no leading/trailing whitespace. The
+key was neither displayed nor changed. These checks do not prove server-side key
+validity. Next, the owner must verify the key and project/organization/access
+settings in the OpenAI console and update .env if needed; no key should be pasted
+into chat. Do not make another provider request simply to repeat the same failure.
+
+The run is closed with one uncertain attempt: **USD 0.002267 reserved, USD 0
+settled**. Actual billing is unknown; no reservation was released and previous
+reservations remain untouched. No answer was returned, so actual schema acceptance
+and insufficient/citation behavior remain unmeasured. The rejection sidecar,
+report, ledger, assessment and `run/results-review.html` are private and retain
+mode 0600. The agent checked these results directly. No implementation changed;
+the latest full backend run remains 549 passed. This execution requires no new
+application tests; documentation whitespace and private artifact checks passed.
+
+### 2026-10-17 resumed after key replacement: invalid_api_key
+
+The owner reported replacing the key and requested resuming the same pending
+check. This authorizes a fresh bounded attempt with the unchanged one-question/
+three-excerpt scope and one-call/USD 0.01 cap. New protocol:
+`567d6ff39e5621ca51450316dc73ef3d6e563932aa4802804185770b18ae07de`,
+acknowledging the closed `d51d005a…` run. Current preflight matched exactly.
+
+One dispatch returned upstream HTTP **401 / invalid_api_key** in 0.745s;
+lifhop returned HTTP 503 `ANSWER_PROVIDER_REJECTED`. The request did not produce
+an answer. No retry occurred and the new run is closed. The ledger keeps one
+uncertain attempt with USD 0.002267 reserved and zero settled. Previous uncertain
+reservations remain unchanged; no billing reconciliation or key-management action
+was performed. Actual provider billing and schema acceptance remain unmeasured.
+
+Secret-safe local checks confirmed .env loading, no environment override, no
+whitespace, ASCII-only content and no literal wrapping quotes. The loaded value
+does **not** start with `sk-`. No key value, length or fingerprint was printed or
+persisted in results. This format observation does not establish where the value
+came from; owner should ensure the repository-root OPENAI_API_KEY contains the
+actual newly issued secret rather than a display name or key identifier. No
+further provider request should occur until the configured credential is corrected.
+
+Private approval/preflight, run marker, HTTP result, safe rejection metadata,
+ledger, assessment and `run/results-review.html` are retained. No product code
+changed and tests were not repeated; the previous 549-test suite remains current.
+Whitespace and private result checks passed. No private artifacts are committed.
+
+### 2026-10-17 corrected-key regression: passed
+
+After reporting a key typo, the owner explicitly requested another attempt of
+the same one-question/three-excerpt check. Protocol
+`b7ad00623a71c76d4ebe4e262d33e121ea5bbc16e7ee16640bdb6e1c569cc104`
+acknowledges closed `567d6ff3…`; current preflight matched before dispatch. The
+configured value now has the expected `sk-` prefix. No secret contents were
+printed or persisted in the report. Prior markers and reservations stayed intact.
+
+One dispatch returned **HTTP 200** in **2.329s**. The model used the new
+`result` wrapper and returned insufficient status with an empty `citation_ids`
+list. The public response also has empty citations. The answer states that the
+provided excerpts describe music behavior/location but do not identify the
+composer; the agent checked this against the excerpts and found no invented name
+or unsupported addition. The known negative-case regression passes, and actual
+provider acceptance of the nested schema is established for this call.
+
+Usage: 496 input/44 output tokens; **USD 0.000269 spent**, no uncertain usage for
+this attempt, zero retries. Earlier uncertain reservations remain pending and
+were not automatically released. The run is closed. Private raw output, HTTP
+result, ledger, agent assessment and `run/results-review.html` are retained with
+mode 0600. Owner repetition of evidence checking is optional.
+
+This is a known regression check, not independent search/answer-quality evidence.
+The earlier two supported real answers used the prior provider format; the new
+wrapper's supported branch is tested synthetically and was not remeasured live.
+Stop further paid diagnostics here. Next: commit result documentation and plan
+automatic evidence selection, keeping the recorded rank-six context gaps and
+avoiding fresh-validation claims from these inspected cases. No product code
+changed during execution; the prior 549-test suite remains current. Whitespace,
+protocol/report consistency and private artifact checks passed.
+
+### 2026-10-17 GPT-6 Luna migration: local and real checks passed
+
+The user requested one model-replacement validation round, then continuation to
+the next slice. Answers now use `gpt-6-luna`, reasoning none and temperature zero
+with the existing schema/prompt and 512-token output cap. Cache mode is explicit
+without breakpoints: the official contract disables caching and cache writes,
+keeping ordinary input/output accounting sufficient. Unexpected cached/write
+usage is rejected as unresolved. Input/output prices are 100,000/500,000 micro-USD
+per million tokens. The ledger stores new prices per attempt and leaves historical
+prices unchanged. No embedding, vector, model routing, public schema, dependency
+or database migration was added. Reranking's deferred historical model is unchanged.
+
+After 555 backend tests passed, protocol
+`c751209e1b80052158403777d7b04b0f2304962c7d3888d615880a8cd21fdce0`
+froze the same reviewed three questions/five excerpts. This was one model-switch
+round, at most three calls/USD 0.03, with conservative estimate USD 0.001774.
+Preflight matched and the approved real execution made exactly three calls,
+without retries or any new query/document embedding.
+
+| Case | Result | Agent evidence assessment | HTTP time | Tokens in/out | Micro-USD |
+| --- | --- | --- | --- | --- | --- |
+| holdout-03 | HTTP 200, supported, citation 34 | Live timer progress and no jump to start are directly supported. | 3.096s | 380/59 | 68 |
+| holdout-02 | HTTP 200, supported, citation 187 | Non-fatal failures and debugPrint logging match the supplied plan. | 2.690s | 373/44 | 60 |
+| holdout-10 | HTTP 200, insufficient, no citations | Correctly states that the excerpts omit composer identity; no invented name. | 2.546s | 494/54 | 77 |
+
+All three pass the fixed claim/citation criteria. Total actual cost is **USD
+0.000205**, all attempts spent, zero uncertain usage for this round. Returned
+model identity is `gpt-6-luna`; all responses report zero cached tokens, cache
+writes and reasoning tokens. All earlier uncertain reservations remain untouched.
+The agent checked actual answers and sources directly; owner repetition is optional.
+The private protocol's `run/results-review.html` contains the result and citations.
+Raw responses, report/ledger and agent assessment remain private, mode 0600.
+
+This verifies known-case migration compatibility and the selected-context answer
+flow, not independent quality, speed superiority or general cross-source RAG.
+No further model sweeps or paid repetition are planned. Normal ANSWER_MODE=off
+and per-action consent remain. Current-model aliases may change server-side;
+each future response still checks returned identity, usage and the fixed local
+contract rather than assuming a permanent snapshot guarantee.
+
+Next work is specified in `EVIDENCE_SELECTION_PLAN.md`: check a local bounded
+parent-Passage recommendation against saved results, then implement the reviewable
+recommendation action only if coverage warrants it. Keep embedding small/1536
+for now. Large is a possible higher-quality multilingual candidate (USD 0.13 vs
+USD 0.02 per million input tokens, default 3072 dimensions), but requires a new
+compatible document/query index and independently approved comparison before any
+reindex. The existing rank-six context gaps do not alone prove a need to replace
+the embedding model.
+
+Verification: full backend **555 passed**, including request settings, new ledger
+pricing, historical-price settlement and no-undercharge cache guards. Private
+protocol/digest, safe HTML/permissions, actual usage/citations and whitespace
+checks passed. Frontend is unchanged; no frontend tests were rerun.

@@ -1,8 +1,84 @@
 # lifhop Current Status
 
-Last updated: 2026-10-16
+Last updated: 2026-10-17
 
 ## Current product slice
+
+**2026-10-17 GPT-6 Luna migration and next-slice plan:** Answer generation now
+uses `gpt-6-luna`, reasoning effort none, temperature 0, no prompt caching
+(explicit mode without breakpoints), and standard short-context prices of
+USD 0.10 input/USD 0.50 output per million tokens. The shared ledger stores new
+prices/config per attempt and preserves historical prices. Unexpected nonzero
+cache usage cannot silently settle at the uncached rate. Embedding/indexing and
+the deferred reranker retain their own existing models; no vectors were changed.
+All 555 backend tests passed; no public API/frontend change occurred.
+One user-requested migration round, protocol
+`c751209e1b80052158403777d7b04b0f2304962c7d3888d615880a8cd21fdce0`,
+sent the previously reviewed three questions/five excerpts once per question
+under three calls/USD 0.03. All pass: supported answers cite slices 34/187;
+the composer question returns insufficient with empty citations. The agent
+checked claims/citations against source. Actual cost USD 0.000205, all three
+attempts spent; reasoning/cache-write tokens zero. Old uncertain reservations
+remain untouched, and normal ANSWER_MODE=off is preserved. This is a known-case
+migration check, not independent quality/speed superiority evidence.
+Private result: the new protocol's `run/results-review.html`; owner rechecking
+is optional. Next work is planned in `EVIDENCE_SELECTION_PLAN.md`: first test
+bounded local parent-Passage recommendations, then implement only if local
+coverage justifies them. Keep text-embedding-3-small (1536); large-model
+comparison/reindexing is deferred pending measured need and separate approval.
+Migration code, the next-slice plan and accumulated execution records form the
+completed model-migration checkpoint.
+
+**2026-10-17 corrected-key negative regression, passed and closed:** After the
+owner corrected a key typo and requested another attempt, new protocol
+`b7ad00623a71c76d4ebe4e262d33e121ea5bbc16e7ee16640bdb6e1c569cc104`
+sent the same one question/three excerpts once, under the one-call/USD 0.01 cap.
+HTTP 200 returned in 2.329s: insufficient, empty citation IDs/public citations,
+and an accurate explanation that the selected excerpts omit the composer.
+The agent verified the answer against the source context and parsed the retained
+raw response. The nested result schema is accepted by the pinned real provider.
+Usage is spent (496 input/44 output tokens), actual cost USD 0.000269; no uncertain
+usage for this attempt. All earlier failed runs and uncertain reservations remain
+unchanged. No retry or key-management operation occurred. Normal answers stay off.
+Private result: this protocol's `run/results-review.html`; owner rechecking is
+optional. This closes the known negative-case regression, not independent quality
+validation; the new wrapper's supported branch has synthetic coverage and was not
+retested live. Stop repeated paid diagnostics here. Next: commit execution records
+and plan automatic evidence selection for Phase 3.3. Product code is unchanged;
+latest full backend tests remain 549 passed. Only result docs are uncommitted.
+
+**2026-10-17 resumed check after user key replacement, closed:** The user stated
+the key was replaced and requested resuming the same check. New protocol
+`567d6ff39e5621ca51450316dc73ef3d6e563932aa4802804185770b18ae07de`
+preserves all previous closed markers and sent the same one question/three
+excerpts once, under the one-call/USD 0.01 cap. OpenAI returned HTTP 401,
+`invalid_api_key`, in 0.745s; lifhop returned HTTP 503. No retry or answer occurred.
+Secret-safe local checks confirm .env matches the loaded value, with no process
+override, whitespace, non-ASCII characters or literal wrapping quotes. The loaded
+value does not start with `sk-`; no key content, length or fingerprint was printed.
+Next: owner verifies the actual newly issued secret (rather than name/ID) is set
+as OPENAI_API_KEY in the repository-root .env. No further provider request before
+credential correction. New usage remains uncertain, USD 0.002267 reserved, zero
+settled; previous reservations are unchanged. Actual billing/schema acceptance/
+answer behavior remain unmeasured. Private result: this protocol's
+`run/results-review.html`. No product code changed; latest full tests remain 549.
+
+**2026-10-17 approved diagnostic run, closed with authentication rejection:**
+Protocol `d51d005ac86f7f251df0787a706de8320c3f5cd72fc6300b6ac85d2905fb4e73`
+sent the approved question/three excerpts once (one-call/USD 0.01 cap). Upstream
+HTTP **401**, type `invalid_request_error`, was safely captured in the private
+rejection sidecar/report; code and parameter are null. Lifhop returned HTTP 503
+`ANSWER_PROVIDER_REJECTED` in 0.799s. No retry or answer occurred. Authentication
+rejection is established; the exact credential/project/access cause is not.
+Local secret-safe checks confirm .env loading, no environment override and no
+edge whitespace. No key was printed or changed. The new attempt remains uncertain,
+USD 0.002267 reserved, zero settled; actual billing is unknown. Prior reservations
+and closed run markers remain unchanged. Results and agent assessment are in the
+new protocol's `run/results-review.html`; user evidence checks are unnecessary.
+Next: owner checks key validity and project/organization/access settings in the
+OpenAI console, updates .env if needed, then requests a new explicitly bounded
+check. Do not blame the schema from HTTP 401 or repeat paid requests before fixing
+authentication. Code is unchanged; latest full backend suite remains 549 passed.
 
 **2026-10-16 commit/preflight checkpoint:** Core output-contract and safe-provider
 diagnostics are committed as `b3f76ac`; explicit evidence-selection/capture tooling,

@@ -98,3 +98,26 @@ def test_legacy_or_malformed_result_wrappers_are_rejected(data):
     with pytest.raises(AnswerOutputError) as error:
         parse(raw,{4})
     assert error.value.reason=='json_shape'
+
+
+def test_luna_payload_preserves_bounded_nonreasoning_uncached_role():
+    from app.services.answer_transport import payload, cost_micro, CONFIG_HASH
+    from app.evaluation.schemas import digest
+    value,_=payload('Synthetic question?', [dict(id=4,text='Synthetic evidence')])
+    assert value['model']=='gpt-6-luna'
+    assert value['reasoning']==dict(effort='none')
+    assert value['prompt_cache_options']==dict(mode='explicit')
+    assert value['temperature']==0 and value['store'] is False
+    assert value['max_output_tokens']==512
+    assert 'prompt_cache_breakpoint' not in json.dumps(value)
+    assert cost_micro(1000,100)==150
+    assert CONFIG_HASH != digest(dict(model='gpt-4.1-mini-2025-04-14'))
+
+
+@pytest.mark.parametrize('details', [dict(cached_tokens=2), dict(cache_write_tokens=1), None])
+def test_unexpected_cache_accounting_is_not_silently_undercharged(details):
+    from app.services.answer_transport import usage
+    raw=dict(model=MODEL,usage=dict(input_tokens=10,output_tokens=2,total_tokens=12,
+        input_tokens_details=details))
+    with pytest.raises(EmbeddingError,match='ANSWER_USAGE_INVALID'):
+        usage(raw,100)

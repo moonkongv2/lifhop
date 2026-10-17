@@ -1477,3 +1477,31 @@ Current-version, source/record AI permission, work-only and deleted-source check
 run under the owner lock before sending and again before returning citations.
 The answer model stays off by default; no personal records are transmitted by
 this implementation check.
+
+## 2026-10-17: Move selected-passage answers to GPT-6 Luna
+
+Use `gpt-6-luna` for answers through the existing Responses transport. Preserve
+the prior model's nonreasoning role with explicit `reasoning.effort=none`,
+temperature zero, 512 output tokens and the same nested structured-output
+contract. Use `prompt_cache_options.mode=explicit` without breakpoints so no
+cache reads/writes occur and the existing simple input/output ledger remains
+accurate. Treat unexpected cache usage as unresolved rather than silently
+undercharging. Model, reasoning/caching settings and published prices contribute
+to the configuration hash; completed old protocols cannot authorize new calls.
+
+Standard short-context input/output prices are USD 0.10/USD 0.50 per million
+tokens. Preserve per-attempt historical prices and all prior uncertain usage.
+Keep the one-call/USD 0.01 request cap, source/owner/version/policy rechecks,
+off-by-default activation and separate transmission consent. The user requested
+one migration check: three previously reviewed cases passed with known selected
+context, at USD 0.000205 total. This does not establish independent quality or
+speed superiority; stop repeated paid tuning and proceed to evidence selection.
+
+Embedding remains `text-embedding-3-small` at 1,536 dimensions. A change to
+`text-embedding-3-large` would require compatible document/query vectors, explicit
+reindex scope and separately measured benefit; a new answer model does not require
+replacing the embedding space. The deferred reranking experiment remains unchanged.
+Sources: [Luna](https://developers.openai.com/api/docs/models/gpt-6-luna),
+[migration](https://developers.openai.com/api/docs/guides/latest-model),
+[cache behavior](https://developers.openai.com/api/docs/guides/prompt-caching),
+[embeddings](https://developers.openai.com/api/docs/guides/embeddings).
