@@ -1,7 +1,59 @@
 # Automatic evidence recommendations for cited answers
 
-Status: proposed next slice after the GPT-6 Luna migration check, 2026-10-17.
-Implementation has not started. No new transmission is authorized by this plan.
+Status: implemented after the passing local gate, 2026-10-17. The owner authorized
+the checkpoint commit after discussing the interim UI; a separate owner browser
+check was not reported. No new real-provider transmission was authorized or performed.
+
+## Implementation result
+
+- Local `POST /answers/recommendations` accepts one to twenty ordered unique
+  Semantic IDs, the question and observed policy revision; existing source/type/
+  date filters are query parameters. The shared owner read lock and five-second
+  search budget protect the entire read. Any missing/foreign/stale/filtered or
+  AI-denied candidate rejects the request before returning source text.
+- Choose at most five complete parents in original rank order, deduplicating
+  verified document parents. The actual serialized answer request must fit
+  14 KiB; duplicate, count and byte-limit omissions are returned visibly.
+  There is no recommendation table, ledger reservation or external request.
+- In Semantic results, choose **Review original passage recommendations**, then
+  **Recommend passages**. Full original text is shown with editable checkboxes.
+  Generating an answer still requires separate consent. Choosing an individual
+  search match returns to the embedding-ID path and clears the proposal/consent.
+  Account/filter/result/policy changes unmount the prior proposal; pending local
+  requests are canceled and cannot repopulate another selection. Reload never
+  repeats a search, recommendation or answer automatically.
+- `scripts/check_answer_evidence.py` reproduces the local comparison from an
+  authenticated read-only snapshot and saved candidate captures. Questions/gold
+  do not influence ranking; gold is used only to score selected current spans.
+
+### Local gate result and limits
+
+Saved ten-case product retrieval, eight supported cases: complete required-span
+coverage increased from 3/8 with the first three exact Semantic slices to 6/8
+with parent recommendations. No previously covered evidence group was lost.
+Cases 02, 03 and 08 gained complete coverage; 01 and 07 remain incomplete.
+Two negative cases remain diagnostic and are excluded from that denominator.
+Requests were 7,725–12,047 bytes, within 14,336 bytes. Provider calls: zero.
+
+The private, body-free report is the validation set's
+`evidence-selection/implemented-parent-gate.json`. These are previously inspected
+cases. This measures context assembly, not generated-answer quality or independent
+retrieval quality. Parent expansion can consume more bytes and can lose useful
+lower-ranked parents on other inputs; visible omissions and the manual selection
+path remain necessary. A synthetic regression test proves that such a coverage
+loss fails the diagnostic gate.
+
+Agent browser verification passed using the disposable Semantic demo: recommendation,
+selection adjustment/consent reset, Passage-ID answer submission, switching back to
+individual matches and reload without replay. The provider was mocked. Owner
+review is about the usefulness of this interaction; no new paid evaluation is needed
+to accept this functional slice.
+
+Final checks: 581 backend tests, 131 frontend tests, frontend lint/build and diff
+whitespace passed. PostgreSQL checks used an isolated migrated test schema; the
+initial sandbox DB connection was blocked and passed when run on the host. An
+early frontend test needed to wait for availability before clicking; its remaining
+TypeScript locator-option error was corrected, and final tests/build passed.
 
 ## Observable flow and boundary
 

@@ -4,6 +4,26 @@ Last updated: 2026-10-17
 
 ## Current product slice
 
+**2026-10-17 local evidence recommendations implemented:** Phase 3.3 now supports
+Semantic results → local original-passage recommendation → full-text review and
+selection adjustment → separate consented cited answer. The new local POST checks
+all (at most twenty) candidates against current ownership, policy, version and
+filters; it keeps at most five complete parents within the actual 14 KiB request
+limit and reports omissions. It sends nothing externally and reserves no usage.
+The existing answer route rechecks the selected Passage IDs before/after dispatch.
+No database, dependency, embedding or ranking change was introduced.
+The saved eight supported cases improve complete span coverage from 3/8 to 6/8,
+with no evidence-group regressions; cases 01/07 still lack complete support.
+This is known-case local context coverage, not a model-quality improvement claim.
+The synthetic browser flow passed including consent reset, evidence-kind switch
+and reload without replay. Final checks: 581 backend tests, 131 frontend tests,
+frontend lint/build and diff whitespace passed. Initial sandbox DB access was
+blocked; host execution passed. A frontend test type error was corrected before
+the final successful build. No new real-provider call occurred. The owner authorized
+this checkpoint's commit after discussing the interim UI. Separate owner browser
+confirmation was not reported. The model checkpoint is `8731d0b`.
+See `EVIDENCE_SELECTION_PLAN.md` for the implementation/result boundary.
+
 **2026-10-17 GPT-6 Luna migration and next-slice plan:** Answer generation now
 uses `gpt-6-luna`, reasoning effort none, temperature 0, no prompt caching
 (explicit mode without breakpoints), and standard short-context prices of
@@ -977,18 +997,17 @@ user-verifiable product slices in `ROADMAP.md`.
 
 ## Next
 
-1. Continue the optional B2 Semantic flow in `SEMANTIC_PRODUCT_PLAN.md`: storage
-   and lifecycle, durable indexing and API/UI are implemented; confirm the owner
-   browser flow before actual scoped indexing/evaluation. B1 tuning is closed; preserve its
-   failed captures. Fresh held-out transmission follows product integration and
-   requires separate scope/cost approval.
-   Preserve the approved ten-case validation set; its retrieval is still unmeasured.
-   Rank capture/replay and the approved twenty-question experiment are complete.
-   Preserve its failed frozen-B result and use a new held-out set if the old
-   validation cases guide further tuning. The former B1 promotion gate remains failed;
-   optional B2 proceeds under the current direction above.
-   The original authoring set's case-04 remains draft; the approved GitHub set is
-   separate and does not establish quality across Codex or ordinary life records.
+1. Plan a unified Phase 3.3 question action: retrieve → recommend bounded context
+   → generate a cited answer, with explicit consent covering both the question
+   and automatically selected allowed source text. The current manual evidence
+   review stays available as an optional advanced flow. Separate-step buttons
+   are an interim verification UI, not the intended final required workflow.
+   Define consent, cumulative cost limits and interruption/no-replay behavior
+   before implementation; date-range retrospectives follow that integration.
+   Paid tuning is stopped; no further OpenAI calls or
+   reindexing are authorized by these implementation checks. Preserve all closed
+   evaluation protocols, failures and uncertain reservations. Broader quality
+   claims need a separately agreed fresh scope rather than reuse of these cases.
 2. Confirm GitHub repository browsing in Entries → repository → Commits/Documents
    → reader → return, and Search → Browse repository → return. Existing stored
    GitHub Entries need no reimport for this UI. Repository browsing and the earlier
@@ -1001,8 +1020,8 @@ user-verifiable product slices in `ROADMAP.md`.
    Codex search/evidence, replay, annotations and disposable deletion/policy checks
    in `CODEX_BACKFILL.md`. Its checkpoint has 33 acknowledgments; completed status,
    target account and selected current versions still require confirmation.
-5. Expand retrieval evaluation across sources/languages and plan Phase 3.3 cited answers
-   after the 3.2B semantic-search decision.
+5. Broader source/language and retrospective quality remain unmeasured; selected-
+   passage cited answers and local recommendations are implemented in Phase 3.3.
 6. Verify Phase 2.2 using `HISTORY.md`: synthetic history, annotations, source
    markers, deletion/reimport block, and Sources permissions.
 7. Follow the sequence: Codex/GitHub history → evidence-based answers/retrospectives

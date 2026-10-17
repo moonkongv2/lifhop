@@ -5,6 +5,7 @@ import { MemoryRouter, Route, Routes } from "react-router";
 import App from "../App";
 import EntrySearchPage from "./EntrySearchPage";
 import PassagePage from "./PassagePage";
+import { setAccessToken } from "../utils/session";
 
 const passage = { id: 3, entry_id: 2, version_id: 4, field: "content", start: 100, end: 120, passage_hash: "a".repeat(64),
   title: "Synthetic worker", text: "Runs on the server.", source: "manual", created_at: "2026-01-01", event_at: null,
@@ -16,16 +17,25 @@ let revision: number;
 let statusFailure: number;
 let readerFailure: number;
 let answerEnabled: boolean;
+let recommendationFailure: boolean;
+let recommendationDelay: Promise<void> | undefined;
 let sent: { url: string; options: RequestInit }[];
 beforeEach(() => {
   localStorage.clear(); localStorage.setItem("access_token", "test-token");
   state = "available"; failure = 0; revision = 1; statusFailure = 0; readerFailure = 0; answerEnabled = false; sent = [];
+  recommendationFailure = false; recommendationDelay = undefined;
   vi.stubGlobal("fetch", vi.fn(async (url: string, options: RequestInit) => {
     sent.push({ url, options });
     const coverage = { state, policy_revision: revision, matched_records: 3, allowed_records: 2, indexed_records: 1, ready_slices: 1, jobs: {} };
+    if (url.includes("/answers/recommendations?")) {
+      await recommendationDelay;
+      return recommendationFailure ? Response.json({}, { status: 409 }) : Response.json({
+        passages: [{ ...passage, text: "Full original worker passage with nearby context." }],
+        omissions: [{ embedding_id: 11, rank: 2, reason: "duplicate_parent" }], policy_revision: revision, request_bytes: 3000 });
+    }
     if (url.endsWith("/answers/status")) return Response.json({ enabled: answerEnabled, policy_revision: revision, selected_limit: 5, max_input_characters: 3000, output_limit_tokens: 512 });
     if (url.endsWith("/answers")) return Response.json({ status: "supported", answer: "Synthetic grounded draft.",
-      citations: [{ kind: "embedding", source_id: 10, passage }], policy_revision: revision });
+      citations: [{ kind: JSON.parse(options.body as string).passage_ids ? "passage" : "embedding", source_id: 10, passage }], policy_revision: revision });
     if (url.includes("/status?")) return statusFailure ? new Response(null, { status: statusFailure }) : Response.json(coverage);
     if (url.endsWith("/search")) return failure ? Response.json({ detail: "PROVIDER_TIMEOUT_OR_NETWORK" }, { status: failure }) : Response.json({ items: [{ embedding_id: 10, distance: 0.1, passage }], coverage, truncated: false, limit: 20 });
     if (url.includes("/locations?")) return Response.json({ items: [{ embedding_id: 11, entry_id: 5, version_id: 8, start: 100, end: 120, event_at: null }], total: 1, limit: 20, offset: 0 });
@@ -145,4 +155,76 @@ it("hides cached source text when a semantic reader is no longer available", asy
   void cache.refetchQueries({ queryKey: ["semantic-slice"] });
   await screen.findByRole("alert");
   expect(screen.queryByText("Runs on the server.")).toBeNull();
+});
+
+async function recommend() {
+  fireEvent.click(screen.getByRole("button", { name: "Review original passage recommendations" }));
+  fireEvent.click(screen.getByRole("button", { name: "Recommend passages" }));
+}
+it("reviews full recommended text locally and sends only adjusted Passage IDs after separate consent", async () => {
+  answerEnabled = true; mount(); await submit(); await screen.findByText("Synthetic worker");
+  await recommend(); await screen.findByText("Full original worker passage with nearby context.");
+  const local = sent.find(r => r.url.includes("/recommendations?"))!;
+  expect(JSON.parse(local.options.body as string)).toEqual({ q: "where is the worker", embedding_ids: [10], policy_revision: 1 });
+  expect(local.url).toContain("source=manual");
+  expect(sent.filter(r => r.url.endsWith("/answers"))).toHaveLength(0);
+  expect(screen.getByText("1 search match omitted from this proposal")).toBeTruthy();
+  expect((screen.getByRole("button", { name: "Generate cited answer" }) as HTMLButtonElement).disabled).toBe(true);
+  fireEvent.click(screen.getByRole("checkbox", { name: "Send this question and the selected passages to OpenAI for an answer" }));
+  fireEvent.click(screen.getByRole("checkbox", { name: "Include original passage 3" }));
+  expect((screen.getByRole("checkbox", { name: "Send this question and the selected passages to OpenAI for an answer" }) as HTMLInputElement).checked).toBe(false);
+  fireEvent.click(screen.getByRole("checkbox", { name: "Include original passage 3" }));
+  fireEvent.click(screen.getByRole("checkbox", { name: "Send this question and the selected passages to OpenAI for an answer" }));
+  await waitFor(() => expect((screen.getByRole("button", { name: "Generate cited answer" }) as HTMLButtonElement).disabled).toBe(false));
+  fireEvent.click(screen.getByRole("button", { name: "Generate cited answer" }));
+  await screen.findByText("Synthetic grounded draft.");
+  const body = JSON.parse(sent.find(r => r.url.endsWith("/answers"))!.options.body as string);
+  expect(body.passage_ids).toEqual([3]); expect(body.embedding_ids).toBeUndefined();
+  fireEvent.click(screen.getByRole("checkbox", { name: "Use this passage for an answer" }));
+  expect(screen.queryByText("Synthetic grounded draft.")).toBeNull();
+  expect(screen.queryByText("Full original worker passage with nearby context.")).toBeNull();
+  expect((screen.getByRole("checkbox", { name: "Send this question and the selected passages to OpenAI for an answer" }) as HTMLInputElement).checked).toBe(false);
+});
+it("keeps manual selection usable after a local recommendation error", async () => {
+  recommendationFailure = true; answerEnabled = true; mount(); await submit(); await screen.findByText("Synthetic worker");
+  await recommend(); expect((await screen.findByRole("alert")).textContent).toContain("No AI request was sent");
+  fireEvent.click(screen.getByRole("checkbox", { name: "Use this passage for an answer" }));
+  await screen.findByText("1 of 5 passages selected");
+  expect(sent.filter(r => r.url.endsWith("/answers"))).toHaveLength(0);
+});
+it("drops a pending recommendation after switching back to manual matches", async () => {
+  let finish!: () => void;
+  recommendationDelay = new Promise(resolve => { finish = resolve; });
+  mount(); await submit(); await screen.findByText("Synthetic worker"); await recommend();
+  await screen.findByText("Preparing passages locally...");
+  fireEvent.click(screen.getByRole("button", { name: "Use individual search matches" }));
+  const signal = sent.find(r => r.url.includes("/recommendations?"))!.options.signal;
+  expect(signal?.aborted).toBe(true); finish();
+  await screen.findByText("0 of 5 passages selected");
+  expect(screen.queryByText("Full original worker passage with nearby context.")).toBeNull();
+});
+it.each(["policy", "account"])("clears recommendation and consent after a %s change", async change => {
+  answerEnabled = true; mount(); await submit(); await screen.findByText("Synthetic worker");
+  await recommend(); await screen.findByText("Full original worker passage with nearby context.");
+  fireEvent.click(screen.getByRole("checkbox", { name: "Send this question and the selected passages to OpenAI for an answer" }));
+  if (change === "policy") {
+    revision = 2; fireEvent.click(screen.getByRole("button", { name: "Refresh index status" }));
+    await screen.findByText(/Records or permissions changed/);
+  } else setAccessToken("other-account-token");
+  await waitFor(() => expect(screen.queryByText("Full original worker passage with nearby context.")).toBeNull());
+  expect(sent.filter(r => r.url.endsWith("/answers"))).toHaveLength(0);
+});
+it("cancels a recommendation after applying a different question and filters", async () => {
+  let finish!: () => void;
+  recommendationDelay = new Promise(resolve => { finish = resolve; });
+  mount(); await submit(); await screen.findByText("Synthetic worker"); await recommend();
+  await screen.findByText("Preparing passages locally...");
+  fireEvent.change(screen.getByLabelText("Search query"), { target: { value: "Different question" } });
+  fireEvent.change(screen.getByLabelText("Source", { exact: true }), { target: { value: "github" } });
+  fireEvent.click(screen.getByRole("button", { name: "Review index" }));
+  await waitFor(() => expect(sent.find(r => r.url.includes("/recommendations?"))!.options.signal?.aborted).toBe(true));
+  finish(); await screen.findByText("Stored slices are available for semantic search.");
+  expect(screen.queryByText("Full original worker passage with nearby context.")).toBeNull();
+  expect(sent.filter(r => r.url.endsWith("/search"))).toHaveLength(1);
+  expect(sent.filter(r => r.url.endsWith("/answers"))).toHaveLength(0);
 });

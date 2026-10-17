@@ -1,8 +1,10 @@
 import type { components } from "./generated/schema";
 import { assertCurrentSession, expireSession, sessionExpiredMessage } from "../utils/session";
+import { semanticFilters } from "./semantic";
 
 export type AnswerResponse = components["schemas"]["AnswerResponse"];
 export type AnswerStatus = components["schemas"]["AnswerStatus"];
+export type RecommendationResponse = components["schemas"]["RecommendationResponse"];
 
 const messages: Record<string,string> = {
   ANSWER_DISABLED: "Answer generation is not enabled for this server.",
@@ -27,7 +29,9 @@ async function request<T>(path: string, body?: unknown, signal?: AbortSignal): P
   if (response.status === 401) { expireSession(token); throw new Error(sessionExpiredMessage); }
   if (!response.ok) {
     const value = await response.json().catch(() => ({}));
-    throw new Error(messages[value.detail] ?? "The answer request could not finish. A sent request may have been charged.");
+    throw new Error(path.startsWith("/recommendations")
+      ? "Passage recommendation failed. Records or filters may have changed. Run the search again or select individual matches. No AI request was sent."
+      : messages[value.detail] ?? "The answer request could not finish. A sent request may have been charged.");
   }
   const data = await response.json();
   assertCurrentSession(token);
@@ -35,6 +39,10 @@ async function request<T>(path: string, body?: unknown, signal?: AbortSignal): P
 }
 
 export const fetchAnswerStatus = (signal?: AbortSignal) => request<AnswerStatus>("/status", undefined, signal);
+export const recommendPassages = (params: URLSearchParams, ids: number[], revision: number, signal?: AbortSignal) =>
+  request<RecommendationResponse>(`/recommendations?${semanticFilters(params)}`, {
+    q: params.get("q") ?? "", embedding_ids: ids, policy_revision: revision,
+  }, signal);
 export const requestAnswer = (q: string, ids: number[], kind: "embedding" | "passage") => request<AnswerResponse>("", {
   q, [kind === "embedding" ? "embedding_ids" : "passage_ids"]: ids,
   request_id: crypto.randomUUID().replaceAll("-", ""), confirm_external_ai: true,

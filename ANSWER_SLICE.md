@@ -567,3 +567,60 @@ Verification: full backend **555 passed**, including request settings, new ledge
 pricing, historical-price settlement and no-undercharge cache guards. Private
 protocol/digest, safe HTML/permissions, actual usage/citations and whitespace
 checks passed. Frontend is unchanged; no frontend tests were rerun.
+
+## 2026-10-17: Local original-passage recommendations
+
+Semantic results can now propose complete parent Passages for answer review.
+`POST /answers/recommendations` is local: no question embedding, answer call,
+usage reservation or source permission change. It takes ordered Semantic IDs
+(maximum twenty), the active question and policy revision; filters use the same
+query parameters as search. All candidates must still be current, owned,
+AI-eligible and within those filters. At most five complete parents are returned
+in original similarity order, deduplicating verified document parents and
+respecting the actual 14 KiB answer payload. Omissions have visible reasons.
+
+The owner can remove proposed parents or return to individual Semantic matches.
+Answer generation reuses the existing `passage_ids` request, separate consent,
+one-call/USD 0.01 bound and dispatch/result policy checks. A recommendation is
+not a claim that its text can answer the question. No persistent schema or
+embedding change was needed.
+
+### Result and remaining limitation
+
+Local replay of the saved ten-case retrieval increased complete supporting-span
+coverage from 3/8 to 6/8 supported questions, without losing previously covered
+groups. Three cases gained coverage; two remain incomplete. The two negative
+questions are not counted as supported successes. Proposed requests ranged from
+7,725 to 12,047 bytes. No new real-provider calls were made. These inspected cases
+measure context assembly only; generated-answer quality on new cases remains
+unverified. No further paid tuning is part of this slice.
+
+### Optional owner review: exact steps
+
+The agent verified the synthetic browser flow. To review its usability:
+
+1. Start/reuse the synthetic backend (repository root):
+   `.venv/bin/python scripts/preview_semantic.py --database-url postgresql+psycopg://lifhop:lifhop@localhost:5433/lifhop_test --port 8002`
+2. Start/reuse the frontend (in `frontend`):
+   `LIFHOP_API_PROXY_TARGET=http://127.0.0.1:8002 npm run dev -- --host 127.0.0.1 --port 5174 --strictPort`
+   If already running, reuse it. This demo uses an isolated test schema and
+   mocked providers; the normal API/worker is not needed.
+3. Open `http://127.0.0.1:5174/login`; log in with
+   `demo@example.test` / `demo-password`.
+4. Search → Semantic; enter `Where does the import worker run?`; choose
+   **Review index**. Check the search consent and choose **Search with OpenAI**.
+   Despite that production button label, this disposable server uses a fake provider.
+5. Choose **Review original passage recommendations**, then **Recommend passages**.
+   Expect full original text for the two synthetic records and editable checkboxes.
+   The recommendation step itself makes no AI request.
+6. Check the answer consent, then change one selected checkbox. Consent must clear.
+   Select the desired text, consent again and choose **Generate cited answer**.
+   Expect a `[Synthetic]` draft and a Passage citation. The demo is a functional
+   check with a canned answer; it does not evaluate factual relevance.
+7. Choose **Use individual search matches**. The proposal and draft disappear;
+   the manual selection path remains. Refreshing the page shows only index status
+   and does not repeat a search, recommendation or answer.
+
+The two preview servers were left running at handoff. Owner review is optional
+for mechanical checks, which the agent already performed; feedback should focus
+on whether full-text review and selection are comfortable to use.

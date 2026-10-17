@@ -1505,3 +1505,26 @@ Sources: [Luna](https://developers.openai.com/api/docs/models/gpt-6-luna),
 [migration](https://developers.openai.com/api/docs/guides/latest-model),
 [cache behavior](https://developers.openai.com/api/docs/guides/prompt-caching),
 [embeddings](https://developers.openai.com/api/docs/guides/embeddings).
+
+## 2026-10-17: Recommend complete parent passages locally before answering
+
+Keep Semantic ranking and its embedding space unchanged. Expand at most twenty
+ordered eligible hits to their current parent Passages, deduplicate validated
+document parents, then propose at most five complete parents within the actual
+serialized answer-request limit. Report skipped duplicates/count/byte limits;
+never silently truncate source text. This recommendation holds the existing
+shared owner read lock, checks the observed policy revision and current filters,
+and creates no provider call, usage reservation or persistent recommendation.
+
+The owner reviews/adjusts exact text before a separate consented answer action
+using the existing Passage-ID path. Recommendations assert neither factual
+sufficiency nor transmission authorization. Ephemeral selections and consent
+reset across evidence-kind/account/filter/policy changes. Local known-case
+coverage (3/8 to 6/8, no group losses) justified implementation; further paid
+tuning, a reranker and a new embedding space remain out of scope.
+
+The owner confirmed that individual search/recommendation/answer steps should
+not be mandatory in the final product. Next plan one question action that runs
+these stages within explicit source-transmission consent and cost limits; keep
+manual evidence review as an optional advanced flow. The current implementation
+retains separate actions until that integrated flow is implemented and verified.

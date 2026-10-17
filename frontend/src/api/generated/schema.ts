@@ -978,6 +978,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/answers/recommendations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Recommendations */
+        post: operations["recommendations_answers_recommendations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/answers/status": {
         parameters: {
             query?: never;
@@ -2774,6 +2791,38 @@ export interface components {
             outcome: "new" | "unchanged" | "updated" | "retained" | "blocked" | "failed";
             /** Error Code */
             error_code?: string | null;
+        };
+        /** RecommendationOmission */
+        RecommendationOmission: {
+            /** Embedding Id */
+            embedding_id: number;
+            /** Rank */
+            rank: number;
+            /**
+             * Reason
+             * @enum {string}
+             */
+            reason: "duplicate_parent" | "count_limit" | "byte_limit";
+        };
+        /** RecommendationRequest */
+        RecommendationRequest: {
+            /** Q */
+            q: string;
+            /** Embedding Ids */
+            embedding_ids: number[];
+            /** Policy Revision */
+            policy_revision: number;
+        };
+        /** RecommendationResponse */
+        RecommendationResponse: {
+            /** Passages */
+            passages: components["schemas"]["PassageResponse"][];
+            /** Omissions */
+            omissions: components["schemas"]["RecommendationOmission"][];
+            /** Policy Revision */
+            policy_revision: number;
+            /** Request Bytes */
+            request_bytes: number;
         };
         /** RecordSettings */
         RecordSettings: {
@@ -5185,6 +5234,47 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SemanticLocations"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    recommendations_answers_recommendations_post: {
+        parameters: {
+            query?: {
+                source?: components["schemas"]["EntrySource"] | null;
+                source_state?: ("available" | "deleted" | "unavailable" | "unknown") | null;
+                type?: components["schemas"]["EntryType"] | null;
+                date_field?: "created_at" | "event_at";
+                date_from?: string | null;
+                date_to?: string | null;
+                include_work_commentary?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecommendationRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecommendationResponse"];
                 };
             };
             /** @description Validation Error */
