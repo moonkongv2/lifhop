@@ -1,3 +1,4 @@
+import { citationTarget } from "../api/passages";
 import { useState } from "react";
 import { Link } from "react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -27,7 +28,7 @@ export default function SelectedAnswer({ question, selected, params, kind }: { q
     {result && <div className="answer-result"><h4>{result.status === "supported" ? "Draft answer" : "Insufficient evidence"}</h4>
       <p>{result.answer}</p>
       {result.citations.length > 0 && <ul>{result.citations.map(c =>
-        <li key={`${c.kind}-${c.source_id}`}><Link to={`${c.kind === "embedding" ? "/semantic/slices" : "/passages"}/${c.source_id}?${new URLSearchParams({ returnTo })}`}>
+        <li key={`${c.kind}-${c.source_id}`}><Link to={citationTarget(c.passage, returnTo, `${c.kind === "embedding" ? "/semantic/slices" : "/passages"}/${c.source_id}`)}>
           {c.passage.title} · Version {c.passage.version_id} · Characters {c.passage.start+1}–{c.passage.end}
         </Link></li>)}</ul>}
     </div>}

@@ -8,7 +8,8 @@ from app.auth import get_current_user
 from app.db import get_db
 from app.models.entry import EntrySource, EntryType
 from app.models.user import User
-from app.schemas.passage import PassageResponse, PassageSearchResponse, PassageSnapshotsResponse
+from app.schemas.passage import CitationAnchor, CitationResponse, PassageResponse, PassageSearchResponse, PassageSnapshotsResponse
+from app.services.citation_read import read_citation
 from app.services.entry_search import DateField, date_boundary
 from app.services.passage_search import read_passage, search_passages, search_snapshots
 from app.services.passage_budget import search_budget
@@ -59,6 +60,17 @@ def search(db: Annotated[Session, Depends(get_db)], current_user: Annotated[User
         current_read(db, current_user.id)
         with search_budget(db):
             return search_passages(db, user_id=current_user.id, q=q, limit=limit, offset=offset, **filters)
+    except DBAPIError as error:
+        database_failure(error)
+
+
+@router.get("/citation", response_model=CitationResponse)
+def citation(anchor: Annotated[CitationAnchor, Query()], db: Annotated[Session, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)]):
+    try:
+        current_read(db, current_user.id)
+        with search_budget(db):
+            return read_citation(db, current_user.id, anchor)
     except DBAPIError as error:
         database_failure(error)
 

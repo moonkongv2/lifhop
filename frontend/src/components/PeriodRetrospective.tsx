@@ -1,3 +1,4 @@
+import { citationTarget } from "../api/passages";
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link } from "react-router";
@@ -18,7 +19,6 @@ function PeriodRun({ preview, params, available, refresh }: { preview: PeriodPre
   useEffect(() => () => controller.current?.abort(), []);
   const result = available && !run.isPending && run.data?.preview.preview_digest === preview.preview_digest ? run.data : undefined;
   const returnTo = listTarget(listContext("/search", params));
-  const sourceLink = (id: number) => `/passages/${id}?${new URLSearchParams({ returnTo })}`;
   return <section className="panel semantic-controls" aria-label="Period retrospective">
     <h3>Period retrospective</h3>
     <p>{preview.scope.date_from} – {preview.scope.date_to} · Asia/Seoul · {preview.scope.date_field === "event_at" ? "Source/event dates" : "Added dates (collection time)"}</p>
@@ -45,13 +45,13 @@ function PeriodRun({ preview, params, available, refresh }: { preview: PeriodPre
       {result.answer.status === "insufficient" ? <p>{result.answer.answer}</p> : <ul>{result.answer.answer.trim().split("\n").map((line, index) => {
         const match = line.match(/^\[(\d+)\] (.*)$/);
         const citation = result.answer.citations.find(c => c.source_id === Number(match?.[1]));
-        return <li key={index}>{match?.[2] ?? line}{citation && <> <Link to={sourceLink(citation.source_id)}>[{citation.source_id}] {citation.passage.title}</Link></>}</li>;
+        return <li key={index}>{match?.[2] ?? line}{citation && <> <Link to={citationTarget(citation.passage, returnTo)}>[{citation.source_id}] {citation.passage.title}</Link></>}</li>;
       })}</ul>}
       <p className="help-text">Check every category and claim against its original. This draft covers only the selected passages.</p>
     </div>}
     <details><summary>Review {preview.passages.length} selected original passages</summary>{preview.passages.map(p => <article key={p.id}>
       <h4>{p.title}</h4><p className="help-text">Source/event: {formatEntryDate(p.event_at)} · Added: {formatEntryDate(p.created_at)} · Version {p.version_id}</p>
-      <p className="entry-content">{p.text}</p><Link to={sourceLink(p.id)}>Open original · Characters {p.start+1}–{p.end}</Link>
+      <p className="entry-content">{p.text}</p><Link to={citationTarget(p, returnTo)}>Open original · Characters {p.start+1}–{p.end}</Link>
     </article>)}</details>
   </section>;
 }

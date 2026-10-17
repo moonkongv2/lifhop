@@ -1576,3 +1576,27 @@ validation does not establish factual grounding or prove a Completed work label.
 Stop/scope/account/revision changes reject stale output, and no automatic retry
 repairs an invalid paid response. Synthetic verification grants no new real-provider
 transmission or change to application AI permissions.
+
+
+## 2026-10-17: Keep citation identity independent of disposable search indexes
+
+New cited-answer and retrospective links include the retained version ID, field,
+character bounds and SHA-256 of the exact excerpt. A local owner-scoped reader
+checks these anchors against a bounded PostgreSQL substring (maximum 2,000
+characters) under the existing shared owner lock and search timeout. It does not
+rebuild historical indexes, retain additional bodies or dispatch a provider.
+The hash checks excerpt identity; it is not proof that an answer is correct or
+that a particular model previously cited this range.
+
+Compare the anchored version with the current selection, retaining the original
+version's title/event date and observation time. Show source deletion/unavailability
+separately from local retention and offer an explicit current-record link. A
+locally deleted record, missing version, invalid hash or another owner's version
+returns a generic unavailable response; do not infer deletion versus access loss
+or reveal replacement content. External-AI exclusion controls transmission,
+not the owner's existing local version-history access. This does not grant any
+new transmission consent or change current-only answer eligibility. On failed
+rechecks, hide earlier reader data; use account/anchor-specific ephemeral query
+keys and uncached HTTP requests. Existing unanchored links cannot recover their
+original evidence after disposable IDs disappear. Historical question retrieval,
+answer persistence and real-time push invalidation remain separate work.

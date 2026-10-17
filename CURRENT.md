@@ -1,8 +1,27 @@
 # lifhop Current Status
 
-Last updated: 2026-10-17
+Last updated: 2026-10-18
 
 ## Current product slice
+
+**2026-10-17 retained citation freshness implemented:** New answer and
+retrospective citation links carry version/field/range/hash anchors. Local
+`GET /passages/citation` reads at most 2,000 characters directly from the owned
+retained version, checks its hash, and reports whether that version is currently
+selected. It survives disposable Passage/embedding removal without replacing
+old evidence with current text. The reader shows the original title/event date,
+version observation time, current-version identity and source deletion/unavailable
+warnings; Open current record provides a separate destination. Local deletion,
+missing versions, another owner and mismatched text all return generic 404 with
+no replacement. Local reading remains available when external-AI permission is
+off, consistent with existing version history; this endpoint cannot dispatch AI.
+Readers discard cached text on failed rechecks and separate account/anchor keys.
+Full backend 615 passed, frontend 167 passed, lint/build passed; Chromium verified
+mocked answer → citation → edit → retained original/current record → AI permission
+revocation → source deletion → local deletion → search return. Actual OpenAI
+calls: zero. No schema/dependency/indexing changes. Owner authorized this commit checkpoint.
+Legacy links without anchors still depend on disposable IDs; historical retrieval
+and real-model quality remain outside this checkpoint. See ANSWER_SLICE.md.
 
 **2026-10-17 bounded period retrospective implemented:** Search offers **Period
 retrospective** for up to 92 days, defaulting to source/event dates with an Added
@@ -1038,10 +1057,9 @@ user-verifiable product slices in `ROADMAP.md`.
 
 ## Next
 
-1. Scope a Phase 3.3 citation freshness checkpoint: distinguish cited versions
-   from updated, deleted or unavailable originals without silently replacing the
-   evidence. Then scope historical-version selection and a small cross-source
-   acceptance check. Owner usability review of the retrospective remains pending.
+1. Scope Phase 3.3 historical-version selection, followed by a small cross-source
+   acceptance check. The retained citation freshness checkpoint is verified and
+   authorized for commit. Owner usability review of the retrospective remains pending.
    Current retained-version samples do not establish historical
    reconstruction or general real-answer quality. Do not mark Phase 3.3 complete.
    Paid tuning is stopped; no further OpenAI calls or

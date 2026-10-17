@@ -790,6 +790,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/passages/citation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Citation */
+        get: operations["citation_passages_citation_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/passages/{passage_id}": {
         parameters: {
             query?: never;
@@ -1349,6 +1366,49 @@ export interface components {
             /** Messages */
             messages: components["schemas"]["CaptureMessage"][];
             diagnostics: components["schemas"]["CaptureDiagnostics"];
+        };
+        /** CitationResponse */
+        CitationResponse: {
+            /** Entry Id */
+            entry_id: number;
+            /** Version Id */
+            version_id: number;
+            /** Current Version Id */
+            current_version_id: number | null;
+            /**
+             * Field
+             * @enum {string}
+             */
+            field: "title" | "content";
+            /** Start */
+            start: number;
+            /** End */
+            end: number;
+            /** Title */
+            title: string;
+            /** Text */
+            text: string;
+            /** Event At */
+            event_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Observed At
+             * Format: date-time
+             */
+            observed_at: string;
+            /** Source State */
+            source_state: string;
+            /** Completeness */
+            completeness: string;
+            /**
+             * Freshness
+             * @enum {string}
+             */
+            freshness: "current" | "updated";
         };
         /** CodexSessionRef */
         CodexSessionRef: {
@@ -4964,6 +5024,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PassageSearchResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    citation_passages_citation_get: {
+        parameters: {
+            query: {
+                version_id: number;
+                field: "title" | "content";
+                start: number;
+                end: number;
+                passage_hash: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CitationResponse"];
                 };
             };
             /** @description Validation Error */

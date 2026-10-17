@@ -207,3 +207,46 @@ def test_projection_database_failure_rolls_back_source_update(client, authentica
     assert current.content == original["content"] and current.current_version_id == original["current_version_id"]
     assert search(client, headers, "Unchanged original")["total"] == 1
     assert search(client, headers, "Uncommitted replacement")["total"] == 0
+
+
+def test_retained_citation_survives_edit_restore_and_source_deletion(client, auth_headers, db_session):
+    entry = note(client, auth_headers, text="Original 🙂 worker evidence.")
+    hit = search(client, auth_headers, "evidence")["items"][0]
+    anchor = {k: hit[k] for k in ("version_id", "field", "start", "end", "passage_hash")}
+    def read():
+        return client.get('/passages/citation', headers=auth_headers, params=anchor)
+    assert read().json()["freshness"] == "current"
+    client.patch(f'/entries/{entry["id"]}', headers=auth_headers, json={"title": "Changed title", "content": "Replacement"})
+    assert client.get(f'/passages/{hit["id"]}', headers=auth_headers).status_code == 404
+    response = read()
+    assert response.status_code == 200, response.text
+    result = response.json()
+    assert result["freshness"] == "updated" and result["text"] == hit["text"]
+    assert result["title"] == hit["title"] and result["version_id"] == hit["version_id"]
+    assert result["current_version_id"] != result["version_id"]
+    client.post(f'/entries/{entry["id"]}/versions/{hit["version_id"]}/select', headers=auth_headers)
+    assert read().json()["freshness"] == "current"
+    client.patch(f'/entries/{entry["id"]}/source-state', headers=auth_headers, json={"state": "deleted", "confirmed": True})
+    assert read().json()["source_state"] == "deleted"
+    client.delete(f'/entries/{entry["id"]}', headers=auth_headers)
+    assert read().status_code == 404
+
+
+def test_citation_rejects_other_owner_tampering_and_invalid_ranges(client, authenticated_user, another_user, db_session):
+    owner, headers = authenticated_user
+    entry = Entry(user_id=another_user.id, provider="manual", type=EntryType.NOTE, title="Private", content="Private evidence")
+    db_session.add(entry)
+    entry.current_version_id = record_version(db_session, entry).id
+    sync_current_passages(db_session, entry)
+    db_session.commit()
+    anchor = dict(version_id=entry.current_version_id, field="content", start=0, end=16,
+        passage_hash=hashlib.sha256(b"Private evidence").hexdigest())
+    assert client.get('/passages/citation', headers=headers, params=anchor).status_code == 404
+    note(client, headers)
+    hit = search(client, headers, "deployment")["items"][0]
+    anchor = {k: hit[k] for k in ("version_id", "field", "start", "end", "passage_hash")}
+    for patch, status in [({"passage_hash": "0" * 64}, 404), ({"end": 2000}, 404),
+        ({"end": 2001, "start": 0}, 422), ({"start": -1}, 422),
+        ({"end": 0}, 422), ({"field": "payload"}, 422), ({"version_id": 0}, 422), ({"extra": "x"}, 422)]:
+        assert client.get('/passages/citation', headers=headers, params={**anchor, **patch}).status_code == status
+    assert client.get('/passages/citation', params=anchor).status_code == 401

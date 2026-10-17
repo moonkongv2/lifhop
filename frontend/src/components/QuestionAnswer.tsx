@@ -1,3 +1,4 @@
+import { citationTarget } from "../api/passages";
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link } from "react-router";
@@ -46,12 +47,12 @@ function QuestionRun({ params, revision, available, refresh }: { params: URLSear
         <p>{result.answer.answer}</p>
         <p className="help-text">Verify claims against the cited originals. Only part of your archive may have been examined.</p>
         {result.answer.citations.length > 0 && <ul>{result.answer.citations.map(c => <li key={`${c.kind}-${c.source_id}`}>
-          <Link to={`/passages/${c.source_id}?${new URLSearchParams({ returnTo })}`}>{c.passage.title} · Version {c.passage.version_id} · Characters {c.passage.start+1}–{c.passage.end}</Link>
+          <Link to={citationTarget(c.passage, returnTo)}>{c.passage.title} · Version {c.passage.version_id} · Characters {c.passage.start+1}–{c.passage.end}</Link>
         </li>)}</ul>}
       </div> : <p role="status">No usable evidence was selected. No answer request was sent. Check the filters or use manual evidence review.</p>}
       {result.proposal && <details><summary>Review {result.proposal.passages.length} passages used for this answer</summary>
         {result.proposal.passages.map(p => <article key={p.id}><h4>{p.title}</h4><p className="entry-content">{p.text}</p>
-          <Link to={`/passages/${p.id}?${new URLSearchParams({ returnTo })}`}>Open original passage · Characters {p.start+1}–{p.end}</Link></article>)}
+          <Link to={citationTarget(p, returnTo)}>Open original passage · Characters {p.start+1}–{p.end}</Link></article>)}
         {result.proposal.omissions.length > 0 && <p className="help-text">{result.proposal.omissions.length} matches were omitted because they repeated a parent passage or exceeded the selection/size limits.</p>}
       </details>}
     </>}

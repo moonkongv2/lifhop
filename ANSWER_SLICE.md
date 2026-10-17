@@ -629,3 +629,45 @@ The agent verified the synthetic browser flow. To review its usability:
 The two preview servers were left running at handoff. Owner review is optional
 for mechanical checks, which the agent already performed; feedback should focus
 on whether full-text review and selection are comfortable to use.
+
+
+## Retained citation reader (2026-10-17)
+
+New citations from selected-Passage/Semantic answers, unified answers and period
+retrospectives include the exact retained version, field, character range and
+excerpt hash. `GET /passages/citation` authenticates the owner and reads only that
+range (1–2,000 characters), verifying the hash even after current search indexes
+have been replaced. No AI request, reservation or background worker is involved.
+
+- Current selection: “This citation matches the current retained version.”
+- Changed selection: show the cited version and current version separately,
+  keeping the old title/text/event date. **Open current record** opens the current
+  record; it does not replace the cited text.
+- Source marked deleted/unavailable: label the retained local version.
+- Deleted in lifhop, missing or inaccessible version, or mismatched excerpt: show
+  an unavailable error with no body or automatic replacement. These causes are
+  intentionally indistinguishable across owners.
+- AI permission revoked: the owner can still read retained local history; this
+  does not make that version eligible for new AI requests.
+
+Reload, remount and focus rechecks fetch fresh local state. Previous text is
+hidden during rechecks and after errors. This is not instantaneous push deletion
+from an already open/offline screen. Old links without anchors retain their prior
+current-only behavior. Answers still retrieve current eligible versions by default;
+this change does not implement historical questions or persist generated answers.
+
+### Verification completed by the agent
+
+Backend 615 tests and frontend 167 tests passed; lint/build passed. A Chromium
+flow created a disposable synthetic note, generated a mocked answer, opened its
+citation, edited the note, confirmed the original title/text and separate current
+record, revoked AI permission, marked the source deleted, deleted the local
+record and confirmed the citation body disappeared. Search return was preserved.
+Screenshot: `.local/verification/citation-updated.png` (ignored local artifact).
+Actual OpenAI calls: zero. The in-app browser failed to connect; standalone
+Chromium completed these checks. No user repetition is required for functional
+verification. Optional visual review: start the synthetic API/frontend as usual,
+log in with `demo@example.test` / `demo-password` at `http://127.0.0.1:5174`,
+generate a selected-passage mocked answer, retain its citation URL, edit that
+note and reload the URL. Expect the old evidence plus a changed-version notice;
+**Open current record** should show the edited note.

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter, Route, Routes } from "react-router";
 import EntrySearchPage from "./EntrySearchPage";
@@ -39,12 +39,15 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
 function mount(path = "/search?mode=passages&q=worker") {
-  render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+  const cache = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  render(<QueryClientProvider client={cache}>
     <MemoryRouter initialEntries={[path]}><Routes><Route element={<App />}>
       <Route path="/search" element={<EntrySearchPage />} /><Route path="/passages/:id" element={<PassagePage />} />
+      <Route path="/semantic/slices/:id" element={<PassagePage semantic />} />
       <Route path="/login" element={<p>Login page</p>} />
     </Route></Routes></MemoryRouter>
   </QueryClientProvider>);
+  return cache;
 }
 
 it("keeps initial searches empty and requires a passage query", () => {
@@ -120,4 +123,56 @@ it("expires authentication on a 401", async () => {
   mount();
   await screen.findByText("Login page");
   await waitFor(() => expect(localStorage.getItem("access_token")).toBeNull());
+});
+
+
+const pinnedPath = "/passages/11?version_id=9&field=content&start=2&end=32&passage_hash=" + "a".repeat(64) + "&returnTo=%2Fsearch%3Fmode%3Dpassages%26q%3Dworker";
+
+it.each(["current", "updated"])("reads the exact citation anchor and displays %s freshness", async freshness => {
+  vi.stubGlobal("fetch", vi.fn(async (path: string) => {
+    requests.push(path);
+    return Response.json({ ...passage, freshness, current_version_id: freshness === "current" ? 9 : 10,
+      observed_at: "2026-01-01T00:00:00Z" });
+  }));
+  mount(pinnedPath);
+  await screen.findByText(freshness === "current" ? /matches the current retained version/ : /Showing the cited version 9; current version: 10/);
+  expect(requests[0]).toContain("/passages/citation?");
+  expect(requests[0]).toContain("passage_hash=" + "a".repeat(64));
+  expect(requests[0]).not.toContain("returnTo");
+  expect(screen.getByText(passage.text).textContent).toBe(passage.text);
+  expect(screen.getByRole("link", { name: "Open current record" }).getAttribute("href")).toContain("/entries/7?");
+  expect(document.querySelector("script")).toBeNull();
+});
+
+it("hides previously loaded citation text when a deletion recheck fails", async () => {
+  vi.stubGlobal("fetch", vi.fn(async () => failure ? new Response(null, { status: failure }) : Response.json({
+    ...passage, freshness: "updated", source_state: "deleted", current_version_id: 10, observed_at: passage.created_at,
+  })));
+  const cache = mount(pinnedPath);
+  await screen.findByText("Deleted at source. This is a retained local version.");
+  expect(screen.getByText(passage.text)).toBeTruthy();
+  failure = 404;
+  await act(async () => { await cache.invalidateQueries(); });
+  expect((await screen.findByRole("alert")).textContent).toContain("unavailable");
+  expect(screen.queryByText(passage.text)).toBeNull();
+});
+
+
+it("opens Semantic citations through the retained anchor without loading an embedding", async () => {
+  vi.stubGlobal("fetch", vi.fn(async (path: string) => {
+    requests.push(path);
+    return Response.json({ ...passage, freshness: "current", current_version_id: 9, observed_at: passage.created_at });
+  }));
+  mount(pinnedPath.replace("/passages/11", "/semantic/slices/11"));
+  await screen.findByText(/matches the current retained version/);
+  expect(requests).toHaveLength(1);
+  expect(requests[0]).toContain("/passages/citation?");
+});
+
+it("rejects an incomplete citation anchor instead of falling back to a current passage", async () => {
+  failure = 422;
+  mount(pinnedPath.replace("version_id=9&", ""));
+  await screen.findByRole("alert");
+  expect(requests).toHaveLength(1);
+  expect(requests[0]).toContain("/passages/citation?");
 });
