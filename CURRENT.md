@@ -48,7 +48,11 @@ The common citation instructions now require cited evidence for every factual
 claim and omit unsupported optional details; insufficient evidence still requires
 an empty citation list. Synthetic checks cover delivery and response handling,
 not actual model compliance. No real-provider retest was performed.
-Next consolidate the remaining acceptance scope before another paid check.
+The permitted evidence/scope audit is complete. Its inspected candidates do not
+establish a linked cross-source implementation, an adopted-change reason or a
+positive ordinary-life fact. These remain unmet gates, not successful negatives.
+Next identify the missing real evidence and its permitted scope, or obtain explicit
+agreement to defer those gates before proposing one consolidated final check.
 Do not repeatedly tune these known cases.
 Cross-source
 decision/implementation and adopted-change reasons remain deferred; positive
@@ -60,6 +64,26 @@ Phase 3.3 is incomplete; do not start scheduled collection yet.
 See AI_SOURCE_COVERAGE.md for scope and completion gates.
 
 ## Current product slice
+
+**2026-10-18 acceptance scope audit and unresolved-report correction:** The local
+preflight now reports every case with coverage gaps as unresolved, including
+empty/denied corpora and selected context missing a required source. Previously
+these could be missing from the summary list. Render that list in the private
+HTML; keep candidate readiness separate from factual relevance and acceptance.
+Focused preflight/executor tests **29 passed**. Actual read-only discovery stayed
+within the existing 46 allowed records/274 parents/1,060 vectors and left Entry,
+usage/run/job counts unchanged. Cross-source candidates do not establish a linked
+decision and implementation; inspected reason candidates are proposals/priorities
+or review checklists; life matches are desired questions rather than actual facts.
+No excluded body was read, and no provider call, activation, policy or settings
+change occurred. Private discovery/relevance artifacts are retained under
+`.local/evaluation/phase33/scope-audit-*/`. Bounded findings do not establish absence
+from all original history. Remaining gates now require owner-selected real
+evidence or explicit agreement to defer them; no Phase 4 transition or scope
+waiver is implied. Citation/period-date corrections remain live-unverified.
+Final full backend suite **701 passed**; diff whitespace passed. No frontend
+change or browser run. The citation correction is committed separately;
+this checkpoint covers the unresolved-report correction and scope audit.
 
 **2026-10-18 citation instructions strengthened locally:** Require the provider's
 returned citation set collectively to support every factual claim, include all
@@ -1344,7 +1368,9 @@ user-verifiable product slices in `ROADMAP.md`.
    three-question integrated smoke pass is also closed, with a partial GitHub
    citation-coverage finding. The common citation instruction correction is now
    implemented and synthetically tested; actual model compliance remains unverified.
-   Consolidate remaining acceptance scope before any separately approved paid check.
+   Permitted discovery is complete; identify actual missing evidence and its
+   allowed scope, or obtain explicit agreement to defer the unresolved gates
+   before any separately approved consolidated check.
    The four-call selected-context pass is closed;
    expected statuses matched, but the date defect prevents calling the period
    check fully passed. Synthetic date regressions do not establish real-model

@@ -222,7 +222,7 @@ def prepare_acceptance(snapshot, spec, settings):
     budget = budget_summary(db, scope=settings.embedding_billing_scope,
         monthly_limit=settings.embedding_monthly_limit_micro_usd)
     prepared = [c['id'] for c in cases if c['selected'] and not c['gaps']]
-    unresolved = [c['id'] for c in cases if c['deferred'] or c['positive_category_unverified']]
+    unresolved = [c['id'] for c in cases if c['gaps'] or c['positive_category_unverified']]
     protocol = dict(schema='lifhop-phase33-preflight-v1', preparation_version='evidence-drafts-v2', owner_id=owner,
         database=snapshot.database_fingerprint, policy_revision=revision, spec_digest=digest(spec.model_dump(mode='json')),
         model=MODEL, configuration_hash=CONFIG_HASH, storage_configuration=STORAGE_CONFIG,
@@ -271,4 +271,5 @@ def review_html(protocol, review):
         f'<p>{protocol["question_count"]} questions · {protocol["excerpt_count"]} excerpts · '
         f'{protocol["answer_call_limit"]} prepared answer candidates; deferred/blocked cases are excluded. '
         f'Future answer-only ceiling USD {protocol["answer_max_micro_usd"]/1000000:.2f}; indexing/query embeddings excluded.</p>'
+        f'<p>Unresolved acceptance categories: {escape(", ".join(protocol["unresolved_acceptance_categories"]) or "none detected; evidence still needs owner review")}</p>'
         f'<p>State: {escape(protocol["state"])} · Digest: {protocol["digest"]}</p>' + ''.join(sections) + '</html>').encode()

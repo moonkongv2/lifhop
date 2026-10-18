@@ -4,6 +4,42 @@ Status: 2026-10-18. The selected-context, 46-record indexing and three-question
 integrated smoke passes are closed. Phase 3.3 remains incomplete; this plan does
 not authorize another provider request.
 
+## Remaining scope audit implemented (2026-10-18)
+
+The local preflight now includes every structurally blocked case in its unresolved
+category list, not just explicit deferrals and negative substitutes for positive
+categories. Previously an empty evidence set or a missing required source could
+be absent from that list despite coverage gaps elsewhere in the report. The HTML
+now shows the complete unresolved list. Tests cover empty/denied/deleted/foreign
+corpora and a selected Codex excerpt with the required GitHub source unavailable.
+This summary does not prove that the contents support the proposed answer;
+candidate relevance and adopted reasons still require direct review.
+
+A fresh, read-only discovery used only the existing permitted 46-record pool.
+It found the same 1,060 valid vectors and 274 primary parents; usage/run/job/Entry
+counts were unchanged. Denied record bodies were not materialized. No API call,
+indexing activation, permission change or paid replay occurred. Detailed source
+anchors and relevance findings are private outside Git.
+
+| Remaining item | Local finding | Required resolution |
+| --- | --- | --- |
+| Linked cross-source implementation | Reviewed Codex planning and GitHub app documents do not establish the same decision/implementation; the worker query returned Codex only | Review an actual linked pair from owner-selected permitted records, or explicitly defer this gate |
+| Adopted change with reason | Inspected hits contain proposals, priorities or review checklists, not an adopted change and its stated reason | Review an explicit adoption/reason, or explicitly defer this gate |
+| Positive ordinary-life recall | Two rental matches are desired example questions, not a used company and selection reason | Review a real note/conversation containing the fact, or explicitly defer this gate |
+| Citation completeness and Seoul period dates | Local instruction/metadata fixes are implemented; original live failures remain preserved | Include both in one later reviewed acceptance pass; no automatic retest |
+
+These are findings from bounded permitted discovery, not proof that the owner's
+entire original history lacks evidence. Do not broaden permissions, invent facts,
+pair unrelated projects or treat keyword hits as acceptance. The next owner
+decision is either to identify the missing real evidence and its allowed scope,
+or agree a concrete narrower gate that leaves those categories deferred. This
+audit does not itself change the roadmap order or authorize Phase 4.
+
+Focused preflight/executor tests: **29 passed**; full backend **701 passed** and
+diff whitespace passed. The citation instruction correction is committed
+separately as `6a7beda`; this checkpoint covers the unresolved-report correction
+and scope audit. No frontend or schema change.
+
 ## Latest local change: citation instructions strengthened
 
 The shared answer instructions now require cited excerpts collectively to support
@@ -259,6 +295,6 @@ checks passed. No new tests or browser steps are required to inspect these findi
 The owner need not repeat a closed pass or local readback. Review the results and
 the citation-coverage finding; no browser action is required to inspect the agent's
 checks. Preserve frozen protocols and raw answers. The worker/indexing change was
-committed as `e45e74e`; integrated results were committed as `693b919`. The local
-instruction change, regressions and updated status can form the next checkpoint:
-`fix: require cited support for every answer fact`.
+committed as `e45e74e`; integrated results were committed as `693b919`. The
+citation instructions and regressions are committed separately as `6a7beda`
+(`fix: require cited support for every answer fact`).

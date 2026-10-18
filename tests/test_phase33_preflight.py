@@ -5,7 +5,7 @@ from uuid import uuid4
 import pytest
 from pydantic import ValidationError
 from sqlalchemy import func, select
-from app.evaluation.phase33_preflight import AcceptanceSpec, default_spec, prepare_acceptance, review_html
+from app.evaluation.phase33_preflight import CASE_IDS, AcceptanceSpec, default_spec, prepare_acceptance, review_html
 from app.models.ai_usage import AiUsageAttempt
 from app.models.embedding_job import EmbeddingJob
 from app.models.entry import Entry
@@ -82,6 +82,8 @@ def test_coverage_gaps_never_become_synthetic_success(db_session, user, another_
     assert protocol['excerpt_count'] == 0
     assert all('NO_ELIGIBLE_PRIMARY_EVIDENCE' in c['gaps'] for c in protocol['cases'])
     assert all(c['passages'] == [] for c in review)
+    assert protocol['unresolved_acceptance_categories'] == CASE_IDS
+    assert 'Unresolved acceptance categories: decision-implementation, reason-change, ordinary-life' in review_html(protocol, review).decode()
 
 
 def test_changed_policy_changes_protocol_and_preserves_exclusion(db_session, user):
@@ -96,6 +98,7 @@ def test_changed_policy_changes_protocol_and_preserves_exclusion(db_session, use
     assert 'CODEX_AND_GITHUB_EVIDENCE_REQUIRED' in second['cases'][0]['gaps']
     assert all(p['source'] != 'github' for c in review for p in c['passages'])
     assert policy.external_ai_allowed is False
+    assert 'decision-implementation' in second['unresolved_acceptance_categories']
 
 
 def test_denied_matching_text_is_counted_without_materialization(db_session, user, monkeypatch):
@@ -173,6 +176,19 @@ def test_no_evidence_means_no_prepared_calls(db_session, user):
     protocol, _ = prepare_acceptance(*inputs(db_session, user))
     assert protocol['prepared_answer_cases'] == []
     assert protocol['answer_call_limit'] == protocol['answer_max_micro_usd'] == protocol['estimated_max_micro_usd'] == 0
+
+
+def test_missing_one_source_remains_unresolved_despite_selected_context(db_session, user):
+    seed(db_session, user)
+    db_session.scalar(select(SourcePolicy).where(SourcePolicy.user_id == user.id,
+        SourcePolicy.provider == 'github')).external_ai_allowed = False
+    db_session.flush()
+    protocol, review = prepare_acceptance(*inputs(db_session, user))
+    case = protocol['cases'][0]
+    assert case['selected'] and case['gaps'] == ['CODEX_AND_GITHUB_EVIDENCE_REQUIRED']
+    assert case['id'] not in protocol['prepared_answer_cases']
+    assert case['id'] in protocol['unresolved_acceptance_categories']
+    assert 'Unresolved acceptance categories: decision-implementation' in review_html(protocol, review).decode()
 
 
 @pytest.mark.parametrize('change', ['order', 'duplicates', 'historical_question', 'period_question', 'unknown_field', 'work', 'expected'])
