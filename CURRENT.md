@@ -36,17 +36,70 @@ the Seoul day. Retrospective metadata and instructions now explicitly use Seoul
 dates; synthetic regressions cover the fix, but no further real-model call was
 made. The original paid outputs remain unchanged. No new uncertain reservations;
 three earlier unresolved reservations remain untouched.
-Next: prepare a small integrated retrieval/answer check using the restored index,
-with separate question/answer transmission approval, then resolve or explicitly
-narrow remaining acceptance coverage. Cross-source
+The separately approved integrated smoke pass is now closed: three real questions,
+six calls, fourteen automatically selected excerpt occurrences, USD 0.000997
+settled, zero new outstanding usage. All expected statuses matched. Direct review
+passed priority recall and missing-proof refusal; the GitHub answer is partial:
+its child-audience detail exists in selected context but not its sole returned
+citation, and a reference checklist detail was omitted. Both returned citations
+resolve to exact original text. Answer mode was temporarily enabled in that
+process only and restored off. No additional indexing, permission change or retry.
+Next: address citation coverage locally and consolidate the remaining acceptance
+scope before another paid check; do not repeatedly tune these known cases.
+Cross-source
 decision/implementation and adopted-change reasons remain deferred; positive
-ordinary-life fact recall and automatic Semantic retrieval are unverified.
+ordinary-life fact recall and broad automatic Semantic retrieval remain unverified.
+The three source-filtered known cases establish bounded integrated wiring only.
 The rental question tested missing evidence, not positive fact recall.
 Private results and permission audit remain under `.local/evaluation/phase33/`.
 Phase 3.3 is incomplete; do not start scheduled collection yet.
 See AI_SOURCE_COVERAGE.md for scope and completion gates.
 
 ## Current product slice
+
+**2026-10-18 approved integrated smoke pass closed:** Verified exact frozen
+owner/database/revision/configuration and 1,060 vector/274 parent anchors before
+dispatch. Existing Semantic → local recommendation → answer handlers processed
+the same questions/source filters/action IDs without injecting scoring evidence.
+Three query calls plus three answers sent fourteen parent excerpt occurrences,
+within six calls/USD 0.033 and five parents per answer. Actual settled cost
+USD 0.000997; per-action latency 4.5–5.3 seconds; no new uncertain attempt.
+Priority order and missing-proof refusal passed direct grounding review. GitHub
+purpose/flow is mostly supported, but its sole citation omits the child-audience
+fact supported elsewhere in selected context; reference vehicle-selection detail
+was also absent from the answer. Preserve this partial result rather than
+claiming full acceptance or rewriting paid output. Two original citation GETs
+and the refusal explanation were checked locally with no additional provider
+calls/usage rows. Prior reservations, source permissions and versions were
+verified unchanged; temporary process settings were restored and answer mode is
+off. The approval is consumed. No application code, model, persistent setting,
+new indexing or paid retry. Raw stage responses/ledger/grounding review and a
+readable results HTML remain private beside the frozen protocol. The next local
+work is a narrow citation-coverage correction and acceptance-scope review;
+cross-source reasons, positive life memory and period-date retest remain open.
+Existing recommendation/Semantic/answer tests rerun: **61 passed**; diff whitespace
+passed. No frontend code change or new browser verification in this execution.
+
+**2026-10-18 integrated-flow proposal prepared:** Committed the bounded indexing
+worker/results as `e45e74e`. Prepared three known-evidence smoke questions for
+Codex priorities, GitHub document purpose/usage and a Codex missing-proof refusal.
+Bind exact questions/source filters, owner/database/revision/configuration,
+1,060 current vector anchors and 274 eligible parent anchors from the existing
+46-record pool. Reference claims and original text are private scoring inputs;
+they must not seed paid retrieval or force selection. Proposed caps: three query
+embeddings plus three answers, at most six calls/USD 0.033; up to five automatic
+parent excerpts per answer, fifteen occurrences total. Exact selected text depends
+on actual query results and remains within the frozen pool and 14 KiB request
+limit. Answer mode remains off; a future approved run needs a temporary bounded
+process override. No real query/answer/indexing call or permission change occurred.
+Real-corpus local probes using source vectors exercised ranking/recommendation
+and selected reference text; these are structural checks, not question-quality
+evidence. Read-only preparation left usage counts unchanged. Existing backend
+tests **61 passed**, frontend integrated tests **32 passed**, diff whitespace
+passed. No new app code or browser run. Review is private under
+`.local/evaluation/phase33/integrated-smoke/`; the proposed pass is unapproved.
+Phase 3.3 and the remaining category/period-date checks are still incomplete.
+See PHASE33_COMPLETION_PLAN.md for the exact scope and execution sequence.
 
 **2026-10-18 owner-approved current indexing complete:** The one-pass approval
 covered 46 existing permitted records, at most 72 calls/USD 0.01. Both frozen
@@ -1265,9 +1318,11 @@ user-verifiable product slices in `ROADMAP.md`.
 ## Next
 
 1. Follow PHASE33_COMPLETION_PLAN.md: the guarded tooling and Seoul date correction
-   are committed and the approved 46-record indexing pass is complete. Prepare
-   a small integrated-flow review and obtain separate question/answer transmission
-   consent before executing it. The four-call selected-context pass is closed;
+   are committed and the approved 46-record indexing pass is complete. The
+   three-question integrated smoke pass is also closed, with a partial GitHub
+   citation-coverage finding. Prepare a narrow local citation correction and
+   consolidate remaining acceptance scope before any separately approved paid check.
+   The four-call selected-context pass is closed;
    expected statuses matched, but the date defect prevents calling the period
    check fully passed. Synthetic date regressions do not establish real-model
    compliance. Resolve or explicitly narrow the deferred cross-source decision

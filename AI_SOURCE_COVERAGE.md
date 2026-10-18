@@ -269,6 +269,18 @@ Phase 3.3 or authorize further paid diagnostics.
 
 ### Acceptance gates
 
+The subsequent approved integrated smoke pass completed once: three real queries,
+three answers, fourteen automatic excerpt occurrences, USD 0.000997 settled and
+zero new uncertain usage. Codex priority recall and missing-proof refusal passed
+direct review. GitHub purpose/flow is partial: the child-audience detail is present
+in selected context but absent from its sole cited excerpt, and a reference
+checklist detail was omitted. Two exact original citation reads passed; source
+policy, versions and old reservations remained unchanged. Temporary answer mode
+was restored off. Preserve this finding and the immutable raw outputs; expected
+status agreement does not close grounding acceptance. No additional paid retry
+is authorized. PHASE33_COMPLETION_PLAN.md records the remaining local work and
+coverage gaps. These source-filtered known cases are not a broad quality benchmark.
+
 The separately approved 46-record current-index restoration completed on
 2026-10-18: 43 GitHub documents and three Codex records, 1,060 eligible slices,
 67 embedding calls, USD 0.000996 settled and zero new uncertain usage. Exact

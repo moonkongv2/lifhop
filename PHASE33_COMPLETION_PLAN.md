@@ -1,8 +1,51 @@
 # Phase 3.3 remaining acceptance
 
-Status: 2026-10-18. The four-call selected-context pass and the separately approved
-46-record indexing pass are closed. Phase 3.3 remains incomplete; this plan does
+Status: 2026-10-18. The selected-context, 46-record indexing and three-question
+integrated smoke passes are closed. Phase 3.3 remains incomplete; this plan does
 not authorize another provider request.
+
+## Latest result: integrated smoke pass closed
+
+The owner approved three questions, up to fifteen automatic excerpt occurrences,
+one pass/six calls/USD 0.033 and temporary answer enablement. The exact protocol
+matched live owner/database/policy/configuration and the full frozen index.
+Existing product handlers processed actual question embeddings, their ranked
+hits, unchanged automatic parent recommendations and answers. No scoring answer
+or reference anchor entered retrieval, selection or model requests.
+
+| Case | Retrieved / selected / cited | Direct review |
+| --- | --- | --- |
+| Codex priority order | 20 / 5 / 1 | Pass: exact user priority order and citation match |
+| GitHub README purpose/flow | 20 / 5 / 1 | Partial: core explanation supported, citation coverage incomplete; reference vehicle-selection detail omitted |
+| Codex production proof | 20 / 4 / 0 | Pass: insufficient with no invented deployment success |
+
+All three expected statuses matched, but this is not three full acceptance
+passes. The GitHub answer describes the child audience, which appears in selected
+README context but not the only excerpt it actually cites. A source elsewhere in
+the request is not a complete returned citation. The missing reference checklist
+detail is recorded separately from the factual citation gap; do not rewrite the
+answer or automatically insert a reference to make the result appear passed.
+
+Actual **six calls** (three query/three answer), **fourteen excerpt occurrences**,
+**USD 0.000997 settled**, **zero new uncertain usage**, **4.5–5.3 seconds/action**.
+Two original citation reads and the refusal explanation were independently
+checked with zero provider calls/new usage rows. The same-action domain-separated
+ledger and exclusive marker prevent replay. All prior attempts, source policy
+and versions were preserved. Temporary process settings were restored; answer
+mode remains off. Private raw stage responses, ledger, grounding review and
+readable results are retained alongside the immutable protocol. Approval is
+consumed; do not repeat it.
+
+Existing recommendation/Semantic/answer tests rerun after execution: **61 passed**;
+diff whitespace passed. No app code changed, and no new browser run was made.
+
+Next make a narrow local citation-coverage proposal: require citations supporting
+all returned factual details and omit a detail that cannot be tied to selected
+evidence. Preserve the observed failure; do not silently add guessed citations
+or use evaluation answers to repair output. Synthetic checks can verify request
+contracts and no-retry behavior, not prove semantic grounding. Consolidate this
+with the remaining acceptance gaps before seeking any fresh real-model pass;
+do not start another paid tuning loop against these three known cases.
 
 ## Latest result: approved indexing completed
 
@@ -24,7 +67,8 @@ Unscoped processing retains its normal behavior. Two scope-isolation regressions
 were added. Full backend **696 passed**, focused indexing tests **31 passed** and
 diff whitespace passed. No frontend change or browser check was required.
 
-Next prepare step 2 below. Index availability establishes readiness, not answer
+Step 2's private protocol has now been executed and closed (details below).
+Index availability establishes readiness, not broad answer
 or automatic retrieval quality. The approval is consumed; do not rerun it or send
 new questions under the indexing permission. The readiness counts below describe
 the pre-execution snapshot and are retained as the audit trail.
@@ -92,7 +136,52 @@ Do not resume older runs or release earlier uncertain reservations. Report actua
 spent/uncertain cost and current eligible vector counts after publication. A
 successful indexing pass alone does not establish retrieval quality.
 
-### 2. Freeze one small integrated-flow check
+### 2. Integrated-flow check — executed; grounding partially passed
+
+**Preparation snapshot, subsequently approved and executed as recorded above.** Three proposed
+questions cover Codex priority-order recall, GitHub README purpose/usage recall,
+and missing production-deployment proof restricted to the permitted Codex source.
+The two positive examples have directly inspected reference evidence; the
+negative example preserves the requirement to decline unsupported claims. These
+are known-evidence smoke cases, not a newly approved gold benchmark.
+
+The private proposal binds owner/database/policy, answer/storage configuration,
+all 1,060 vector anchors, 274 eligible parent anchors, exact questions/source
+filters, reference evidence and scoring checklists. Its HTML includes the full
+eligible parent-text pool for review. Source filters are part of each question;
+the test does not measure unfiltered cross-source recall. The question and all
+retrieval inputs must match the frozen proposal before paid execution.
+
+At most three question embeddings plus three answers: **six calls / USD 0.033**
+(query USD 0.003, answer USD 0.03). Actual answer excerpts cannot be known until
+the real query executes. Approval must explicitly allow up to five automatically
+selected complete parents per answer, at most fifteen excerpt occurrences total,
+from the existing 46-record pool only. Keep the existing 14 KiB answer request
+limit; no reindexing or policy expansion is included. Recheck every selected
+anchor against this pool before answer dispatch. Expected answers/checklists
+must not enter paid requests or modify ranking/selection.
+
+Execute the existing `/semantic/search` → `/answers/recommendations` → `/answers`
+handlers with the same question, filters, revision and action ID. Save each
+stage, originals, omission reasons, latency and separately settled query/answer
+cost. Use an exclusive run marker and separate query/answer ledger domains;
+stop on failure without replay. A retrieval/context miss remains in the report;
+do not manually insert the expected evidence. Missing selected evidence should
+prevent a positive answer and be classified separately from an answer error.
+The configured answer mode remains off. Approval should include enabling answers
+temporarily inside this bounded process only; restore settings afterward.
+
+Local checks used a reference **source vector**, not a paid question vector, to
+exercise real-corpus distance ranking/grouping and parent recommendation. All
+three probes selected reference text within request limits. This verifies wiring
+and stored-vector readability only; it does not establish question recall or
+answer grounding. Preparation ran in a read-only transaction and left usage-row
+counts unchanged. Additional actual provider calls: **zero**.
+
+Existing backend recommendation/Semantic/answer tests rerun: **61 passed**.
+Existing frontend integrated question/search tests rerun: **32 passed**. No app
+code or frontend behavior changed in this preparation; no browser run was made.
+The prior worker/indexing slice was committed as `e45e74e`.
 
 After indexing, prepare exact questions, independent expected claims and source
 anchors from permitted primary records. Reuse supported evidence deliberately
@@ -131,8 +220,8 @@ database execution and unchanged row-count assertions verified the audit. The
 existing indexing-job/Semantic tests were also rerun: **51 passed**. Diff whitespace
 checks passed. No new tests or browser steps are required to inspect these findings.
 
-The owner need not repeat either completed paid pass or the local readback. The
-next step is preparing an integrated-flow review; its question/answer transmission
-needs separate bounded approval after the exact data is reviewable. Preserve
-frozen protocols and raw answers. The pending worker change/results can form a
-commit checkpoint: `feat: scope embedding processing to approved runs`.
+The owner need not repeat a closed pass or local readback. Review the results and
+the citation-coverage finding; no browser action is required to inspect the agent's
+checks. Preserve frozen protocols and raw answers. The worker/indexing change was
+committed as `e45e74e`. The current documentation/results can form a checkpoint:
+`docs: record bounded integrated answer validation`.
