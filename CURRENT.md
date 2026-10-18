@@ -20,15 +20,101 @@ source metadata. Full originals remain retained. Both AI permissions and current
 owner/version/deletion checks still apply; arbitrary events/logs remain excluded.
 The projection/storage configuration changed: existing accounts require local
 Passage backfill and separately approved fresh embedding indexing. Old vectors
-are unavailable; old follow approvals cannot enroll new-config jobs. The real
-owner database/permissions/index were not changed in this implementation.
-Synthetic multi-source answer/retrospective/history and exact citation checks
-pass, but actual recall, model grounding, latency and cost remain unverified.
-Next: one bounded six-case acceptance pass, freshly scoped and approved before
-any real-provider indexing/evaluation. Do not declare Phase 3.3 complete or start
-scheduled collection yet. See AI_SOURCE_COVERAGE.md for scope and completion gates.
+are unavailable; old follow approvals cannot enroll new-config jobs. The owner
+has rebuilt local projections. A subsequent explicit request enabled exactly
+three selected Codex records and their source, preserving all other record and
+source settings. No new embedding indexing was activated.
+The owner-approved four-question/nine-excerpt pass is now closed: four real
+calls returned the expected statuses, costing USD 0.000809 with 2.4–4.0 seconds
+per action. Four returned original citations were independently read and checked.
+Two evidence refusals and the priority answer were grounded. The period review
+distinguished proposals correctly but reported one UTC calendar day instead of
+the Seoul day. Retrospective metadata and instructions now explicitly use Seoul
+dates; synthetic regressions cover the fix, but no further real-model call was
+made. The original paid outputs remain unchanged. No new uncertain reservations;
+three earlier unresolved reservations remain untouched.
+Next: commit the guarded acceptance tooling and date fix at coherent boundaries,
+then resolve or explicitly narrow remaining acceptance coverage. Cross-source
+decision/implementation and adopted-change reasons remain deferred; positive
+ordinary-life fact recall and automatic Semantic retrieval are unverified.
+The rental question tested missing evidence, not positive fact recall.
+Private results and permission audit remain under `.local/evaluation/phase33/`.
+Phase 3.3 is incomplete; do not start scheduled collection yet.
+See AI_SOURCE_COVERAGE.md for scope and completion gates.
 
 ## Current product slice
+
+**2026-10-18 approved selected-context pass closed; retrospective date fix:**
+Executed exactly four real answer calls within the approved USD 0.04 ceiling.
+Current missing-fact and missing-proof questions returned insufficient; period
+review and historical priorities returned supported. Status agreement is not full
+acceptance: direct grounding review found the period's UTC/Seoul date discrepancy.
+Convert retrospective event/collection metadata to explicit +09:00 offsets and
+instruct the existing model to use Seoul calendar dates, preserving stored times
+and citation anchors. Missing event dates remain unknown. Two regression tests
+cover the boundary and missing-date behavior. The run temporarily enabled answer
+mode only inside its approved process; `.env` and running server configuration
+were unchanged. No new indexing, permission expansion, model change or paid retry.
+The consumed protocol cannot be replayed; changed prompt configuration requires
+a fresh preflight and separate approval for any future paid pass. No frontend
+change or browser verification was needed for this backend slice. Final full
+backend suite: **694 passed**; diff whitespace check passed. Real-model behavior
+after the date fix remains unverified; no additional user-run paid test is required
+to review these results.
+
+**2026-10-18 evidence-based draft revision and guarded execution prepared:**
+Retain unsupported cases with explicit deferral reasons and no provider-call
+budget. Allow negative questions without treating them as positive category
+coverage. Budget only prepared cases and keep unresolved categories visible.
+The private revised draft uses four questions/nine excerpts from the three
+authorized records; dates/expectations are proposals, not an approved answer key.
+The separate one-pass CLI reconstructs live preflight, requires digest approval,
+uses existing current/period/history answer APIs and monthly ledger, prevents
+replay, stops on HTTP/status failure and preserves uncertain in-flight requests.
+The earlier closed pilot is unchanged. Mocked product-API tests exercise all three
+routes and settlement; actual model grounding, latency/cost and remaining release
+criteria are unverified. No source/record permission change, embedding/model,
+schema/dependency change or paid API call in this slice. Full backend 692 passed,
+including 20 preflight and 8 execution tests; both CLI help commands and diff
+whitespace check passed. No frontend change or browser run in this slice. The
+real four-question/nine-excerpt pass awaits separate owner approval; the local
+request plan validates four product-API actions and a USD 0.04 maximum.
+See AI_SOURCE_COVERAGE.md.
+
+**2026-10-18 owner-authorized permission update and review:** Enabled only the
+three requested Codex records and their existing source. Verified target ownership,
+current-version identity and the absence of matching active follow-change or
+pending indexing work before applying the normal policy-revision/derivative
+invalidation boundary. Checked all other record settings and source policies
+were unchanged, including collection settings. Read only the expressly authorized
+questions/explicit final-answer spans; no commands, tool results or commentary.
+Refreshed the private read-only preflight and recorded relevance findings without
+approving its provisional expected outcomes. No application code change, paid
+provider call or indexing activation. The updated private review remains blocked
+by coverage/relevance issues; Phase 3.3 is incomplete. Persistent AI permission
+does not replace approval of a newly scoped paid run. No new tests were needed
+for this data-only action; transactional assertions and independent readback
+verify the requested change. Detailed personal findings remain outside Git.
+
+**2026-10-18 six-case local preflight implemented:** The authenticated read-only
+CLI prepares private source excerpts, scoped period/history previews, candidate
+limits, coverage gaps and provisional checklists for the six acceptance categories.
+Only currently AI-permitted primary text enters candidates; denied/deleted/foreign
+sources are excluded. Bind exact owner/database/policy/configuration and source
+anchors, escape source HTML and keep artifacts private outside Git. No provider
+calls, usage reservations, jobs, indexing activation, permission change or new
+embedding occurs. Defaults are editable drafts, not owner-approved gold answers.
+The deliberate local keyword selection does not measure product Semantic recall
+or authorize a paid run. The owner's actual draft was found and inspected through
+metadata only: coverage gaps remain, permissions are unchanged, and no prohibited
+body was read. Added projection/source permission inventories and per-case counts
+to distinguish AI exclusion from missing local keyword projections. Counts include
+only the owner; record/source denials can overlap. Real-case relevance/expected
+outcomes, fresh retrieval/indexing and one approved model pass remain outstanding.
+Full backend 681 passed, including 17 preflight tests and the authenticated CLI
+round trip; CLI help and diff
+whitespace checks passed. No frontend/schema change or browser check in this
+slice. See AI_SOURCE_COVERAGE.md.
 
 **2026-10-18 primary event evidence implemented:** Seven Codex/GitHub event payload
 kinds share eligibility in indexing, vector reads, exact answer egress, period
@@ -1137,22 +1223,18 @@ user-verifiable product slices in `ROADMAP.md`.
 
 ## Next
 
-1. First scope consistent AI eligibility for the required Codex/GitHub event
-   records, preserving exact primary-text mapping, ownership, record/source
-   permissions, deletion, historical versions and usage limits across indexing,
-   storage, answer dispatch, historical selection and retrospective selection.
-   Do not enable every PROJECT_EVENT body or send personal records merely to
-   satisfy coverage; a separately reviewed bounded scope and synthetic egress
-   checks come first. Then define a small cross-source Phase 3.3 acceptance check across ordinary
-   questions, period review and observed history. Record unsupported conclusions, coverage
-   gaps, cost and latency; do not resume broad paid tuning. Owner usability review
-   of the retrospective remains pending.
-   Current retained-version samples do not establish historical
-   reconstruction or general real-answer quality. Do not mark Phase 3.3 complete.
-   Paid tuning is stopped; no further OpenAI calls or
-   reindexing are authorized by these implementation checks. Preserve all closed
-   evaluation protocols, failures and uncertain reservations. Broader quality
-   claims need a separately agreed fresh scope rather than reuse of these cases.
+1. Commit the guarded acceptance tooling and Seoul retrospective-date correction
+   as coherent changes. The approved four-call selected-context pass is closed;
+   expected statuses matched, but the date defect prevents calling the period
+   check fully passed. Synthetic date regressions do not establish real-model
+   compliance. Resolve or explicitly narrow the deferred cross-source decision
+   and change-reason categories, positive ordinary-life recall and automatic
+   Semantic retrieval acceptance before declaring Phase 3.3 complete. Inspect
+   relevant permitted evidence locally first; do not expand permissions to fill
+   gaps. No further OpenAI calls or reindexing are authorized by these checks.
+   Preserve closed protocols, failures, raw answers and uncertain reservations.
+   Broader quality claims need a separately agreed fresh scope. Historical
+   samples do not establish general reconstruction or answer quality.
 2. Confirm GitHub repository browsing in Entries → repository → Commits/Documents
    → reader → return, and Search → Browse repository → return. Existing stored
    GitHub Entries need no reimport for this UI. Repository browsing and the earlier

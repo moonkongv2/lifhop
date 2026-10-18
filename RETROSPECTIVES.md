@@ -113,6 +113,22 @@ unmeasured. Any real-provider check requires a separate fixed data/call/cost sco
 This implementation made zero actual OpenAI calls and preserves old uncertain
 reservations. Do not mark all of Phase 3.3 complete from this synthetic check.
 
+## Real selected-context check and date correction (2026-10-18)
+
+One owner-approved real period answer distinguished recorded activity from a
+proposal and returned three valid original citations. It reported one event's UTC
+calendar date instead of the Asia/Seoul date used by the period selector. The
+original response is retained unchanged in the private acceptance artifacts;
+this is a date presentation defect, not a fully passed period acceptance check.
+
+Retrospective provider metadata now converts event and collection timestamps to
+Asia/Seoul with explicit +09:00 offsets, and the instructions require that calendar
+day. Stored source timestamps and citation ranges are unchanged; an absent event
+date remains unknown. Two synthetic API regressions check the UTC/Seoul boundary
+and missing event dates. No additional real-provider call was made to retest the
+fix. The instruction change invalidates previous answer configuration approvals;
+any further paid check needs a fresh reviewed preflight and separate approval.
+
 ## Owner review: exact steps
 
 The synthetic API and frontend were left running; no normal API or worker is

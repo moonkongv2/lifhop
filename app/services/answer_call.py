@@ -1,6 +1,7 @@
 """One consented answer call; selected slices are rechecked under the owner lock."""
 import asyncio
 import logging
+from zoneinfo import ZoneInfo
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from app.models.ai_usage import AiUsageAttempt
@@ -9,6 +10,7 @@ from app.services.ai_policy import embedding_inputs
 from app.services.answer_transport import payload, request, usage, parse, AnswerOutputError, AnswerProviderError
 from app.services.embedding_transport import EmbeddingError
 from app.services.passage_search import read_passage
+from app.services.entry_search import USER_TIMEZONE
 
 
 def answer_excerpts(db, owner_id, anchors, texts, retrospective):
@@ -17,8 +19,9 @@ def answer_excerpts(db, owner_id, anchors, texts, retrospective):
         item = dict(id=a["reference_id"], text=value)
         if retrospective:
             p = read_passage(db, owner_id, a["id"])
-            item.update(event_at=p.event_at.isoformat() if p.event_at else None,
-                added_at=p.created_at.isoformat(), completeness=p.completeness,
+            zone = ZoneInfo(USER_TIMEZONE)
+            item.update(event_at=p.event_at.astimezone(zone).isoformat() if p.event_at else None,
+                added_at=p.created_at.astimezone(zone).isoformat(), completeness=p.completeness,
                 source=p.source, source_kind=p.repository_ref.kind if p.repository_ref else p.source)
         excerpts.append(item)
     return excerpts

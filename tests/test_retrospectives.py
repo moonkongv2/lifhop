@@ -85,6 +85,42 @@ def test_one_call_retrospective_sends_dates_and_rechecks_exact_preview(answer_cl
         assert rows[0].reserved_micro_usd <= 10000
 
 
+def test_retrospective_sends_seoul_day_across_utc_midnight(answer_client):
+    client, headers, sender, _, bind, owner, _ = answer_client
+    entry_id = seed(bind, owner)
+    with Session(bind) as db:
+        entry = db.get(Entry, entry_id)
+        entry.event_at = datetime(2026, 1, 30, 15, 5, tzinfo=timezone.utc)
+        entry.created_at = datetime(2026, 1, 30, 15, 7, tzinfo=timezone.utc)
+        db.commit()
+    p = get_preview(client, headers)
+    sender.side_effect = retro_response
+    result = client.post('/retrospectives', headers=headers, json=request_data(p))
+    assert result.status_code == 200, result.text
+    sent = sender.call_args.args[0]
+    excerpt = json.loads(sent['input'])['excerpts'][0]
+    assert excerpt['event_at'] == '2026-01-31T00:05:00+09:00'
+    assert excerpt['added_at'] == '2026-01-31T00:07:00+09:00'
+    assert 'Asia/Seoul' in sent['instructions'] and '+09:00' in sent['instructions']
+    original = result.json()['answer']['citations'][0]['passage']['event_at']
+    assert datetime.fromisoformat(original.replace('Z', '+00:00')) == datetime.fromisoformat(excerpt['event_at'])
+
+
+def test_missing_event_date_remains_unknown_with_seoul_collection_time(answer_client):
+    client, headers, sender, _, bind, owner, entry_id = answer_client
+    with Session(bind) as db:
+        entry = db.get(Entry, entry_id)
+        entry.event_at = None
+        entry.created_at = datetime(2026, 1, 30, 15, 7, tzinfo=timezone.utc)
+        db.commit()
+    p = get_preview(client, headers, date_field='created_at')
+    sender.side_effect = retro_response
+    result = client.post('/retrospectives', headers=headers, json=request_data(p))
+    assert result.status_code == 200, result.text
+    excerpt = json.loads(sender.call_args.args[0]['input'])['excerpts'][0]
+    assert excerpt['event_at'] is None and excerpt['added_at'] == '2026-01-31T00:07:00+09:00'
+
+
 @pytest.mark.parametrize('change', ['record', 'policy', 'dates', 'text'])
 def test_stale_preview_never_dispatches(answer_client, change):
     client, headers, sender, _, bind, owner, _ = answer_client
