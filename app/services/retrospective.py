@@ -1,8 +1,8 @@
 """Bounded local period sampling from current permitted body passages; no egress."""
-from sqlalchemy import String, cast, func, literal, select
+from sqlalchemy import String, case, cast, func, literal, select
 from app.api.passages import search_filters
 from app.evaluation.schemas import digest
-from app.models.entry import Entry, EntryType
+from app.models.entry import Entry
 from app.models.history import EntryVersion, SourcePolicy
 from app.models.passage import EntryPassage, PassageIndexState
 from app.models.user import User
@@ -12,6 +12,7 @@ from app.services.answer_transport import CONFIG_HASH, payload
 from app.services.embedding_transport import EmbeddingError
 from app.services.entry_search import search_components
 from app.services.passage_search import eligible_conditions, read_passage
+from app.services.ai_sources import allowed_type
 
 
 def summary_question(scope):
@@ -34,12 +35,14 @@ def preview(db, owner_id, scope):
     allowed = matched.join(SourcePolicy, (SourcePolicy.user_id == Entry.user_id) &
         (SourcePolicy.provider == func.coalesce(Entry.provider, 'unknown')) & (SourcePolicy.scope == Entry.source_scope)).where(
         SourcePolicy.external_ai_allowed.is_(True), Entry.external_ai_allowed.is_(True), Entry.source_state != 'deleted',
-        Entry.type.in_([EntryType.NOTE, EntryType.DOCUMENT, EntryType.CONVERSATION]))
+        allowed_type())
     allowed_count = db.scalar(select(func.count()).select_from(allowed.subquery()))
     timestamp = Entry.event_at if scope.date_field == 'event_at' else Entry.created_at
     body = select(EntryPassage.id.label('passage_id'), Entry.id.label('entry_id'), timestamp.label('at'),
         func.coalesce(EntryPassage.group_key, literal('p:') + cast(EntryPassage.id, String)).label('group_key'),
-        func.row_number().over(partition_by=Entry.id, order_by=EntryPassage.ordinal).label('position')
+        func.row_number().over(partition_by=Entry.id, order_by=[
+            case(((Entry.provider == 'codex') & EntryPassage.text.startswith('assistant:'), 0), else_=1),
+            EntryPassage.ordinal]).label('position')
         ).select_from(EntryPassage).join(EntryVersion, EntryVersion.id == EntryPassage.version_id).join(
             Entry, Entry.id == EntryVersion.entry_id).join(PassageIndexState, PassageIndexState.entry_id == Entry.id).where(
                 *eligible_conditions(owner_id, filters), Entry.id.in_(allowed), EntryPassage.field == 'content').cte('period_bodies')

@@ -11,6 +11,7 @@ from app.services.source_history import owner_lock, source_policy
 from app.services.passage_search import read_passage
 from app.models.history import SourcePolicy
 from app.services.passage_index import text_hash
+from app.services.ai_sources import allowed_type
 
 Purpose = Literal["embedding", "rerank", "summary", "answer", "telemetry"]
 
@@ -43,6 +44,8 @@ def _records(db: Session, context: PreparedContext) -> list[EntryVersion]:
         entry = db.get(Entry, version.entry_id, populate_existing=True) if version else None
         if not entry or entry.user_id != context.user_id:
             raise HTTPException(403, "Source dependency is unavailable")
+        if entry.type == EntryType.PROJECT_EVENT or version.entry_type == EntryType.PROJECT_EVENT:
+            raise HTTPException(403, "Event evidence requires exact primary passage ranges")
         policy = source_policy(db, context.user_id, entry.provider or "unknown", entry.source_scope)
         if not policy.external_ai_allowed or not entry.external_ai_allowed:
             raise HTTPException(403, "Source or record excludes external AI")
@@ -73,8 +76,21 @@ def embedding_inputs(db: Session, *, user_id: int, passages: list[dict], revisio
         p = read_passage(db, user_id, anchor["id"])
         if p.passage_hash != anchor["passage_hash"] or p.field != "content" or p.work_only or p.source_state == "deleted":
             raise HTTPException(409, "EMBEDDING_CONTEXT_CHANGED")
-        if db.scalar(select(Entry.type).where(Entry.id == p.entry_id)) not in {EntryType.NOTE, EntryType.DOCUMENT, EntryType.CONVERSATION}:
+        if db.scalar(select(Entry.id).where(Entry.id == p.entry_id, allowed_type())) is None:
             raise HTTPException(403, "EMBEDDING_INPUT_TYPE_EXCLUDED")
+        if db.scalar(select(Entry.type).where(Entry.id == p.entry_id)) == EntryType.PROJECT_EVENT:
+            from sqlalchemy import Text, cast, func
+            from sqlalchemy.orm import defer
+            from app.services.passage_index import MAX_INPUT_BYTES, content_ranges
+            version = db.scalar(select(EntryVersion).where(EntryVersion.id == p.version_id,
+                EntryVersion.entry_id == p.entry_id,
+                func.coalesce(func.octet_length(EntryVersion.content), 0) <= MAX_INPUT_BYTES,
+                func.coalesce(func.octet_length(cast(EntryVersion.payload, Text)), 0) <= MAX_INPUT_BYTES * 2))
+            entry = db.scalar(select(Entry).options(defer(Entry.content), defer(Entry.primary_content))
+                .where(Entry.id == p.entry_id))
+            spans, gaps = content_ranges(entry, version) if version and version.entry_type == EntryType.PROJECT_EVENT else ([], ["INPUT_BUDGET"])
+            if gaps or not any(not work and left <= p.start < p.end <= right for left, right, work in spans):
+                raise HTTPException(403, "EMBEDDING_INPUT_TYPE_EXCLUDED")
         allowed = db.scalar(select(SourcePolicy.external_ai_allowed).where(SourcePolicy.user_id == user_id,
             SourcePolicy.provider == p.source, SourcePolicy.scope == db.scalar(
                 select(Entry.source_scope).where(Entry.id == p.entry_id))))

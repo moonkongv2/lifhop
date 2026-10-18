@@ -4,14 +4,15 @@ import json
 import re
 from sqlalchemy import Text, cast, delete, func, select
 from sqlalchemy.orm import Session, defer
-from app.importers.canonical import GitHubDocumentPayload, github_external_id
-from app.importers.normalizer import dev_session_content
-from app.models.entry import Entry
+from app.importers.canonical import CanonicalItem, GitHubCommitPayload, GitHubDocumentPayload, github_external_id
+from app.importers.github_discussions import GitHubDiscussionPayload, GitHubDiscussionRoot
+from app.importers.normalizer import EntryNormalizer, dev_session_content
+from app.models.entry import Entry, EntryType
 from app.models.history import EntryVersion
 from app.models.passage import EntryPassage, PassageIndexState
 from app.services.codex_presentation import dev_payload
 
-PROJECTION_VERSION = "current-passages-v1"
+PROJECTION_VERSION = "current-passages-v2"
 MAX_INPUT_BYTES = 8 * 1024 * 1024
 MAX_PASSAGES = 512
 TARGET_CHARS = 1200
@@ -44,6 +45,27 @@ def split_ranges(value: str, start: int = 0, end: int | None = None):
 
 def content_ranges(entry: Entry, version: EntryVersion):
     content = version.content or ""
+    if entry.provider == "github" and version.entry_type == EntryType.PROJECT_EVENT:
+        try:
+            item = CanonicalItem(provider=entry.provider, external_id=entry.external_id,
+                source_scope=entry.source_scope, title=version.title, payload=version.payload)
+            parsed = item.payload
+            if not isinstance(parsed, (GitHubCommitPayload, GitHubDiscussionPayload)) or EntryNormalizer().normalize(item).content != content:
+                raise ValueError("Unverified event mapping")
+        except ValueError:
+            return [], ["GITHUB_MAPPING_UNAVAILABLE"]
+        if isinstance(parsed, GitHubCommitPayload):
+            end = len(parsed.message)
+        else:
+            # Empty/unavailable markers and source metadata are retained locally,
+            # but cannot substitute for a collected discussion body.
+            end = len(parsed.body) if parsed.body_state == "available" else 0
+            if isinstance(parsed, GitHubDiscussionRoot):
+                end = len(parsed.title) + (2 + end if end else 0)
+        spans = [(0, end, False)] if end else []
+        if end < len(content):
+            spans.append((end, len(content), True))
+        return spans, []
     if entry.provider != "codex":
         return [(0, len(content), False)] if content else [], []
     parsed = dev_payload(entry.provider, version.payload)
@@ -62,7 +84,7 @@ def content_ranges(entry: Entry, version: EntryVersion):
             "order": [], "omissions": []})
         value = dev_session_content(single)
         work = kind != "message" or row.role not in {"user", "assistant"} or (
-            row.role == "assistant" and parsed.message_phases.get(row.message_id) == "commentary")
+            row.role == "assistant" and parsed.message_phases.get(row.message_id) != "final_answer")
         if content[cursor:cursor + len(value)] != value:
             return [], ["CODEX_MAPPING_UNAVAILABLE"]
         if value:

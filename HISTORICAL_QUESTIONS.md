@@ -29,9 +29,10 @@ not reconstructed as a full timeline.
 
 - Apply current ownership, source/type scope, current record and source AI
   permissions and source-deletion exclusion. Both current record type and the
-  historical version type must be NOTE, DOCUMENT or CONVERSATION; an explicit
-  type filter must match both. Project events and logs remain excluded under
-  the existing answer eligibility policy.
+  historical version type must qualify under the shared AI source gate; an
+  explicit type filter must match both. NOTE, DOCUMENT and CONVERSATION remain
+  eligible; validated Codex/GitHub primary events now qualify as described in
+  AI_SOURCE_COVERAGE.md. Logs and arbitrary project events remain excluded.
 - Match up to sixteen existing query tokens (or a literal nonempty fallback)
   against the chosen versions' bodies. English stopwords follow the existing
   Passage tokenizer. This is local keyword matching, with no translation,

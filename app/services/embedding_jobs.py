@@ -10,12 +10,13 @@ from app.evaluation.retrieval import database_identity
 from app.evaluation.schemas import digest
 from app.models.ai_usage import AiUsageAttempt
 from app.models.embedding_job import EmbeddingJob, EmbeddingRun
-from app.models.entry import Entry, EntryType
+from app.models.entry import Entry
 from app.models.history import EntryVersion, SourcePolicy
 from app.models.passage import EntryPassage, PassageIndexState
 from app.models.passage_embedding import PassageEmbedding
 from app.models.user import User
 from app.services.ai_policy import embedding_inputs
+from app.services.ai_sources import allowed_type
 from app.services.embedding_store import STORAGE_CONFIG, eligible_embeddings, slice_anchors
 from app.services.embedding_transport import cost_micro
 from app.services.passage_search import eligible_conditions
@@ -40,7 +41,7 @@ def entry_selection(owner_id, provider, scope, ids=None):
 
 def allowed_selection(owner_id):
     return [Entry.external_ai_allowed.is_(True), Entry.source_state != "deleted",
-        Entry.type.in_([EntryType.NOTE, EntryType.DOCUMENT, EntryType.CONVERSATION]),
+        allowed_type(),
         SourcePolicy.user_id == owner_id, SourcePolicy.provider == func.coalesce(Entry.provider, "unknown"),
         SourcePolicy.scope == Entry.source_scope, SourcePolicy.external_ai_allowed.is_(True)]
 
@@ -151,7 +152,8 @@ def activate_indexing(db: Session, *, owner_id: int, manifest: dict, confirm_ext
     if fresh["follow_changes"]:
         following = db.scalars(select(EmbeddingRun).where(EmbeddingRun.owner_id == owner_id,
             EmbeddingRun.provider == fresh["provider"], EmbeddingRun.scope == fresh["scope"],
-            EmbeddingRun.follow_changes.is_(True), EmbeddingRun.status.in_(["active", "paused"])))
+            EmbeddingRun.follow_changes.is_(True), EmbeddingRun.config == STORAGE_CONFIG,
+            EmbeddingRun.status.in_(["active", "paused"])))
         if any(r.scope_all or fresh["selector_ids"] is None or
                 set(r.entry_ids).intersection(fresh["entry_ids"]) for r in following):
             raise HTTPException(409, "INDEXING_FOLLOW_SCOPE_ALREADY_EXISTS")
@@ -175,7 +177,8 @@ def run_matches(run, entry):
 def enqueue_current(db: Session, entry: Entry):
     """Only separately activated follow-change scopes can enroll future content."""
     runs = list(db.scalars(select(EmbeddingRun).where(EmbeddingRun.owner_id == entry.user_id,
-        EmbeddingRun.status == "active", EmbeddingRun.follow_changes.is_(True))))
+        EmbeddingRun.status == "active", EmbeddingRun.config == STORAGE_CONFIG,
+        EmbeddingRun.follow_changes.is_(True))))
     runs = [run for run in runs if run_matches(run, entry)]
     if not runs:
         return

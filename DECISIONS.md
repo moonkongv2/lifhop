@@ -1646,3 +1646,27 @@ requests and reset ephemeral paid work on changes or navigation. Create abort
 controllers on click, isolate caches by account, and hide cached search bodies
 when rechecks fail. A changed question, purpose or version must prevent later
 paid stages; returning to the same search must not replay a call.
+
+
+## 2026-10-18: Admit validated primary event text without widening old AI approvals
+
+Keep Codex sessions and GitHub commits/discussions as PROJECT_EVENT. Share a
+provider/payload-kind type gate across indexing, vector selection, current answer
+egress, period review and historical answers. Reconstruct exact canonical source
+ranges: Codex user/explicit final-answer messages, commit messages, discussion
+titles/bodies. Exclude assistant unknown phases/commentary, commands/results,
+patches, code-location/status metadata and missing-body placeholders from primary
+evidence. Validate GitHub repository/object identity and complete canonical body
+equality; revalidate bounded event ranges at egress under the owner policy lock.
+The whole-version legacy AI helper rejects events. Full retained source text and
+version citations remain available locally; logs/arbitrary events stay excluded.
+
+Bump the disposable Passage projection and bind it into embedding storage config.
+Old parents/vectors must not be treated as safe primary context. Existing accounts
+need authenticated local backfill and separately approved new indexing estimates.
+Old follow-change approvals cannot enroll work in the new configuration; old-config
+queued runs pause on claim. Do not modify source/record permission or turn old
+experimental approval into event indexing approval. No schema/model/dependency
+change is needed. Period sampling prefers Codex final answers over questions.
+Synthetic contract checks cannot establish actual model grounding; complete one
+bounded cross-source acceptance pass before closing Phase 3.3.

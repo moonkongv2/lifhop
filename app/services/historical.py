@@ -5,7 +5,7 @@ from fastapi import HTTPException
 from sqlalchemy import Text, cast, func, or_, select
 from sqlalchemy.orm import defer
 from app.evaluation.schemas import digest
-from app.models.entry import Entry, EntrySource, EntryType
+from app.models.entry import Entry, EntrySource
 from app.models.history import EntryVersion, SourcePolicy
 from app.models.user import User
 from app.schemas.historical import HistoricalExcerpt, HistoricalPreview
@@ -17,11 +17,11 @@ from app.services.entry_search import date_boundary
 from app.services.passage_index import content_ranges, split_ranges, text_hash
 from app.services.passage_search import query_tokens
 from app.services.source_history import owner_lock
+from app.services.ai_sources import allowed_type
 
 MAX_CONTENT_BYTES = 1024 * 1024
 MAX_PAYLOAD_BYTES = 2 * 1024 * 1024
 CANDIDATES = 20
-ALLOWED_TYPES = [EntryType.NOTE, EntryType.DOCUMENT, EntryType.CONVERSATION]
 
 
 def cutoff(scope):
@@ -51,8 +51,8 @@ def allowed_versions(owner_id, scope):
     return snapshots(owner_id, scope).join(Entry, Entry.id == EntryVersion.entry_id).join(SourcePolicy,
         (SourcePolicy.user_id == Entry.user_id) & (SourcePolicy.provider == func.coalesce(Entry.provider, 'unknown')) &
         (SourcePolicy.scope == Entry.source_scope)).where(Entry.external_ai_allowed.is_(True),
-            SourcePolicy.external_ai_allowed.is_(True), Entry.source_state != 'deleted', Entry.type.in_(ALLOWED_TYPES),
-            EntryVersion.entry_type.in_([value.value for value in ALLOWED_TYPES]),
+            SourcePolicy.external_ai_allowed.is_(True), Entry.source_state != 'deleted', allowed_type(),
+            allowed_type(EntryVersion),
             *([EntryVersion.entry_type == scope.type.value] if scope.type else []))
 
 

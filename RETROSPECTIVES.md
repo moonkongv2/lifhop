@@ -23,10 +23,12 @@ source/type, not an assertion that those records belong to the chosen period.
 It reports all matching records, AI-eligible records, records with a current body
 passage, grouped representatives, sampled candidates and selected records.
 Eligibility uses both source and record AI permission and the existing allowed
-record types; work-only passages, source deletions and stale projections are
+record types, including validated Codex/GitHub primary events (see
+AI_SOURCE_COVERAGE.md); work-only passages, source deletions and stale projections are
 excluded. No Semantic vector or paid question embedding is required.
 
-Keep the first eligible body Passage per record. Group identical validated
+Keep the first eligible body Passage per record, preferring an explicitly final
+assistant passage for Codex turns. Group identical validated
 GitHub document parents before temporal sampling, retaining the latest in-range
 representative. Select at most twenty representative positions spread evenly
 across chronological rank (including endpoints). Prioritize five spread positions

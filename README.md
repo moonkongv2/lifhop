@@ -262,6 +262,7 @@ Avoid introducing infrastructure purely to make the architecture look sophistica
 - `UNIFIED_ANSWER.md` — consolidated search/questions, combined consent, stop/replay limits and synthetic verification
 - `RETROSPECTIVES.md` — bounded period summaries, date meaning, coverage and per-item citations
 - `HISTORICAL_QUESTIONS.md` — observed version cutoffs, local history preview and cited answers
+- `AI_SOURCE_COVERAGE.md` — primary event evidence, index compatibility and bounded Phase 3.3 acceptance
 
 The repository is the source of truth for the project. ChatGPT, Codex CLI, Antigravity CLI, and other coding agents should read the project documentation before making changes.
 

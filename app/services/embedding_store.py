@@ -5,18 +5,19 @@ from fastapi import HTTPException
 from sqlalchemy import delete, func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
-from app.models.entry import Entry, EntryType
+from app.models.entry import Entry
 from app.models.history import EntryVersion, SourcePolicy
 from app.models.passage import EntryPassage, PassageIndexState
 from app.models.passage_embedding import PassageEmbedding
 from app.services.ai_policy import embedding_inputs
+from app.services.ai_sources import allowed_type
 from app.services.embedding_transport import CONFIG, DIMENSIONS, MODEL
 from app.services.passage_index import PROJECTION_VERSION, text_hash
 from app.services.passage_search import read_passage
 from app.services.semantic_chunks import CHUNKING, section_ranges
 from app.services.source_history import owner_lock
 
-STORAGE_CONFIG = CONFIG + ":" + CHUNKING
+STORAGE_CONFIG = CONFIG + ":" + CHUNKING + ":" + PROJECTION_VERSION
 
 
 def eligible_embeddings(user_id: int):
@@ -31,7 +32,7 @@ def eligible_embeddings(user_id: int):
             (SourcePolicy.scope == Entry.source_scope))
         .where(Entry.user_id == user_id, Entry.external_ai_allowed.is_(True),
             SourcePolicy.external_ai_allowed.is_(True), Entry.source_state != "deleted",
-            Entry.type.in_([EntryType.NOTE, EntryType.DOCUMENT, EntryType.CONVERSATION]),
+            allowed_type(),
             Entry.current_version_id == EntryVersion.id,
             EntryPassage.field == "content", EntryPassage.work_only.is_(False),
             EntryPassage.projection_version == PROJECTION_VERSION,

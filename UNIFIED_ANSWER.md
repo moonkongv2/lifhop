@@ -1,5 +1,11 @@
 # One-action answers with sources
 
+2026-10-18 source coverage update: validated Codex questions/final answers and
+GitHub commit/discussion primary text can now qualify as AI evidence. Commands,
+patches and unknown assistant phases remain outside this scope. Existing records
+need a local projection rebuild and separately approved fresh embedding indexing;
+see AI_SOURCE_COVERAGE.md for the exact boundary and Phase 3.3 acceptance gate.
+
 Implemented 2026-10-17. Agent synthetic browser verification passed; the owner
 authorized the checkpoint commit. Separate owner browser confirmation was not
 reported. No real-provider evaluation or new transmission was performed.

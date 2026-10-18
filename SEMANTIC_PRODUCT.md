@@ -1,5 +1,13 @@
 # Semantic search, storage and indexing
 
+**2026-10-18 compatibility boundary:** `current-passages-v2` and its new storage
+configuration require local projection rebuild and fresh, separately approved
+embedding indexing. Old vectors are unavailable to current retrieval; old
+follow-change approvals cannot enroll new work. Validated Codex/GitHub primary
+event text now qualifies within both source and record permissions. Earlier real
+indexing results below describe the previous configuration. See
+AI_SOURCE_COVERAGE.md before running activation commands from this document.
+
 Current direction: `SEMANTIC_PRODUCT_PLAN.md`. Storage/lifecycle and explicitly
 activated indexing and Semantic Search API/UI are implemented.
 No personal document or question was sent during implementation verification.
@@ -194,7 +202,8 @@ Default activation covers the current snapshot. Add `--follow-changes` to the
 dry-run only when also approving future eligible records/edits in that selector.
 Without `--entries`, future enrollment covers the entire provider/scope; with IDs,
 only those IDs follow changes. The same cumulative run budget/call cap applies.
-Overlapping follow scopes, including paused ones, cannot be activated again.
+Overlapping follow scopes in the same configuration, including paused ones,
+cannot be activated again. Old-configuration runs require fresh scope approval.
 Past experiment approval and `.env` alone never enroll records.
 
 ## Worker, status and recovery

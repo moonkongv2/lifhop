@@ -12,17 +12,40 @@ real quality checks concentrated on GitHub documents and selected known cases.
 Phase 4 scheduled Codex/GitHub collection and Phase 5 private AWS daily use remain
 unimplemented. Existing import/embedding workers are not scheduled collectors.
 
-The audit found a source-coverage gap: current import normalization produces
-PROJECT_EVENT for Codex sessions and GitHub commits/discussions, while embedding
-jobs/storage, answer egress, historical answers and retrospectives admit only NOTE,
-DOCUMENT and CONVERSATION. These event records can be retained/read/searched locally
-but do not become AI evidence even when their AI permission is enabled. GitHub
-documents do qualify. Synthetic normalization and the compiled storage type filter
-confirmed this without private record reads, DB changes or provider calls.
-Address the bounded primary-evidence scope before declaring cross-source RAG or
-Phase 3.3 complete; this audit did not change any egress permission or type gate.
+The audit's PROJECT_EVENT coverage gap is addressed in code: a shared source gate
+now admits validated Codex user/explicit final-answer text and GitHub commit
+messages/discussion primary bodies, alongside existing text record types. Exact
+canonical ranges exclude unknown assistant phases, commands/results, patches and
+source metadata. Full originals remain retained. Both AI permissions and current
+owner/version/deletion checks still apply; arbitrary events/logs remain excluded.
+The projection/storage configuration changed: existing accounts require local
+Passage backfill and separately approved fresh embedding indexing. Old vectors
+are unavailable; old follow approvals cannot enroll new-config jobs. The real
+owner database/permissions/index were not changed in this implementation.
+Synthetic multi-source answer/retrospective/history and exact citation checks
+pass, but actual recall, model grounding, latency and cost remain unverified.
+Next: one bounded six-case acceptance pass, freshly scoped and approved before
+any real-provider indexing/evaluation. Do not declare Phase 3.3 complete or start
+scheduled collection yet. See AI_SOURCE_COVERAGE.md for scope and completion gates.
 
 ## Current product slice
+
+**2026-10-18 primary event evidence implemented:** Seven Codex/GitHub event payload
+kinds share eligibility in indexing, vector reads, exact answer egress, period
+review and observed history. GitHub ranges require matching repository/object
+identity and canonical retained content; event egress verifies primary containment
+again under the owner lock. Empty/unavailable discussion bodies never substitute
+placeholder evidence; root titles can qualify alone. Codex unknown phases are
+work-only and period review prefers explicit final answers over user questions.
+Legacy whole-version AI dispatch rejects events. New projection/config makes old
+Passages/vectors unavailable to current search until rebuilt; fresh indexing
+approval is required, including for previously indexed documents. No schema,
+dependency, model or source-content change. Agent checks use isolated synthetic
+databases and mocked providers; no actual OpenAI call or private-data inspection.
+Full backend suite: 664 passed, including 23 new event-evidence tests; diff
+whitespace check passed. No frontend/API schema changes; browser checks were
+not repeated for this backend slice.
+Local application upgrade and bounded real-model acceptance remain outstanding.
 
 **2026-10-18 Search UI consolidated:** The form now exposes Search & ask and
 Review a period. Ordinary searches call local Passage retrieval without answer
