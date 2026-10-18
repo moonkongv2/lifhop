@@ -47,6 +47,8 @@ def fake_answer(value):
             category = 'Proposal' if 'proposal' in item['text'].lower() else 'Completed work' if 'completed' in item['text'].lower() else 'Recorded activity'
             return f'[{item["id"]}] {category}: [Synthetic] {item["text"]}'
         result.update(answer='\n'.join(summary(item) for item in excerpts), citation_ids=[item['id'] for item in excerpts])
+    if "observed_through" in json.loads(value["input"]):
+        result.update(answer="[Synthetic] Reviewed observation: " + excerpts[0]["text"])
     return dict(model=ANSWER_MODEL, status="completed",
                 output=[dict(type="message", content=[dict(type="output_text", text=json.dumps(dict(result=result)))])],
                 usage=dict(input_tokens=10, output_tokens=10, total_tokens=20))
@@ -97,6 +99,20 @@ def main(argv=None):
                     event_at=datetime(2026, 1, day, 3, tzinfo=timezone.utc))
                 db.add(entry)
                 select_version(db, entry, record_version(db, entry))
+            # Deliberately dated synthetic observations: current February text
+            # must not leak into a January observation-cutoff answer.
+            history = Entry(user_id=user.id, provider="manual", type=EntryType.NOTE,
+                title="[Synthetic] Deployment history", content="Deployment history: proposal to run the worker on server Alpha.",
+                external_ai_allowed=True, created_at=datetime(2026, 1, 15, 3, tzinfo=timezone.utc),
+                event_at=datetime(2026, 1, 14, 3, tzinfo=timezone.utc))
+            db.add(history)
+            old = record_version(db, history)
+            old.observed_at = datetime(2026, 1, 15, 3, tzinfo=timezone.utc)
+            history.content = "Deployment history: recorded decision to use server Beta. No deployment is proven by this note."
+            history.event_at = datetime(2026, 2, 14, 3, tzinfo=timezone.utc)
+            current = record_version(db, history)
+            current.observed_at = datetime(2026, 2, 15, 3, tzinfo=timezone.utc)
+            select_version(db, history, current)
             manifest = prepare_indexing(db, owner_id=user.id, provider="manual", scope="default")
             activate_indexing(db, owner_id=user.id, manifest=manifest, confirm_external_ai=True)
             owner_id = user.id

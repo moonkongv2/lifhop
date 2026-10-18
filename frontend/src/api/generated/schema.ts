@@ -1080,6 +1080,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/historical/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Review */
+        get: operations["review_historical_preview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/historical": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create */
+        post: operations["create_historical_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -2484,6 +2518,131 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** HistoricalExcerpt */
+        HistoricalExcerpt: {
+            /** Entry Id */
+            entry_id: number;
+            /** Version Id */
+            version_id: number;
+            /** Current Version Id */
+            current_version_id: number | null;
+            /**
+             * Field
+             * @enum {string}
+             */
+            field: "title" | "content";
+            /** Start */
+            start: number;
+            /** End */
+            end: number;
+            /** Title */
+            title: string;
+            /** Text */
+            text: string;
+            /** Event At */
+            event_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Observed At
+             * Format: date-time
+             */
+            observed_at: string;
+            /** Source State */
+            source_state: string;
+            /** Completeness */
+            completeness: string;
+            /**
+             * Freshness
+             * @enum {string}
+             */
+            freshness: "current" | "updated";
+            /** Passage Hash */
+            passage_hash: string;
+        };
+        /** HistoricalPreview */
+        HistoricalPreview: {
+            scope: components["schemas"]["HistoricalScope"];
+            /** Policy Revision */
+            policy_revision: number;
+            /** Preview Digest */
+            preview_digest: string;
+            /** Scope Records */
+            scope_records: number;
+            /** Observed Records */
+            observed_records: number;
+            /** Allowed Records */
+            allowed_records: number;
+            /** Matching Records */
+            matching_records: number;
+            /** Examined Records */
+            examined_records: number;
+            /** Input Skipped */
+            input_skipped: number;
+            /** Byte Skipped */
+            byte_skipped: number;
+            /** Passages */
+            passages: components["schemas"]["HistoricalExcerpt"][];
+            /**
+             * Partial
+             * @default true
+             */
+            partial: boolean;
+            /**
+             * Timezone
+             * @default Asia/Seoul
+             */
+            timezone: string;
+        };
+        /** HistoricalRequest */
+        HistoricalRequest: {
+            /** Q */
+            q: string;
+            /**
+             * As Of
+             * Format: date
+             */
+            as_of: string;
+            source?: components["schemas"]["EntrySource"] | null;
+            type?: components["schemas"]["EntryType"] | null;
+            /** Preview Digest */
+            preview_digest: string;
+            /** Request Id */
+            request_id: string;
+            /**
+             * Confirm External Ai
+             * @default false
+             */
+            confirm_external_ai: boolean;
+        };
+        /** HistoricalResult */
+        HistoricalResult: {
+            preview: components["schemas"]["HistoricalPreview"];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "supported" | "insufficient";
+            /** Answer */
+            answer: string;
+            /** Citations */
+            citations: components["schemas"]["HistoricalExcerpt"][];
+        };
+        /** HistoricalScope */
+        HistoricalScope: {
+            /** Q */
+            q: string;
+            /**
+             * As Of
+             * Format: date
+             */
+            as_of: string;
+            source?: components["schemas"]["EntrySource"] | null;
+            type?: components["schemas"]["EntryType"] | null;
         };
         /** ImportArtifactDownloadResponse */
         ImportArtifactDownloadResponse: {
@@ -5626,6 +5785,73 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RetrospectiveResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    review_historical_preview_get: {
+        parameters: {
+            query: {
+                q: string;
+                as_of: string;
+                source?: components["schemas"]["EntrySource"] | null;
+                type?: components["schemas"]["EntryType"] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HistoricalPreview"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_historical_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HistoricalRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HistoricalResult"];
                 };
             };
             /** @description Validation Error */

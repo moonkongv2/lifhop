@@ -24,8 +24,19 @@ def answer_excerpts(db, owner_id, anchors, texts, retrospective):
     return excerpts
 
 
+def prepare_payload(db, owner_id, anchors, revision, question, retrospective, historical_scope):
+    if historical_scope is not None:
+        from app.services.historical import checked_passages, excerpts
+        passages = checked_passages(db, owner_id, anchors, revision, historical_scope)
+        return payload(question, excerpts(passages), historical_as_of=str(historical_scope.as_of))
+    texts = embedding_inputs(db, user_id=owner_id, passages=anchors, revision=revision)
+    return payload(question, answer_excerpts(db, owner_id, anchors, texts, retrospective), retrospective=retrospective)
+
+
 def answer(engine, settings, *, owner_id, request_id, question, anchors, revision,
-           confirm_external_ai=False, transport=None, retrospective=False):
+           confirm_external_ai=False, transport=None, retrospective=False, historical_scope=None):
+    if retrospective and historical_scope is not None:
+        raise EmbeddingError("ANSWER_INPUT_LIMIT")
     if confirm_external_ai is not True:
         raise EmbeddingError("ANSWER_CONSENT_REQUIRED")
     if settings.answer_mode != "openai" or settings.embedding_monthly_limit_micro_usd == 0:
@@ -38,8 +49,7 @@ def answer(engine, settings, *, owner_id, request_id, question, anchors, revisio
         with Session(connection) as db:
             db.execute(text("SET LOCAL lock_timeout = '2s'"))
             db.execute(text("SET LOCAL statement_timeout = '5s'"))
-            texts=embedding_inputs(db,user_id=owner_id,passages=anchors,revision=revision)
-            value,upper=payload(question,answer_excerpts(db,owner_id,anchors,texts,retrospective), retrospective=retrospective)
+            value,upper=prepare_payload(db,owner_id,anchors,revision,question,retrospective,historical_scope)
             db.rollback()
             attempt=reserve(db,scope=settings.embedding_billing_scope,owner_id=owner_id,
                 run_id=request_id,purpose="answer",upper=upper,
@@ -50,8 +60,7 @@ def answer(engine, settings, *, owner_id, request_id, question, anchors, revisio
             try:
                 db.execute(text("SET LOCAL lock_timeout = '2s'"))
                 db.execute(text("SET LOCAL statement_timeout = '5s'"))
-                checked=embedding_inputs(db,user_id=owner_id,passages=anchors,revision=revision)
-                checked_value,_=payload(question,answer_excerpts(db,owner_id,anchors,checked,retrospective), retrospective=retrospective)
+                checked_value,_=prepare_payload(db,owner_id,anchors,revision,question,retrospective,historical_scope)
                 if checked_value!=value:
                     raise EmbeddingError("ANSWER_CONTEXT_CHANGED")
                 sent=True

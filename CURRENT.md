@@ -4,6 +4,26 @@ Last updated: 2026-10-18
 
 ## Current product slice
 
+**2026-10-18 observed historical questions implemented:** Search now offers
+Historical question with an explicit end-of-day Asia/Seoul observation cutoff.
+Choose the latest retained observation per record before keyword matching; never
+fall back to an older matching version or substitute today's text. The local
+preview shows exact dated evidence, observation/AI coverage and all selection
+limits (twenty candidates, five full excerpts; no historical vectors). A reviewed
+owner/scope/revision/config-bound digest gates one consented answer. The existing
+answer caller/ledger rechecks historical eligibility and exact ranges/date metadata
+before reservation, under the dispatch owner lock and before returning output.
+Current exclusions, allowed record/version types and deletion apply to old versions.
+Citations open retained originals separately from the current record. Current
+answer/retrospective defaults and AI activation are unchanged; no schema, dependency
+or indexing change. Backend 641 and frontend 181 tests passed; Chromium verified
+January Alpha vs February Beta, original/current citation destinations, no evidence
+before collection, and no replay on return/reload. Two mocked answer calls, zero
+actual OpenAI calls. A test-owner cleanup leak and async UI result reset were
+found and corrected before passing verification. Owner authorized this commit checkpoint.
+Late imports do not reconstruct earlier external state; semantic recall and actual
+model grounding/classification remain unverified. See HISTORICAL_QUESTIONS.md.
+
 **2026-10-17 retained citation freshness implemented:** New answer and
 retrospective citation links carry version/field/range/hash anchors. Local
 `GET /passages/citation` reads at most 2,000 characters directly from the owned
@@ -1057,9 +1077,17 @@ user-verifiable product slices in `ROADMAP.md`.
 
 ## Next
 
-1. Scope Phase 3.3 historical-version selection, followed by a small cross-source
-   acceptance check. The retained citation freshness checkpoint is verified and
-   authorized for commit. Owner usability review of the retrospective remains pending.
+1. Next proposed slice: consolidate the Search UI around ordinary search/questions
+   and period review. Hide Passage/Semantic implementation choices; expose exact
+   phrase matching and an observation cutoff as optional advanced controls.
+   Keep local search usable without AI and require existing explicit consent for
+   paid stages. Existing historical selection remains keyword-based; do not imply
+   semantic historical retrieval. Preserve citation return/filter state and do not
+   replay calls when navigating. This UI consolidation is not implemented yet.
+   Then define a small cross-source Phase 3.3 acceptance check across ordinary
+   questions, period review and observed history. Record unsupported conclusions, coverage
+   gaps, cost and latency; do not resume broad paid tuning. Owner usability review
+   of the retrospective remains pending.
    Current retained-version samples do not establish historical
    reconstruction or general real-answer quality. Do not mark Phase 3.3 complete.
    Paid tuning is stopped; no further OpenAI calls or

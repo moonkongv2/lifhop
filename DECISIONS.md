@@ -1600,3 +1600,25 @@ rechecks, hide earlier reader data; use account/anchor-specific ephemeral query
 keys and uncached HTTP requests. Existing unanchored links cannot recover their
 original evidence after disposable IDs disappear. Historical question retrieval,
 answer persistence and real-time push invalidation remain separate work.
+
+## 2026-10-18: Use observed version cutoffs for the first historical question flow
+
+Keep ordinary questions and retrospectives on current versions. Add an explicit
+historical-question mode whose cutoff means the end of a day in Asia/Seoul.
+Choose each record's latest retained observation by that cutoff, with version-ID
+tie-breaking, before keyword matching. Do not infer an external past state from
+event dates, provider timestamps or restored current selections. Late imports
+are excluded rather than backdated. Surface the resulting observation gaps.
+
+Use bounded local body matching and normalization (twenty candidates, five full
+excerpts), without historical vectors or schema changes. Reuse the existing
+answer caller, usage ledger/domain and one-call/USD 0.01 limit, adding a separate
+historical eligibility check before reservation, at dispatch under the owner
+lock and before exposing output. Current record/source AI permissions, allowed
+record/version types and source-deletion exclusion also apply to old versions.
+The reviewed digest and serialized request bind exact versions, ranges, hashes,
+cutoff and observation/event metadata. Historical instructions join the answer
+configuration hash; they do not reopen prior paid protocols or establish factual
+quality. Retained citation anchors open the original version independently of
+current search projections. Future historical semantic retrieval must be scoped
+separately if actual usage shows keyword recall is insufficient.
