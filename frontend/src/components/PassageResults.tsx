@@ -22,21 +22,22 @@ function SnapshotLinks({ passage, params }: { passage: Passage; params: URLSearc
   if (passage.alias_total <= 1) return null;
   return <div className="passage-snapshots"><button aria-expanded={expanded} onClick={() => setExpanded(!expanded)}>{expanded ? "Hide locations" : `View ${passage.alias_total} retained locations`}</button>
     {expanded && <>{isFetching && <p role="status">Loading locations...</p>}{error && <p role="alert">{error.message}</p>}
-      {data && <><ul>{data.items.map(item => <li key={item.id}><Link to={passageTarget(item.id, params)}>Record {item.entry_id} · {formatEntryDate(item.event_at)}</Link></li>)}</ul>
+      {data && !isFetching && !error && <><ul>{data.items.map(item => <li key={item.id}><Link to={passageTarget(item.id, params)}>Record {item.entry_id} · {formatEntryDate(item.event_at)}</Link></li>)}</ul>
         <div className="actions"><button disabled={offset === 0 || isFetching} onClick={() => setOffset(Math.max(0, offset-20))}>Previous locations</button><button disabled={offset+20 >= data.total || isFetching} onClick={() => setOffset(offset+20)}>Next locations</button></div></>}
     </>}
   </div>;
 }
 
-export default function PassageResults({ params }: { params: URLSearchParams }) {
+export default function PassageResults({ params, showAnswerControls = true, productView = false }: { params: URLSearchParams; showAnswerControls?: boolean; productView?: boolean }) {
   const [, setParams] = useSearchParams();
   const [selected, setSelected] = useState<number[]>([]);
   const serialized = params.toString();
+  const token = localStorage.getItem("access_token");
   const offset = Number(params.get("offset") ?? 0);
   const valid = validPage(params);
   const context = listContext("/search", params);
-  const { data, error, isLoading, isFetching, refetch } = useQuery({ queryKey: ["passages", serialized],
-    queryFn: ({ signal }) => fetchPassages(new URLSearchParams(serialized), signal), enabled: valid, retry: false });
+  const { data, error, isLoading, isFetching, refetch } = useQuery({ queryKey: ["passages", token, serialized],
+    queryFn: ({ signal }) => fetchPassages(new URLSearchParams(serialized), signal), enabled: valid, retry: false, gcTime: 0 });
   function page(value: number) {
     const next = new URLSearchParams(serialized);
     if (value) next.set("offset", String(value)); else next.delete("offset");
@@ -50,19 +51,19 @@ export default function PassageResults({ params }: { params: URLSearchParams }) 
       setParams(next, { replace: true });
     }
   }, [data, offset, serialized, setParams]);
-  return <section aria-label="Passage search results">
+  return <section aria-label={productView ? "Matching record excerpts" : "Passage search results"}>
     {!valid && <><p role="alert">Invalid page value.</p><button onClick={() => page(0)}>Reset page</button></>}
     {isLoading && <p role="status">Finding passages...</p>}
     {error && <><p role="alert">{error.message}</p><button onClick={() => void refetch()}>Retry</button></>}
-    {data && <>
-      {Object.entries(data.coverage).some(([status, count]) => status !== "ready" && count > 0) && <p role="status" className="panel">Index coverage: {Object.entries(data.coverage).map(([status, count]) => `${count} ${status}`).join(" · ")}. Some records are not fully searchable in this mode.</p>}
-      <div className="records-toolbar"><p>{data.total} {data.total === 1 ? "passage" : "passages"} · Page {Math.floor(offset/20)+1}</p><span>Related words · Current retained versions</span></div>
-      {data.items.length === 0 && <div className="panel empty-state"><h3>No matching passages</h3><p>Try words used in the source, another language, or Exact phrase search.</p></div>}
+    {data && !isFetching && !error && <>
+      {Object.entries(data.coverage).some(([status, count]) => status !== "ready" && count > 0) && <p role="status" className="panel">{productView ? "Some records are not fully searchable yet. Results may be incomplete." : <>Index coverage: {Object.entries(data.coverage).map(([status, count]) => `${count} ${status}`).join(" · ")}. Some records are not fully searchable in this mode.</>}</p>}
+      <div className="records-toolbar"><p>{data.total} {productView ? (data.total === 1 ? "excerpt" : "excerpts") : (data.total === 1 ? "passage" : "passages")} · Page {Math.floor(offset/20)+1}</p><span>Related words · Current retained versions</span></div>
+      {data.items.length === 0 && <div className="panel empty-state"><h3>{productView ? "No matching records" : "No matching passages"}</h3><p>Try words used in the source, another language, or Exact phrase search.</p></div>}
       <div className="records-grid">{data.items.map(p => <article className="panel record-card" key={p.id}>
         <div className="badges"><span className="badge source">{sourceLabels[p.source as keyof typeof sourceLabels] ?? p.source}</span><span className="badge">{p.field === "title" ? "Title match" : "Original passage"}</span>{p.work_only && <span className="badge">Work details</span>}{p.source_state === "deleted" && <span className="badge">Deleted at source</span>}{p.index_status === "partial" && <span className="badge">Partial index</span>}</div>
         {p.completeness !== "complete" && <span className="badge">Incomplete source</span>}
         <h3>{p.title}</h3><p className="entry-content">{p.text}</p>
-        {p.field === "content" && !p.work_only && p.source_state !== "deleted" && <label className="work-search-option"><input type="checkbox"
+        {showAnswerControls && p.field === "content" && !p.work_only && p.source_state !== "deleted" && <label className="work-search-option"><input type="checkbox"
           checked={selected.includes(p.id)} disabled={!selected.includes(p.id) && selected.length >= 5}
           onChange={e => setSelected(current => e.target.checked ? [...current, p.id] : current.filter(id => id !== p.id))} />Use this passage for an answer</label>}
         <p className="help-text">{p.repository_ref?.repository ?? p.session_ref?.thread_id ?? ""}{p.repository_ref?.path ? ` · ${p.repository_ref.path}` : ""}</p>
@@ -70,7 +71,7 @@ export default function PassageResults({ params }: { params: URLSearchParams }) 
         <div className="actions"><Link to={passageTarget(p.id, params)}>View passage</Link><Link to={p.session_ref ? sessionTarget(p.session_ref, context, p.entry_id) : entryTarget(p.entry_id, context)}>Open record</Link>{p.repository_ref && <Link to={repositoryLink(p.repository_ref.source_scope, context)}>Browse repository</Link>}</div>
         <SnapshotLinks passage={p} params={params} />
       </article>)}</div>
-      {!error && <><p className="help-text">Answer requests use only selected content passages. Source or record AI exclusions are checked again before sending.</p>
+      {showAnswerControls && !error && <><p className="help-text">Answer requests use only selected content passages. Source or record AI exclusions are checked again before sending.</p>
         <SelectedAnswer key={selected.join(",")} question={params.get("q") ?? ""} selected={selected} params={params} kind="passage" /></>}
       <div className="actions pagination"><button disabled={offset === 0 || isFetching} onClick={() => page(Math.max(0, offset-20))}>Previous page</button><button disabled={offset+20 >= data.total || isFetching} onClick={() => page(offset+20)}>Next page</button></div>
     </>}

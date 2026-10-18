@@ -359,6 +359,7 @@ describe("Dedicated Search page", () => {
     await screen.findByRole("heading", { name: note.title });
     fireEvent.click(within(screen.getByRole("navigation", { name: "Main navigation" })).getByRole("link", { name: "Search" }));
     fireEvent.change(screen.getByLabelText("Search query"), { target: { value: "여행" } });
+    fireEvent.click(screen.getByLabelText("Match exact phrase"));
     click("Search");
     await screen.findByRole("heading", { name: note.title });
     click(note.title);
@@ -399,6 +400,7 @@ describe("Dedicated Search page", () => {
     records = [note];
     mount("/search");
     fireEvent.change(screen.getByLabelText("Search query"), { target: { value: " 여행 " } });
+    fireEvent.click(screen.getByLabelText("Match exact phrase"));
     expect(requests).toHaveLength(0);
     fireEvent.submit(screen.getByLabelText("Search query").closest("form")!);
     await screen.findByRole("heading", { name: note.title });

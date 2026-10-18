@@ -1,5 +1,5 @@
-const filterKeys = ["q", "source", "source_state", "type", "date_field", "date_from", "date_to", "include_work_commentary", "mode", "as_of"];
-const conditionKeys = filterKeys.filter(key => !["date_field", "include_work_commentary", "mode", "as_of"].includes(key));
+const filterKeys = ["q", "source", "source_state", "type", "date_field", "date_from", "date_to", "include_work_commentary", "mode", "as_of", "exact"];
+const conditionKeys = filterKeys.filter(key => !["date_field", "include_work_commentary", "mode", "as_of", "exact"].includes(key));
 export type EntryListContext = { pathname: "/entries" | "/search"; search: string };
 
 export function hasLegacyFilters(params: URLSearchParams) {
@@ -10,7 +10,7 @@ export function listParams(params: URLSearchParams, pathname: EntryListContext["
   const result = new URLSearchParams();
   for (const key of pathname === "/search" ? [...filterKeys, "offset"] : ["offset"]) {
     const value = params.get(key)?.trim();
-    if (key === "mode" && !["passages", "semantic", "answer", "retrospective", "historical"].includes(value ?? "")) continue;
+    if (key === "mode" && !["search", "passages", "semantic", "answer", "retrospective", "historical"].includes(value ?? "")) continue;
     if (value) result.set(key, value);
   }
   return result;

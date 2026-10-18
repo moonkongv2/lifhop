@@ -52,7 +52,7 @@ async function start() {
 it('previews local collection history before one consented call with an exact anchor', async () => {
   mount(); await screen.findByRole('button', { name: 'Answer from historical excerpts' });
   expect(posts()).toHaveLength(0); expect(screen.getByText(/6 of 10 scoped records/)).toBeTruthy();
-  expect(screen.getByText(/Versions first collected later are excluded/)).toBeTruthy();
+  expect(screen.getAllByText(/Later imports are excluded/).length).toBeGreaterThan(0);
   expect(screen.queryByLabelText('Date field')).toBeNull(); expect(screen.queryByLabelText('Source status')).toBeNull();
   await start(); await screen.findByText('Draft historical answer'); expect(posts()).toHaveLength(1);
   const body = JSON.parse(posts()[0].options.body as string);
@@ -69,7 +69,7 @@ it('returns from a citation with historical mode and cutoff without paid replay'
   expect(requests.some(r => r.url.includes('/passages/citation?'))).toBe(true);
   fireEvent.click(screen.getByRole('link', { name: 'Back to search' }));
   await screen.findByRole('button', { name: 'Answer from historical excerpts' });
-  expect((screen.getByLabelText('Search mode') as HTMLSelectElement).value).toBe('historical');
+  expect((screen.getByLabelText('Record version') as HTMLSelectElement).value).toBe('observed');
   expect((screen.getByLabelText('Observed through', { exact: true }) as HTMLInputElement).value).toBe('2026-01-31');
   expect(posts()).toHaveLength(1);
 });
@@ -108,10 +108,10 @@ it('hides previous results when policy revision changes', async () => {
 });
 it('requires a cutoff and submits only historical filters', async () => {
   mount('/search?mode=historical'); fireEvent.change(screen.getByLabelText('Search query'), { target: { value: 'worker' } });
-  fireEvent.click(screen.getByRole('button', { name: 'Review history' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Search' }));
   expect((await screen.findByRole('alert')).textContent).toContain('cutoff'); expect(requests).toHaveLength(0);
   fireEvent.change(screen.getByLabelText('Observed through', { exact: true }), { target: { value: '2026-01-31' } });
-  fireEvent.click(screen.getByRole('button', { name: 'Review history' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Search' }));
   await screen.findByRole('button', { name: 'Answer from historical excerpts' });
   const url = requests.find(r => r.url.includes('/historical/preview?'))!.url;
   expect(url).toContain('as_of=2026-01-31'); expect(url).not.toContain('date_field');

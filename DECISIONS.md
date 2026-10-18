@@ -1622,3 +1622,27 @@ configuration hash; they do not reopen prior paid protocols or establish factual
 quality. Retained citation anchors open the original version independently of
 current search projections. Future historical semantic retrieval must be scoped
 separately if actual usage shows keyword recall is insufficient.
+
+
+## 2026-10-18: Organize Search by user intent, keeping AI requests explicit
+
+Expose Search & ask and Review a period, with one question input and source/date
+filters. Use existing local Passage retrieval for ordinary text searches and
+keep records excluded from external AI visible locally. Only an expanded answer
+action checks AI availability; one subsequent explicit consent/action runs the
+existing integrated question flow. Hide algorithm selection and manual evidence
+selection from the normal screen, retaining legacy URLs for compatibility.
+
+Place exact phrase matching and an observed-version cutoff under Advanced
+options. Exact phrase uses the existing record search and remains local only;
+do not show a semantic answer action that could falsely imply respect for an
+exact-match constraint. Historical cutoffs reuse the bounded keyword/history
+flow with reviewed originals and separate consent. Period review reuses the
+existing date preview and summary. No new ranking, vectors, provider settings,
+backend API, dependency or database state is required.
+
+Keep user-purpose/filter/page context in URLs, strip UI-only fields before API
+requests and reset ephemeral paid work on changes or navigation. Create abort
+controllers on click, isolate caches by account, and hide cached search bodies
+when rechecks fail. A changed question, purpose or version must prevent later
+paid stages; returning to the same search must not replay a call.

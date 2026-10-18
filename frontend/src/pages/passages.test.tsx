@@ -50,11 +50,10 @@ function mount(path = "/search?mode=passages&q=worker") {
   return cache;
 }
 
-it("keeps initial searches empty and requires a passage query", () => {
+it("keeps initial searches empty until a query or filter is submitted", () => {
   mount("/search");
-  fireEvent.change(screen.getByLabelText("Search mode"), { target: { value: "passages" } });
   fireEvent.click(screen.getByRole("button", { name: "Search" }));
-  expect(screen.getByRole("alert").textContent).toContain("Enter a query");
+  expect(screen.queryByRole("alert")).toBeNull();
   expect(requests).toHaveLength(0);
 });
 
@@ -71,7 +70,7 @@ it("opens a pinned passage and returns to its query, filters, mode and page", as
   expect(screen.getByRole("link", { name: "Search" }).getAttribute("aria-current")).toBe("page");
   fireEvent.click(screen.getByText("Back to search"));
   await screen.findByText(/41 passages · Page 2/);
-  expect((screen.getByLabelText("Search mode") as HTMLSelectElement).value).toBe("passages");
+  expect(screen.getByRole("button", { name: "Search & ask" }).getAttribute("aria-pressed")).toBe("true");
   expect((screen.getByLabelText("Source") as HTMLSelectElement).value).toBe("manual");
 });
 

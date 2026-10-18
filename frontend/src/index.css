@@ -230,3 +230,8 @@ details > p:first-of-type { margin-top: 12px; }
   .repository-header, .repository-browser { padding: 18px; }
   .passage-reader { padding: 20px; }
 }
+
+.search-intents { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 22px; }
+.search-intents button[aria-pressed="true"] { background: #edf2ff; color: #3155c6; border-color: #b9c9ff; }
+.search-answer-action { margin-bottom: 24px; }
+.search-answer-action > .semantic-controls { margin-top: 16px; }

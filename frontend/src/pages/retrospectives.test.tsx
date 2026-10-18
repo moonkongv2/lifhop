@@ -115,12 +115,12 @@ it("preserves retrospective scope on citation return without resending", async (
   await screen.findByText(/ORIGINAL PASSAGE/i);
   fireEvent.click(screen.getByRole("link", { name: "Back to search" }));
   await screen.findByRole("button", { name: "Summarize this period" });
-  expect((screen.getByLabelText("Search mode") as HTMLSelectElement).value).toBe("retrospective");
+  expect(screen.getByRole("button", { name: "Review a period" }).getAttribute("aria-pressed")).toBe("true");
   expect(posts()).toHaveLength(1);
 });
 it("requires dates and an ordered range within 92 days without requiring a question", async () => {
   mount("/search");
-  fireEvent.change(screen.getByLabelText("Search mode"), { target: { value: "retrospective" } });
+  fireEvent.click(screen.getByRole("button", { name: "Review a period" }));
   expect(screen.queryByLabelText("Search query")).toBeNull();
   expect((screen.getByLabelText("Date field") as HTMLSelectElement).value).toBe("event_at");
   fireEvent.click(screen.getByRole("button", { name: "Review period" }));

@@ -72,7 +72,7 @@ describe("Codex session browsing", () => {
   it("searches work commentary only when opted in and focuses its turn", async () => {
     mount("/search?q=zebra");
     await screen.findByText("No entries match your search.");
-    fireEvent.click(screen.getByLabelText("Include work commentary from Codex"));
+    fireEvent.click(screen.getByLabelText("Include Codex commands, results, diffs and commentary"));
     fireEvent.click(screen.getByRole("button", { name: "Search" }));
     fireEvent.click(await screen.findByRole("link", { name: "Turn 21" }));
     await screen.findByText("25 retained turns · Page 2");

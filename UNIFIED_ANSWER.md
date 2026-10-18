@@ -6,19 +6,97 @@ reported. No real-provider evaluation or new transmission was performed.
 
 ## Observable flow
 
-Search → **Answer with sources** → enter the question/filters → **Review question**.
-This only reads local availability. Review the transmission scope, check consent,
-and choose **Ask from my records** once. The browser then runs:
+Search → **Search & ask** → enter the question/filters → **Search**. This first
+returns local record excerpts and makes no provider/status request for answering.
+Choose **Get an answer with sources** to review local answer availability and the
+transmission scope. Check consent and choose **Ask from my records** once.
+The browser then runs:
 
 1. One question embedding and existing local Semantic search (at most twenty hits).
 2. Local recommendation of up to five complete current parent Passages.
 3. One answer request using those original Passages, returning versioned citations.
 
 The ordinary result is the draft answer and source links. Exact transmitted
-passages can be expanded below the draft. **Choose evidence manually (advanced)**
-opens the earlier separate-step flow; it is optional. Existing Exact phrase,
-Passages and Semantic modes retain their behavior. No new model, vector index,
+passages can be expanded below the draft. The normal screen hides internal
+Passage/Semantic and manual evidence-selection controls. Existing bookmarked
+verification URLs retain their earlier readers and guarded workflows; they are
+not choices in the normal search form. No new model, vector index,
 queue, database table, migration or application dependency was introduced.
+
+## Consolidated search screen (2026-10-18)
+
+The form offers two purposes: **Search & ask** and **Review a period**. No
+algorithm/mode selector is exposed. Current searches use the existing local
+Passage keyword API; results can include records denied to external AI. Choosing
+to ask invokes the existing separate policy-checked retrieval/answer flow, which
+may use different allowed records. The answer action is initially closed and
+opening it only checks availability; it does not grant transmission consent.
+Local results remain usable when AI is disabled or no approved index is ready.
+No selected-passage checkboxes or manual recommendation steps appear in this
+normal flow.
+
+**Advanced options** contains:
+
+- **Match exact phrase:** uses the existing record phrase search, preserving
+  its source-status/date/work-detail behavior. It is local only and hides the AI
+  answer action so a semantic answer is not misrepresented as respecting an
+  exact-phrase constraint. Clear the checkbox to request an ordinary AI answer.
+- **Record version → Observed by a date:** selects the existing historical
+  preview and consented answer flow. Source/type filters apply. Current date,
+  source-status, work-detail and exact-phrase controls do not apply in this flow.
+  Historical selection remains keyword-based; no historical vectors are added.
+- Current-source status and optional Codex work details remain explicit filters.
+  Normal keyword search defaults to excluding source-deleted records. Exact
+  phrase/filter-only browsing can show all locally retained records by default,
+  as labelled by its source-status option. AI requests continue to exclude
+  source-deleted/work-only records independently.
+
+Period review hides the question input and uses source/type, date basis and
+an inclusive date range of up to 92 days, followed by the existing reviewed
+retrospective action. It defaults to source/event dates when switching purposes.
+
+New ordinary URLs use `mode=search`, with `exact=true` for phrase search. These
+UI parameters are stripped from API requests. Legacy unmoded phrase URLs and
+`mode=passages|semantic|answer|historical|retrospective` URLs remain readable.
+New submissions use the consolidated form. Citation return paths retain the
+purpose, question, filters, exact/version options and page. Answer panels and
+results remain ephemeral; returning/reloading never replays paid stages.
+
+Draft or purpose/version changes and closing the answer panel synchronously
+abort pending stages; the controller is created on click before mutation work
+can begin. Account-specific query keys isolate local/availability caches, and
+failed local rechecks hide previously cached bodies. Opening/closing Advanced
+options does not change the reviewed filters; its open state persists when
+clearing exact phrase matching.
+
+### Verification for this UI checkpoint
+
+Frontend 194 tests, lint and production build passed. The new tests cover local
+search with no provider/status calls, AI-off operation, exact-phrase routing,
+consent, hidden internal controls, citation/page return, cancellation on draft,
+purpose/version/account/panel changes and stale-cache suppression. Existing
+reader/legacy workflow tests were adapted to the new user-facing form rather
+than removed. A browser-discovered Advanced panel collapse was corrected and
+covered by a regression test. No backend code/schema or dependency changed, so
+the backend suite was not rerun for this UI-only checkpoint.
+
+Standalone Chromium verified the actual synthetic API flow on desktop and a
+390-pixel mobile viewport: local AI-excluded note visibility; no request before
+consent; integrated question and citation return/reload without replay; exact
+phrase; historical Alpha observation; period summary; no horizontal overflow.
+Provider responses were mocked, with zero actual OpenAI calls. The in-app browser
+connection failed; standalone Chromium was used. Ignored screenshots are
+`.local/verification/search-unified-desktop.png` and
+`.local/verification/search-unified-mobile.png`.
+
+Optional visual review uses the already running synthetic frontend at
+`http://127.0.0.1:5174` and API at `http://127.0.0.1:8002`. Log in with
+`demo@example.test` / `demo-password`; choose Search in the main navigation to
+start with the new form. Search `worker`, open **Get an answer with sources**,
+review consent and request a mocked answer. Under Advanced options, exact phrase
+stays local; Observed by a date with `Deployment history`/`2026-01-31` shows Alpha.
+**Review a period** with January 2026 shows the dated retrospective preview.
+No mandatory user repetition is needed for functional verification.
 
 ## Consent and execution limits
 

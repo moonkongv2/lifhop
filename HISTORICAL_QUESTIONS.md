@@ -1,7 +1,8 @@
 # Questions from observed historical versions
 
-Implemented 2026-10-18. Search → **Historical question** → enter a question and
-**Observed through** date → **Review history**. The preview is local. Review its
+Implemented 2026-10-18. Search → **Search & ask** → enter a question →
+**Advanced options** → **Record version: Observed by a date** → choose the
+**Observed through** date → **Search**. The preview is local. Review its
 exact original excerpts and coverage, then explicitly approve one answer call.
 Existing answer modes still use current eligible versions.
 
@@ -124,9 +125,9 @@ LIFHOP_API_PROXY_TARGET=http://127.0.0.1:8002 npm run dev -- --host 127.0.0.1 --
 ```
 
 If these ports already serve this latest synthetic preview, reuse them. Open
-`http://127.0.0.1:5174`, log in as `demo@example.test` / `demo-password`, choose
-Historical question, enter `Deployment history`, set Observed through to
-`2026-01-31` and Review history. Expect Alpha; `2026-02-28` selects Beta;
+`http://127.0.0.1:5174`, log in as `demo@example.test` / `demo-password`, enter
+`Deployment history` in Search. Under Advanced options choose Record version →
+Observed by a date, set Observed through to `2026-01-31` and Search. Expect Alpha; `2026-02-28` selects Beta;
 `2026-01-01` selects nothing. Explicit consent plus **Answer from historical
 excerpts** produces a synthetic cited answer. No import/embedding worker is
 needed. Screenshot: `.local/verification/historical-january.png` (ignored).

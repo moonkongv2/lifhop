@@ -30,7 +30,7 @@ export default function EntryResults({ searching }: { searching: boolean }) {
     {!validOffset && <><p role="alert">Invalid page value. Please reset the page.</p><button onClick={() => page(0)}>Reset page</button></>}
     {isLoading && validOffset && <p role="status">Loading...</p>}
     {error && <><p role="alert">{error.message}</p><button onClick={() => void refetch()}>Retry</button></>}
-    {data && validOffset && <>
+    {data && validOffset && !isFetching && !error && <>
       <div className="records-toolbar"><p>{data.total} {data.total === 1 ? "entry" : "entries"} · Page {Math.floor(offset / 20) + 1}</p><span>{params.get("q") ? "Title matches first" : "Most recently added"}</span></div>
       {data.items.length === 0 && <div className="panel empty-state"><Icon name="archive" /><p>{searching ? "No entries match your search." : "No entries yet."}</p><span>{searching ? "Try another phrase or reset your filters." : "Create a note or import your first records."}</span></div>}
       <div className="records-grid">{data.items.map((entry) => <article className="panel record-card" key={entry.id}>

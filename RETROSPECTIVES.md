@@ -5,7 +5,7 @@ review and real-provider classification/summary quality remain unverified.
 
 ## Product flow
 
-Search → **Period retrospective** → choose source/type, date basis and range →
+Search → **Review a period** → choose source/type, date basis and range →
 **Review period**. The preview is local and shows selection/coverage and exact
 originals. After explicit transmission consent, **Summarize this period** makes
 one bounded answer request. Each supported item has a source link and one of:

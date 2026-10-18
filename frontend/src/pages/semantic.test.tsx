@@ -38,6 +38,7 @@ beforeEach(() => {
       citations: [{ kind: JSON.parse(options.body as string).passage_ids ? "passage" : "embedding", source_id: 10, passage }], policy_revision: revision });
     if (url.includes("/status?")) return statusFailure ? new Response(null, { status: statusFailure }) : Response.json(coverage);
     if (url.endsWith("/search")) return failure ? Response.json({ detail: "PROVIDER_TIMEOUT_OR_NETWORK" }, { status: failure }) : Response.json({ items: [{ embedding_id: 10, distance: 0.1, passage }], coverage, truncated: false, limit: 20 });
+    if (url.includes("/passages/search?")) return Response.json({ items: [], total: 0, limit: 20, offset: 0, coverage: {} });
     if (url.includes("/locations?")) return Response.json({ items: [{ embedding_id: 11, entry_id: 5, version_id: 8, start: 100, end: 120, event_at: null }], total: 1, limit: 20, offset: 0 });
     return readerFailure ? new Response(null, { status: readerFailure }) : Response.json(passage);
   }));
@@ -109,7 +110,7 @@ it("returns from an exact slice without repeating the paid search", async () => 
   expect(screen.getByRole("link", { name: "Search" }).getAttribute("aria-current")).toBe("page");
   fireEvent.click(screen.getByRole("link", { name: "Back to search" }));
   await screen.findByText("Stored slices are available for semantic search.");
-  expect((screen.getByLabelText("Search mode") as HTMLSelectElement).value).toBe("semantic");
+  expect(screen.getByRole("button", { name: "Search & ask" }).getAttribute("aria-pressed")).toBe("true");
   expect(screen.queryByText("Synthetic worker")).toBeNull();
   expect(paid()).toHaveLength(1);
 });
@@ -221,9 +222,9 @@ it("cancels a recommendation after applying a different question and filters", a
   await screen.findByText("Preparing passages locally...");
   fireEvent.change(screen.getByLabelText("Search query"), { target: { value: "Different question" } });
   fireEvent.change(screen.getByLabelText("Source", { exact: true }), { target: { value: "github" } });
-  fireEvent.click(screen.getByRole("button", { name: "Review index" }));
+  fireEvent.click(screen.getByRole("button", { name: "Search" }));
   await waitFor(() => expect(sent.find(r => r.url.includes("/recommendations?"))!.options.signal?.aborted).toBe(true));
-  finish(); await screen.findByText("Stored slices are available for semantic search.");
+  finish(); await screen.findByRole("button", { name: "Get an answer with sources" });
   expect(screen.queryByText("Full original worker passage with nearby context.")).toBeNull();
   expect(sent.filter(r => r.url.endsWith("/search"))).toHaveLength(1);
   expect(sent.filter(r => r.url.endsWith("/answers"))).toHaveLength(0);

@@ -4,6 +4,23 @@ Last updated: 2026-10-18
 
 ## Current product slice
 
+**2026-10-18 Search UI consolidated:** The form now exposes Search & ask and
+Review a period. Ordinary searches call local Passage retrieval without answer
+status/provider calls; an optional Get an answer with sources panel reuses the
+existing consented integrated answer. AI-excluded records remain searchable.
+Advanced options hold exact phrase matching (local record search, no AI action)
+and observed-version cutoffs (existing historical keyword preview/answer), plus
+source-state/work controls. Legacy URLs remain readable; new normal URLs use
+mode=search and strip UI-only fields from API requests. Citation returns preserve
+filters/options/page without replay. Draft/purpose/version/account/panel changes
+abort paid work; account-specific caches and failed-recheck hiding prevent stale
+local bodies from resurfacing. Frontend 194 tests, lint/build and synthetic
+Chromium desktop/mobile flow passed; an Advanced-panel collapse was found and
+fixed with regression coverage. Actual OpenAI calls: zero. Backend/schema,
+activation, ranking, indexing and dependencies are unchanged; backend tests were
+not rerun for this UI checkpoint. Owner usability and real-model quality remain
+unverified. Owner authorized this commit checkpoint. See UNIFIED_ANSWER.md.
+
 **2026-10-18 observed historical questions implemented:** Search now offers
 Historical question with an explicit end-of-day Asia/Seoul observation cutoff.
 Choose the latest retained observation per record before keyword matching; never
@@ -1077,14 +1094,8 @@ user-verifiable product slices in `ROADMAP.md`.
 
 ## Next
 
-1. Next proposed slice: consolidate the Search UI around ordinary search/questions
-   and period review. Hide Passage/Semantic implementation choices; expose exact
-   phrase matching and an observation cutoff as optional advanced controls.
-   Keep local search usable without AI and require existing explicit consent for
-   paid stages. Existing historical selection remains keyword-based; do not imply
-   semantic historical retrieval. Preserve citation return/filter state and do not
-   replay calls when navigating. This UI consolidation is not implemented yet.
-   Then define a small cross-source Phase 3.3 acceptance check across ordinary
+1. Define a small
+   cross-source Phase 3.3 acceptance check across ordinary
    questions, period review and observed history. Record unsupported conclusions, coverage
    gaps, cost and latency; do not resume broad paid tuning. Owner usability review
    of the retrospective remains pending.

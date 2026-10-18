@@ -98,7 +98,7 @@ it("stops without an answer request when no evidence is found", async () => {
 });
 it.each(["disabled", "unindexed"])("makes no paid request when %s", async state => {
   if (state === "disabled") enabled = false; else indexed = false;
-  mount(); await screen.findByText(/Answer generation needs/);
+  mount(); await screen.findByText(/AI answers are unavailable/);
   expect(posts()).toHaveLength(0);
   expect((screen.getByRole("button", { name: "Ask from my records" }) as HTMLButtonElement).disabled).toBe(true);
 });
@@ -149,7 +149,7 @@ it("returning from a citation preserves the answer mode without repeating any pa
   await screen.findByText(/ORIGINAL PASSAGE/i);
   fireEvent.click(screen.getByRole("link", { name: "Back to search" }));
   await screen.findByRole("button", { name: "Ask from my records" });
-  expect((screen.getByLabelText("Search mode") as HTMLSelectElement).value).toBe("answer");
+  expect(screen.getByRole("button", { name: "Search & ask" }).getAttribute("aria-pressed")).toBe("true");
   expect(posts()).toHaveLength(3);
   expect(screen.queryByText("The worker runs on the server.")).toBeNull();
 });

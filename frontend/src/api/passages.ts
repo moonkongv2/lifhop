@@ -24,6 +24,8 @@ async function request<T>(path: string, signal?: AbortSignal): Promise<T> {
 function searchParams(params: URLSearchParams) {
   const query = new URLSearchParams(params);
   query.delete("mode");
+  query.delete("exact");
+  query.delete("as_of");
   return query;
 }
 

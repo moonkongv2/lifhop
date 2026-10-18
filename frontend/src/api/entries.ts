@@ -44,6 +44,7 @@ export const deleteEntry = (id: string) => request<void>(`/${id}`, { method: "DE
 export type EntrySearch = components["schemas"]["EntrySearchResponse"];
 export const fetchEntrySearch = (params: URLSearchParams, signal?: AbortSignal) => {
   const query = new URLSearchParams(params);
+  for (const key of ["mode", "exact", "as_of"]) query.delete(key);
   query.set("limit", "20");
   return request<EntrySearch>(`/search?${query}`, { signal });
 };

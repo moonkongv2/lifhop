@@ -4,9 +4,10 @@ import { validPage } from "../utils/entryNavigation";
 
 export default function useEntrySearch(params: URLSearchParams, enabled = true) {
   const serialized = params.toString();
+  const token = localStorage.getItem("access_token");
   const validOffset = validPage(params);
   const query = useQuery({
-    queryKey: ["entries", serialized],
+    queryKey: ["entries", token, serialized],
     queryFn: ({ signal }) => fetchEntrySearch(new URLSearchParams(serialized), signal),
     enabled: Boolean(localStorage.getItem("access_token") && enabled && validOffset),
   });
