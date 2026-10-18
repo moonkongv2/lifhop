@@ -2,6 +2,26 @@
 
 Last updated: 2026-10-18
 
+## Roadmap checkpoint (2026-10-18)
+
+Active stage: **Phase 3.3, implementation present but exit acceptance incomplete**.
+Phase 1 archive and Phase 2 manual collectors/history/policies are implemented;
+selected-source coverage and older owner-confirmation notes still need reconciliation.
+Phase 3.1 evaluation tooling and Phase 3.2 indexing/search are implemented, with
+real quality checks concentrated on GitHub documents and selected known cases.
+Phase 4 scheduled Codex/GitHub collection and Phase 5 private AWS daily use remain
+unimplemented. Existing import/embedding workers are not scheduled collectors.
+
+The audit found a source-coverage gap: current import normalization produces
+PROJECT_EVENT for Codex sessions and GitHub commits/discussions, while embedding
+jobs/storage, answer egress, historical answers and retrospectives admit only NOTE,
+DOCUMENT and CONVERSATION. These event records can be retained/read/searched locally
+but do not become AI evidence even when their AI permission is enabled. GitHub
+documents do qualify. Synthetic normalization and the compiled storage type filter
+confirmed this without private record reads, DB changes or provider calls.
+Address the bounded primary-evidence scope before declaring cross-source RAG or
+Phase 3.3 complete; this audit did not change any egress permission or type gate.
+
 ## Current product slice
 
 **2026-10-18 Search UI consolidated:** The form now exposes Search & ask and
@@ -1094,8 +1114,13 @@ user-verifiable product slices in `ROADMAP.md`.
 
 ## Next
 
-1. Define a small
-   cross-source Phase 3.3 acceptance check across ordinary
+1. First scope consistent AI eligibility for the required Codex/GitHub event
+   records, preserving exact primary-text mapping, ownership, record/source
+   permissions, deletion, historical versions and usage limits across indexing,
+   storage, answer dispatch, historical selection and retrospective selection.
+   Do not enable every PROJECT_EVENT body or send personal records merely to
+   satisfy coverage; a separately reviewed bounded scope and synthetic egress
+   checks come first. Then define a small cross-source Phase 3.3 acceptance check across ordinary
    questions, period review and observed history. Record unsupported conclusions, coverage
    gaps, cost and latency; do not resume broad paid tuning. Owner usability review
    of the retrospective remains pending.
