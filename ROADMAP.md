@@ -1,6 +1,6 @@
 # lifhop Product Roadmap
 
-Last revised: 2026-10-06
+Last revised: 2026-10-19
 
 ## Purpose and release boundary
 
@@ -328,6 +328,16 @@ and automatic project classification are deferred.
 and inspect citations. Record failures, latency, and per-query cost. No observed
 ownership leak, prohibited AI transmission, or deleted-content resurfacing is
 acceptable for release. Report unsupported conclusions as failures to fix.
+
+Owner clarification, 2026-10-19: real conversations need not contain a reported
+final decision or outcome. A useful answer may recover recorded recommendations,
+comparisons, requests and progress, cite those facts, and explicitly state which
+requested outcomes or personal reasons are unconfirmed in the reviewed records.
+Evaluate this bounded partial recall as its own expected behavior; do not require
+the owner to manufacture a closed-loop outcome or keep searching until one exists.
+Do not turn an assistant recommendation into the owner's adopted choice or reuse
+this clarification to excuse unsupported claims or incomplete returned citations.
+Wholly irrelevant/missing evidence still requires an appropriate refusal.
 
 ## Phase 4 — Scheduled collection from both new sources
 

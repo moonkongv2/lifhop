@@ -1,6 +1,6 @@
 # lifhop Current Status
 
-Last updated: 2026-10-18
+Last updated: 2026-10-19
 
 ## Roadmap checkpoint (2026-10-18)
 
@@ -48,22 +48,120 @@ The common citation instructions now require cited evidence for every factual
 claim and omit unsupported optional details; insufficient evidence still requires
 an empty citation list. Synthetic checks cover delivery and response handling,
 not actual model compliance. No real-provider retest was performed.
-The permitted evidence/scope audit is complete. Its inspected candidates do not
-establish a linked cross-source implementation, an adopted-change reason or a
-positive ordinary-life fact. These remain unmet gates, not successful negatives.
-Next identify the missing real evidence and its permitted scope, or obtain explicit
-agreement to defer those gates before proposing one consolidated final check.
-Do not repeatedly tune these known cases.
-Cross-source
-decision/implementation and adopted-change reasons remain deferred; positive
-ordinary-life fact recall and broad automatic Semantic retrieval remain unverified.
-The three source-filtered known cases establish bounded integrated wiring only.
-The rental question tested missing evidence, not positive fact recall.
+On 2026-10-19 the owner clarified that recorded progress plus explicit unknowns
+is a valid recall result; a final personal decision need not have been reported
+back to AI. Stop treating an absent final rental outcome as a source-authoring
+blocker. Planning/advice must still not be presented as actual choice or use.
+The owner-authorized jy_yamyam investigation found a genuine same-change chain:
+Codex policy/implementation requests match GitHub implementation `62f20ee` and
+documentation follow-up `644e980`, both independently checked remotely. New
+sources are local evidence candidates, not yet imported/AI-enabled/indexed in
+lifhop. Current two-state output cannot explicitly represent cited partial
+answers; the proposed partial contract and collector compatibility need local
+implementation/verification before one consolidated paid proposal.
+The earlier three source-filtered known cases establish bounded integrated
+wiring only. Their citation defect remains a failure, not a newly valid partial
+answer. Broad automatic recall and corrected real-model behavior remain unverified.
 Private results and permission audit remain under `.local/evaluation/phase33/`.
 Phase 3.3 is incomplete; do not start scheduled collection yet.
 See AI_SOURCE_COVERAGE.md for scope and completion gates.
 
 ## Current product slice
+
+**2026-10-19 owner clarification and actual cross-source match:** The owner
+authorized inspection of jy_yamyam's conversations/repository and clarified that
+useful partial recall does not require a recorded final outcome. ROADMAP and
+DECISIONS now preserve this distinction without waiving factual/citation guards.
+Metadata discovery found 84 project sessions; inspected two selected sessions
+through disposable snapshots, with locally generated 0.163.0 RPC schemas checked.
+Matched 14 primary messages/instructions to immutable Git blobs: optional linked
+deletion, default off, already-used rewards retained, implementation `62f20ee`,
+and explicit SHA reference leading to guides commit `644e980`. Both commits were
+verified with read-only GitHub GETs. One unrelated divergent turn was excluded;
+all paired turns passed snapshot consistency. Original rollouts and sibling
+worktree are unchanged. Historical test counts are source claims, not tests run
+by this investigation. No app code, source policy, ledger or answer-mode change;
+zero AI calls, three outstanding reservations/USD 0.006801 preserved.
+Private source chain, case drafts, hashes and readable review are under
+`.local/evaluation/phase33/jy-cross-source-2ce93bfe70574c81aa7212c638af0749/`.
+Next implement/review explicit cited partial answers, verify production collector
+0.163 compatibility before selected import, and freeze exact source/index/answer
+scope plus citation/Seoul-date regressions for one new paid proposal. Production
+collector support remains unchanged at 0.158/0.160; discovery is not an import.
+Phase 3.3 is incomplete; Phase 4 has not started.
+
+**2026-10-18 additional approved travel review:** Reviewed the four separately
+approved conversations in 10 exact ranges/17,847 characters, within the
+three-ranges-per-record/2,000-character/24,000-total limits. Found an assistant
+OTS recommendation, the user's OTS coupon-search request and a booking-stage
+ETC-price question. These do not establish completed booking, actual rental use
+or the user's stated final selection reason. Other reviewed material is hotel
+information, predeparture checklists and restaurant recommendations. The original
+ordinary-life question remains unverified; do not substitute advice for use.
+Across both grants, 10 records/26 ranges/49,432 characters were reviewed. The
+adoption candidate remains a draft; a matching Codex/GitHub pair is still missing.
+Verified all 10 new range hashes, unchanged policy/selection/usage fingerprints,
+and all 138 earlier artifacts. Three uncertain reservations remain USD 0.006801;
+zero provider calls/indexing/policy changes, answer mode off. Private assessment
+and HTML: `.local/evaluation/phase33/chatgpt-travel-review-21dba8589cc749858d3c4bb3f1aba950/`.
+No app code changed; source/scope/privacy assertions and diff checks passed.
+Next obtain targeted existing-use/reason and linked-source location clues; do not
+automatically scan more excluded bodies. No paid acceptance scope is ready and
+no completion condition or Phase 4 boundary has changed.
+
+**2026-10-18 approved bounded ChatGPT source review:** Explicit owner approval
+covered the six proposed records, at most three 2,000-character ranges each.
+Reviewed 16 excerpts/31,585 characters, not whole conversations. Verified every
+saved range hash against the retained current version. Found one explicit
+user-reported adoption candidate with a preceding symptom/diagnosis/solution;
+the recorded reason must remain attributed to the assistant explanation, not
+invented personal motivation or proof of testing. Prepared a private question,
+claim/anchor checklist and forbidden inferences; owner case review is pending.
+Actual ordinary-life use/reason and a linked Codex/GitHub pair remain unverified.
+Source/record policies, current selections and usage ledger were unchanged;
+zero provider calls/indexing, answer mode off. Private evidence/report is under
+`.local/evaluation/phase33/chatgpt-source-review-d7451c6e67bb482ab7fc8a927239ef00/`.
+No app code changed. Range/scope/state assertions and diff checks passed.
+Next resolve remaining evidence scopes; no paid acceptance proposal is ready.
+Prepared a separate four-record travel metadata proposal (up to 24,000 related
+characters). It was subsequently approved and reviewed as recorded above; the
+original unapproved proposal file remains an immutable preparation snapshot.
+Existing Entry-level indexing cannot treat this excerpt-only grant as approval
+to embed full long conversations. Phase 3.3 stays incomplete.
+
+**2026-10-18 ChatGPT candidate discovery, metadata only:** Following the owner's
+request to proceed, searched only job 7's 1,254 owned ChatGPT titles/dates and
+version/policy metadata in a repeatable-read, read-only transaction. All record
+AI permissions remain off; conversation start dates span February 2023 through
+September 2026 and do not establish dates of described events or later messages.
+Title matches: life 20, project 44, change/control 32 (overlapping categories).
+Prepared six candidate records for a separate bounded source review: at most
+three 2,000-character excerpts each, 36,000 characters total. No source body was
+read; review permission is pending, not implied by this metadata report. Current
+permitted Codex records remain the same three lifhop records; ChatGPT cannot
+substitute for the required Codex/GitHub link. Usage/source-policy/record-selection
+fingerprints were unchanged, with zero provider calls or permission changes.
+Private candidate identities, dates, version hashes and review HTML are under
+`.local/evaluation/phase33/chatgpt-title-discovery-55aea244fe504870a1fadf75fc6fd6f6/`.
+Next: obtain the exact source-review grant, verify facts/adoption/reasons, then
+prepare one consolidated transmission/cost proposal. Phase 3.3 stays incomplete.
+
+**2026-10-18 ChatGPT import recovery:** The owner's `b@test.com` job 7 reached
+the normal three-attempt/120-second caps at 807 saved + 18 empty-text failures
+out of 1,284. One bounded local continuation used the same preserved ZIP and
+cursor 825, with process-only four-attempt/600-second limits. All 1,284 records
+were visited: **1,254 saved, 30 EMPTY_CONVERSATION, PARTIAL**, in 599.31 seconds
+for the continuation. Empty means no supported user/assistant text on the active
+branch, not proof that the source has no other content. No unprocessed remainder.
+Previous record selections/AI permissions, source policies and usage ledger were
+preserved; no external AI calls. Normal settings remain 120 seconds/three attempts
+and ANSWER_MODE=off. Recovery/attempt/owner-lock tests: **4 passed**. Private
+metadata-only recovery evidence is in `.local/verification/import-job7-recovery-20261018/`.
+The default budget can still be insufficient for large archives; this recovery
+does not change general retry behavior or authorize inspection/transmission of
+the imported conversations. Do not retry the completed PARTIAL job just to clear
+unsupported-text errors: that would replay the entire archive. Phase 3.3 remains
+incomplete; no newly imported evidence has been reviewed by the agent.
 
 **2026-10-18 follow-up handoff:** Citation instructions committed as `6a7beda`;
 unresolved-report correction committed separately as `9d9eb69`. Reviewed both
@@ -1383,14 +1481,16 @@ user-verifiable product slices in `ROADMAP.md`.
    three-question integrated smoke pass is also closed, with a partial GitHub
    citation-coverage finding. The common citation instruction correction is now
    implemented and synthetically tested; actual model compliance remains unverified.
-   Permitted discovery is complete; identify actual missing evidence and its
-   allowed scope, or obtain explicit agreement to defer the unresolved gates
-   before any separately approved consolidated check.
+   The owner clarified that useful recorded progress does not require a recorded
+   final outcome. Implement and locally verify explicit cited partial answers;
+   prepare minimal permitted source scopes using the rental progress and the
+   verified jy_yamyam decision/implementation chain before any separately
+   approved consolidated check. Verify collector compatibility before import.
    The four-call selected-context pass is closed;
    expected statuses matched, but the date defect prevents calling the period
    check fully passed. Synthetic date regressions do not establish real-model
-   compliance. Resolve or explicitly narrow the deferred cross-source decision
-   and change-reason categories, positive ordinary-life recall and automatic
+   compliance. Validate the prepared cross-source decision and change-reason
+   cases, bounded ordinary-life recall and automatic
    Semantic retrieval acceptance before declaring Phase 3.3 complete. Inspect
    relevant permitted evidence locally first; do not expand permissions to fill
    gaps. No further OpenAI calls or reindexing are authorized by these checks.

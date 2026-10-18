@@ -1670,3 +1670,28 @@ experimental approval into event indexing approval. No schema/model/dependency
 change is needed. Period sampling prefers Codex final answers over questions.
 Synthetic contract checks cannot establish actual model grounding; complete one
 bounded cross-source acceptance pass before closing Phase 3.3.
+
+
+## 2026-10-19: Recover recorded progress without requiring an unrecorded outcome
+
+The owner clarified that a decision may happen outside the AI conversation.
+Evaluate answers by what the retained evidence can establish: a recommendation,
+comparison, request, explicit adoption, implementation or actual use are distinct
+observations. Recover useful recorded facts and name the limits of the reviewed
+scope. A missing final outcome does not invalidate an otherwise useful source
+case or require endless discovery. This is an explicit owner clarification of
+Phase 3.3 acceptance, not a claim that an actual choice or its reason was found.
+
+Every returned factual claim still needs matching returned citations. Attribute
+assistant advice/diagnosis to the recorded assistant; do not invent the owner's
+personal motivation. A valid partial answer identifies the missing outcome;
+unsupported details and omitted necessary citations remain failures. Preserve
+earlier protocols, raw answers and the original grading of citation defects.
+
+Implementation is pending: the current common answer contract has only supported
+(complete answer with citations) and insufficient (empty citations). A reviewed
+proposal is to add an explicit partial branch with citations and scoped unknowns,
+retaining refusal for no useful direct evidence. API/parser/schema, current and
+historical/period flows, UI labels and local regressions must be reconciled before
+one separately approved real-model pass. This note changes no runtime behavior,
+model, AI permission, ledger reservation or embedding space.
