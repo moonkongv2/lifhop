@@ -39,6 +39,29 @@ every claim.
   in browser memory while the search result is present. Citations are validated
   references, not a guarantee that the generated claim is true.
 
+## Citation coverage instruction update (2026-10-18)
+
+The bounded integrated check found a fact supported by selected context but absent
+from the one excerpt actually cited. The common answer instructions now require
+the cited excerpts collectively to support every factual claim, including all
+necessary source IDs. Omit optional details that the cited evidence cannot
+support; if the remaining evidence cannot fully answer the question, return
+insufficient with no citations. Current, retrospective and historical requests
+all receive this rule through the existing common payload.
+
+The server still validates source identity, ownership, current policy and output
+shape. It does not semantically prove every claim or automatically add citations
+the provider omitted. Synthetic tests verify instruction delivery and response
+handling, not model compliance. Multiple complementary citations survive the API;
+unused sources are not appended and replay makes no second provider call.
+
+This is an instruction change only. Models, embeddings, API/schema and limits
+are unchanged. The answer configuration hash changes, so old frozen protocols
+cannot authorize a fresh run. Preserve their raw responses and the observed
+partial result. No real-provider retest, indexing, permission or `.env` change
+was made in this correction. Restart the backend to load the new code; the owner
+does not need to repeat a paid test to review these changes.
+
 The Responses request and structured output shape follow the
 [OpenAI text generation guide](https://developers.openai.com/api/docs/guides/text)
 and [Structured Outputs guide](https://developers.openai.com/api/docs/guides/structured-outputs).

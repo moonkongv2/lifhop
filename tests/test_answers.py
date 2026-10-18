@@ -201,6 +201,55 @@ def test_local_passage_answer_refuses_ai_exclusion(answer_client):
     sender.assert_not_called()
 
 
+def test_complementary_facts_return_provider_citations_without_adding_unused_sources(answer_client):
+    from app.models.passage import EntryPassage
+    from test_embedding_store import create
+    client,headers,sender,_,bind,owner,_=answer_client
+    texts=['The synthetic vehicle is a boat.', 'The synthetic boat is intended for children.',
+        'The synthetic boat is painted yellow.']
+    ids=[]
+    with Session(bind) as db:
+        for body in texts:
+            entry=create(db,owner,body)
+            ids.append(db.scalar(select(EntryPassage.id).where(
+                EntryPassage.version_id==entry.current_version_id,EntryPassage.field=='content')))
+        db.commit()
+    def complementary_response(value):
+        raw=response(value,ids=ids[:2])
+        raw['output'][0]['content'][0]['text']=json.dumps(dict(result=dict(status='supported',
+            answer='The synthetic vehicle is a boat intended for children.',citation_ids=ids[:2])))
+        return raw
+    sender.side_effect=complementary_response
+    data=dict(q='What kind of synthetic vehicle is this, and who is it for?',passage_ids=ids,
+        request_id=uuid4().hex,confirm_external_ai=True)
+    result=client.post('/answers',headers=headers,json=data)
+    assert result.status_code==200,result.text
+    assert [c['source_id'] for c in result.json()['citations']]==ids[:2]
+    assert [c['passage']['text'] for c in result.json()['citations']]==texts[:2]
+    assert 'yellow' not in result.json()['answer']
+    sent=sender.call_args.args[0]
+    assert json.loads(sent['input'])==dict(question=data['q'],
+        excerpts=[dict(id=i,text=t) for i,t in zip(ids,texts)])
+    assert 'collectively support every factual claim' in sent['instructions']
+    assert 'fact found only in an uncited excerpt' in sent['instructions']
+    assert 'Omit optional factual details' in sent['instructions']
+    assert client.post('/answers',headers=headers,json=data).status_code==409
+    assert sender.call_count==1
+    with Session(bind) as db:
+        rows=list(db.scalars(select(AiUsageAttempt).where(AiUsageAttempt.owner_id==owner,
+            AiUsageAttempt.purpose=='answer')))
+        assert len(rows)==1 and rows[0].status=='spent'
+
+
+@pytest.mark.parametrize('mode',['current','retrospective','historical'])
+def test_citation_coverage_contract_is_sent_for_each_answer_mode(mode):
+    options=dict(retrospective=True) if mode=='retrospective' else dict(historical_as_of='2026-01-31') if mode=='historical' else {}
+    value,_=payload('Synthetic question?',[dict(id=4,text='Synthetic evidence.')],**options)
+    assert 'collectively support every factual claim' in value['instructions']
+    assert 'return insufficient with empty citation_ids' in value['instructions']
+    assert json.loads(value['input'])['excerpts']==[dict(id=4,text='Synthetic evidence.')]
+
+
 def test_answer_excerpts_are_bounded_for_full_passages():
     value, upper=payload("Synthetic question?",[dict(id=4,text="x"*2000)])
     assert upper<=16000 and len(json.loads(value["input"])["excerpts"][0]["text"])==2000

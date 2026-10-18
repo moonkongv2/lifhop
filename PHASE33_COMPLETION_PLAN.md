@@ -4,6 +4,42 @@ Status: 2026-10-18. The selected-context, 46-record indexing and three-question
 integrated smoke passes are closed. Phase 3.3 remains incomplete; this plan does
 not authorize another provider request.
 
+## Latest local change: citation instructions strengthened
+
+The shared answer instructions now require cited excerpts collectively to support
+every factual claim and include all necessary IDs. Optional details unsupported
+by those citations must be omitted; if a complete answer is no longer possible,
+the response must be insufficient with empty citations. The same rule is sent
+for current, period and historical answers. This is a prompt correction, not a
+new semantic verifier or a guarantee of factual correctness.
+
+Four synthetic checks were added: an API case with complementary facts in two
+of three selected sources, and instruction delivery for three answer modes. The
+API preserves exactly the provider's two citations, omits the unused source and
+settles once without replay. Focused answer/run/period/history tests: **81 passed**.
+Final full backend suite: **700 passed**; diff whitespace check passed.
+No model, embedding, schema, dependencies, API format or usage limits changed.
+No real-provider call, permission expansion or persistent answer enablement.
+The configuration hash changed; preserve prior protocols and raw answers, and
+prepare a fresh scope before any future paid action. Existing vectors remain
+compatible and do not need reindexing for this instruction change.
+
+### Remaining acceptance, reviewed together
+
+| Item | Current evidence | Next step before a final acceptance decision |
+| --- | --- | --- |
+| Citation coverage | Real partial result; instruction correction tested synthetically | Include complementary-source claims in the next agreed real check; inspect each claim against returned citations |
+| Period dates | Real UTC/Seoul mismatch; metadata/instruction correction tested synthetically | Retain failure and include a Seoul date boundary in the next agreed check |
+| Automatic retrieval | Three source-filtered known cases executed; one partial answer | Keep these as smoke results; do not infer broad unfiltered recall |
+| Cross-source implementation | Validated source types exist; no reviewed linked case | Identify an actual recorded decision and its matching implementation in permitted primary text |
+| Adopted change and reason | Proposals exist; adopted reason not established | Find the explicit adoption/reason, or report absent/excluded evidence |
+| Positive ordinary-life memory | Desired rental question only; negative case passed | Supply a real fact/reason in permitted records, or explicitly agree a narrower gate |
+
+Do not make a separate paid loop for each instruction adjustment. Inspect the
+remaining permitted evidence locally, then present one complete acceptance scope
+or an explicitly narrower release proposal for owner agreement. No category is
+waived by this local fix; Phase 3.3 remains incomplete and Phase 4 has not started.
+
 ## Latest result: integrated smoke pass closed
 
 The owner approved three questions, up to fifteen automatic excerpt occurrences,
@@ -39,7 +75,7 @@ consumed; do not repeat it.
 Existing recommendation/Semantic/answer tests rerun after execution: **61 passed**;
 diff whitespace passed. No app code changed, and no new browser run was made.
 
-Next make a narrow local citation-coverage proposal: require citations supporting
+The subsequent local correction above requires citations supporting
 all returned factual details and omit a detail that cannot be tied to selected
 evidence. Preserve the observed failure; do not silently add guessed citations
 or use evaluation answers to repair output. Synthetic checks can verify request
@@ -223,5 +259,6 @@ checks passed. No new tests or browser steps are required to inspect these findi
 The owner need not repeat a closed pass or local readback. Review the results and
 the citation-coverage finding; no browser action is required to inspect the agent's
 checks. Preserve frozen protocols and raw answers. The worker/indexing change was
-committed as `e45e74e`. The current documentation/results can form a checkpoint:
-`docs: record bounded integrated answer validation`.
+committed as `e45e74e`; integrated results were committed as `693b919`. The local
+instruction change, regressions and updated status can form the next checkpoint:
+`fix: require cited support for every answer fact`.

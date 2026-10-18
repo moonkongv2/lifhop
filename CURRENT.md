@@ -44,8 +44,12 @@ its child-audience detail exists in selected context but not its sole returned
 citation, and a reference checklist detail was omitted. Both returned citations
 resolve to exact original text. Answer mode was temporarily enabled in that
 process only and restored off. No additional indexing, permission change or retry.
-Next: address citation coverage locally and consolidate the remaining acceptance
-scope before another paid check; do not repeatedly tune these known cases.
+The common citation instructions now require cited evidence for every factual
+claim and omit unsupported optional details; insufficient evidence still requires
+an empty citation list. Synthetic checks cover delivery and response handling,
+not actual model compliance. No real-provider retest was performed.
+Next consolidate the remaining acceptance scope before another paid check.
+Do not repeatedly tune these known cases.
 Cross-source
 decision/implementation and adopted-change reasons remain deferred; positive
 ordinary-life fact recall and broad automatic Semantic retrieval remain unverified.
@@ -56,6 +60,24 @@ Phase 3.3 is incomplete; do not start scheduled collection yet.
 See AI_SOURCE_COVERAGE.md for scope and completion gates.
 
 ## Current product slice
+
+**2026-10-18 citation instructions strengthened locally:** Require the provider's
+returned citation set collectively to support every factual claim, include all
+needed excerpt IDs, omit unsupported optional details and decline if a complete
+answer cannot remain. The shared current/period/history payload receives the
+rule. Added a synthetic complementary-facts API test returning two citations from
+three selected originals, with no automatic source appending, no paid replay and
+one settled attempt; three mode-specific checks verify instruction delivery.
+Focused answer/run/period/history tests **81 passed**. This changes instructions
+and the answer configuration hash only; the server's structural validator cannot
+prove semantic grounding. No actual provider call, prompt-specific golden hint,
+model/embedding change, schema/dependency, policy, `.env` change or old-output
+rewrite. Original paid protocols remain closed and their partial results remain
+failures to resolve; do not infer that instruction changes passed a live retest.
+Next settle remaining acceptance scope as one package before seeking any fresh
+real-provider approval. Final full backend suite **700 passed**; diff whitespace
+check passed. No frontend change or browser verification was needed.
+See PHASE33_COMPLETION_PLAN.md and ANSWER_SLICE.md.
 
 **2026-10-18 approved integrated smoke pass closed:** Verified exact frozen
 owner/database/revision/configuration and 1,060 vector/274 parent anchors before
@@ -1320,8 +1342,9 @@ user-verifiable product slices in `ROADMAP.md`.
 1. Follow PHASE33_COMPLETION_PLAN.md: the guarded tooling and Seoul date correction
    are committed and the approved 46-record indexing pass is complete. The
    three-question integrated smoke pass is also closed, with a partial GitHub
-   citation-coverage finding. Prepare a narrow local citation correction and
-   consolidate remaining acceptance scope before any separately approved paid check.
+   citation-coverage finding. The common citation instruction correction is now
+   implemented and synthetically tested; actual model compliance remains unverified.
+   Consolidate remaining acceptance scope before any separately approved paid check.
    The four-call selected-context pass is closed;
    expected statuses matched, but the date defect prevents calling the period
    check fully passed. Synthetic date regressions do not establish real-model
