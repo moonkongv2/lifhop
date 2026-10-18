@@ -65,6 +65,21 @@ See AI_SOURCE_COVERAGE.md for scope and completion gates.
 
 ## Current product slice
 
+**2026-10-18 follow-up handoff:** Citation instructions committed as `6a7beda`;
+unresolved-report correction committed separately as `9d9eb69`. Reviewed both
+changes; focused backend checks **110 passed**, full backend **701 passed**.
+Loaded answer mode is off. No new provider request or indexing was performed.
+Final read-only comparison preserved all 138 original audit files, usage rows,
+source policies and Entry AI/current-version metadata; three outstanding
+reservations remain USD 0.006801. Private handoff preservation report is retained.
+PHASE33_COMPLETION_PLAN.md now defines required real source pairs, adoption/reason
+evidence, positive life facts, private anchor/checklist fields and the preparation
+gate for one consolidated model-validation proposal. Actual missing sources are
+not yet identified; exact transmission/call/cost approval is not ready. First ask
+for record location clues, without reading excluded bodies or changing policies.
+Keep every unmet acceptance gate; no narrower exit scope or Phase 4 is adopted.
+The previous live citation/date failures and original results remain open.
+
 **2026-10-18 acceptance scope audit and unresolved-report correction:** The local
 preflight now reports every case with coverage gaps as unresolved, including
 empty/denied corpora and selected context missing a required source. Previously
