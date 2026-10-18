@@ -31,17 +31,18 @@ def try_owner(db, owner_id):
     return db.scalar(text("SELECT pg_try_advisory_xact_lock(12022, :owner)"), {"owner": owner_id})
 
 
-def recover_expired(bind):
+def recover_expired(bind, *, run_ids=None):
     recovered = 0
+    scope = [] if run_ids is None else [EmbeddingRun.id.in_(run_ids)]
     with Session(bind) as db:
         owners = list(db.scalars(select(EmbeddingRun.owner_id).join(EmbeddingJob).where(
-            EmbeddingJob.status == "running", EmbeddingJob.lease_until < now()).distinct().limit(50)))
+            *scope, EmbeddingJob.status == "running", EmbeddingJob.lease_until < now()).distinct().limit(50)))
     for owner in owners:
         with Session(bind) as db, db.begin():
             if not try_owner(db, owner):
                 continue
             jobs = list(db.scalars(select(EmbeddingJob).join(EmbeddingRun).where(
-                EmbeddingRun.owner_id == owner, EmbeddingJob.status == "running",
+                *scope, EmbeddingRun.owner_id == owner, EmbeddingJob.status == "running",
                 EmbeddingJob.lease_until < now()).with_for_update(of=EmbeddingJob).limit(100)))
             for job in jobs:
                 attempt = db.scalar(select(AiUsageAttempt).where(AiUsageAttempt.dispatch_id == job.dispatch_id))
@@ -56,10 +57,11 @@ def recover_expired(bind):
     return recovered
 
 
-def claim_batch(bind):
+def claim_batch(bind, *, run_ids=None):
+    scope = [] if run_ids is None else [EmbeddingRun.id.in_(run_ids)]
     with Session(bind) as db, db.begin():
         first = db.execute(select(EmbeddingRun.id, EmbeddingRun.owner_id).join(EmbeddingJob).where(
-            EmbeddingRun.status == "active", EmbeddingJob.status == "pending").order_by(
+            *scope, EmbeddingRun.status == "active", EmbeddingJob.status == "pending").order_by(
             EmbeddingJob.created_at, EmbeddingJob.id).limit(1)).first()
         if first is None or not try_owner(db, first.owner_id):
             return None, False
@@ -167,9 +169,9 @@ def record_failure(bind, batch, error):
         finish_run(db, run)
 
 
-def process_one(bind=engine, config=settings, *, transport=None, before_publish=None):
-    recovered = recover_expired(bind)
-    batch, handled = claim_batch(bind)
+def process_one(bind=engine, config=settings, *, transport=None, before_publish=None, run_ids=None):
+    recovered = recover_expired(bind, run_ids=run_ids)
+    batch, handled = claim_batch(bind, run_ids=run_ids)
     if batch is None:
         return handled or bool(recovered)
     try:

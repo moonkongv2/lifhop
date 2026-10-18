@@ -269,6 +269,16 @@ Phase 3.3 or authorize further paid diagnostics.
 
 ### Acceptance gates
 
+The separately approved 46-record current-index restoration completed on
+2026-10-18: 43 GitHub documents and three Codex records, 1,060 eligible slices,
+67 embedding calls, USD 0.000996 settled and zero new uncertain usage. Exact
+manifest anchors and local status API were independently verified without new
+provider calls. Prior jobs/runs/reservations, source policies and versions were
+preserved. No question/answer call was included. Index availability does not
+establish integrated retrieval quality; the remaining sequence is recorded in
+PHASE33_COMPLETION_PLAN.md. The consumed approval grants no follow-change work
+or additional evaluation calls.
+
 Prepare a fresh, owner-reviewed evidence set with exact questions, expected claims,
 required sources/versions and allowed excerpts. Keep failures in the report; do
 not repeatedly tune against this set. Use the existing runtime model/configuration.

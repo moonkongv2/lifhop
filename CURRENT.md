@@ -23,7 +23,10 @@ Passage backfill and separately approved fresh embedding indexing. Old vectors
 are unavailable; old follow approvals cannot enroll new-config jobs. The owner
 has rebuilt local projections. A subsequent explicit request enabled exactly
 three selected Codex records and their source, preserving all other record and
-source settings. No new embedding indexing was activated.
+source settings. The subsequently approved indexing pass is complete: exactly
+the existing 43 GitHub documents and three selected Codex records now have
+1,060 current eligible vectors. It made 67 embedding calls, settled USD 0.000996
+and left no new uncertain usage. Prior runs/jobs/reservations were preserved.
 The owner-approved four-question/nine-excerpt pass is now closed: four real
 calls returned the expected statuses, costing USD 0.000809 with 2.4–4.0 seconds
 per action. Four returned original citations were independently read and checked.
@@ -33,8 +36,9 @@ the Seoul day. Retrospective metadata and instructions now explicitly use Seoul
 dates; synthetic regressions cover the fix, but no further real-model call was
 made. The original paid outputs remain unchanged. No new uncertain reservations;
 three earlier unresolved reservations remain untouched.
-Next: commit the guarded acceptance tooling and date fix at coherent boundaries,
-then resolve or explicitly narrow remaining acceptance coverage. Cross-source
+Next: prepare a small integrated retrieval/answer check using the restored index,
+with separate question/answer transmission approval, then resolve or explicitly
+narrow remaining acceptance coverage. Cross-source
 decision/implementation and adopted-change reasons remain deferred; positive
 ordinary-life fact recall and automatic Semantic retrieval are unverified.
 The rental question tested missing evidence, not positive fact recall.
@@ -43,6 +47,43 @@ Phase 3.3 is incomplete; do not start scheduled collection yet.
 See AI_SOURCE_COVERAGE.md for scope and completion gates.
 
 ## Current product slice
+
+**2026-10-18 owner-approved current indexing complete:** The one-pass approval
+covered 46 existing permitted records, at most 72 calls/USD 0.01. Both frozen
+manifests matched the live DB before activation. Completed both exact-selector
+runs without follow changes: GitHub 43 records/1,031 slices, Codex three records/
+29 slices; 67 actual document-embedding calls, USD 0.000996 settled, zero new
+outstanding usage, about 56 seconds. A separate local readback matched every
+stored anchor to the approved manifests, checked 1,536-dimensional nonzero
+vectors, and verified `/semantic/status` overall/by source reports available.
+Readback added no calls or usage rows. Source/record policy, source versions and
+all prior attempts/runs/jobs were verified unchanged. No query or answer call,
+model/settings change, fresh permission, old-run resumption or paid retry.
+The indexing approval is consumed; Phase 3.3 retrieval/grounding acceptance is
+still incomplete. Private approval/dispatch/ledger/readback artifacts are retained
+beside the reviewed manifests outside Git. Added an optional run selector to
+worker claim/recovery/processing so this execution could not consume other work;
+empty selectors process nothing and the normal unscoped worker remains available.
+Two synthetic scope-isolation regressions pass; full backend **696 passed**,
+targeted indexing tests **31 passed**, diff whitespace passed. No frontend change
+or browser run. Next prepare the integrated-flow review described in
+PHASE33_COMPLETION_PLAN.md without sending new questions implicitly.
+
+**2026-10-18 commits and remaining-readiness audit:** Acceptance tooling committed
+as `3639c3c`; Seoul retrospective dates/results committed as `998950d`. A local
+read-only audit found 480 current ready projections, 46 AI-permitted records,
+zero usable current vectors and 1,031 stale old jobs. Answer mode remains off.
+Prepared private indexing previews for only the existing 43 GitHub documents and
+three permitted Codex records: 1,060 slice occurrences, at most 72 batched calls,
+conservative combined cost USD 0.008423. No provider request, job/run activation,
+reservation or policy change; Entry/run/job/attempt counts were unchanged.
+The indexing manifests remain unapproved. Next obtain explicit bounded indexing
+transmission approval, then prepare a small integrated retrieval/answer check
+with separate consent. Resolve or explicitly narrow remaining evidence categories
+before Phase 4. See PHASE33_COMPLETION_PLAN.md; no new paid retry or broad tuning.
+This follow-up changes docs/private audit artifacts only. Existing indexing-job
+and Semantic tests rerun: **51 passed**; diff whitespace passed. No new test or
+browser run. The prior implementation's full suite passed 694 tests.
 
 **2026-10-18 approved selected-context pass closed; retrospective date fix:**
 Executed exactly four real answer calls within the approved USD 0.04 ceiling.
@@ -1223,8 +1264,10 @@ user-verifiable product slices in `ROADMAP.md`.
 
 ## Next
 
-1. Commit the guarded acceptance tooling and Seoul retrospective-date correction
-   as coherent changes. The approved four-call selected-context pass is closed;
+1. Follow PHASE33_COMPLETION_PLAN.md: the guarded tooling and Seoul date correction
+   are committed and the approved 46-record indexing pass is complete. Prepare
+   a small integrated-flow review and obtain separate question/answer transmission
+   consent before executing it. The four-call selected-context pass is closed;
    expected statuses matched, but the date defect prevents calling the period
    check fully passed. Synthetic date regressions do not establish real-model
    compliance. Resolve or explicitly narrow the deferred cross-source decision

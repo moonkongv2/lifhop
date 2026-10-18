@@ -124,6 +124,44 @@ def test_identical_allowed_text_is_reused_without_another_send(actor):
         assert db.scalar(select(func.count()).select_from(PassageEmbedding)) == 2
 
 
+def test_scoped_worker_does_not_claim_other_pending_runs(actor):
+    bind, config, owner, entry_id = actor
+    other, _ = activate(actor, entry_ids=[entry_id])
+    with Session(bind) as db:
+        selected_entry = create(db, owner, "Distinct scoped synthetic text")
+        selected_id = selected_entry.id
+        db.commit()
+    selected, _ = activate(actor, entry_ids=[selected_id])
+    sender = Mock(side_effect=response)
+    assert not process_one(bind, config, transport=sender, run_ids=[])
+    sender.assert_not_called()
+    assert process_one(bind, config, transport=sender, run_ids=[selected])
+    assert not process_one(bind, config, transport=sender, run_ids=[selected])
+    assert sender.call_count == 1
+    with Session(bind) as db:
+        assert summaries(db, owner, selected)[0]['counts'] == {'ready': 1}
+        assert summaries(db, owner, other)[0]['counts'] == {'pending': 1}
+        assert db.scalar(select(AiUsageAttempt.run_id)) == selected
+
+
+def test_scoped_recovery_does_not_touch_other_expired_jobs(actor):
+    bind, _, owner, entry_id = actor
+    other, _ = activate(actor, entry_ids=[entry_id])
+    batch, _ = claim_batch(bind, run_ids=[other])
+    assert batch['run_id'] == other
+    with Session(bind) as db:
+        db.scalar(select(EmbeddingJob).where(EmbeddingJob.run_id == other)).lease_until = now() - timedelta(seconds=1)
+        selected_entry = create(db, owner, "A separate recovery scope")
+        selected_id = selected_entry.id
+        db.commit()
+    selected, _ = activate(actor, entry_ids=[selected_id])
+    assert recover_expired(bind, run_ids=[selected]) == 0
+    assert claim_batch(bind, run_ids=[])[0] is None
+    with Session(bind) as db:
+        assert summaries(db, owner, other)[0]['counts'] == {'running': 1}
+    assert recover_expired(bind, run_ids=[other]) == 1
+
+
 def test_no_scope_activation_means_no_work_or_send(actor):
     bind, config, owner, _ = actor
     with Session(bind) as db:
