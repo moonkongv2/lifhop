@@ -3,7 +3,47 @@
 Status: 2026-10-19. The selected-context, 46-record indexing and three-question
 integrated smoke passes are closed. Phase 3.3 remains incomplete; this plan does
 not authorize another provider request. The later combined 37-slice pass below
-is also closed after its first query hit a database search timeout.
+is also closed after its first query hit a database search timeout. The subsequent
+11-call proposal was approved and is now closed after the first actual answer's
+context-selection/status failure, as recorded immediately below.
+
+## 새 승인 실행 결과: 근거 선택 누락과 부분 답변 상태 오류 (2026-10-19)
+
+사용자가 재검증 proposal
+`26652b31d956a98c4c1e8340ae25f5cf70e0110925880e83af74db9ff53d72c1`을
+최대 11회/USD 0.02로 명시 승인했다. 추가 import·인덱싱·권한 변경 없이
+새 독립 실행 표식과 요청 ID로 정상 제품 경로를 실행했다. 사전 대조에서
+자료·모델/config/설정 단가·예산·1,097 anchor와 기간/과거 미리보기가 일치했다.
+
+첫 질문의 검색 20개 → 자동 부모 선택 5개 → 답변 → 반환 인용 2개를 확인했다.
+이전 검색 시간 초과는 이번 실행에서 발생하지 않았다. 실제 구현 커밋은 검색
+9위에 있었으나 자동 선택의 `count_limit`으로 답변 입력에서 빠졌다. 반환 인용은
+정책·기록상의 구현 브랜치를 지원했고 원본 소유권/버전/경계/본문 해시가 맞았다.
+답변은 커밋 식별자가 제공 본문에서 확인되지 않는다고 명시하면서도 `supported`로
+반환했다. 이 입력 기준으로는 `partial`이어야 하며, 사례의 정책→실제 커밋 연결
+완료 조건도 미충족이다. 정답 상태 문자열 일치만으로 통과시키지 않았다.
+
+검색 누락과 구분되는 **후보 선택 누락 + 답변 상태 오류**다. 커밋을 지어내지는
+않았고 정책 사실의 인용은 확인됐지만, 전체 요청이 충족된 것은 아니다. 기대
+커밋을 강제로 끼워 넣거나 원본 답변/상태/인용을 고쳐 성공처럼 만들지 않았다.
+첫 실패 중단 조건에 따라 이번 승인은 종료됐다. 나머지 6개 모델 답변은 미실행이며
+한국 날짜·일상 부분 회수·별도 인용 회귀 통과로 계산하지 않는다.
+
+실제 **2회 호출(질문 1 + 답변 1)/USD 0.000301 확정**, 신규 미확정 0건,
+전체 첫 동작 약 14.06초다. 기존 183개 파일·444개 과금 행과 미확정
+3건/USD 0.006801, 자료·권한·현재 버전·1,097벡터를 보존했다.
+원본 단계별 요청/응답·타이밍·인용 대조·판정:
+`.local/evaluation/phase33/approved-reverification-5f2796fb41a54179835795d546755379/report.html`.
+서버/환경 ANSWER_MODE=off를 유지했고 프로세스 답변 설정은 원복됐다. 앱 코드나
+frontend 변경이 없어 앱 테스트는 재실행하지 않았다. 실제 모델 검증과 로컬
+보존 검사를 수행한 결과이며 앞선 745개 테스트 결과를 이번 재실행으로 표시하지 않는다.
+
+다음은 복합 질문의 필요한 근거가 상위 후보 안에 있을 때 자동 선택에서 누락되는
+문제와 `supported`/`partial` 경계의 로컬 개선 범위를 설계·검증하는 일이다.
+현 선택기는 순위를 유지하도록 설계돼 있으므로 동작 변경 시 명시적으로 설명하고
+일반 사례·누락·권한·입력 제한을 함께 확인한다. 이 한 정답에 맞춘 소스 강제나
+사후 인용 보정은 하지 않는다. 새 모델 실행은 수정/검증 범위를 고정한 뒤 별도
+승인이 필요하다. Phase 3.3 완료 조건과 Phase 4 미착수는 그대로다.
 
 ## 승인 실행 결과: 검색 시간 초과로 중단 (2026-10-19)
 

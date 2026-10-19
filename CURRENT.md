@@ -70,6 +70,33 @@ See AI_SOURCE_COVERAGE.md for scope and completion gates.
 
 ## Current product slice
 
+**2026-10-19 new 7-case approval executed; closed after first answer failure:**
+The owner approved digest
+`26652b31d956a98c4c1e8340ae25f5cf70e0110925880e83af74db9ff53d72c1`
+for at most 11 calls/USD 0.02 without import/indexing/permission changes. The
+first question completed normal Semantic search, automatic parent recommendation
+and an actual answer without the previous timeout. The implementation commit
+was found at rank 9 but omitted by the five-parent count limit. The selected
+policy/implementation-branch passages support the returned known facts; two
+citations match exact owner/version/range/text hashes. However the answer could
+not identify the requested commit, explicitly said its identifier was unconfirmed,
+and incorrectly returned `supported` instead of `partial` for that context.
+This is a context-selection miss plus an answer-status defect, not a retrieval
+miss, fabricated commit or complete pass. No expected source/citation was inserted.
+Stopped under the agreed first-failure rule: **1 query + 1 answer, USD 0.000301
+settled, zero new uncertain usage**. Six later cases remain unsent; period/history
+previews matched locally but their answers and Seoul-date compliance are untested.
+Original raw stages, grounding review and result:
+`.local/evaluation/phase33/approved-reverification-5f2796fb41a54179835795d546755379/report.html`.
+The 183 earlier artifacts, 444 prior usage rows, all Entry/source settings/current
+versions and 1,097-vector corpus remain unchanged. Old uncertain 3/USD 0.006801
+and persistent ANSWER_MODE=off remain. No app code changed or application tests
+reran; this was actual provider verification plus read-only preservation checks.
+The approval is now closed. Next is local design/verification of evidence
+selection for a composite question and the supported/partial boundary before
+preparing any new paid scope. Do not force this known commit into selection or
+weaken the completion gate. Phase 3.3 remains incomplete; no Phase 4 work.
+
 **2026-10-19 approved execution closed after Semantic timeout:** The owner approved
 proposal `e29c7c37e1f067ead1c36882acfff7ed7f07b18d3ab2c469a6f2116b20b0727c`.
 Normal collection APIs imported exactly four records; their real IDs and current
@@ -99,11 +126,11 @@ is off. Next: review this closed failure and a fresh bounded 7-case proposal
 change). New paid work needs explicit approval; Phase 3.3 is incomplete and
 Phase 4 has not started.
 Implementation checkpoints: `160afe9` (bounded Passage indexing) and `55858b4`
-(Semantic alias scan fix). The fresh, unapproved proposal is
+(Semantic alias scan fix). The proposal subsequently approved/executed above is
 `.local/evaluation/phase33/post-timeout-review-543fc83a81da48e3ae369d69cb2bf436/review.html`,
 digest `26652b31d956a98c4c1e8340ae25f5cf70e0110925880e83af74db9ff53d72c1`.
 It freezes the same questions and complete reviewed source pool/current anchors;
-provider calls in this proposal are zero. No new frontend checks were needed for
+provider calls at preparation were zero. No new frontend checks were needed for
 the backend-only timeout fix; the prior indexing checkpoint's frontend results
 remain historical checks, not reruns in this execution.
 
@@ -1603,12 +1630,13 @@ user-verifiable product slices in `ROADMAP.md`.
 
 ## Next
 
-1. Review the latest closed search-timeout result and new unapproved 7-case scope
-   in PHASE33_COMPLETION_PLAN.md before any new paid call. Indexing is complete
-   at 52 records/1,097 vectors; the search fix passed saved-vector local readback
-   and 745 backend tests. All seven actual answers remain unexecuted. No more
-   source discovery/import/indexing/permission expansion is required by the new
-   proposal. Persistent ANSWER_MODE remains off. Phase 3.3 is incomplete.
+1. Review the latest closed actual-answer failure in PHASE33_COMPLETION_PLAN.md.
+   The first case found its commit at rank 9 but omitted it from the five-parent
+   context, and the incomplete answer incorrectly returned supported. Design
+   and verify a general local correction before proposing another paid pass;
+   six later cases remain unexecuted. Indexing remains 52 records/1,097 vectors.
+   No more import/indexing/permission expansion is needed for these findings.
+   Persistent ANSWER_MODE remains off. Phase 3.3 is incomplete.
    Earlier checkpoint context: the guarded tooling and Seoul date correction
    are committed and the approved 46-record indexing pass is complete. The
    three-question integrated smoke pass is also closed, with a partial GitHub
