@@ -1695,3 +1695,13 @@ retaining refusal for no useful direct evidence. API/parser/schema, current and
 historical/period flows, UI labels and local regressions must be reconciled before
 one separately approved real-model pass. This note changes no runtime behavior,
 model, AI permission, ledger reservation or embedding space.
+
+Implementation follow-up, 2026-10-19: the proposed `partial` status is now
+implemented in the common strict output schema/parser, current/historical public
+schemas and all answer displays. It requires the same 1–5 distinct allowed IDs
+as `supported`; retrospective item format validation applies to both. Unknowns
+remain bounded to selected evidence and advice is attributed to its author.
+Natural-language grounding is still a real-model verification requirement, not
+something the structural parser proves. Closed evaluation artifacts and existing
+two-outcome preflight protocols are unchanged; a new partial-capable evaluation
+scope is needed before any fresh paid run.

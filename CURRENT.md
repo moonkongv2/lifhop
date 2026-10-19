@@ -56,9 +56,9 @@ The owner-authorized jy_yamyam investigation found a genuine same-change chain:
 Codex policy/implementation requests match GitHub implementation `62f20ee` and
 documentation follow-up `644e980`, both independently checked remotely. New
 sources are local evidence candidates, not yet imported/AI-enabled/indexed in
-lifhop. Current two-state output cannot explicitly represent cited partial
-answers; the proposed partial contract and collector compatibility need local
-implementation/verification before one consolidated paid proposal.
+lifhop. The common output contract now includes cited partial answers with
+explicit unknowns; real-model compliance remains unverified. Collector
+compatibility and exact source/evaluation preparation precede a paid proposal.
 The earlier three source-filtered known cases establish bounded integrated
 wiring only. Their citation defect remains a failure, not a newly valid partial
 answer. Broad automatic recall and corrected real-model behavior remain unverified.
@@ -67,6 +67,24 @@ Phase 3.3 is incomplete; do not start scheduled collection yet.
 See AI_SOURCE_COVERAGE.md for scope and completion gates.
 
 ## Current product slice
+
+**2026-10-19 cited partial-answer implementation:** Added `partial` alongside
+`supported` and `insufficient` to the common structured output/parser, current
+and historical API schemas, generated types and all four answer displays.
+Partial answers require 1–5 distinct permitted citation IDs. Instructions recover
+directly relevant recorded progress, attribute assistant advice and distinguish
+unconfirmed outcomes/personal reasons within the selected evidence. Retrospective
+partial lines retain the exact category/citation format; preview coverage alone
+does not determine answer status. Configuration hashing includes this new
+contract, so previous paid protocols are not reusable. No migration, dependency,
+budget, owner/policy/version guard, retry behavior or AI setting changed.
+Local checks and remaining real-model verification are recorded in
+PHASE33_COMPLETION_PLAN.md: 712 backend and 198 frontend tests passed, frontend
+lint/build and diff checks passed. Prior 138 files, policies/selection/usage and
+three uncertain reservations remained unchanged; answer mode is off.
+Actual-model citation/date/partial compliance is
+unverified; no model call or indexing was performed. The old two-outcome paid
+preflight tools still need an explicit partial-case contract before a new manifest.
 
 **2026-10-19 owner clarification and actual cross-source match:** The owner
 authorized inspection of jy_yamyam's conversations/repository and clarified that
@@ -84,7 +102,7 @@ by this investigation. No app code, source policy, ledger or answer-mode change;
 zero AI calls, three outstanding reservations/USD 0.006801 preserved.
 Private source chain, case drafts, hashes and readable review are under
 `.local/evaluation/phase33/jy-cross-source-2ce93bfe70574c81aa7212c638af0749/`.
-Next implement/review explicit cited partial answers, verify production collector
+Next verify production collector
 0.163 compatibility before selected import, and freeze exact source/index/answer
 scope plus citation/Seoul-date regressions for one new paid proposal. Production
 collector support remains unchanged at 0.158/0.160; discovery is not an import.
@@ -1482,8 +1500,8 @@ user-verifiable product slices in `ROADMAP.md`.
    citation-coverage finding. The common citation instruction correction is now
    implemented and synthetically tested; actual model compliance remains unverified.
    The owner clarified that useful recorded progress does not require a recorded
-   final outcome. Implement and locally verify explicit cited partial answers;
-   prepare minimal permitted source scopes using the rental progress and the
+   final outcome. Cited partial answers are implemented; real-model behavior is
+   unverified. Prepare minimal permitted source scopes using the rental progress and the
    verified jy_yamyam decision/implementation chain before any separately
    approved consolidated check. Verify collector compatibility before import.
    The four-call selected-context pass is closed;

@@ -27,7 +27,7 @@ class AnswerCitation(BaseModel):
 
 
 class AnswerResponse(BaseModel):
-    status: Literal["supported", "insufficient"]
+    status: Literal["supported", "partial", "insufficient"]
     answer: str
     citations: list[AnswerCitation]
     policy_revision: int

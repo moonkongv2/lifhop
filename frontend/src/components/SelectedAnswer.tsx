@@ -25,7 +25,7 @@ export default function SelectedAnswer({ question, selected, params, kind }: { q
       onClick={() => { answer.reset(); answer.mutate(); }}>Generate cited answer</button>
     {answer.isPending && <p role="status">Checking the selected evidence...</p>}
     {answer.error && <p role="alert">{answer.error.message}</p>}
-    {result && <div className="answer-result"><h4>{result.status === "supported" ? "Draft answer" : "Insufficient evidence"}</h4>
+    {result && <div className="answer-result"><h4>{result.status === "supported" ? "Draft answer" : result.status === "partial" ? "Partial draft — some requested facts are unconfirmed" : "Insufficient evidence"}</h4>
       <p>{result.answer}</p>
       {result.citations.length > 0 && <ul>{result.citations.map(c =>
         <li key={`${c.kind}-${c.source_id}`}><Link to={citationTarget(c.passage, returnTo, `${c.kind === "embedding" ? "/semantic/slices" : "/passages"}/${c.source_id}`)}>

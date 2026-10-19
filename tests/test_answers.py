@@ -24,7 +24,7 @@ from test_embedding_store import save
 def response(value, *, status="supported", ids=None):
     excerpts=json.loads(value["input"])["excerpts"]
     data=dict(status=status, answer="Synthetic answer from the selected passage.",
-        citation_ids=ids if ids is not None else ([excerpts[0]["id"]] if status=="supported" else []))
+        citation_ids=ids if ids is not None else ([excerpts[0]["id"]] if status in {"supported", "partial"} else []))
     return dict(model=MODEL,status="completed",output=[dict(type="message",content=[
         dict(type="output_text",text=json.dumps(dict(result=data)))])],
         usage=dict(input_tokens=10,output_tokens=10,total_tokens=20))
@@ -247,6 +247,9 @@ def test_citation_coverage_contract_is_sent_for_each_answer_mode(mode):
     value,_=payload('Synthetic question?',[dict(id=4,text='Synthetic evidence.')],**options)
     assert 'collectively support every factual claim' in value['instructions']
     assert 'return insufficient with empty citation_ids' in value['instructions']
+    assert 'set status to partial' in value['instructions']
+    assert 'personal motivation' in value['instructions']
+    assert 'unconfirmed within the supplied excerpts' in value['instructions']
     assert json.loads(value['input'])['excerpts']==[dict(id=4,text='Synthetic evidence.')]
 
 
@@ -319,3 +322,29 @@ def test_historical_attempt_settles_using_its_stored_prices(answer_client):
         settle(db,row.id,status='spent',input_tokens=10,output_tokens=10)
         db.commit()
         assert row.spent_micro_usd==20 and row.model=='gpt-4.1-mini-2025-04-14'
+
+
+@pytest.mark.parametrize('source', ['embedding', 'passage'])
+def test_partial_answer_retains_exact_citation_and_replay_guard(answer_client, source):
+    from app.models.passage import EntryPassage
+    client, headers, sender, vector_id, bind, owner, entry_id = answer_client
+    sender.side_effect = lambda value: response(value, status='partial')
+    request = ask(vector_id)
+    if source == 'passage':
+        with Session(bind) as db:
+            passage_id = db.scalar(select(EntryPassage.id).where(EntryPassage.version_id == db.get(Entry, entry_id).current_version_id,
+                EntryPassage.field == "content"))
+        request.pop('embedding_ids')
+        request['passage_ids'] = [passage_id]
+        request['policy_revision'] = client.get('/answers/status', headers=headers).json()['policy_revision']
+    result = client.post('/answers', headers=headers, json=request)
+    assert result.status_code == 200, result.text
+    body = result.json()
+    assert body['status'] == 'partial' and len(body['citations']) == 1
+    assert body['citations'][0]['kind'] == source
+    assert body['citations'][0]['passage']['entry_id'] == entry_id
+    assert client.post('/answers', headers=headers, json=request).status_code == 409
+    assert sender.call_count == 1
+    with Session(bind) as db:
+        rows = list(db.scalars(select(AiUsageAttempt).where(AiUsageAttempt.owner_id == owner)))
+        assert len(rows) == 1 and rows[0].status == 'spent'

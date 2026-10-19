@@ -58,6 +58,6 @@ class HistoricalRequest(HistoricalScope):
 
 class HistoricalResult(BaseModel):
     preview: HistoricalPreview
-    status: Literal['supported', 'insufficient']
+    status: Literal['supported', 'partial', 'insufficient']
     answer: str
     citations: list[HistoricalExcerpt]

@@ -41,7 +41,7 @@ function PeriodRun({ preview, params, available, refresh }: { preview: PeriodPre
     {run.error && <p role="alert">{run.error.name === "AbortError" ? "Stopped. A request already sent may still finish and be charged." : run.error.message}</p>}
     {!preview.passages.length && <p role="status">No eligible original passages were selected. No AI request will be sent.</p>}
     <p className="help-text">Each new action may incur a new charge. Stopping or leaving cannot withdraw an already sent request. Nothing repeats automatically.</p>
-    {result && <div className="answer-result"><h4>{result.answer.status === "supported" ? "Draft retrospective" : "Insufficient evidence"}</h4>
+    {result && <div className="answer-result"><h4>{result.answer.status === "supported" ? "Draft retrospective" : result.answer.status === "partial" ? "Partial draft — some requested facts are unconfirmed" : "Insufficient evidence"}</h4>
       {result.answer.status === "insufficient" ? <p>{result.answer.answer}</p> : <ul>{result.answer.answer.trim().split("\n").map((line, index) => {
         const match = line.match(/^\[(\d+)\] (.*)$/);
         const citation = result.answer.citations.find(c => c.source_id === Number(match?.[1]));

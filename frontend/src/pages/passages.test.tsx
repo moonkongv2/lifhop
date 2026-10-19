@@ -18,13 +18,15 @@ let aliases: number;
 let answerEnabled: boolean;
 let paid: RequestInit[];
 
+let partial = false;
 beforeEach(() => {
+  partial = false;
   localStorage.clear(); localStorage.setItem("access_token", "test-token");
   requests = []; failure = 0; total = 1; aliases = 1; answerEnabled = false; paid = [];
   vi.stubGlobal("fetch", vi.fn(async (path: string, options: RequestInit = {}) => {
     requests.push(path);
     if (path.endsWith("/answers/status")) return Response.json({ enabled: answerEnabled, policy_revision: 1, selected_limit: 5, max_input_characters: 10000, output_limit_tokens: 512 });
-    if (path.endsWith("/answers")) { paid.push(options); return Response.json({ status: "supported", answer: "The worker runs on the server.",
+    if (path.endsWith("/answers")) { paid.push(options); return Response.json({ status: partial ? "partial" : "supported", answer: "The worker runs on the server.",
       citations: [{ kind: "passage", source_id: 11, passage }], policy_revision: 1 }); }
     if (failure) return new Response(null, { status: failure });
     if (path.includes("/snapshots?")) return Response.json({ items: [{ ...passage, id: 12 }], total: 1, limit: 20, offset: 0 });
@@ -84,7 +86,8 @@ it("loads snapshot locations only when expanded", async () => {
   expect(requests.some(p => p.includes("/11/snapshots?") && p.includes("q=worker"))).toBe(true);
 });
 
-it("answers from a selected local passage with a separate consent", async () => {
+it.each([false, true])("answers from a selected local passage with a separate consent (partial=%s)", async isPartial => {
+  partial = isPartial;
   answerEnabled = true;
   mount();
   await screen.findByText("Saved worker explanation");
@@ -99,7 +102,7 @@ it("answers from a selected local passage with a separate consent", async () => 
   await waitFor(() => expect((screen.getByRole("button", { name: "Generate cited answer" }) as HTMLButtonElement).disabled).toBe(false));
   fireEvent.click(screen.getByRole("button", { name: "Generate cited answer" }));
   await waitFor(() => expect(paid).toHaveLength(1));
-  expect(screen.getByRole("region", { name: "Cited answer" }).textContent).toContain("Draft answer");
+  expect(screen.getByRole("region", { name: "Cited answer" }).textContent).toContain(isPartial ? "Partial draft — some requested facts are unconfirmed" : "Draft answer");
   await screen.findByText("The worker runs on the server.");
   expect(paid).toHaveLength(1);
   const body = JSON.parse(paid[0].body as string);

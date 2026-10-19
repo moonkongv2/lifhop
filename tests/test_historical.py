@@ -272,3 +272,19 @@ def test_exact_request_limit_skips_whole_range_instead_of_truncation(answer_clie
     p = preview(client, headers)
     assert p['byte_skipped'] > 0 and len(p['passages']) < 5
     assert all(len(p['text']) == 2000 for p in p['passages'])
+
+
+def test_partial_historical_answer_cites_only_cutoff_version(answer_client):
+    client, headers, sender, _, bind, owner, _ = answer_client
+    _, old, latest = historical_note(bind, owner)
+    p = preview(client, headers)
+    sender.side_effect = lambda value: response(value, status='partial')
+    request = data(p)
+    result = client.post('/historical', headers=headers, json=request)
+    assert result.status_code == 200, result.text
+    body = result.json()
+    assert body['status'] == 'partial'
+    assert len(body['citations']) == 1 and body['citations'][0]['version_id'] == old
+    assert body['citations'][0]['version_id'] != latest
+    assert client.post('/historical', headers=headers, json=request).status_code == 409
+    assert sender.call_count == 1

@@ -38,7 +38,7 @@ function HistoryRun({ preview, params, available, refresh }: { preview: HistoryP
     </div>
     {run.isPending && <p role="status">Checking historical evidence...</p>}
     {run.error && <p role="alert">{run.error.name === 'AbortError' ? 'Stopped. A sent request may still finish and be charged.' : run.error.message}</p>}
-    {result && <div className="answer-result"><h4>{result.status === 'supported' ? 'Draft historical answer' : 'Insufficient evidence'}</h4><p>{result.answer}</p>
+    {result && <div className="answer-result"><h4>{result.status === 'supported' ? 'Draft historical answer' : result.status === 'partial' ? 'Partial draft — some requested facts are unconfirmed' : 'Insufficient evidence'}</h4><p>{result.answer}</p>
       <p className="help-text">Verify the conclusion against the cited observations. These excerpts do not reconstruct the entire past.</p>
       {result.citations.length > 0 && <ul>{result.citations.map(p => <li key={p.version_id}><Link to={historyCitationTarget(p, returnTo)}>{p.title} · Version {p.version_id}</Link></li>)}</ul>}
     </div>}

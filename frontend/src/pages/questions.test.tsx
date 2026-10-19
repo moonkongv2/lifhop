@@ -21,7 +21,9 @@ let insufficient: boolean;
 let failure: "search" | "proposal" | "answer" | undefined;
 let changedProposal: boolean;
 let gates: Partial<Record<"search" | "proposal" | "answer", Promise<void>>>;
+let partial = false;
 beforeEach(() => {
+  partial = false;
   localStorage.clear(); localStorage.setItem("access_token", "test-token");
   sent = []; revision = 1; enabled = true; indexed = true; empty = false; insufficient = false;
   failure = undefined; changedProposal = false; gates = {};
@@ -45,7 +47,7 @@ beforeEach(() => {
     if (url.endsWith("/answers")) {
       await gates.answer;
       return failure === "answer" ? Response.json({ detail: "EMBEDDING_BUDGET_EXHAUSTED" }, { status: 429 }) : Response.json({
-        status: insufficient ? "insufficient" : "supported", answer: insufficient ? "The records do not say." : "The worker runs on the server.",
+        status: insufficient ? "insufficient" : partial ? "partial" : "supported", answer: insufficient ? "The records do not say." : partial ? "The worker is described as running on the server; deployment is unconfirmed in these excerpts." : "The worker runs on the server.",
         citations: insufficient ? [] : [{ kind: "passage", source_id: 3, passage }], policy_revision: current });
     }
     return Response.json(passage);
@@ -178,4 +180,11 @@ it("the whole-action deadline prevents later stages", async () => {
   deadline(); finish();
   await screen.findByText(/The question timed out/);
   expect(posts()).toHaveLength(1);
+});
+
+it("keeps original citations visible for a partial draft", async () => {
+  partial = true; mount(); await start();
+  await screen.findByText("Partial draft — some requested facts are unconfirmed");
+  expect(screen.queryByText("Insufficient evidence")).toBeNull();
+  expect(screen.getByRole("link", { name: /Synthetic worker · Version 4/ })).toBeTruthy();
 });

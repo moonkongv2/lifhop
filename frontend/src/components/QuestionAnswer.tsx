@@ -41,7 +41,7 @@ function QuestionRun({ params, revision, available, refresh, productView }: { pa
     <p className="help-text">Stopping or leaving this screen prevents later stages. A request already sent may still finish and be charged. No stage repeats automatically.</p>
     {run.error && <p role="alert">{run.error.name === "AbortError" ? "Stopped. No later stage will run. A request already sent may have been charged." : `${run.error.message} No automatic retry will be made.`}</p>}
     {result && <>
-      {result.answer ? <div className="answer-result"><h4>{result.answer.status === "supported" ? "Draft answer" : "Insufficient evidence"}</h4>
+      {result.answer ? <div className="answer-result"><h4>{result.answer.status === "supported" ? "Draft answer" : result.answer.status === "partial" ? "Partial draft — some requested facts are unconfirmed" : "Insufficient evidence"}</h4>
         <p>{result.answer.answer}</p>
         <p className="help-text">Verify claims against the cited originals. Only part of your archive may have been examined.</p>
         {result.answer.citations.length > 0 && <ul>{result.answer.citations.map(c => <li key={`${c.kind}-${c.source_id}`}>

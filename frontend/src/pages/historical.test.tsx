@@ -13,7 +13,9 @@ const excerpt = { entry_id: 4, version_id: 7, current_version_id: 8, field: 'con
 let revision: number, enabled: boolean, empty: boolean, failure: boolean, insufficient: boolean;
 let delay: Promise<void> | undefined;
 let requests: { url: string; options: RequestInit }[];
+let partial = false;
 beforeEach(() => {
+  partial = false;
   localStorage.clear(); localStorage.setItem('access_token', 'test-token');
   revision = 1; enabled = true; empty = false; failure = false; insufficient = false; delay = undefined; requests = [];
   vi.stubGlobal('fetch', vi.fn(async (url: string, options: RequestInit = {}) => {
@@ -27,7 +29,7 @@ beforeEach(() => {
     if (url.endsWith('/historical')) {
       await delay;
       return failure ? Response.json({ detail: 'HISTORICAL_PREVIEW_CHANGED' }, { status: 409 }) : Response.json({ preview,
-        status: insufficient ? 'insufficient' : 'supported', answer: insufficient ? 'No explicit adoption is established.' : 'The observed proposal uses Alpha.',
+        status: insufficient ? 'insufficient' : partial ? 'partial' : 'supported', answer: insufficient ? 'No explicit adoption is established.' : partial ? 'The retained proposal uses Alpha; adoption is unconfirmed in these versions.' : 'The observed proposal uses Alpha.',
         citations: insufficient ? [] : [excerpt] });
     }
     return Response.json(excerpt);
@@ -133,4 +135,11 @@ it('preserves a completed answer across asynchronous availability rechecks', asy
   await act(async () => { finish(); await recheck; });
   await screen.findByText('Draft historical answer');
   expect(posts()).toHaveLength(1);
+});
+
+it("keeps original citations visible for a partial draft", async () => {
+  partial = true; mount(); await start();
+  await screen.findByText("Partial draft — some requested facts are unconfirmed");
+  expect(screen.queryByText("Insufficient evidence")).toBeNull();
+  expect(screen.getByRole("link", { name: /Previous worker proposal/ })).toBeTruthy();
 });

@@ -13,6 +13,8 @@ def output(data):
 @pytest.mark.parametrize("data", [
     dict(status="insufficient", answer="Evidence is missing.", citation_ids=[4]),
     dict(status="supported", answer="Synthetic answer.", citation_ids=[]),
+    dict(status="partial", answer="The plan is recorded; adoption is unconfirmed.", citation_ids=[]),
+    dict(status="partial", answer="The plan is recorded; adoption is unconfirmed.", citation_ids=[99]),
     dict(status="supported", answer="Synthetic answer.", citation_ids=[99]),
     dict(status="supported", answer="Synthetic answer.", citation_ids=[4, 4]),
     dict(status="supported", answer="", citation_ids=[4]),
@@ -26,8 +28,9 @@ def test_invalid_citation_and_length_contracts(data):
 @pytest.mark.parametrize("data", [
     dict(status="insufficient", answer="Evidence is missing.", citation_ids=[]),
     dict(status="supported", answer="Synthetic answer.", citation_ids=[4]),
+    dict(status="partial", answer="The plan is recorded; adoption is unconfirmed.", citation_ids=[4]),
 ])
-def test_valid_supported_and_insufficient_contracts(data):
+def test_valid_answer_status_contracts(data):
     assert parse(output(data), {4}) == data
 
 
@@ -76,7 +79,7 @@ def test_transmitted_schema_couples_status_to_citation_count():
     assert schema['type']=='object' and 'anyOf' not in schema
     assert schema['required']==['result'] and schema['additionalProperties'] is False
     branches=schema['properties']['result']['anyOf']
-    assert len(branches)==2
+    assert len(branches)==3
     by_status={b['properties']['status']['enum'][0]:b for b in branches}
     for branch in branches:
         assert branch['additionalProperties'] is False
@@ -85,6 +88,7 @@ def test_transmitted_schema_couples_status_to_citation_count():
     insufficient=by_status['insufficient']['properties']['citation_ids']
     assert supported['minItems']==1 and supported['maxItems']==5
     assert insufficient['maxItems']==0
+    assert by_status['partial']['properties']['citation_ids']==supported
 
 
 @pytest.mark.parametrize('data', [

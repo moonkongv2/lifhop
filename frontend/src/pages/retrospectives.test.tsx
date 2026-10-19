@@ -18,7 +18,9 @@ let failure: boolean;
 let insufficient: boolean;
 let delayed: Promise<void> | undefined;
 let sent: { url: string; options: RequestInit }[];
+let partial = false;
 beforeEach(() => {
+  partial = false;
   localStorage.clear(); localStorage.setItem("access_token", "test-token");
   revision = 1; enabled = true; empty = false; failure = false; insufficient = false; delayed = undefined; sent = [];
   vi.stubGlobal("fetch", vi.fn(async (url: string, options: RequestInit) => {
@@ -33,7 +35,7 @@ beforeEach(() => {
     if (url.endsWith("/retrospectives")) {
       await delayed;
       return failure ? Response.json({ detail: "RETROSPECTIVE_PREVIEW_CHANGED" }, { status: 409 }) : Response.json({ preview,
-        answer: { status: insufficient ? "insufficient" : "supported", answer: insufficient ? "No recorded activity is supported." : "[3] Proposal: Add a backup.",
+        answer: { status: insufficient ? "insufficient" : partial ? "partial" : "supported", answer: insufficient ? "No recorded activity is supported." : partial ? "[3] Unclear: A backup was proposed; adoption is unconfirmed in the selected records." : "[3] Proposal: Add a backup.",
           citations: insufficient ? [] : [{ kind: "passage", source_id: 3, passage }], policy_revision: revision } });
     }
     return Response.json(passage);
@@ -135,4 +137,11 @@ it("choosing a new date in the calendar invalidates the reviewed consent and dra
   await screen.findByText("Review your updated question and filters before asking.");
   expect(screen.queryByText("Draft retrospective")).toBeNull();
   expect(posts()).toHaveLength(1);
+});
+
+it("keeps original citations visible for a partial draft", async () => {
+  partial = true; mount(); await start();
+  await screen.findByText("Partial draft — some requested facts are unconfirmed");
+  expect(screen.queryByText("Insufficient evidence")).toBeNull();
+  expect(screen.getByRole("link", { name: "[3] Synthetic backup proposal" })).toBeTruthy();
 });

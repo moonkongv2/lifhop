@@ -1175,7 +1175,7 @@ export interface components {
              * Status
              * @enum {string}
              */
-            status: "supported" | "insufficient";
+            status: "supported" | "partial" | "insufficient";
             /** Answer */
             answer: string;
             /** Citations */
@@ -2626,7 +2626,7 @@ export interface components {
              * Status
              * @enum {string}
              */
-            status: "supported" | "insufficient";
+            status: "supported" | "partial" | "insufficient";
             /** Answer */
             answer: string;
             /** Citations */

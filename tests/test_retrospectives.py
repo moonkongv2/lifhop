@@ -174,9 +174,10 @@ def test_sampling_covers_early_and_late_records_and_has_explicit_omissions(answe
 
 @pytest.mark.parametrize('answer,ids', [('Uncited claim.', [1]), ('[1] Completed: Wrong category.', [1]),
     ('[1] Proposal: Text.\nExtra uncited line.', [1]), ('[2] Decision: Text.', [1])])
-def test_supported_retrospective_requires_each_line_to_reference_registered_citations(answer, ids):
+@pytest.mark.parametrize('status', ['supported', 'partial'])
+def test_cited_retrospective_requires_each_line_to_reference_registered_citations(answer, ids, status):
     raw = dict(model=MODEL, status='completed', output=[dict(type='message', content=[dict(type='output_text',
-        text=json.dumps(dict(result=dict(status='supported', answer=answer, citation_ids=ids))))])])
+        text=json.dumps(dict(result=dict(status=status, answer=answer, citation_ids=ids))))])])
     with pytest.raises(AnswerOutputError): parse(raw, {1,2}, retrospective=True)
 
 
@@ -279,3 +280,26 @@ def test_partial_projection_is_reported_without_claiming_complete_period_coverag
     p = get_preview(client, headers)
     assert p['incomplete_selected'] == 1 and p['partial'] is True
     assert p['passages'][0]['gap_codes'] == ['SYNTHETIC_GAP']
+
+
+def test_partial_retrospective_keeps_cited_unknown_and_one_call_accounting(answer_client):
+    client, headers, sender, _, bind, owner, _ = answer_client
+    seed(bind, owner)
+    p = get_preview(client, headers)
+    def partial(value):
+        raw = retro_response(value)
+        result = json.loads(raw['output'][0]['content'][0]['text'])['result']
+        result['status'] = 'partial'
+        first = result['citation_ids'][0]
+        result['answer'] = f'[{first}] Unclear: A backup was proposed; adoption is unconfirmed in the selected records.'
+        result['citation_ids'] = [first]
+        raw['output'][0]['content'][0]['text'] = json.dumps(dict(result=result))
+        return raw
+    sender.side_effect = partial
+    request = request_data(p)
+    result = client.post('/retrospectives', headers=headers, json=request)
+    assert result.status_code == 200, result.text
+    assert result.json()['answer']['status'] == 'partial'
+    assert len(result.json()['answer']['citations']) == 1
+    assert client.post('/retrospectives', headers=headers, json=request).status_code == 409
+    assert sender.call_count == 1
