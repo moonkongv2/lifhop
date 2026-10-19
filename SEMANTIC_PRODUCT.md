@@ -177,6 +177,22 @@ Enter the lifhop password in the terminal prompt. The first command prints
 estimated cost in micro-USD, the shared month exposure, and a private manifest path.
 Selected record count can exceed allowed record count because it includes excluded
 records in the scope. `--entries 123,456` restricts activation to explicit Entry IDs.
+
+For a one-shot subset of a long record, add `--passages 789,790` together with
+`--entries`. The API equivalent is `passage_ids` in `POST /indexing/preview`;
+the reviewed manifest binds `selector_passage_ids`. Every selected parent must
+belong to the explicit Entries and be current, owned, eligible and AI-allowed.
+Unknown, duplicate, stale, denied or out-of-scope IDs fail before source inputs
+are prepared. Only those parents' existing Semantic slices become jobs.
+Passage selection cannot use `--follow-changes`; updates require a fresh preview
+and approval rather than silently enrolling the rest of the Entry. This needs no
+schema migration. Legacy manifests omit the new selector and keep their digest
+and idempotent CLI/API replay contract.
+
+This selects indexing work; it does not grant AI permission or introduce a
+range-level policy system. Record/source AI flags still apply to Entries. Inspect
+the complete selected parent text: its boundaries may exceed an earlier excerpt
+review. Do not use an excerpt-only read grant as whole-record transmission consent.
 The second command lists only this owner's runs; `[]` is expected before activation.
 
 Metadata-only verification of the previously allowed 43 GitHub documents found

@@ -2772,6 +2772,8 @@ export interface components {
             scope: string;
             /** Selector Ids */
             selector_ids: number[] | null;
+            /** Selector Passage Ids */
+            selector_passage_ids?: number[] | null;
             /** Entry Ids */
             entry_ids: number[];
             /** Follow Changes */
@@ -2812,6 +2814,8 @@ export interface components {
             scope: string;
             /** Entry Ids */
             entry_ids?: number[] | null;
+            /** Passage Ids */
+            passage_ids?: number[] | null;
             /**
              * Follow Changes
              * @default false

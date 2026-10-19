@@ -30,7 +30,7 @@ DB = Annotated[Session, Depends(indexing_db)]
 Owner = Annotated[User, Depends(get_current_user)]
 
 
-@router.post("/preview", response_model=IndexingPreviewResponse)
+@router.post("/preview", response_model=IndexingPreviewResponse, response_model_exclude_unset=True)
 def preview(data: IndexingPreviewRequest, db: DB, owner: Owner):
     return dict(manifest=prepare_indexing(db, owner_id=owner.id, **data.model_dump()),
         budget=budget_summary(db, scope=settings.embedding_billing_scope,
@@ -39,7 +39,7 @@ def preview(data: IndexingPreviewRequest, db: DB, owner: Owner):
 
 @router.post("/runs", response_model=IndexingRunResponse, status_code=201)
 def activate(data: IndexingActivateRequest, db: DB, owner: Owner):
-    run = activate_indexing(db, owner_id=owner.id, manifest=data.manifest.model_dump(by_alias=True),
+    run = activate_indexing(db, owner_id=owner.id, manifest=data.manifest.model_dump(by_alias=True, exclude_unset=True),
         confirm_external_ai=data.confirm_external_ai)
     db.commit()
     return summaries(db, owner.id, run.id)[0]

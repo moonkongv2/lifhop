@@ -47,13 +47,17 @@ def allowed_selection(owner_id):
 
 
 def prepare_indexing(db: Session, *, owner_id: int, provider: str, scope: str,
-                     entry_ids=None, follow_changes=False, max_micro_usd=250000, max_calls=1000):
+                     entry_ids=None, passage_ids=None, follow_changes=False, max_micro_usd=250000, max_calls=1000):
     if (not isinstance(provider, str) or provider not in PROVIDERS or not isinstance(scope, str) or not 1 <= len(scope) <= 255
             or type(follow_changes) is not bool or type(max_micro_usd) is not int
             or not 1 <= max_micro_usd <= 250000 or type(max_calls) is not int or not 1 <= max_calls <= 5000
             or entry_ids is not None and (not isinstance(entry_ids, list) or not 1 <= len(entry_ids) <= 1000
                 or any(type(i) is not int or i <= 0 for i in entry_ids) or len(set(entry_ids)) != len(entry_ids))):
         raise HTTPException(422, "INDEXING_LIMIT")
+    if passage_ids is not None and (entry_ids is None or follow_changes or
+            not isinstance(passage_ids, list) or not 1 <= len(passage_ids) <= MAX_JOBS or
+            any(type(i) is not int or i <= 0 for i in passage_ids) or len(set(passage_ids)) != len(passage_ids)):
+        raise HTTPException(422, "INDEXING_PASSAGE_ALLOWLIST_INVALID")
     started = time.monotonic()
     db.execute(text("SET LOCAL lock_timeout = '2s'"))
     db.execute(text("SET LOCAL statement_timeout = '5s'"))
@@ -78,7 +82,11 @@ def prepare_indexing(db: Session, *, owner_id: int, provider: str, scope: str,
         .where(*eligible_conditions(owner_id, {}), Entry.id.in_(allowed_ids),
             EntryPassage.field == "content", EntryPassage.work_only.is_(False))
         .order_by(EntryPassage.id).limit(MAX_JOBS + 1))
+    if passage_ids is not None:
+        query = query.where(EntryPassage.id.in_(passage_ids))
     parents = db.execute(query).all()
+    if passage_ids is not None and sorted(p.id for p in parents) != sorted(passage_ids):
+        raise HTTPException(422, "INDEXING_PASSAGE_ALLOWLIST_INVALID")
     if len(parents) > MAX_JOBS:
         raise HTTPException(422, "INDEXING_CORPUS_LIMIT")
     ready = set(db.execute(eligible_embeddings(owner_id).with_only_columns(
@@ -109,6 +117,10 @@ def prepare_indexing(db: Session, *, owner_id: int, provider: str, scope: str,
         indexed_records=len({p.entry_id for p in parents}), ready_slices=ready_count,
         pending_slices=len(items), items=items,
         estimated_max_micro_usd=sum(cost_micro(i["input_bytes"]) for i in items))
+    # Omit this field for legacy whole-record manifests so their digest/replay
+    # contract stays unchanged. Selected parents are one-shot; no follow scope.
+    if passage_ids is not None:
+        manifest["selector_passage_ids"] = sorted(passage_ids)
     manifest["digest"] = digest(manifest)
     if len(json.dumps(manifest).encode()) > 2 * 1024 * 1024:
         raise HTTPException(422, "INDEXING_MANIFEST_LIMIT")
@@ -133,7 +145,8 @@ def activate_indexing(db: Session, *, owner_id: int, manifest: dict, confirm_ext
     if existing:
         return existing
     fresh = prepare_indexing(db, owner_id=owner_id, provider=manifest.get("provider"), scope=manifest.get("scope"),
-        entry_ids=manifest.get("selector_ids"), follow_changes=manifest.get("follow_changes"),
+        entry_ids=manifest.get("selector_ids"), passage_ids=manifest.get("selector_passage_ids"),
+        follow_changes=manifest.get("follow_changes"),
         max_micro_usd=manifest.get("max_micro_usd"), max_calls=manifest.get("max_calls"))
     if fresh != manifest:
         raise HTTPException(409, "INDEXING_MANIFEST_STALE")

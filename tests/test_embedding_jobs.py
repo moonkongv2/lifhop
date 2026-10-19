@@ -528,3 +528,103 @@ def test_cli_dry_run_activation_and_status_without_provider(actor, tmp_path, mon
     assert cli.main(["--status", "--email", email]) == 0
     assert cli.main(["--usage", "--email", email]) == 0
     assert "synthetic recorded answer" not in capsys.readouterr().out.lower()
+
+
+def test_selected_passages_only_reach_worker_and_legacy_digest_is_unchanged(actor, monkeypatch):
+    from app.models.passage import EntryPassage
+    from app.services.embedding_jobs import digest
+    bind, config, owner, entry_id = actor
+    with Session(bind) as db:
+        entry = db.get(Entry, entry_id)
+        entry.content = ('FIRST-APPROVED-PARAGRAPH ' * 80) + '\n\n' + ('SECOND-PRIVATE-PARAGRAPH ' * 80)
+        select_version(db, entry, record_version(db, entry)); db.commit()
+        parents = list(db.scalars(select(EntryPassage).where(EntryPassage.version_id == entry.current_version_id,
+            EntryPassage.field == 'content').order_by(EntryPassage.start)))
+        assert len(parents) > 1
+        selected_id, selected_text = parents[0].id, parents[0].text
+        import app.services.embedding_jobs as jobs
+        original = jobs.slice_anchors
+        def selected_only(db, **values):
+            assert values['passage_id'] == selected_id
+            return original(db, **values)
+        monkeypatch.setattr(jobs, 'slice_anchors', selected_only)
+        manifest = prepare_indexing(db, owner_id=owner, provider='manual', scope='default',
+            entry_ids=[entry_id], passage_ids=[selected_id])
+        assert manifest['selector_passage_ids'] == [selected_id]
+        assert {item['id'] for item in manifest['items']} == {selected_id}
+        assert manifest['digest'] == digest({k:v for k,v in manifest.items() if k != 'digest'})
+        run = activate_indexing(db, owner_id=owner, manifest=manifest, confirm_external_ai=True)
+        run_id = run.id
+        assert not run.follow_changes
+        assert activate_indexing(db, owner_id=owner, manifest=manifest, confirm_external_ai=True).id == run_id
+        db.commit()
+    sender = Mock(side_effect=response)
+    assert process_one(bind, config, transport=sender, run_ids=[run_id])
+    assert not process_one(bind, config, transport=sender, run_ids=[run_id])
+    assert sender.call_count == 1
+    sent = sender.call_args.args[0]
+    assert ''.join(sent) == selected_text
+    assert 'SECOND-PRIVATE-PARAGRAPH' not in ''.join(sent)
+    with Session(bind) as db:
+        assert set(db.scalars(select(EmbeddingJob.passage_id).where(EmbeddingJob.run_id == run_id))) == {selected_id}
+        monkeypatch.setattr(jobs, 'slice_anchors', original)
+        legacy = prepare_indexing(db, owner_id=owner, provider='manual', scope='default', entry_ids=[entry_id])
+        assert 'selector_passage_ids' not in legacy
+
+
+@pytest.mark.parametrize('change', ['missing_entries', 'follow', 'empty', 'duplicate', 'boolean', 'foreign', 'wrong_entry', 'denied', 'stale'])
+def test_passage_selector_fails_before_reading_any_unselected_text(actor, monkeypatch, change):
+    from app.models.passage import EntryPassage
+    bind, _, owner, entry_id = actor
+    with Session(bind) as db:
+        selected = db.scalar(select(EntryPassage.id).where(EntryPassage.version_id == db.get(Entry, entry_id).current_version_id))
+        options = dict(entry_ids=[entry_id], passage_ids=[selected])
+        if change == 'missing_entries': options['entry_ids'] = None
+        elif change == 'follow': options['follow_changes'] = True
+        elif change == 'empty': options['passage_ids'] = []
+        elif change == 'duplicate': options['passage_ids'] *= 2
+        elif change == 'boolean': options['passage_ids'] = [True]
+        elif change == 'foreign': options['passage_ids'] = [999999999]
+        elif change == 'wrong_entry':
+            other = create(db, owner, 'Different record')
+            options['passage_ids'] = [db.scalar(select(EntryPassage.id).where(EntryPassage.version_id == other.current_version_id))]
+        elif change == 'denied': db.get(Entry, entry_id).external_ai_allowed = False
+        else:
+            entry = db.get(Entry, entry_id); entry.content = 'Changed version'
+            select_version(db, entry, record_version(db, entry))
+        db.flush()
+        monkeypatch.setattr('app.services.embedding_jobs.slice_anchors', lambda *a, **kw: pytest.fail('Invalid scope must not read source'))
+        with pytest.raises(HTTPException, match='INDEXING_PASSAGE_ALLOWLIST_INVALID'):
+            prepare_indexing(db, owner_id=owner, provider='manual', scope='default', **options)
+        assert db.scalar(select(func.count()).select_from(EmbeddingJob)) == 0
+
+
+def test_http_passage_scope_roundtrip_and_strict_ids(client, authenticated_user, db_session):
+    from app.models.passage import EntryPassage
+    owner, headers = authenticated_user
+    entry = create(db_session, owner.id, 'First retained paragraph.\n\n' + 'Second retained paragraph. ' * 100)
+    db_session.commit()
+    selected = db_session.scalar(select(EntryPassage.id).where(EntryPassage.version_id == entry.current_version_id, EntryPassage.field == 'content').order_by(EntryPassage.start))
+    body = dict(provider='manual', scope='default', entry_ids=[entry.id], passage_ids=[selected])
+    result = client.post('/indexing/preview', headers=headers, json=body)
+    assert result.status_code == 200, result.text
+    manifest = result.json()['manifest']
+    assert manifest['selector_passage_ids'] == [selected]
+    assert {i['id'] for i in manifest['items']} == {selected}
+    data = dict(manifest=manifest, confirm_external_ai=True)
+    activated = client.post('/indexing/runs', headers=headers, json=data)
+    assert activated.status_code == 201, activated.text
+    assert client.post('/indexing/runs', headers=headers, json=data).json()['id'] == activated.json()['id']
+    for ids in [[True], ['1'], [], [selected, selected]]:
+        assert client.post('/indexing/preview', headers=headers, json=dict(body, passage_ids=ids)).status_code == 422
+    assert client.post('/indexing/preview', headers=headers, json=dict(body, follow_changes=True)).status_code == 422
+    assert client.post('/indexing/preview', headers=headers, json={k:v for k,v in body.items() if k != 'entry_ids'}).status_code == 422
+
+
+@pytest.mark.parametrize('options', [['--passages', ''], ['--passages', '1', '--follow-changes'], ['--passages', '1']])
+def test_cli_invalid_passage_selector_never_authenticates(monkeypatch, options):
+    from scripts import index_embeddings as cli
+    monkeypatch.setattr(cli, 'getpass', lambda *a: pytest.fail('Invalid scope must fail before authentication'))
+    with pytest.raises(SystemExit) as error:
+        cli.main(['--dry-run', '--email', 'synthetic@test.invalid', '--provider', 'manual', '--scope', 'default', *options])
+    assert error.value.code == 2

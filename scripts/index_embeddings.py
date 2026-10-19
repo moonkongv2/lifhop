@@ -37,6 +37,7 @@ def main(argv=None):
     parser.add_argument("--provider", choices=("github", "codex", "manual", "markdown", "chatgpt", "unknown"))
     parser.add_argument("--scope")
     parser.add_argument("--entries", help="Comma-separated explicit Entry IDs; omitted selects this provider/scope")
+    parser.add_argument("--passages", help="Comma-separated Passage IDs within --entries; one-shot only, no --follow-changes")
     parser.add_argument("--follow-changes", action="store_true", help="Also authorize future content in this selector within the same cumulative limits")
     parser.add_argument("--max-cost-usd", default="0.25")
     parser.add_argument("--max-calls", type=int, default=1000)
@@ -50,11 +51,14 @@ def main(argv=None):
         parser.error("--activate requires --manifest and --confirm-external-ai")
     if args.retry and not args.confirm_external_ai:
         parser.error("--retry requires --confirm-external-ai; repeated work may incur another charge")
+    if args.passages is not None and (not args.entries or args.follow_changes):
+        parser.error("--passages requires --entries and cannot use --follow-changes")
     try:
         maximum = Decimal(args.max_cost_usd) * 1000000
         if not maximum.is_finite() or maximum != maximum.to_integral() or not 0 < maximum <= 250000:
             parser.error("--max-cost-usd must be a positive micro-USD amount up to 0.25")
         ids = [int(v) for v in args.entries.split(",")] if args.entries else None
+        passage_ids = [int(v) for v in args.passages.split(",")] if args.passages is not None else None
     except (ValueError, InvalidOperation):
         parser.error("Invalid Entry IDs or cost amount")
     try:
@@ -63,7 +67,8 @@ def main(argv=None):
         with Session(engine) as db:
             if args.dry_run:
                 manifest = prepare_indexing(db, owner_id=owner_id, provider=args.provider, scope=args.scope,
-                    entry_ids=ids, follow_changes=args.follow_changes, max_micro_usd=int(maximum), max_calls=args.max_calls)
+                    entry_ids=ids, passage_ids=passage_ids, follow_changes=args.follow_changes,
+                    max_micro_usd=int(maximum), max_calls=args.max_calls)
                 path = PRIVATE_ROOT / ("preview-" + manifest["digest"] + ".json")
                 if path.exists():
                     if read_private(path, PRIVATE_ROOT) != manifest:
@@ -76,7 +81,7 @@ def main(argv=None):
                 print("Private manifest:", path)
                 print("No jobs activated or external requests made. Follow-changes approval is", manifest["follow_changes"])
             elif args.activate:
-                manifest = IndexingManifest.model_validate(read_private(args.manifest, PRIVATE_ROOT)).model_dump(by_alias=True)
+                manifest = IndexingManifest.model_validate(read_private(args.manifest, PRIVATE_ROOT)).model_dump(by_alias=True, exclude_unset=True)
                 run = activate_indexing(db, owner_id=owner_id, manifest=manifest,
                     confirm_external_ai=args.confirm_external_ai)
                 db.commit()

@@ -1713,3 +1713,19 @@ answer configuration before execution. Expectations remain review-only and are
 not model input. Old preparations require a new review; files, prior grading and
 reservations remain untouched. Useful partial evidence is a prepared candidate,
 not a waiver of missing-source, policy, grounding or automatic-retrieval checks.
+
+## 2026-10-19: Select existing parents for one-shot indexing of reviewed evidence
+
+An Entry-wide indexing selector would exceed the bounded source review of long
+ChatGPT conversations. Add an optional exact existing Passage allowlist within
+explicit Entry IDs, retaining the ordinary whole-record path. Reject follow-change
+enrollment for this selector: future versions and other parents need a fresh
+review rather than a persistent range policy or a schema migration. Reuse existing
+per-slice durable jobs and dispatch checks. Omit the added selector for legacy
+manifests to preserve hashes/replay; bind it into new manifest digests when used.
+
+Source/record AI flags remain Entry-level. This feature narrows a particular
+indexing run, not every possible egress from an enabled Entry. It grants no
+permission, and complete selected parent text must be reviewed before a fresh
+transmission approval. Rewriting excerpts as fake originals or indexing an entire
+long record under an excerpt-only grant would lose provenance or expand scope.

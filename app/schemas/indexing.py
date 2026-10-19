@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Annotated, Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -6,6 +6,7 @@ class IndexingPreviewRequest(BaseModel):
     provider: Literal["github", "codex", "manual", "markdown", "chatgpt", "unknown"]
     scope: str = Field(min_length=1, max_length=255)
     entry_ids: list[int] | None = Field(default=None, min_length=1, max_length=1000)
+    passage_ids: list[Annotated[int, Field(strict=True, gt=0)]] | None = Field(default=None, min_length=1, max_length=5000)
     follow_changes: bool = False
     max_micro_usd: int = Field(default=250000, ge=1, le=250000)
     max_calls: int = Field(default=1000, ge=1, le=5000)
@@ -31,6 +32,7 @@ class IndexingManifest(BaseModel):
     provider: Literal["github", "codex", "manual", "markdown", "chatgpt", "unknown"]
     scope: str = Field(min_length=1, max_length=255)
     selector_ids: list[int] | None = Field(max_length=1000)
+    selector_passage_ids: list[Annotated[int, Field(strict=True, gt=0)]] | None = Field(default=None, min_length=1, max_length=5000)
     entry_ids: list[int] = Field(max_length=1000)
     follow_changes: bool
     policy_revision: int = Field(ge=0)
