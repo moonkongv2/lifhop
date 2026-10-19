@@ -272,7 +272,7 @@ def test_complementary_facts_return_provider_citations_without_adding_unused_sou
     assert json.loads(sent['input'])==dict(question=data['q'],
         excerpts=[dict(id=i,text=t,title="Synthetic vector test",source="manual",source_kind="manual")
             for i,t in zip(ids,texts)])
-    assert 'All factual clauses must be supported by their own quotes' in sent['instructions']
+    assert 'All factual clauses need their own supporting quotes' in sent['instructions']
     assert client.post('/answers',headers=headers,json=data).status_code==409
     assert sender.call_count==1
     with Session(bind) as db:
@@ -300,7 +300,7 @@ def test_citation_coverage_contract_is_sent_for_each_answer_mode(mode):
     options=dict(retrospective=True) if mode=='retrospective' else dict(historical_as_of='2026-01-31') if mode=='historical' else {}
     value,_=payload('Synthetic question?',[dict(id=4,text='Synthetic evidence.')],**options)
     if mode == 'current':
-        assert 'exact nonblank source quotes' in value['instructions']
+        assert 'exact nonblank body quotes' in value['instructions']
         assert 'Complete parts need an answer claim and no unknown' in value['instructions']
         assert value['text']['format']['name']=='claim_evidence_answer'
         assert value['max_output_tokens']==4096

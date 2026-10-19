@@ -1794,3 +1794,28 @@ and English fallback only. No new locale system or model-quality guarantee added
 ANSWER_MODE stays off until separately authorized; actual schema/output-capacity
 and semantic acceptance remain unverified. This local instruction authorizes no
 paid provider calls and does not complete Phase 3.3.
+
+
+## 2026-10-20: Preserve explicit verification limits and version question-aligned grading
+
+On the owner's instruction to implement ANSWER_EVIDENCE_POLICY_PLAN.md, ordinary
+claims add limitation: source-explicit verification limits relevant to the question
+are useful partial information and retain their citations. They cannot alone mark
+a question part complete. Attribute non-execution to its actual review/record;
+never infer operational failure, non-execution elsewhere or facts from silence.
+Mere topical background remains hidden. Exact quotes and structural validation
+cannot prove relevance, correct classification or semantic entailment; direct
+review remains necessary. Retrospective/historical contracts remain unchanged.
+
+The approved question-aligned v2 rubric distinguishes requested core facts from
+optional keywords/framework details. Original v1 grades and provider results stay
+immutable. Grade the existing answers separately under v2 before generation, so
+criterion effects cannot masquerade as output improvements. New results compare
+to the same-model, same-context v2 baseline. This does not remove automatic
+retrieval or other Phase 3.3 exit requirements. Tests are not model-quality proof.
+
+Prepare experiments from information needed, then compute exact request caps and
+costs. The owner rejected an arbitrary USD 0.03 ceiling; budget flexibility itself
+is not paid approval. The proposed 13-call repetition scope needs separate explicit
+approval, is finite/hash-bound and never retries. Product mode stays off; old
+uncertain reservations, source permissions and original evidence are preserved.

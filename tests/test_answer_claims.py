@@ -36,7 +36,7 @@ def test_answer_is_assembled_only_from_rendered_claims_and_unknowns():
     assert 'review' not in answer['answer'] and 'quote' not in answer
 
 
-@pytest.mark.parametrize('kind',['answer','progress'])
+@pytest.mark.parametrize('kind',['answer','progress','limitation'])
 def test_known_facts_or_progress_and_unknown_outcome_are_partial(kind):
     assert parsed(result(kind,False))['status']=='partial'
 
@@ -49,7 +49,7 @@ def test_no_direct_evidence_is_insufficient_with_no_citations(background):
     assert answer['status']=='insufficient' and answer['citation_ids']==[]
     assert answer['unconfirmed_aspects']==[] and 'selected' not in answer['answer']
     korean=parse(raw(data),set(BODIES),excerpts=BODIES,question='어떤 선택을 했어?')
-    assert korean['answer']=='제공된 기록에서 질문에 직접 답하는 사실이나 관련 진행을 확인하지 못했습니다.'
+    assert korean['answer']=='제공된 기록에서 질문에 답하는 사실·관련 진행·명시된 검증 한계를 확인하지 못했습니다.'
 
 
 def test_distinct_citations_follow_rendered_claim_order_and_repeat_source_quotes_are_valid():
@@ -83,6 +83,7 @@ def test_distinct_citations_follow_rendered_claim_order_and_repeat_source_quotes
     lambda d:d['claims'][0]['evidence'][0].update(quote='x'*121),
     lambda d:d['claims'][0]['evidence'].append(deepcopy(d['claims'][0]['evidence'][0])),
     lambda d:d['claims'][0].update(kind='progress'),
+    lambda d:d['claims'][0].update(kind='limitation'),
     lambda d:d['claims'][0].update(kind='background'),
     lambda d:d.update(claims=[]),
     lambda d:d['parts'][0].update(complete=False),
@@ -154,3 +155,42 @@ def test_invalid_background_is_not_ignored_when_it_would_render_no_facts():
     data=result('background',False)
     data['claims'][0]['evidence'][0]['quote']='An invented quote.'
     with pytest.raises(AnswerOutputError):parsed(data)
+
+
+def test_explicit_review_limitation_is_retained_with_scope_and_unknown_outcome():
+    body='This review read the documents but did not run execution tests.'
+    data=dict(parts=[dict(id=1,text='Whether deployment and verification succeeded.',complete=False)],
+        claims=[dict(part=1,kind='limitation',
+            text='The reviewer reported that this review did not run execution tests.',
+            evidence=[dict(id=11,quote='did not run execution tests')])],
+        unknowns=[dict(part=1,text='Deployment and post-deployment verification success are unconfirmed in these excerpts.')])
+    answer=parse(raw(data),{11},excerpts={11:body},question='Did deployment succeed?')
+    assert answer['status']=='partial' and answer['citation_ids']==[11]
+    assert answer['answer']==data['claims'][0]['text']+'\n'+data['unknowns'][0]['text']
+    assert 'deployment failed' not in answer['answer'].lower()
+
+
+def test_explicit_nonexecution_can_answer_a_question_about_that_review():
+    body='This review did not run execution tests.'
+    data=dict(parts=[dict(id=1,text='Did this review run execution tests?',complete=True)],
+        claims=[dict(part=1,kind='answer',text='This review did not run execution tests.',
+            evidence=[dict(id=11,quote=body)])],unknowns=[])
+    assert parse(raw(data),{11},excerpts={11:body},question='Did this review run tests?')['status']=='supported'
+
+
+def test_exact_quote_does_not_prove_semantic_scope_or_claim_relevance():
+    # The local validator cannot detect this model mistake. The frozen semantic
+    # rubric must reject treating a scoped nonexecution as operational failure.
+    data=result('limitation',False)
+    data['claims'][0]['text']='The deployment failed everywhere.'
+    assert parsed(data)['status']=='partial'
+
+
+def test_new_limitation_kind_is_sent_only_in_ordinary_contract():
+    for options,expected in [({},True),({'retrospective':True},False),({'historical_as_of':'2026-01-31'},False)]:
+        request,_=payload('Synthetic question?',[dict(id=11,text=BODIES[11])],**options)
+        schema=json.dumps(request['text']['format']['schema'])
+        assert ('limitation' in schema)==expected
+        if expected:
+            assert 'Silence is not evidence of non-execution' in request['instructions']
+            assert 'not operational failure or non-execution elsewhere' in request['instructions']

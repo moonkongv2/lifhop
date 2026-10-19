@@ -7,6 +7,31 @@ is also closed after its first query hit a database search timeout. The subseque
 11-call proposal was approved and is now closed after the first actual answer's
 context-selection/status failure, as recorded immediately below.
 
+## 질문 정렬 v2 로컬 구현·검증 및 유료 승인 대기 (2026-10-20)
+
+사용자가 ANSWER_EVIDENCE_POLICY_PLAN.md대로 진행하도록 지시했다. 일반 답변은
+질문 관련 명시 검증 한계를 limitation으로 보존하고, 이를 해당 기록의 범위에 귀속한다.
+limitation만으로 완료 선언은 불가하며 주제 일치·기록의 침묵을 운영 진행/실패의
+증거로 바꾸지 않는다. 실제 의미 지지·분류 정확성은 여전히 모델 재검증 대상이다.
+
+원래 v1 4/7 결과는 그대로다. 기존 14답변을 별도 v2로 검토한 기준선은 Luna 5/7,
+Sol 6/7이며 기준 변경의 효과다. 새 생성이나 모델 개선으로 보고하지 않는다.
+Luna의 예약 진행 누락/README 인용 오류, Sol의 README 핵심 누락은 남았다.
+전체 backend 824개, 관련 frontend 61개 통과. 실행기 compile/실제 7문맥 읽기 전용
+재구성/승인 전 실행 차단 통과. 새 일반 요청은 8,157–14,312 bytes, input 동일;
+회고/과거 요청·512는 그대로다. 일반 4,096/14KiB와 실제 예약 상한도 유지했다.
+
+별도 승인할 권장안은 같은 7건 + 세 취약 유형 각2회 추가, 총 **13회 / 최대 예약
+USD 0.038951**다. 7회 단회안은 USD 0.019355다. 임의 USD0.03 제한 없이 반복으로
+얻을 정보를 따져 준비했다. 작은 반복은 일반 성공률 측정이 아니다. 실행기·가격·
+정확한 요청/기준/code hash·중단 조건을 고정했으며 새 승인 전 전송하지 않는다.
+Digest: `7778d077559f5017c36d9bb44144eb1a661f60e61bc03fb8531cfc0592f5d284`.
+보고서: `.local/evaluation/phase33/policy-v2-review-20261020-v1/handoff.html`.
+
+기존 531파일/471과금행/권한·현재 버전/1,097 anchor, 미확정3건 USD0.006801 보존.
+신규 제품 AI 호출·예약·과금0, ANSWER_MODE=off, 유료 dispatch/의미 품질 미검증.
+자동 검색을 포함한 나머지 완료 조건은 유지한다. Phase3.3 미완료/Phase4 미착수.
+
 ## 일반 출력 4,096 후보 로컬 구현 완료 (2026-10-19)
 
 사용자의 명시 지시로 초기 512 게이트 중단 이후 로컬 구현을 재개했다.

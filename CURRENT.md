@@ -1,6 +1,6 @@
 # lifhop Current Status
 
-Last updated: 2026-10-19
+Last updated: 2026-10-20
 
 ## Roadmap checkpoint (2026-10-18)
 
@@ -69,6 +69,50 @@ Phase 3.3 is incomplete; do not start scheduled collection yet.
 See AI_SOURCE_COVERAGE.md for scope and completion gates.
 
 ## Current product slice
+
+**2026-10-20 policy v2 locally implemented; finite paid verification prepared, NOT approved:**
+
+The owner's “계획대로 진행해줘” adopts ANSWER_EVIDENCE_POLICY_PLAN.md's v2
+question-aligned rubric and authorizes local implementation/preparation only.
+Ordinary claim-evidence-v2 adds limitation: explicitly recorded, question-relevant
+verification limits are rendered with source citations and scoped unknowns.
+A limitation alone cannot complete a question part. Mere topical review remains
+background; silence cannot prove non-execution. Scoped non-execution cannot prove
+operational failure or non-execution elsewhere. Matching quotes/valid structure
+still cannot establish semantic scope, relevance or completeness.
+Original v1 raw results and 4/7 grades remain intact. Offline grading of the same
+14 existing answers under v2 yields **Luna 5/7, Sol 6/7**; this is a criterion change,
+not a new model improvement. Luna still omits booking progress and has README
+citation defects; Sol still omits core audience/vehicle details. Coupon keyword
+matching and Flutter are no longer arbitrary all-or-nothing requirements.
+Full backend **824 passed**, related frontend **61 passed**, related backend
+**175 passed**, whitespace checks passed. Frontend source unchanged; lint/build
+not repeated this turn. Initial request-size and preparation-anchor checks failed
+locally, were corrected without changing source data, and the final checks passed.
+All seven frozen requests were reconstructed from actual permitted local DB ranges
+in read-only checks. Ordinary full bytes **8157–14312**, unchanged input strings;
+period/history full requests unchanged. Caps remain 4096/512. Config hash changed
+to `1a7040cc3c18f8064002e998e7ba7e760240e2955bd6f704016428782d8bf3c0`.
+A compiled finite verifier with exact request/price/rubric/code/digest binding and
+immutable per-attempt start claims is prepared. Read-only checks and missing-
+approval blocking passed; actual paid dispatch/schema/output capacity/semantic
+quality remain unverified. No API/UI/DB/embedding/search changes or dependencies.
+Recommended scope: **13 Luna answers / USD 0.038951 maximum reservation**: same
+7 cases once, then rental/README/deployment-limit cases twice more each. Single
+7-call alternative costs USD 0.019355; additional 6 cost USD 0.019596. Repetition
+samples consistency, not a population success rate. No arbitrary USD 0.03 cap.
+No query embeddings, imports/indexing, new source scope, other models or retries.
+Technical/provider/usage/schema/format/timeout/policy/context mismatch stops all
+later calls; semantic failures remain visible while the fixed manifest continues.
+Proposal digest: `7778d077559f5017c36d9bb44144eb1a661f60e61bc03fb8531cfc0592f5d284`.
+Private handoff, two synthetic rendered examples, unchanged-v1/v2 baseline and
+exact frozen cost/request scope:
+`.local/evaluation/phase33/policy-v2-review-20261020-v1/handoff.html`.
+Existing **531 files / 471 usage rows**, permissions/current versions and **1097
+anchors** verified unchanged; uncertain **3/USD 0.006801** untouched. New product
+AI calls/reservations/charges zero; ANSWER_MODE=off. No paid approval exists for
+this new scope. Phase 3.3 and automatic retrieval acceptance remain incomplete;
+Phase 4 unstarted. Historical implementation/closed-run notes below remain as-is.
 
 **2026-10-19 ordinary claim/evidence contract locally implemented, 4096 candidate:**
 
@@ -1858,23 +1902,19 @@ user-verifiable product slices in `ROADMAP.md`.
 
 ## Next
 
-The owner-selected ordinary 4096 candidate is locally implemented and tested.
-Review the private claim-local-4096 report and unchanged-v1 checklist. Next bind a
-finite seven-request verifier and stopping rules to the exact new requests before
-seeking separate paid approval. No real-model schema/capacity/quality acceptance
-has been established; keep ANSWER_MODE=off and do not reuse closed approvals.
+Review the policy-v2 handoff above. The new criterion is adopted locally, with
+old raw answers graded separately under v2 before any new generation. The finite
+13-call scope and cost are prepared; obtain separate explicit external-AI/paid
+approval for its digest before execution. Keep ANSWER_MODE=off and never reuse
+closed approvals. Actual model/schema/output-capacity quality is still unverified.
 
-1. Review the closed comparison: both models 4/7, with shared progress-omission and
-   insufficient/partial boundary failures. Do not adopt Sol from these results.
-   The small claim/source and requested-fact/progress contract is now locally
-   implemented; actual recovery and operational evidence classification need
-   fixed-context model revalidation.
-   A structural claim/source link cannot prove entailment; semantic checks remain.
-   Separately review question/checklist alignment (e.g. Flutter) before proposing
-   changes; do not regrade closed runs or silently lower completion conditions.
-   No more import/indexing/permissions are needed. All paid approvals are closed;
-   future experiments require a new frozen scope and separate approval. Automatic
-   retrieval acceptance remains pending. ANSWER_MODE=off; no Phase 4 yet.
+1. After separate approval, run the fixed 7-case pass and planned repeats under
+   the frozen v2 scope; compare new Luna to old Luna under the same v2 criteria.
+   Preserve v1 4/7 and distinguish criterion changes from output improvements.
+   Do not adopt Sol from old samples. Report remaining omissions/grounding/scope
+   and structural failures separately. No more imports/indexing/permissions are
+   required. Automatic retrieval acceptance remains pending; no Phase 4 yet.
+
 2. Confirm GitHub repository browsing in Entries → repository → Commits/Documents
    → reader → return, and Search → Browse repository → return. Existing stored
    GitHub Entries need no reimport for this UI. Repository browsing and the earlier
