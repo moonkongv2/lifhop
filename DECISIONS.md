@@ -1705,3 +1705,11 @@ Natural-language grounding is still a real-model verification requirement, not
 something the structural parser proves. Closed evaluation artifacts and existing
 two-outcome preflight protocols are unchanged; a new partial-capable evaluation
 scope is needed before any fresh paid run.
+
+Preparation follow-up, 2026-10-19: `evidence-drafts-v3-partial` requires explicit
+bounded `unconfirmed_aspects` for a partial expectation; non-partial cases cannot
+carry that field's content. Their digest is checked with the spec/checklist and
+answer configuration before execution. Expectations remain review-only and are
+not model input. Old preparations require a new review; files, prior grading and
+reservations remain untouched. Useful partial evidence is a prepared candidate,
+not a waiver of missing-source, policy, grounding or automatic-retrieval checks.

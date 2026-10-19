@@ -2,6 +2,7 @@
 from time import perf_counter
 from app.evaluation.schemas import EvaluationError, digest, now
 from app.evaluation.storage import write_private
+from app.evaluation.phase33_preflight import PREPARATION_VERSION
 from app.services.answer_transport import CONFIG_HASH
 from app.services.embedding_store import STORAGE_CONFIG
 
@@ -13,7 +14,7 @@ def request_id(protocol, case_id):
 def request_plan(protocol, spec, *, approval_digest):
     prepared = [c for c in protocol.get('cases', []) if c.get('selected') and not c.get('gaps')]
     if (protocol.get('schema') != 'lifhop-phase33-preflight-v1' or
-            protocol.get('preparation_version') != 'evidence-drafts-v2' or
+            protocol.get('preparation_version') != PREPARATION_VERSION or
             digest({k:v for k,v in protocol.items() if k != 'digest'}) != protocol.get('digest') or
             approval_digest != protocol['digest'] or protocol.get('configuration_hash') != CONFIG_HASH or
             protocol.get('storage_configuration') != STORAGE_CONFIG or
@@ -31,6 +32,7 @@ def request_plan(protocol, spec, *, approval_digest):
         if (case.get('deferred') or source.deferred_reason or
                 digest(source.question) != case['question_digest'] or
                 digest(source.checklist) != case['checklist_digest'] or
+                digest(source.unconfirmed_aspects) != case.get('unconfirmed_aspects_digest') or
                 source.expected_outcome != case['expected_outcome']):
             raise EvaluationError('PHASE33_INPUT_CHANGED')
         data = dict(request_id=request_id(protocol, case['id']), confirm_external_ai=True)

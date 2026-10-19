@@ -242,3 +242,43 @@ def test_authenticated_cli_writes_private_review_without_mutating_database(actor
     monkeypatch.setattr(cli, 'getpass', lambda prompt: 'wrong-synthetic-password')
     assert cli.main(args) == 1
     assert 'AUTH_FAILED' in capsys.readouterr().out
+
+
+def test_partial_life_draft_requires_explicit_unknowns_and_stays_unapproved(db_session, user, monkeypatch):
+    seed(db_session, user)
+    snapshot, spec, config = inputs(db_session, user)
+    raw = spec.model_dump(mode='json')
+    raw['cases'][2].update(expected_outcome='partial', unconfirmed_aspects=[
+        'Actual use is unconfirmed in the selected excerpts. <script>unknown</script>',
+        'The owner\'s personal selection reason is unconfirmed.'])
+    spec = AcceptanceSpec.model_validate(raw)
+    monkeypatch.setattr('httpx.AsyncClient.send', lambda *a, **kw: pytest.fail('No egress during preparation'))
+    protocol, review = prepare_acceptance(snapshot, spec, config)
+    assert protocol['preparation_version'] == 'evidence-drafts-v3-partial'
+    assert protocol['cases'][2]['expected_outcome'] == 'partial'
+    assert 'ordinary-life' in protocol['prepared_answer_cases']
+    assert 'ordinary-life' not in protocol['unresolved_acceptance_categories']
+    assert protocol['state'] == 'needs_owner_review' and protocol['approved'] is False
+    assert protocol['provider_calls'] == 0 and protocol['automatic_retrieval_evaluated'] is False
+    html = review_html(protocol, review).decode()
+    assert 'Partial answer: cite every recovered fact' in html
+    assert '&lt;script&gt;unknown&lt;/script&gt;' in html and '<script>' not in html
+    assert 'Actual use' not in str(protocol)  # review content is not copied into the manifest
+
+
+@pytest.mark.parametrize('outcome,unknowns', [('partial', []), ('partial', [' ']),
+    ('partial', ['x' * 1001]), ('supported', ['Missing outcome']), ('insufficient', ['Missing outcome'])])
+def test_unscoped_or_mislabelled_partial_case_is_rejected(outcome, unknowns):
+    raw = default_spec(date(2026, 1, 1), date(2026, 1, 31), date(2026, 1, 31)).model_dump(mode='json')
+    raw['cases'][2].update(expected_outcome=outcome, unconfirmed_aspects=unknowns)
+    with pytest.raises(ValidationError):
+        AcceptanceSpec.model_validate(raw)
+
+
+def test_partial_without_permitted_evidence_remains_blocked(db_session, user):
+    snapshot, spec, config = inputs(db_session, user)
+    raw = spec.model_dump(mode='json')
+    raw['cases'][2].update(expected_outcome='partial', unconfirmed_aspects=['Actual use is unconfirmed.'])
+    protocol, _ = prepare_acceptance(snapshot, AcceptanceSpec.model_validate(raw), config)
+    assert 'ordinary-life' in protocol['unresolved_acceptance_categories']
+    assert protocol['answer_call_limit'] == 0

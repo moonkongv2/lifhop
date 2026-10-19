@@ -25,6 +25,7 @@ from app.services.source_history import owner_lock
 
 CASE_IDS = ['decision-implementation', 'reason-change', 'ordinary-life',
     'period-review', 'historical-cutoff', 'missing-proof']
+PREPARATION_VERSION = 'evidence-drafts-v3-partial'
 
 
 def default_spec(date_from, date_to, as_of):
@@ -36,7 +37,9 @@ def default_spec(date_from, date_to, as_of):
         ('What proposal changed later, and what reason for the adopted decision was recorded?', 'proposal decision 이유 변경',
             ['Identify the proposal and later decision.', 'Cite an explicit reason; do not invent a missing reason.']),
         ('Which rental car company was used in Okinawa in April 2026, and why was it selected?', 'Okinawa 오키나와 렌터카',
-            ['Distinguish the company actually used from alternatives.', 'Cite the recorded selection reason.']),
+            ['Distinguish assistant recommendations, booking progress and actual use.',
+             'Cite known facts and attribute advice; mark unconfirmed use/personal reasons explicitly.',
+             'Review whether supported, partial or insufficient matches the selected evidence before approval.']),
         (summary_question(period), 'period', ['Separate proposals, decisions and completed assertions.', 'Cite each item and disclose partial/date coverage.']),
         (history.q, 'worker 워커', ['Use the latest observation by the cutoff.', 'Do not substitute current text for a historical gap.']),
         ('Do these records prove that production deployment and its verification succeeded?', 'worker 워커',
@@ -55,8 +58,9 @@ class AcceptanceCase(BaseModel):
         'period-review', 'historical-cutoff', 'missing-proof']
     question: str = Field(min_length=1, max_length=256)
     query: str = Field(min_length=1, max_length=256)
-    expected_outcome: Literal['supported', 'insufficient']
+    expected_outcome: Literal['supported', 'partial', 'insufficient']
     checklist: list[str] = Field(min_length=1, max_length=8)
+    unconfirmed_aspects: list[str] = Field(default_factory=list, max_length=8)
     filters: Filters = Field(default_factory=Filters)
     period: RetrospectiveScope | None = None
     historical: HistoricalScope | None = None
@@ -66,6 +70,8 @@ class AcceptanceCase(BaseModel):
     def matching_scope(self):
         if (not self.question.strip() or not self.query.strip() or
                 any(not value.strip() or len(value) > 1000 for value in self.checklist) or
+                any(not value.strip() or len(value) > 1000 for value in self.unconfirmed_aspects) or
+                (self.expected_outcome == 'partial') != bool(self.unconfirmed_aspects) or
                 (self.id == 'period-review') != (self.period is not None) or
                 (self.id == 'historical-cutoff') != (self.historical is not None) or
                 self.id == 'missing-proof' and self.expected_outcome != 'insufficient' or
@@ -213,17 +219,19 @@ def prepare_acceptance(snapshot, spec, settings):
             passage_id=getattr(p, 'id', None)) for p in passages]
         cases.append(dict(id=case.id, endpoint='/retrospectives' if case.period else '/historical' if case.historical else '/answers',
             question_digest=digest(case.question), checklist_digest=digest(case.checklist),
+            unconfirmed_aspects_digest=digest(case.unconfirmed_aspects),
             expected_outcome=case.expected_outcome, scope=scope, selected=selected, coverage=coverage,
             deferred=bool(case.deferred_reason),
             positive_category_unverified=case.expected_outcome == 'insufficient' and case.id != 'missing-proof',
             estimated_max_micro_usd=estimate, input_upper_bound=upper, gaps=gaps))
         review.append(dict(id=case.id, question=case.question, expected_outcome=case.expected_outcome,
-            checklist=case.checklist, passages=passage_data, gaps=gaps, deferred_reason=case.deferred_reason))
+            checklist=case.checklist, unconfirmed_aspects=case.unconfirmed_aspects,
+            passages=passage_data, gaps=gaps, deferred_reason=case.deferred_reason))
     budget = budget_summary(db, scope=settings.embedding_billing_scope,
         monthly_limit=settings.embedding_monthly_limit_micro_usd)
     prepared = [c['id'] for c in cases if c['selected'] and not c['gaps']]
     unresolved = [c['id'] for c in cases if c['gaps'] or c['positive_category_unverified']]
-    protocol = dict(schema='lifhop-phase33-preflight-v1', preparation_version='evidence-drafts-v2', owner_id=owner,
+    protocol = dict(schema='lifhop-phase33-preflight-v1', preparation_version=PREPARATION_VERSION, owner_id=owner,
         database=snapshot.database_fingerprint, policy_revision=revision, spec_digest=digest(spec.model_dump(mode='json')),
         model=MODEL, configuration_hash=CONFIG_HASH, storage_configuration=STORAGE_CONFIG,
         projection_coverage=projection_coverage(db, owner), source_permissions=source_permissions(db, owner),
@@ -248,13 +256,17 @@ def review_html(protocol, review):
         paragraphs = ''.join(f'<h3>{escape(p["source"])} · Entry {p["entry_id"]} · Version {p["version_id"]}</h3>'
             f'<pre>{escape(p["text"])}</pre>' for p in case['passages'])
         checks = ''.join(f'<li>{escape(x)}</li>' for x in case['checklist'])
+        unknowns = ''.join(f'<li>{escape(x)}</li>' for x in case.get('unconfirmed_aspects', []))
+        partial = ('<p>Partial answer: cite every recovered fact, explicitly bound the following unknowns to '
+            'the selected evidence, and do not infer final choice, actual use or personal motivation.</p>'
+            f'<ul>{unknowns}</ul>') if case['expected_outcome'] == 'partial' else ''
         counts = ''.join(f'<li>{key}: {by_id[case["id"]]["coverage"][key]}</li>'
             for key in count_fields if key in by_id[case['id']]['coverage'])
         deferred = f'<p>Deferred: {escape(case["deferred_reason"])}</p>' if case.get('deferred_reason') else ''
         category = '<p>The positive fact-recall requirement for this category remains unverified.</p>' if by_id[case['id']].get('positive_category_unverified') else ''
         sections.append(f'<section><h2>{escape(case["id"])}: {escape(case["question"])}</h2>'
             f'<p>Provisional expectation: {escape(case["expected_outcome"])}; owner review required.</p>'
-            f'{deferred}{category}<p>Coverage gaps: {escape(", ".join(case["gaps"]) or "none detected")}</p><ul>{counts}</ul><ul>{checks}</ul>{paragraphs}</section>')
+            f'{deferred}{category}{partial}<p>Coverage gaps: {escape(", ".join(case["gaps"]) or "none detected")}</p><ul>{counts}</ul><ul>{checks}</ul>{paragraphs}</section>')
     inventory = ''.join(f'<li>{escape(row["source"])} · {escape(row["type"])} · '
         f'record allowed: {row["record_allowed"]} · source allowed: {row["source_allowed"]} · '
         f'{row["records"]} records</li>' for row in protocol.get('source_permissions', []))

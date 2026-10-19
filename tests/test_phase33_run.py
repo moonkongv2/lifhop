@@ -100,3 +100,42 @@ def test_http_failure_stops_and_crash_is_uncertain_without_retry(actor, tmp_path
     with pytest.raises(EvaluationError, match='OUTPUT_EXISTS'):
         run_pass(protocol, spec, approval_digest=protocol['digest'], client=client, output=tmp_path/'crashed', root=tmp_path)
     assert client.post.call_count == 1
+
+
+def test_partial_selected_pass_runs_once_without_sending_expectations(answer_client, actor, tmp_path):
+    client, headers, sender, _, bind, owner, _ = answer_client
+    _, spec = prepared(bind, owner, actor[1])
+    raw = spec.model_dump(mode='json')
+    raw['cases'][2].update(expected_outcome='partial', unconfirmed_aspects=['PRIVATE-EXPECTED-UNKNOWN'])
+    for c in raw['cases'][3:]:
+        c['deferred_reason'] = 'Other cases are outside this synthetic test.'
+    spec = AcceptanceSpec.model_validate(raw)
+    with Session(bind) as db:
+        snapshot, _, _ = inputs(db, SimpleNamespace(id=owner))
+        protocol, _ = prepare_acceptance(snapshot, spec, actor[1])
+    plan = request_plan(protocol, spec, approval_digest=protocol['digest'])
+    assert len(plan) == 1 and plan[0]['expected_outcome'] == 'partial'
+    assert 'PRIVATE-EXPECTED-UNKNOWN' not in json.dumps(plan[0]['data'])
+    sender.side_effect = lambda value: response(value, status='partial')
+    client.headers.update(headers)
+    report = run_pass(protocol, spec, approval_digest=protocol['digest'], client=client, output=tmp_path, root=tmp_path)
+    assert report['state'] == 'completed' and report['cases'][0]['status'] == 'partial'
+    assert report['phase_exit'] is False and report['grounding_review_complete'] is False
+    assert 'PRIVATE-EXPECTED-UNKNOWN' not in json.dumps(sender.call_args.args[0])
+    assert sender.call_count == 1
+    with pytest.raises(EvaluationError, match='OUTPUT_EXISTS'):
+        run_pass(protocol, spec, approval_digest=protocol['digest'], client=client, output=tmp_path, root=tmp_path)
+    assert sender.call_count == 1
+
+
+@pytest.mark.parametrize('change', ['old_preparation', 'unknowns'])
+def test_partial_scope_or_preparation_change_rejects_old_approval(actor, change):
+    bind, config, owner, _ = actor
+    protocol, spec = prepared(bind, owner, config)
+    if change == 'old_preparation':
+        protocol['preparation_version'] = 'evidence-drafts-v2'
+    else:
+        protocol['cases'][2]['unconfirmed_aspects_digest'] = digest(['Unreviewed unknown'])
+    protocol.pop('digest'); protocol['digest'] = digest(protocol)
+    with pytest.raises(EvaluationError, match='PHASE33_APPROVAL_INVALID|PHASE33_INPUT_CHANGED'):
+        request_plan(protocol, spec, approval_digest=protocol['digest'])

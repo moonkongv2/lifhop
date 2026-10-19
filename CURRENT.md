@@ -68,6 +68,26 @@ See AI_SOURCE_COVERAGE.md for scope and completion gates.
 
 ## Current product slice
 
+**2026-10-19 collector compatibility and partial-case preparation:** The manual
+Codex collector now accepts exact CLI 0.163.0 with a distinct parser tag, alongside
+0.158.0/0.160.0. Unknown patches/future versions still fail closed; old bundles
+remain readable. Generated schemas and actual stored reads on the two previously
+reviewed jy_yamyam sessions matched 14 primary items and normalized seven relevant
+turns. Two turns are complete; five keep partial omissions (command output,
+unsupported items, sensitive-content filtering). Original sources/sibling worktree
+are unchanged; no real import was performed. The old acquisition PoC is unchanged.
+Private counts/hashes: `.local/evaluation/phase33/codex0163-compatibility-detail-f67afd9b5b8348fe88d93aff2b835188/`.
+Phase 3.3 preparation now accepts `partial` only with explicit bounded
+`unconfirmed_aspects`; their digest binds the review/approval and they are never
+sent as model input. `evidence-drafts-v3-partial` rejects old preparations and
+still requires fresh review. Missing/denied evidence remains blocked; transport
+completion alone never marks grounding or phase exit. Related 68 and full 731
+backend tests passed; diff checks passed. No frontend changed in this follow-up.
+The 138 prior artifacts, account permissions/selection/usage and three uncertain
+reservations/USD 0.006801 are preserved; ANSWER_MODE remains off and new AI calls
+are zero. Next freeze minimal import records and eligible passage ranges before
+the combined source/index/answer approval proposal. No paid manifest is approved.
+
 **2026-10-19 cited partial-answer implementation:** Added `partial` alongside
 `supported` and `insufficient` to the common structured output/parser, current
 and historical API schemas, generated types and all four answer displays.
@@ -83,8 +103,8 @@ PHASE33_COMPLETION_PLAN.md: 712 backend and 198 frontend tests passed, frontend
 lint/build and diff checks passed. Prior 138 files, policies/selection/usage and
 three uncertain reservations remained unchanged; answer mode is off.
 Actual-model citation/date/partial compliance is
-unverified; no model call or indexing was performed. The old two-outcome paid
-preflight tools still need an explicit partial-case contract before a new manifest.
+unverified; no model call or indexing was performed. The subsequent preparation
+update above supports partial cases; exact source scope remains to be frozen.
 
 **2026-10-19 owner clarification and actual cross-source match:** The owner
 authorized inspection of jy_yamyam's conversations/repository and clarified that
@@ -102,10 +122,9 @@ by this investigation. No app code, source policy, ledger or answer-mode change;
 zero AI calls, three outstanding reservations/USD 0.006801 preserved.
 Private source chain, case drafts, hashes and readable review are under
 `.local/evaluation/phase33/jy-cross-source-2ce93bfe70574c81aa7212c638af0749/`.
-Next verify production collector
-0.163 compatibility before selected import, and freeze exact source/index/answer
-scope plus citation/Seoul-date regressions for one new paid proposal. Production
-collector support remains unchanged at 0.158/0.160; discovery is not an import.
+The subsequent collector update above verifies selected 0.163 reads. Next freeze
+exact source/index/answer scope plus citation/Seoul-date regressions for one new
+paid proposal. Discovery/normalization is not an import.
 Phase 3.3 is incomplete; Phase 4 has not started.
 
 **2026-10-18 additional approved travel review:** Reviewed the four separately
