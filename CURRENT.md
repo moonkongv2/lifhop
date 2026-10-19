@@ -54,9 +54,11 @@ back to AI. Stop treating an absent final rental outcome as a source-authoring
 blocker. Planning/advice must still not be presented as actual choice or use.
 The owner-authorized jy_yamyam investigation found a genuine same-change chain:
 Codex policy/implementation requests match GitHub implementation `62f20ee` and
-documentation follow-up `644e980`, both independently checked remotely. New
-sources are local evidence candidates, not yet imported/AI-enabled/indexed in
-lifhop. The common output contract now includes cited partial answers with
+documentation follow-up `644e980`, both independently checked remotely. The later
+approved bounded import/index pass added four records plus selected ChatGPT
+parents: now 52 records/1,097 eligible vectors. Its first integrated query hit a
+DB search timeout; all seven answers were left unsent and that approval is closed.
+The common output contract now includes cited partial answers with
 explicit unknowns; real-model compliance remains unverified. Collector
 compatibility and exact source/evaluation preparation precede a paid proposal.
 The earlier three source-filtered known cases establish bounded integrated
@@ -67,6 +69,94 @@ Phase 3.3 is incomplete; do not start scheduled collection yet.
 See AI_SOURCE_COVERAGE.md for scope and completion gates.
 
 ## Current product slice
+
+**2026-10-19 approved execution closed after Semantic timeout:** The owner approved
+proposal `e29c7c37e1f067ead1c36882acfff7ed7f07b18d3ab2c469a6f2116b20b0727c`.
+Normal collection APIs imported exactly four records; their real IDs and current
+version/Passage hashes matched the frozen sources. Only the specified six Entry
+AI flags and chatgpt/default source permission changed. Three one-shot indexing
+runs published exactly 37 slices; all old 1,060 anchors remain unchanged.
+The first question's embedding succeeded, but repeated corpus aggregation for
+per-hit snapshot counts exceeded the five-second search deadline (SQLSTATE
+57014, HTTP 503 SEMANTIC_DATABASE_UNAVAILABLE). Stopped immediately: **4 index +
+1 query + 0 answer calls, USD 0.000133 settled, no new uncertain usage**. All
+seven answer cases remain unexecuted; no citation/partial/date acceptance is claimed.
+Raw requests/responses and closed result:
+`.local/evaluation/phase33/approved-execution-ff2e68acd51b4187a0e2d598eaab60b2/report.html`.
+The indexing script's final ledger-query ID cast error was reconciled read-only;
+the successful provider operations were not repeated. Combined snapshot counts
+with the initial rank query, retaining eligibility, exact grouping, ordering and
+five-second limits. A saved-vector local check succeeded in about four seconds
+with no provider calls/new usage; this is not a real answer retest. Focused
+indexing/Semantic tests **66 passed**, full backend **745 passed**. An initial
+test command named a nonexistent file and ran no tests; the corrected commands
+above passed. No frontend behavior/schema changed in the timeout fix.
+All 138 earlier artifacts and 439 prior usage rows remain unchanged. Unrelated
+Entry settings/current versions and source settings match the execution snapshot;
+three older uncertain reservations/USD 0.006801 remain. Persistent ANSWER_MODE
+is off. Next: review this closed failure and a fresh bounded 7-case proposal
+(4 queries/7 answers, at most 11 calls/USD 0.02, no reimport/reindex/permission
+change). New paid work needs explicit approval; Phase 3.3 is incomplete and
+Phase 4 has not started.
+Implementation checkpoints: `160afe9` (bounded Passage indexing) and `55858b4`
+(Semantic alias scan fix). The fresh, unapproved proposal is
+`.local/evaluation/phase33/post-timeout-review-543fc83a81da48e3ae369d69cb2bf436/review.html`,
+digest `26652b31d956a98c4c1e8340ae25f5cf70e0110925880e83af74db9ff53d72c1`.
+It freezes the same questions and complete reviewed source pool/current anchors;
+provider calls in this proposal are zero. No new frontend checks were needed for
+the backend-only timeout fix; the prior indexing checkpoint's frontend results
+remain historical checks, not reruns in this execution.
+
+**2026-10-19 supplemental read and proposal, before the execution above:**
+The owner granted exactly four further windows/1,043 characters. Read only those
+windows; assembling them with earlier granted text reproduced all five ChatGPT
+parent hashes. No final rental outcome or personal choice reason was found.
+Created a new immutable review package without changing older drafts/results:
+`.local/evaluation/phase33/combined-review-085f899bdd1f4881bc8fd8ade7832f96/review.html`.
+Proposed scope: import the four hashed local candidates, enable those four records
+and ChatGPT Entries 2190/2549 plus chatgpt/default source permission, and index
+exactly ten frozen parents/37 slices without follow changes. Permission remains
+Entry-level; actual batch inputs are the frozen parent allowlist. All other record
+flags remain unchanged. Seven answer cases plus four query embeddings and at most
+four indexing calls total at most 15 calls. Configured-price reservation bound
+is USD 0.012921; proposed budget is USD 0.02. Official model price pages matched
+configured rates. Exact questions, source texts, anchors, hashes, stages and stop
+conditions are in proposal.json; digest
+`e29c7c37e1f067ead1c36882acfff7ed7f07b18d3ab2c469a6f2116b20b0727c`.
+At preparation this was unapproved/unexecuted. Real new IDs and ordinary product manifests must
+be resolved after approved import, then match every frozen text/hash before
+dispatch; changed scope needs new approval. Persistent ANSWER_MODE stays off;
+the proposal explicitly requests process-only answer enablement. No actual
+import/policy/index/model action occurred. Scope/hash/arithmetic/budget/private-file
+and 138-artifact/ledger/policy preservation checks passed; no app code changed or
+app tests reran in this read/preparation follow-up. Three uncertain reservations
+USD 0.006801 remained untouched. The subsequent owner approval/execution is
+recorded above; this preparation snapshot is not permission to repeat it.
+
+**2026-10-19 minimum source scope and bounded indexing:** Committed collector
+compatibility as `97f611e` and partial-case preparation as `02aab6c`. A local
+candidate package now contains exactly two previously matched Codex turns plus
+the GitHub implementation commit and its policy document: four records, not
+the project/archive. They are not imported. Five exact eligible parent candidates
+are selected from these originals; five existing ChatGPT parent candidates cover
+adoption/reason and rental progress. Original review windows leave four small
+boundary gaps totaling 1,043 characters. The subsequent explicit grant/read above
+resolved those gaps without expanding to the complete conversations.
+Package/7-question scope draft (not executable approval):
+`.local/evaluation/phase33/minimum-source-package-d458bc9f9b704aaaa7888f6063415fac/review.html`.
+Added optional one-shot Passage selection to indexing preview/activation and CLI
+`--passages` with explicit `--entries`. Current owner/policy/version guards remain;
+follow-changes is rejected, unselected parents never enter jobs, and legacy
+manifest hashes/CLI/API replay remain compatible. AI flags are still Entry-level;
+this selector is not range-level authorization. No schema/dependency change.
+Final checks: 745 backend, 198 frontend tests passed; frontend lint/build and diff
+checks passed. A sandbox-blocked DB setup rerun passed after approved escalation;
+initial CLI manifest-default handling and test field selection were corrected.
+The 138 earlier artifacts, permissions/selection/usage and uncertain reservations
+3/USD 0.006801 remain unchanged; ANSWER_MODE is off. No actual import/indexing/AI
+call or permission change. The subsequent proposal above freezes source scope
+and conservative call/cost bounds; live new IDs remain a post-approval binding
+step and cannot substitute different text or widen the approved ranges.
 
 **2026-10-19 collector compatibility and partial-case preparation:** The manual
 Codex collector now accepts exact CLI 0.163.0 with a distinct parser tag, alongside
@@ -1513,7 +1603,13 @@ user-verifiable product slices in `ROADMAP.md`.
 
 ## Next
 
-1. Follow PHASE33_COMPLETION_PLAN.md: the guarded tooling and Seoul date correction
+1. Review the latest closed search-timeout result and new unapproved 7-case scope
+   in PHASE33_COMPLETION_PLAN.md before any new paid call. Indexing is complete
+   at 52 records/1,097 vectors; the search fix passed saved-vector local readback
+   and 745 backend tests. All seven actual answers remain unexecuted. No more
+   source discovery/import/indexing/permission expansion is required by the new
+   proposal. Persistent ANSWER_MODE remains off. Phase 3.3 is incomplete.
+   Earlier checkpoint context: the guarded tooling and Seoul date correction
    are committed and the approved 46-record indexing pass is complete. The
    three-question integrated smoke pass is also closed, with a partial GitHub
    citation-coverage finding. The common citation instruction correction is now
