@@ -70,6 +70,17 @@ See AI_SOURCE_COVERAGE.md for scope and completion gates.
 
 ## Current product slice
 
+**2026-10-19 failure replan (planning only):** Inspection confirmed normal answers
+send only ID/text, losing the selected commit's source identity; all seven outputs
+completed in 118–205 tokens, so truncation is not the observed cause. Structural
+validation does not establish semantic grounding/completeness. Next prepare source
+identity delivery with shared selection/dispatch byte accounting, clearer requested
+evidence levels and claim/citation handling, then a separately approved same-input
+comparison (seven cases × two model candidates, no new query embeddings). Model
+limitations remain a hypothesis. Preserve old grading; flag question/rubric alignment
+concerns separately rather than lowering acceptance. See the new replan section in
+PHASE33_COMPLETION_PLAN.md. No implementation or paid call occurred in this review.
+
 **2026-10-19 approved staged verification CLOSED: A 2 passed / 5 failed.**
 The owner approved the prepared 25-call/USD 0.05 maximum proposal, including
 continuing independent quality cases within a stage. All seven A cases executed
