@@ -70,6 +70,33 @@ See AI_SOURCE_COVERAGE.md for scope and completion gates.
 
 ## Current product slice
 
+**2026-10-19 staged paid-verification proposal prepared, NOT approved/executed:**
+The owner requested an efficiency review allowing paid work in the plan and
+authorized preparation only. Recommend A: the same seven cases (11 calls), B:
+four fixed wording variants (8 calls, only if all A pass), C: two additional
+fixed-context answer samples for citation/ordinary-life/period cases (6 calls,
+only if all A/B pass). Maximum **25 calls / proposed USD 0.05**; configured-price
+reservation ceiling **USD 0.030492**. Basic seven-only alternative remains
+11 calls/USD 0.02. Keep models, source permissions and indexing unchanged.
+The proposal explicitly requests replacing global first-quality-failure stop:
+within each stage retain quality failures and continue independent fixed cases;
+a failed stage blocks all later stages. Captured/settled output-validation failure
+can count as an individual quality failure. Scope/access/configuration/budget,
+uncertain usage, provider rejection and infrastructure failures still stop globally.
+No fixing/retry/best-of selection is included. This changed stop rule needs new
+explicit approval; it has not been activated by the preparation request.
+Exact questions, 52-record/284-parent/1,097-anchor pool, current configuration,
+preview bindings, costs, gates and finite 25-slot dispatch blueprint:
+`.local/evaluation/phase33/staged-review-final-cbc090ec9267470483d3b155184ca52d/review.html`.
+Proposal digest `526326983ac355e56e6f28df468e6950834e8c8f7d71524c37741f5649eec05b`.
+Read-only live state matched the previous snapshot; independent parent/slice
+hash, cost, question and gate checks passed. Old files 218/usage rows 446 and
+uncertain 3/USD 0.006801 remain. New AI calls/charges/mutations are zero; no app
+code changed or application tests reran. Repeats measure small-sample answer
+consistency on fixed inputs, not new retrieval or statistical/general quality.
+Persistent ANSWER_MODE=off, Phase 3.3 incomplete, Phase 4 unstarted. Next is owner
+review/explicit execution approval of the concrete staged proposal and stop rule.
+
 **2026-10-19 local evidence-selection and status-contract correction:** For a
 question explicitly requesting a commit (Korean/English), local recommendation
 keeps the leading retrieved parent and considers the first validated commit
@@ -1666,11 +1693,12 @@ user-verifiable product slices in `ROADMAP.md`.
 
 ## Next
 
-1. Review the local selection/status-contract correction and preserved closed
-   actual-answer failure in PHASE33_COMPLETION_PLAN.md. The saved-candidate
-   check now includes the retrieved commit; real-model compliance with this new
-   contract is unverified. Prepare a fresh reviewed scope/configuration binding
-   before any separately approved paid pass. Six later cases remain unexecuted.
+1. Review the new staged paid-verification proposal and changed quality-failure
+   stop rule in PHASE33_COMPLETION_PLAN.md; obtain explicit execution approval.
+   It binds the local selection/status correction to the same seven cases,
+   conditional wording variants and fixed-context samples. No new paid call is
+   authorized by preparation. Real-model compliance remains unverified and six
+   cases from the previous closed pass remain unexecuted.
    Indexing remains 52 records/1,097 vectors.
    No more import/indexing/permission expansion is needed for these findings.
    Persistent ANSWER_MODE remains off. Phase 3.3 is incomplete.
