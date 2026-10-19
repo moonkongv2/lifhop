@@ -7,6 +7,28 @@ is also closed after its first query hit a database search timeout. The subseque
 11-call proposal was approved and is now closed after the first actual answer's
 context-selection/status failure, as recorded immediately below.
 
+## 승인된 v2 검증 종료: 첫 계약 오류에서 중단 (2026-10-20)
+
+사용자가 digest `7778d077559f5017c36d9bb44144eb1a661f60e61bc03fb8531cfc0592f5d284`의
+13회/최대 예약 USD 0.038951 안을 승인했다. 동결 요청/코드·권한·원장 사전 대조 후
+첫 결정·구현 질문을 1회 실행했다. provider는 completed JSON을 반환했으나 두 요청
+부분 모두 complete=false, unknowns=[]로 내부 계약을 위반했다. 서버는 HTTP503
+ANSWER_OUTPUT_INVALID/claim_coverage로 거부했고 원본으로 동일 오류를 재현했다.
+
+출력337토큰은4096 이하이고 인용 구절은 모두 실제 전송 본문에 존재한다. 이는 첫
+요청의 schema 수용을 확인한 것이며 최대 출력 용량이나 의미 품질의 검증은 아니다.
+모델이 왜 모순된 선언을 만들었는지는 확정하지 않는다. 부분 라벨도 질문 분해 대신
+답변 조각 형태다. 독립적인 완료 선언과 미확인 목록의 중복 판단 부담을 다시 검토해야 한다.
+출력을 보정하거나 통과 처리하지 않았다. 중단 조건에 따라 **1회 실행/12회 미전송**,
+승인 종료/재시도 없음. 실제 비용 **USD 0.000400**, 새 미확정0이다.
+
+원본531파일/기존471과금행·권한·현재버전·1097 anchor 동일; 총 원장은472행이다.
+기존 미확정3건 USD0.006801과 ANSWER_MODE=off 유지. 기존 v1 및 v2 기준선은
+그대로이고 새7건 점수/일관성 결과는 없다. 미전송 사례를 실패로 채우지 않는다.
+실행 결과: `.local/evaluation/phase33/policy-v2-review-20261020-v1/execution/report.html`.
+다음은 중복 선언을 줄일 로컬 설계 검토이며 자동 재실행/추가 과금 승인은 없다.
+Phase3.3 및 자동 검색 완료 검증 미완료, Phase4 미착수. 제품 코드 변경 없음.
+
 ## 질문 정렬 v2 로컬 구현·검증 및 유료 승인 대기 (2026-10-20)
 
 사용자가 ANSWER_EVIDENCE_POLICY_PLAN.md대로 진행하도록 지시했다. 일반 답변은

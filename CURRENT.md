@@ -70,7 +70,43 @@ See AI_SOURCE_COVERAGE.md for scope and completion gates.
 
 ## Current product slice
 
-**2026-10-20 policy v2 locally implemented; finite paid verification prepared, NOT approved:**
+**2026-10-20 approved policy-v2 experiment CLOSED after first contract failure:**
+
+The owner explicitly approved digest
+`7778d077559f5017c36d9bb44144eb1a661f60e61bc03fb8531cfc0592f5d284`:
+13 planned Luna answers, maximum reservation USD 0.038951. Frozen code/requests,
+policy/current versions/corpus and old ledger passed read-only preflight. The first
+actual decision/implementation answer returned completed structured JSON, but both
+question parts declared complete=false while unknowns was empty. The local
+coverage validator correctly rejected this contradiction with HTTP 503,
+ANSWER_OUTPUT_INVALID / claim_coverage. Original-response replay reproduced it.
+The provider used **2311 input / 337 output tokens**, well below the 4096 output
+cap; every returned evidence quote occurs in its actual supplied body. These facts
+do not establish semantic correctness, sufficient core recovery or model quality.
+The first response establishes schema acceptance for that request, not maximum
+output capacity or consistent adherence to the full application contract.
+The observed mismatch is clear; why the model emitted it is not established.
+Parts also contain answer fragments rather than concise requested-question labels.
+The contract still asks the model for redundant completeness and unknown-list
+judgments that can disagree. No silent repair/relaxation/retry was performed.
+Per the approved technical-error stop rule, **1 call sent / 12 unsent**. Paid
+usage settled **USD 0.000400**, new uncertain zero. The approval is now closed;
+unsent cases are unmeasured, not failed, and no new 7-case score is available.
+Keep original v1 4/7 and offline-v2 Luna 5/7 / Sol 6/7 as separate historical
+baselines. Do not claim improvement or reclassify this output as a usable answer.
+Actual read-only closure checks preserve **531 original files / 471 old usage
+rows**, permissions/current versions and **1097 anchors**. One new spent row makes
+472 total. Old uncertain **3/USD 0.006801** remain unchanged; ANSWER_MODE=off.
+Raw request/provider/error/usage, local diagnosis and immutable closed marker:
+`.local/evaluation/phase33/policy-v2-review-20261020-v1/execution/report.html`.
+Product code unchanged this execution turn. No new backend/frontend suite run;
+the source replay, original-manifest and ledger/policy/corpus checks were executed.
+Prior 824/61 synthetic tests do not prove actual contract/model quality. Next
+review how to reduce redundant model declarations while retaining scoped unknowns
+and honest completeness; do not automatically repair the result or rerun remaining
+requests. Phase 3.3/automatic-retrieval acceptance incomplete, Phase 4 unstarted.
+
+**2026-10-20 policy v2 preparation checkpoint (subsequently approved and CLOSED above):**
 
 The owner's “계획대로 진행해줘” adopts ANSWER_EVIDENCE_POLICY_PLAN.md's v2
 question-aligned rubric and authorizes local implementation/preparation only.
@@ -1902,18 +1938,19 @@ user-verifiable product slices in `ROADMAP.md`.
 
 ## Next
 
-Review the policy-v2 handoff above. The new criterion is adopted locally, with
-old raw answers graded separately under v2 before any new generation. The finite
-13-call scope and cost are prepared; obtain separate explicit external-AI/paid
-approval for its digest before execution. Keep ANSWER_MODE=off and never reuse
-closed approvals. Actual model/schema/output-capacity quality is still unverified.
+The approved policy-v2 pass is closed after one actual claim_coverage failure;
+12 calls were not sent and cannot be reused automatically. Review the original
+response/diagnosis above. Next locally design a smaller generation contract that
+reduces redundant completeness declarations without guessing that omitted unknowns
+mean all requested facts were answered. Preserve raw outputs, existing criteria
+and reservations. Keep ANSWER_MODE=off; any future paid scope needs new approval.
 
-1. After separate approval, run the fixed 7-case pass and planned repeats under
-   the frozen v2 scope; compare new Luna to old Luna under the same v2 criteria.
-   Preserve v1 4/7 and distinguish criterion changes from output improvements.
-   Do not adopt Sol from old samples. Report remaining omissions/grounding/scope
-   and structural failures separately. No more imports/indexing/permissions are
-   required. Automatic retrieval acceptance remains pending; no Phase 4 yet.
+1. Separate schema acceptance, app contract consistency and semantic quality.
+   The first provider response was completed JSON and below the output cap, but
+   declared incomplete parts with no unknowns. No new seven-case score or repeated
+   quality result exists. Keep the old v1/v2 baselines unchanged. Do not adopt Sol
+   from old samples or count unsent cases as failures. Actual recovery, grounding
+   and automatic retrieval acceptance remain pending; no Phase 4 yet.
 
 2. Confirm GitHub repository browsing in Entries → repository → Commits/Documents
    → reader → return, and Search → Browse repository → return. Existing stored
