@@ -1,4 +1,5 @@
-"""Local, rank-preserving parent selection. No provider, ledger or persistence."""
+"""Local bounded parent selection. No provider, ledger or persistence."""
+import re
 from fastapi import HTTPException
 from sqlalchemy import select
 from app.models.passage import EntryPassage
@@ -12,10 +13,21 @@ from app.services.semantic_search import filtered_vectors, read_slice
 
 
 def choose_parents(question, candidates):
-    """Candidates are already checked; never use gold or question terms to rank."""
+    """Keep the leading context and one explicitly requested commit, if retrieved."""
+    ranked = list(enumerate(candidates, 1))
+    wants_commit = re.search(r'커밋|\bcommits?\b', question, re.IGNORECASE)
+    excludes_commit = re.search(r'커밋(?:은|을|는)?\s*(?:제외|말고|빼고)|\b(?:without|excluding|no)\s+commits?\b',
+        question, re.IGNORECASE)
+    if wants_commit and not excludes_commit:
+        # This is a question-kind preference within the checked candidates, not
+        # a provider quota or an expected source/ID injected into retrieval.
+        preferred = next((item for item in ranked if item[1][1].repository_ref
+            and item[1][1].repository_ref.kind == 'commit'), None)
+        if preferred and preferred != ranked[0]:
+            ranked = [ranked[0], preferred, *[item for item in ranked[1:] if item != preferred]]
     selected, omissions, seen = [], [], set()
     request_bytes = 0
-    for rank, (embedding_id, parent, group_key) in enumerate(candidates, 1):
+    for rank, (embedding_id, parent, group_key) in ranked:
         key = ("document", group_key) if group_key else ("passage", parent.id)
         reason = None
         if key in seen:
@@ -32,7 +44,7 @@ def choose_parents(question, candidates):
         seen.add(key)
         if reason:
             omissions.append(RecommendationOmission(embedding_id=embedding_id, rank=rank, reason=reason))
-    return selected, omissions, request_bytes
+    return selected, sorted(omissions, key=lambda item: item.rank), request_bytes
 
 
 def recommend(db, owner_id, question, embedding_ids, filters, revision):

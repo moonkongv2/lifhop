@@ -160,3 +160,71 @@ def test_source_revocation_after_recommendation_prevents_answer_dispatch(answer_
         passage_ids=[p['id'] for p in proposal['passages']], confirm_external_ai=True, request_id=uuid4().hex))
     assert result.status_code == 403
     sender.assert_not_called()
+
+
+@pytest.fixture
+def commit_candidates(actor):
+    from test_event_evidence import event
+    bind, _, owner, _ = actor
+    with Session(bind) as db:
+        entries = [create(db, owner, f'Synthetic policy detail {i}.') for i in range(8)]
+        entries.append(event(db, owner, 'github_commit'))
+        candidates = []
+        for entry in entries:
+            save(db, entry)
+            vector = db.scalar(select(PassageEmbedding).join(EntryPassage).where(
+                EntryPassage.version_id == entry.current_version_id).order_by(PassageEmbedding.id))
+            candidates.append((vector.id, read_passage(db, owner, vector.passage_id), None))
+        db.commit()
+    return candidates
+
+
+@pytest.mark.parametrize('question', ['어떤 정책을 정했고 어떤 커밋으로 구현했나요?',
+    'What policy was chosen and which commit implements it?'])
+def test_explicit_commit_request_keeps_primary_context_and_retrieved_commit(commit_candidates, question):
+    candidates = commit_candidates
+    selected, omitted, size = choose_parents(question, candidates)
+    assert [p.id for p in selected] == [candidates[i][1].id for i in [0, 8, 1, 2, 3]]
+    assert len(selected) == 5 and size <= REQUEST_LIMIT
+    assert [o.rank for o in omitted] == [5, 6, 7, 8]
+    assert {o.reason for o in omitted} == {'count_limit'}
+    assert all(p.text == next(c[1].text for c in candidates if c[1].id == p.id) for p in selected)
+
+
+@pytest.mark.parametrize('question', ['What policy was chosen?', 'What was the commitment?',
+    '커밋 말고 정책만 설명해주세요.', 'Summarize the policy without commits.'])
+def test_unrequested_or_excluded_commit_does_not_displace_ranked_evidence(commit_candidates, question):
+    selected, _, _ = choose_parents(question, commit_candidates)
+    assert [p.id for p in selected] == [c[1].id for c in commit_candidates[:5]]
+
+
+def test_commit_preference_never_fabricates_a_missing_candidate_or_duplicates_it(commit_candidates):
+    candidates = commit_candidates
+    selected, _, _ = choose_parents('Which commit?', candidates[:8])
+    assert [p.id for p in selected] == [c[1].id for c in candidates[:5]]
+    selected, omitted, _ = choose_parents('Which commit?', [*candidates, candidates[-1]])
+    assert sum(p.id == candidates[-1][1].id for p in selected) == 1
+    assert omitted[-1].reason == 'duplicate_parent' and omitted[-1].rank == 10
+
+
+def test_commit_preference_keeps_byte_limit_and_primary_parent_whole(commit_candidates):
+    candidates = list(commit_candidates)
+    for index in [0, 8]:
+        vector, parent, group = candidates[index]
+        candidates[index] = (vector, parent.model_copy(update={'text': '🙂' * 1900}), group)
+    selected, omitted, size = choose_parents('Which commit?', candidates)
+    assert selected[0].text == '🙂' * 1900 and size <= REQUEST_LIMIT
+    assert any(o.rank == 9 and o.reason == 'byte_limit' for o in omitted)
+    assert candidates[-1][1].id not in {p.id for p in selected}
+
+
+def test_commit_preference_does_not_bypass_policy_checks(answer_client, commit_candidates):
+    client, headers, sender, _, bind, owner, _ = answer_client
+    data = dict(request_data(bind, owner, [c[0] for c in commit_candidates]), q='Which commit implements this policy?')
+    with Session(bind) as db:
+        db.get(Entry, commit_candidates[-1][1].entry_id).external_ai_allowed = False
+        db.commit()
+    assert client.post('/answers/recommendations', headers=headers, json=data).status_code == 404
+    sender.assert_not_called()
+    with Session(bind) as db:
+        assert db.scalar(select(func.count()).select_from(AiUsageAttempt).where(AiUsageAttempt.owner_id == owner)) == 0
