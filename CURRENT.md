@@ -70,6 +70,48 @@ See AI_SOURCE_COVERAGE.md for scope and completion gates.
 
 ## Current product slice
 
+**2026-10-19 approved model comparison CLOSED:** The owner approved the exact
+14-answer/USD 0.30 fixed-context proposal below. Both models completed all seven
+cases once: **Luna 4/7, Sol 4/7**. Decision/implementation linkage, reported adopted
+fix/reason, Seoul retrospective and historical cutoff passed for both. Rental
+progress, README required content/grounding and insufficient-evidence status
+remain failed under the unchanged checklist. Luna omitted coupon and booking
+progress; Sol recovered booking/ETC progress but omitted the coupon request.
+Luna's README still contains audience/vehicle claims absent from its sole returned
+citation. Sol's actual README claims are grounded, but omit the required audience,
+vehicle-selection and Flutter details. Both treat a tangential code/document
+review as partial operational evidence instead of insufficient with empty cites.
+Neither fabricated deployment success. Do not equate these failure types.
+The questioned Flutter criterion remains separately flagged, never silently waived.
+
+Actual charges: **USD 0.048748 total** (Luna **0.002326**, Sol **0.046422**).
+Median whole-action time: Luna 6.17s / Sol 6.40s, including local handling; seven
+samples each cannot establish general latency/quality. Sol cost about 20 times
+more with no increase in whole-case passes here. Do not switch the product model
+or sample repeatedly to obtain passes. The previous A baseline was 2/7, but both
+context metadata and instructions changed; their contributions are not isolated.
+This is fixed-context diagnosis, not automatic-retrieval acceptance or reliability.
+
+The verifier-only `ffac7ce` adds frozen model/pricing context in an isolated fresh
+process per request. It verifies full input before reservation, reserves/settles
+with the actual model's stored prices and restores defaults. Public APIs and the
+product's Luna/USD .01 action limit are unchanged. Focused synthetic tests **26
+passed**, final backend **775 passed**. Initial attempts found a nonexistent test
+path, sandbox DB denial, then a missing fixture import; corrected before any
+provider dispatch. Normal result/code inspection and diff whitespace passed.
+
+All 14 actual inputs match the frozen requests, every returned citation matches
+its original anchor, and model/price/usage/reservation/settlement rows reconcile.
+Closure preserved **317 old files / 457 old usage rows**, permissions/current
+versions and **1,097 anchors**. New uncertain: zero; old **3/USD 0.006801** untouched.
+No query embeddings, new indexing/import, permission changes or retries.
+Original outputs, direct reviews and actual-price ledger:
+`.local/evaluation/phase33/model-comparison-execution-822b4e9a378041859fedb9e96f2b1e20/report.html`.
+This approval is closed. Persistent ANSWER_MODE=off; Phase 3.3 remains incomplete;
+Phase 4 remains unstarted. Next review the shared remaining failures, especially
+per-claim evidence linkage and relevant-progress coverage, before another paid
+experiment. Any rubric alignment change must be explicit and preserve old grades.
+
 **2026-10-19 source-context and evidence-level correction implemented:** Normal
 answers now send exact selected text plus allowlisted title/source/source-kind and
 GitHub repository/path. No raw payload, author, patch, command or invented SHA is
@@ -88,7 +130,7 @@ were a missing helper import (fixed) and an old exact prompt-text assertion
 (updated for equivalent constraints). Diff whitespace passed; no frontend/schema,
 dependency or migration change. Persistent ANSWER_MODE=off, Phase 3.3 incomplete.
 
-**Prepared, NOT approved/executed:** Same seven previous A contexts for
+**Historical preparation snapshot (subsequently approved/executed above):** Same seven previous A contexts for
 `gpt-6-luna` and `gpt-6-sol`, 14 answers, zero new query embeddings, 54 parent
 occurrences. Same instructions/schema/input, reasoning none and output limit 512;
 only model differs. Sol supports none, whereas newer 6.1 Sol does not; this scope
@@ -1780,16 +1822,16 @@ user-verifiable product slices in `ROADMAP.md`.
 
 ## Next
 
-1. Review the local correction and prepared 14-answer model-comparison scope above.
-   Before any new paid dispatch, verify the bounded executor's model-specific
-   ledger prices/limits and frozen inputs, and obtain separate explicit approval.
-   The prior staged approval remains closed; do not reuse its sender or accounting
-   unchanged. Compare both complete sets; no per-case model cherry-picking.
-   No additional import/indexing/permission expansion is needed. Keep the original
-   failed outputs and acceptance criteria, report grounding/recall/status separately,
-   and verify semantic improvements with actual models before claiming success.
-   The fixed-context comparison does not replace automatic retrieval acceptance.
-   Persistent ANSWER_MODE=off; Phase 3.3 incomplete; do not start Phase 4.
+1. Review the closed comparison: both models 4/7, with shared progress-omission and
+   insufficient/partial boundary failures. Do not adopt Sol from these results.
+   Prepare a small claim-to-source representation and requested-fact/progress
+   coverage design, keeping unrelated reviews out of direct operational evidence.
+   A structural claim/source link cannot prove entailment; semantic checks remain.
+   Separately review question/checklist alignment (e.g. Flutter) before proposing
+   changes; do not regrade closed runs or silently lower completion conditions.
+   No more import/indexing/permissions are needed. All paid approvals are closed;
+   future experiments require a new frozen scope and separate approval. Automatic
+   retrieval acceptance remains pending. ANSWER_MODE=off; no Phase 4 yet.
 2. Confirm GitHub repository browsing in Entries → repository → Commits/Documents
    → reader → return, and Search → Browse repository → return. Existing stored
    GitHub Entries need no reimport for this UI. Repository browsing and the earlier
