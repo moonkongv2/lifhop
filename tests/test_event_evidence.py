@@ -17,7 +17,7 @@ from app.services.embedding_store import eligible_embeddings
 from app.services.external_entries import upsert_external_entry
 from app.services.passage_index import sync_current_passages
 from app.services.source_history import source_policy
-from test_answers import answer_client, response
+from test_answers import answer_client, response, claim_result
 from test_embedding_jobs import actor
 from test_embedding_store import save
 
@@ -155,8 +155,11 @@ def test_cross_source_answer_retrospective_history_and_citations(answer_client):
         if 'newline-separated items' in value['instructions']:
             answer = '\n'.join(f'[{x["id"]}] ' + ('Decision: Run the worker on the server.' if 'Decision:' in x['text']
                 else 'Completed work: Added the launch script.') for x in excerpts)
-        raw['output'][0]['content'][0]['text'] = json.dumps(dict(result=dict(status='supported',
-            answer=answer, citation_ids=[x['id'] for x in excerpts], unconfirmed_aspects=[])))
+        result = dict(status='supported', answer=answer, citation_ids=[x['id'] for x in excerpts], unconfirmed_aspects=[])
+        if value['text']['format']['name']=='claim_evidence_answer':
+            result=claim_result(excerpts,ids=[x['id'] for x in excerpts])
+            result['claims'][0]['text']=answer
+        raw['output'][0]['content'][0]['text'] = json.dumps(dict(result=result))
         return raw
     sender.side_effect = combined
     result = client.post('/answers', headers=headers, json=dict(q='What was decided and implemented for the worker?',

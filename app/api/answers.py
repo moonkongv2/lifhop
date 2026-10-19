@@ -13,6 +13,7 @@ from app.models.passage_embedding import PassageEmbedding
 from app.schemas.answer import AnswerRequest, AnswerResponse, AnswerCitation, AnswerStatus, RecommendationRequest, RecommendationResponse
 from app.services.answer_evidence import recommend
 from app.services.answer_call import answer
+from app.services.answer_transport import OUTPUT_LIMIT
 from app.services.embedding_store import eligible_embeddings
 from app.services.embedding_transport import EmbeddingError
 from app.services.ai_policy import embedding_inputs
@@ -41,7 +42,7 @@ def recommendations(data: RecommendationRequest, db: DB, owner: Owner,
 def status(db: DB, owner: Owner):
     try:
         current_read(db,owner.id)
-        return AnswerStatus(enabled=settings.answer_mode=="openai" and bool(settings.openai_api_key)
+        return AnswerStatus(output_limit_tokens=OUTPUT_LIMIT, enabled=settings.answer_mode=="openai" and bool(settings.openai_api_key)
             and settings.embedding_monthly_limit_micro_usd>0,
             policy_revision=db.scalar(select(User.policy_revision).where(User.id==owner.id)))
     except SQLAlchemyError:

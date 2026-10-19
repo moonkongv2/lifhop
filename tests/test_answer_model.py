@@ -24,7 +24,7 @@ def test_frozen_model_prices_reservation_and_settlement_and_restores_defaults(an
     value['model'] = model
     upper = len(json.dumps(value, ensure_ascii=False, separators=(',', ':')).encode()) + 1024
     a, b = PROFILES[model]
-    maximum = (upper*a + 512*b + 999999)//1000000
+    maximum = (upper*a + value["max_output_tokens"]*b + 999999)//1000000
     def synthetic(sent):
         assert sent == value
         raw = response(sent)
@@ -40,6 +40,7 @@ def test_frozen_model_prices_reservation_and_settlement_and_restores_defaults(an
         row = db.scalar(select(AiUsageAttempt).where(AiUsageAttempt.owner_id == owner))
         assert row.model == model and row.status == 'spent'
         assert row.configuration_hash == configured and row.reserved_micro_usd == maximum
+        assert row.output_upper_bound == 4096
         assert (row.input_price_micro, row.output_price_micro) == (a, b)
         assert row.spent_micro_usd == (10*a+10*b+999999)//1000000
     assert (transport.MODEL, transport.CONFIG_HASH, transport.INPUT_PRICE, transport.OUTPUT_PRICE) == original

@@ -1770,3 +1770,27 @@ evidence of that report; independent code verification is a separate question.
 Structural output validation still cannot establish semantic grounding or recall
 completeness. The prepared model comparison is diagnostic, not a product model
 selection or a completed Phase 3.3 acceptance result.
+
+
+## 2026-10-19: Assemble ordinary answers from bounded claims and supplied-body quotes
+
+Ordinary generation uses a single internal claim/evidence contract instead of a
+separate free narrative and citation list. Validate every claimed source quote
+against the exact body actually supplied; source metadata is identity, not proof.
+Render only answer/progress claims plus declared unknowns, deriving status and
+the distinct citations from that validated representation. Background alone cannot
+produce a partial answer. Contradictions and malformed evidence fail closed after
+usage settlement, without repairing the output or retrying. This establishes
+structural consistency, not semantic entailment, correct evidence classification
+or completeness; the unchanged v1 quality checklist still requires actual review.
+
+The owner explicitly selected ordinary output 4096 as the local candidate after
+the initial 512 capacity stop. Period/historical retain their narrative contract
+and 512 cap, selected by explicit mode. Public answer fields stay unchanged;
+per-request output limits govern reservations/usage, and a new config hash binds
+all contracts/renderer versions. Old ledger entries and closed approvals are not
+repriced or reused. The fixed insufficient notice supports Korean (Hangul question)
+and English fallback only. No new locale system or model-quality guarantee added.
+ANSWER_MODE stays off until separately authorized; actual schema/output-capacity
+and semantic acceptance remain unverified. This local instruction authorizes no
+paid provider calls and does not complete Phase 3.3.

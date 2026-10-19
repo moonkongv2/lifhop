@@ -21,11 +21,25 @@ from test_embedding_jobs import actor
 from test_embedding_store import save
 
 
+def claim_result(excerpts, *, status='supported', ids=None, unknowns=None):
+    selected = ids if ids is not None else ([excerpts[0]['id']] if status != 'insufficient' else [])
+    unknowns = unknowns if unknowns is not None else (['The final outcome is unconfirmed.'] if status in {'partial', 'insufficient'} else [])
+    bodies = {item['id']: item['text'] for item in excerpts}
+    return dict(parts=[dict(id=1, text='The requested recorded fact.', complete=status == 'supported')],
+        claims=[dict(part=1, kind='answer', text='Synthetic answer from the selected passage.',
+            evidence=[dict(id=i, quote=bodies.get(i, 'Unknown source.')[:120]) for i in selected])] if selected else [],
+        unknowns=[dict(part=1, text=t) for t in unknowns])
+
+
 def response(value, *, status="supported", ids=None, unknowns=None):
     excerpts=json.loads(value["input"])["excerpts"]
     data=dict(status=status, answer="Synthetic answer from the selected passage.",
         unconfirmed_aspects=unknowns if unknowns is not None else (['The final outcome is unconfirmed.'] if status=='partial' else []),
         citation_ids=ids if ids is not None else ([excerpts[0]["id"]] if status in {"supported", "partial"} else []))
+    if value["text"]["format"]["name"] == "claim_evidence_answer":
+        data=claim_result(excerpts,status=status,ids=ids,unknowns=unknowns)
+        if status == "insufficient" and ids:
+            data["unknowns"]=[]  # Incomplete declaration without its required unknown.
     return dict(model=MODEL,status="completed",output=[dict(type="message",content=[
         dict(type="output_text",text=json.dumps(dict(result=data)))])],
         usage=dict(input_tokens=10,output_tokens=10,total_tokens=20))
@@ -61,6 +75,7 @@ def ask(embedding_id,**values):
 def test_cited_answer_is_consent_based_and_durable_once(answer_client):
     client,headers,sender,vector_id,bind,owner,_=answer_client
     assert client.get("/answers/status",headers=headers).json()["enabled"] is True
+    assert client.get("/answers/status",headers=headers).json()["output_limit_tokens"] == 4096
     assert client.get("/answers/status").status_code==401
     data=ask(vector_id)
     assert client.post("/answers",headers=headers,json=dict(data,confirm_external_ai=False)).status_code==403
@@ -185,7 +200,7 @@ def test_invalid_model_citation_is_rejected_after_settlement(answer_client):
 def test_output_validator_rejects_unselected_citation():
     value,_=payload("Synthetic question?",[dict(id=4,text="Synthetic evidence")])
     with pytest.raises(EmbeddingError,match="ANSWER_OUTPUT_INVALID"):
-        parse(response(value,ids=[99]),{4})
+        parse(response(value,ids=[99]),{4},excerpts={4:"Synthetic evidence."})
 
 
 def test_local_passage_answer_needs_no_semantic_vector(answer_client):
@@ -241,8 +256,9 @@ def test_complementary_facts_return_provider_citations_without_adding_unused_sou
         db.commit()
     def complementary_response(value):
         raw=response(value,ids=ids[:2])
-        raw['output'][0]['content'][0]['text']=json.dumps(dict(result=dict(status='supported',
-            answer='The synthetic vehicle is a boat intended for children.',citation_ids=ids[:2],unconfirmed_aspects=[])))
+        data=claim_result(json.loads(value['input'])['excerpts'],ids=ids[:2])
+        data['claims'][0]['text']='The synthetic vehicle is a boat intended for children.'
+        raw['output'][0]['content'][0]['text']=json.dumps(dict(result=data))
         return raw
     sender.side_effect=complementary_response
     data=dict(q='What kind of synthetic vehicle is this, and who is it for?',passage_ids=ids,
@@ -256,9 +272,7 @@ def test_complementary_facts_return_provider_citations_without_adding_unused_sou
     assert json.loads(sent['input'])==dict(question=data['q'],
         excerpts=[dict(id=i,text=t,title="Synthetic vector test",source="manual",source_kind="manual")
             for i,t in zip(ids,texts)])
-    assert 'collectively support every factual claim' in sent['instructions']
-    assert 'fact found only in an uncited excerpt' in sent['instructions']
-    assert 'Omit optional factual details' in sent['instructions']
+    assert 'All factual clauses must be supported by their own quotes' in sent['instructions']
     assert client.post('/answers',headers=headers,json=data).status_code==409
     assert sender.call_count==1
     with Session(bind) as db:
@@ -285,15 +299,18 @@ def test_supported_with_declared_missing_request_is_rejected_without_rewrite_or_
 def test_citation_coverage_contract_is_sent_for_each_answer_mode(mode):
     options=dict(retrospective=True) if mode=='retrospective' else dict(historical_as_of='2026-01-31') if mode=='historical' else {}
     value,_=payload('Synthetic question?',[dict(id=4,text='Synthetic evidence.')],**options)
-    assert 'collectively support every factual claim' in value['instructions']
-    assert 'return insufficient with empty citation_ids' in value['instructions']
-    assert 'set status to partial' in value['instructions']
+    if mode == 'current':
+        assert 'exact nonblank source quotes' in value['instructions']
+        assert 'Complete parts need an answer claim and no unknown' in value['instructions']
+        assert value['text']['format']['name']=='claim_evidence_answer'
+        assert value['max_output_tokens']==4096
+    else:
+        assert 'collectively support every factual claim' in value['instructions']
+        assert 'return insufficient with empty citation_ids' in value['instructions']
+        assert 'set status to partial' in value['instructions']
+        assert value['text']['format']['name']=='cited_answer'
+        assert value['max_output_tokens']==512
     assert 'personal motivation' in value['instructions']
-    assert 'claim absence outside these excerpts' in value['instructions']
-    assert 'ALL requested facts' in value['instructions']
-    assert 'do not demand code verification unless asked' in value['instructions']
-    assert 'Topical background or an unrelated review is not progress' in value['instructions']
-    assert 'Match each factual statement to supporting excerpt IDs' in value['instructions']
     assert json.loads(value['input'])['excerpts']==[dict(id=4,text='Synthetic evidence.')]
 
 

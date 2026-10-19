@@ -70,31 +70,41 @@ See AI_SOURCE_COVERAGE.md for scope and completion gates.
 
 ## Current product slice
 
-**2026-10-19 claim/evidence capacity gate reached; runtime implementation pending:**
-The owner requested execution of the reviewed ANSWER_EVIDENCE_CONTRACT_PLAN.md.
-An offline candidate schema/instructions and capacity CLI preserve all five
-previous normal-answer inputs exactly. All fit 14 KiB (8,077–14,232 bytes).
-Output capacity did not pass: temporary tiktoken 0.14.0 has no Luna mapping;
-reference o200k_base counts are 103 for a short synthetic partial and 1,493 for
-the joint maximum-field fixture. These are not actual Luna counts or a capacity
-guarantee. Do not claim 512 tokens suffice, wire the new contract into production,
-or silently increase the limit. Existing answer configuration/hash remain intact.
-The candidate is deliberately confined to evaluation tooling; no claim parser,
-renderer, API or frontend behavior has been implemented or changed.
-Unapplied normal-output alternatives 512/2048/4096 reserve USD 0.010355/0.014195/
-0.019315 for the seven prepared contexts, with period/history still 512. These
-are arithmetic alternatives, not a newly approved paid scope or proof of capacity.
-Recommend explicit review of 4096 versus a smaller duplicate-reduced contract,
-then resume implementation; the plan prohibits automatic limit increases.
-Unchanged-v1 intent/required/progress/optional/unknown/evidence-level checklist,
-candidate requests, capacity results, alternatives and preservation audit:
-`.local/evaluation/phase33/contract-capacity-20261019-v1/alternatives.html`.
-Pure capacity tests **3 passed**; full backend **778 passed**, CLI help/whitespace
-checks passed. Runtime answer text unchanged, so frontend behavior checks are
-deferred with runtime wiring. Tokenizer packages/cache live only in /private/tmp;
-no project dependency added. Original **419 files / 471 usage rows**, permissions,
-current versions and **1,097 anchors** preserved. Old uncertain **3/USD 0.006801**
-untouched; new AI calls/charges zero. ANSWER_MODE=off; Phase 3.3 incomplete.
+**2026-10-19 ordinary claim/evidence contract locally implemented, 4096 candidate:**
+
+The owner explicitly chose ordinary output 4096 as a local implementation candidate
+following the initial 512 capacity stop. Ordinary answers now generate bounded
+parts/claims/exact supplied-body quotes/unknowns and deterministically assemble
+public text and citations. Validate all fields, including background, without
+truncation or repair; incomplete parts need one unknown and complete parts need an
+answer claim. Only rendered answer/progress claims contribute citations. Background
+alone yields insufficient with empty citations. A fixed insufficient notice is
+Korean for Hangul questions, otherwise English; other fixed-notice languages remain
+unsupported. Quote existence and declared coverage do not prove entailment,
+classification correctness or recovery of all requested facts.
+Period/historical requests retain their previous schema/instructions and 512 cap,
+with explicit parser modes. Ordinary status reports 4096, generated API docs agree,
+and the UI preserves assembled line breaks. Reservations and usage checks use each
+actual request cap; old stored prices/reservations remain unchanged. The answer
+config hash changed; closed approvals cannot authorize new requests.
+All five original ordinary inputs remain byte-for-byte unchanged, with full request
+sizes **8075–14230 bytes**. Both period/history full requests equal the closed ones.
+The offline seven-request reservation sum is **USD 0.019314**, not an approved paid
+scope. A finite executor/digest binding and stop rules remain to be prepared before
+seeking separate approval. Actual schema acceptance, target-model output capacity,
+semantic quality and automatic retrieval acceptance remain unverified. The original
+512 capacity report remains historical; reference tokenizer counts were never
+promoted to actual Luna counts. No project dependency or DB migration added.
+Full backend **818 passed**; four related frontend files **61 passed**; frontend
+lint/build and diff whitespace passed. Initial combined-shell test invocation
+could not connect to the local test DB; the standalone pytest invocation and final
+full suite succeeded in disposable migrated schemas. Synthetic behavior checks
+are not real-model quality measurements. **524 original files / 471 usage rows**,
+permissions/current versions and **1097 anchors** were verified unchanged; uncertain
+**3/USD 0.006801** untouched. New AI calls/charges zero, ANSWER_MODE=off.
+Phase 3.3 incomplete; Phase 4 unstarted. Local review and frozen request arithmetic:
+`.local/evaluation/phase33/claim-local-4096-20261019-v1/report.html`.
+Implementation details and initial gate history: ANSWER_EVIDENCE_CONTRACT_PLAN.md.
 
 **2026-10-19 approved model comparison CLOSED:** The owner approved the exact
 14-answer/USD 0.30 fixed-context proposal below. Both models completed all seven
@@ -1848,15 +1858,17 @@ user-verifiable product slices in `ROADMAP.md`.
 
 ## Next
 
-First resolve the claim-contract output-capacity gate documented above and in
-ANSWER_EVIDENCE_CONTRACT_PLAN.md before wiring a schema/parser/renderer into
-normal answers. The initial gate is not passed; no new paid proposal is ready.
-Output-limit alternatives are unapplied and require an explicit scope decision.
+The owner-selected ordinary 4096 candidate is locally implemented and tested.
+Review the private claim-local-4096 report and unchanged-v1 checklist. Next bind a
+finite seven-request verifier and stopping rules to the exact new requests before
+seeking separate paid approval. No real-model schema/capacity/quality acceptance
+has been established; keep ANSWER_MODE=off and do not reuse closed approvals.
 
 1. Review the closed comparison: both models 4/7, with shared progress-omission and
    insufficient/partial boundary failures. Do not adopt Sol from these results.
-   Prepare a small claim-to-source representation and requested-fact/progress
-   coverage design, keeping unrelated reviews out of direct operational evidence.
+   The small claim/source and requested-fact/progress contract is now locally
+   implemented; actual recovery and operational evidence classification need
+   fixed-context model revalidation.
    A structural claim/source link cannot prove entailment; semantic checks remain.
    Separately review question/checklist alignment (e.g. Flutter) before proposing
    changes; do not regrade closed runs or silently lower completion conditions.

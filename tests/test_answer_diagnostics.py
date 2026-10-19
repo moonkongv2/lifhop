@@ -1,8 +1,12 @@
 """Local synthetic reproductions; no real provider response is reconstructed."""
 import json
 import pytest
-from app.services.answer_transport import MODEL, INSTRUCTIONS, AnswerOutputError, parse
+from app.services.answer_transport import MODEL, NARRATIVE_INSTRUCTIONS as INSTRUCTIONS, parse as parse_answer, AnswerOutputError
 from app.services.embedding_transport import EmbeddingError
+
+
+def parse(raw, ids):
+    return parse_answer(raw, ids, historical=True)
 
 
 def output(data):
@@ -76,7 +80,7 @@ def test_prompt_explicitly_explains_status_and_length_contract():
 
 def test_transmitted_schema_couples_status_to_citation_count():
     from app.services.answer_transport import payload
-    value,_=payload('Synthetic question?', [dict(id=4,text='Synthetic evidence')])
+    value,_=payload('Synthetic question?', [dict(id=4,text='Synthetic evidence')], historical_as_of='2026-01-31')
     format=value['text']['format']
     assert format['strict'] is True
     schema=format['schema']
@@ -119,7 +123,7 @@ def test_luna_payload_preserves_bounded_nonreasoning_uncached_role():
     assert value['reasoning']==dict(effort='none')
     assert value['prompt_cache_options']==dict(mode='explicit')
     assert value['temperature']==0 and value['store'] is False
-    assert value['max_output_tokens']==512
+    assert value['max_output_tokens']==4096
     assert 'prompt_cache_breakpoint' not in json.dumps(value)
     assert cost_micro(1000,100)==150
     assert CONFIG_HASH != digest(dict(model='gpt-4.1-mini-2025-04-14'))
@@ -164,5 +168,6 @@ def test_synthetic_browser_preview_remains_compatible_with_current_output_contra
     from app.services.answer_transport import payload
     options=dict(retrospective=True) if mode=='retrospective' else dict(historical_as_of='2026-01-31') if mode=='historical' else {}
     value,_=payload('Synthetic question?', [dict(id=4,text='Proposal: run a synthetic check.')], **options)
-    result=parse(fake_answer(value),{4},retrospective=mode=='retrospective')
+    result=parse_answer(fake_answer(value),{4},retrospective=mode=='retrospective',
+        historical=mode=='historical',excerpts={4:'Proposal: run a synthetic check.'},question='Synthetic question?')
     assert result['status']=='supported' and result['unconfirmed_aspects']==[]

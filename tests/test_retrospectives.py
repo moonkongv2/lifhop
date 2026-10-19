@@ -83,6 +83,9 @@ def test_one_call_retrospective_sends_dates_and_rechecks_exact_preview(answer_cl
         rows = list(db.scalars(select(AiUsageAttempt).where(AiUsageAttempt.owner_id == owner)))
         assert len(rows) == 1 and rows[0].purpose == 'answer' and rows[0].status == 'spent'
         assert rows[0].reserved_micro_usd <= 10000
+        assert rows[0].output_upper_bound == 512
+        from app.services.answer_transport import cost_micro
+        assert rows[0].reserved_micro_usd == cost_micro(rows[0].input_upper_bound,512)
 
 
 def test_retrospective_sends_seoul_day_across_utc_midnight(answer_client):

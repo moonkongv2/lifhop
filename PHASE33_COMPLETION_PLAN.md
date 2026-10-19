@@ -7,6 +7,30 @@ is also closed after its first query hit a database search timeout. The subseque
 11-call proposal was approved and is now closed after the first actual answer's
 context-selection/status failure, as recorded immediately below.
 
+## 일반 출력 4,096 후보 로컬 구현 완료 (2026-10-19)
+
+사용자의 명시 지시로 초기 512 게이트 중단 이후 로컬 구현을 재개했다.
+일반 답변은 요청 부분/주장/실제 전송 본문의 인용 구절/미확인 정보를 검증하고
+표시한 직접 답·진행과 미확인 문장으로 공개 답변을 조립한다. 인용은 표시한 주장에
+쓰인 출처의 합집합이다. 배경만 있으면 insufficient/빈 인용이며 모순된 완료 선언과
+원문에 없는 구절은 보정 없이 거부한다. 실제 의미/필수 사실 회수의 보증은 아니다.
+회고/과거는 기존 요청과 512를 유지하고 일반만 4,096 후보로 연결했다. 예약/사용량
+검사는 실제 요청 상한을 따르며 새 구성 hash로 기존 승인의 재사용을 차단한다.
+
+전체 백엔드 **818개**, 관련 프론트 **61개**, lint/build·공백 검사 통과.
+기존 일반 5문맥 무절단 요청은 8,075–14,230 bytes이며 회고/과거 2요청은 동일하다.
+같은 7건의 계산상 최대 예약은 **USD 0.019314**다. 아직 전용 실행기/digest와
+중단 조건을 고정한 승인 요청은 아니며, 실제 schema 수용/출력 용량/의미 검증은
+별도 유료 승인 이후에만 가능하다. 완료 기준/v1 원본 평가는 바꾸지 않는다.
+
+기존 **524파일/471과금행/권한·현재 버전/1,097 anchor** 보존 확인.
+미확정 3건/USD 0.006801 유지, 새 AI 호출·과금 0, ANSWER_MODE=off.
+Phase 3.3 미완료/Phase 4 미착수. 상세 구현/초기 게이트는
+`ANSWER_EVIDENCE_CONTRACT_PLAN.md`, 비공개 로컬 결과는
+`.local/evaluation/phase33/claim-local-4096-20261019-v1/report.html`.
+
+아래 첫 게이트와 종료된 실험은 당시 결과로 보존한다.
+
 ## 다음 개선의 첫 용량 게이트: 입력 통과·출력 미통과 (2026-10-19)
 
 리뷰된 `ANSWER_EVIDENCE_CONTRACT_PLAN.md`의 첫 단계를 실행했다. 일반 5건의

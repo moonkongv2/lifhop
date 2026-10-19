@@ -1,6 +1,7 @@
 """One consented answer call; selected slices are rechecked under the owner lock."""
 import asyncio
 import logging
+import json
 from zoneinfo import ZoneInfo
 from sqlalchemy.orm import Session
 from sqlalchemy import text
@@ -58,7 +59,7 @@ def answer(engine, settings, *, owner_id, request_id, question, anchors, revisio
             value,upper=prepare_payload(db,owner_id,anchors,revision,question,retrospective,historical_scope)
             db.rollback()
             attempt=reserve(db,scope=settings.embedding_billing_scope,owner_id=owner_id,
-                run_id=request_id,purpose="answer",upper=upper,
+                run_id=request_id,purpose="answer",upper=upper,output_limit=value["max_output_tokens"],
                 monthly_limit=settings.embedding_monthly_limit_micro_usd,run_limit=10000,call_limit=1)
             db.commit()
             settle(db,attempt,status="uncertain",error_code="DISPATCH_PENDING")
@@ -71,12 +72,14 @@ def answer(engine, settings, *, owner_id, request_id, question, anchors, revisio
                     raise EmbeddingError("ANSWER_CONTEXT_CHANGED")
                 sent=True
                 raw=transport(value) if transport else asyncio.run(request(value,settings.openai_api_key.get_secret_value()))
-                tokens=usage(raw,upper)
+                tokens=usage(raw,upper,output_limit=value["max_output_tokens"])
                 db.rollback()
                 settle(db,attempt,status="spent",input_tokens=tokens[0],output_tokens=tokens[1])
                 db.commit()
                 try:
-                    return parse(raw,{a["reference_id"] for a in anchors}, retrospective=retrospective)
+                    return parse(raw,{a["reference_id"] for a in anchors}, retrospective=retrospective,
+                        historical=historical_scope is not None, question=question,
+                        excerpts={x["id"]:x["text"] for x in json.loads(value["input"])["excerpts"]})
                 except AnswerOutputError as error:
                     logging.getLogger(__name__).warning("answer_output_rejected",
                         extra={"run_id":request_id, "reason":error.reason})

@@ -28,14 +28,14 @@ def frozen_model_request(request, maximum_micro_usd):
             price=transport.PRICE_HASH, request=expected))
         def checked(*args, **kwargs):
             value, upper = prepare(*args, **kwargs)
-            if digest(value) != expected or transport.cost_micro(upper, transport.OUTPUT_LIMIT) != maximum_micro_usd:
+            if digest(value) != expected or transport.cost_micro(upper, value["max_output_tokens"]) != maximum_micro_usd:
                 raise EmbeddingError('ANSWER_CONTEXT_CHANGED')
             return value, upper
         def priced(db, **kwargs):
             # The product's USD .01 action limit stays unchanged outside this
             # isolated verifier. Only the exact reviewed request gets its bound.
             if kwargs['purpose'] != 'answer' or transport.cost_micro(
-                    kwargs['upper'], transport.OUTPUT_LIMIT) != maximum_micro_usd:
+                    kwargs['upper'], kwargs['output_limit']) != maximum_micro_usd:
                 raise EmbeddingError('ANSWER_COMPARISON_PROFILE_INVALID')
             return reserve(db, **dict(kwargs, run_limit=maximum_micro_usd))
         caller.prepare_payload, caller.reserve = checked, priced

@@ -33,7 +33,9 @@ def call_slot(engine, scope):
 
 
 def reserve(db, *, scope, owner_id, run_id, purpose, upper, monthly_limit, run_limit, at=None,
-            dispatch_id=None, call_limit=None):
+            dispatch_id=None, call_limit=None, output_limit=None):
+    if output_limit is not None and (purpose != "answer" or type(output_limit) is not int):
+        raise EmbeddingError("INVALID_RESERVATION")
     priced = purpose in {"rerank", "answer"}
     if purpose not in {"document", "query", "rerank", "answer"} or not 0 < upper <= (525312 if purpose == "rerank" else 16000) or not 0 < run_limit <= (1000000 if priced else 250000):
         raise EmbeddingError("INVALID_RESERVATION")
@@ -49,7 +51,10 @@ def reserve(db, *, scope, owner_id, run_id, purpose, upper, monthly_limit, run_l
         from app.services import rerank_transport as rt
         from app.services import answer_transport as at
         pricing = rt if purpose == "rerank" else at
-        amount = pricing.cost_micro(upper, pricing.OUTPUT_LIMIT)
+        bound = pricing.OUTPUT_LIMIT if output_limit is None else output_limit
+        if purpose == "answer" and bound not in {pricing.OUTPUT_LIMIT, pricing.CONTEXT_OUTPUT_LIMIT}:
+            raise EmbeddingError("INVALID_RESERVATION")
+        amount = pricing.cost_micro(upper, bound)
     monthly = db.scalar(select(func.coalesce(func.sum(charge), 0)).where(Attempt.billing_scope == scope, active,
         (Attempt.month == month) | Attempt.status.in_(["reserved", "uncertain"])))
     run = db.scalar(select(func.coalesce(func.sum(charge), 0)).where(
@@ -69,7 +74,7 @@ def reserve(db, *, scope, owner_id, run_id, purpose, upper, monthly_limit, run_l
         input_upper_bound=upper, reserved_micro_usd=amount, status="reserved")
     if priced:
         row.model, row.configuration_hash = pricing.MODEL, pricing.CONFIG_HASH
-        row.output_upper_bound = pricing.OUTPUT_LIMIT
+        row.output_upper_bound = bound
         row.input_price_micro, row.output_price_micro, row.price_hash = pricing.INPUT_PRICE, pricing.OUTPUT_PRICE, pricing.PRICE_HASH
     db.add(row)
     db.flush()

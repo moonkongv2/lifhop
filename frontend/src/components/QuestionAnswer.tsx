@@ -42,7 +42,7 @@ function QuestionRun({ params, revision, available, refresh, productView }: { pa
     {run.error && <p role="alert">{run.error.name === "AbortError" ? "Stopped. No later stage will run. A request already sent may have been charged." : `${run.error.message} No automatic retry will be made.`}</p>}
     {result && <>
       {result.answer ? <div className="answer-result"><h4>{result.answer.status === "supported" ? "Draft answer" : result.answer.status === "partial" ? "Partial draft — some requested facts are unconfirmed" : "Insufficient evidence"}</h4>
-        <p>{result.answer.answer}</p>
+        <p className="entry-content">{result.answer.answer}</p>
         <p className="help-text">Verify claims against the cited originals. Only part of your archive may have been examined.</p>
         {result.answer.citations.length > 0 && <ul>{result.answer.citations.map(c => <li key={`${c.kind}-${c.source_id}`}>
           <Link to={citationTarget(c.passage, returnTo)}>{c.passage.title} · Version {c.passage.version_id} · Characters {c.passage.start+1}–{c.passage.end}</Link>

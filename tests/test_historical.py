@@ -130,6 +130,9 @@ def test_history_call_exact_metadata_once_and_same_answer_ledger(answer_client):
         attempts = list(db.scalars(select(AiUsageAttempt)))
         assert len(attempts) == 1 and attempts[0].purpose == 'answer' and attempts[0].status == 'spent'
         assert attempts[0].reserved_micro_usd <= 10000
+        assert attempts[0].output_upper_bound == 512
+        from app.services.answer_transport import cost_micro
+        assert attempts[0].reserved_micro_usd == cost_micro(attempts[0].input_upper_bound,512)
 
 
 @pytest.mark.parametrize('change', ['policy', 'cutoff', 'question', 'text', 'observation', 'source'])

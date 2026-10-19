@@ -47,7 +47,7 @@ beforeEach(() => {
     if (url.endsWith("/answers")) {
       await gates.answer;
       return failure === "answer" ? Response.json({ detail: "EMBEDDING_BUDGET_EXHAUSTED" }, { status: 429 }) : Response.json({
-        status: insufficient ? "insufficient" : partial ? "partial" : "supported", answer: insufficient ? "The records do not say." : partial ? "The worker is described as running on the server; deployment is unconfirmed in these excerpts." : "The worker runs on the server.",
+        status: insufficient ? "insufficient" : partial ? "partial" : "supported", answer: insufficient ? "The records do not say." : partial ? "The worker is described as running on the server.\nDeployment is unconfirmed in these excerpts." : "The worker runs on the server.",
         citations: insufficient ? [] : [{ kind: "passage", source_id: 3, passage }], policy_revision: current });
     }
     return Response.json(passage);
@@ -185,6 +185,8 @@ it("the whole-action deadline prevents later stages", async () => {
 it("keeps original citations visible for a partial draft", async () => {
   partial = true; mount(); await start();
   await screen.findByText("Partial draft — some requested facts are unconfirmed");
+  const answer = screen.getByText(/The worker is described as running on the server/);
+  expect(answer.textContent).toBe("The worker is described as running on the server.\nDeployment is unconfirmed in these excerpts.");
   expect(screen.queryByText("Insufficient evidence")).toBeNull();
   expect(screen.getByRole("link", { name: /Synthetic worker · Version 4/ })).toBeTruthy();
 });

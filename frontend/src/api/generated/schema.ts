@@ -1201,7 +1201,7 @@ export interface components {
             max_input_characters: number;
             /**
              * Output Limit Tokens
-             * @default 512
+             * @default 4096
              */
             output_limit_tokens: number;
         };

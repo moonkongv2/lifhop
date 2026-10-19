@@ -39,7 +39,7 @@ class AnswerStatus(BaseModel):
     policy_revision: int
     selected_limit: int = 5
     max_input_characters: int = 10000
-    output_limit_tokens: int = 512
+    output_limit_tokens: int = 4096
 
 
 class RecommendationRequest(BaseModel):

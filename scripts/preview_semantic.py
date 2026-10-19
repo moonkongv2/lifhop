@@ -49,6 +49,10 @@ def fake_answer(value):
         result.update(answer='\n'.join(summary(item) for item in excerpts), citation_ids=[item['id'] for item in excerpts])
     if "observed_through" in json.loads(value["input"]):
         result.update(answer="[Synthetic] Reviewed observation: " + excerpts[0]["text"])
+    if value['text']['format']['name'] == 'claim_evidence_answer':
+        result = dict(parts=[dict(id=1, text='Synthetic recorded fact.', complete=True)],
+            claims=[dict(part=1, kind='answer', text='[Synthetic] This answer cites the selected passage.',
+                evidence=[dict(id=excerpts[0]['id'], quote=excerpts[0]['text'][:120])])], unknowns=[])
     return dict(model=ANSWER_MODEL, status="completed",
                 output=[dict(type="message", content=[dict(type="output_text", text=json.dumps(dict(result=result)))])],
                 usage=dict(input_tokens=10, output_tokens=10, total_tokens=20))

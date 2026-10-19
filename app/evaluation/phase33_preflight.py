@@ -16,7 +16,7 @@ from app.services.ai_sources import allowed_type
 from app.services.ai_usage import budget_summary
 from app.services.answer_call import answer_excerpts
 from app.services.answer_context import current_excerpt
-from app.services.answer_transport import CONFIG_HASH, MODEL, OUTPUT_LIMIT, cost_micro, payload
+from app.services.answer_transport import CONFIG_HASH, MODEL, cost_micro, payload
 from app.services.embedding_jobs import allowed_selection
 from app.services.embedding_store import STORAGE_CONFIG
 from app.services.embedding_transport import EmbeddingError
@@ -211,9 +211,9 @@ def prepare_acceptance(snapshot, spec, settings):
             gaps.append('CODEX_AND_GITHUB_EVIDENCE_REQUIRED')
         upper = 0
         if passages:
-            _, upper = payload(case.question, excerpts, retrospective=case.period is not None,
+            request, upper = payload(case.question, excerpts, retrospective=case.period is not None,
                 historical_as_of=str(case.historical.as_of) if case.historical else None)
-        estimate = cost_micro(upper, OUTPUT_LIMIT) if upper else 0
+        estimate = cost_micro(upper, request["max_output_tokens"]) if upper else 0
         if estimate > 10000:
             gaps.append('ANSWER_COST_LIMIT')
         selected = [dict(entry_id=p.entry_id, version_id=p.version_id, field=p.field,
