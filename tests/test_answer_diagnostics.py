@@ -70,8 +70,8 @@ def test_rejection_reason_is_bounded_and_public_code_stays_compatible(raw, reaso
 
 
 def test_prompt_explicitly_explains_status_and_length_contract():
-    assert "citation_ids to an empty list" in INSTRUCTIONS
-    assert "distinct integer IDs" in INSTRUCTIONS and "1500 characters" in INSTRUCTIONS
+    assert "empty citation_ids and unconfirmed_aspects" in INSTRUCTIONS
+    assert "distinct supplied IDs" in INSTRUCTIONS and "1500 characters" in INSTRUCTIONS
 
 
 def test_transmitted_schema_couples_status_to_citation_count():

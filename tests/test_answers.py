@@ -289,9 +289,11 @@ def test_citation_coverage_contract_is_sent_for_each_answer_mode(mode):
     assert 'return insufficient with empty citation_ids' in value['instructions']
     assert 'set status to partial' in value['instructions']
     assert 'personal motivation' in value['instructions']
-    assert 'unconfirmed within the supplied excerpts' in value['instructions']
+    assert 'claim absence outside these excerpts' in value['instructions']
     assert 'ALL requested facts' in value['instructions']
-    assert 'a requested fact cannot be identified is partial' in value['instructions']
+    assert 'do not demand code verification unless asked' in value['instructions']
+    assert 'Topical background or an unrelated review is not progress' in value['instructions']
+    assert 'Match each factual statement to supporting excerpt IDs' in value['instructions']
     assert json.loads(value['input'])['excerpts']==[dict(id=4,text='Synthetic evidence.')]
 
 
