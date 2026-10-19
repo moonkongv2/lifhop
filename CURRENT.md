@@ -70,6 +70,32 @@ See AI_SOURCE_COVERAGE.md for scope and completion gates.
 
 ## Current product slice
 
+**2026-10-19 claim/evidence capacity gate reached; runtime implementation pending:**
+The owner requested execution of the reviewed ANSWER_EVIDENCE_CONTRACT_PLAN.md.
+An offline candidate schema/instructions and capacity CLI preserve all five
+previous normal-answer inputs exactly. All fit 14 KiB (8,077–14,232 bytes).
+Output capacity did not pass: temporary tiktoken 0.14.0 has no Luna mapping;
+reference o200k_base counts are 103 for a short synthetic partial and 1,493 for
+the joint maximum-field fixture. These are not actual Luna counts or a capacity
+guarantee. Do not claim 512 tokens suffice, wire the new contract into production,
+or silently increase the limit. Existing answer configuration/hash remain intact.
+The candidate is deliberately confined to evaluation tooling; no claim parser,
+renderer, API or frontend behavior has been implemented or changed.
+Unapplied normal-output alternatives 512/2048/4096 reserve USD 0.010355/0.014195/
+0.019315 for the seven prepared contexts, with period/history still 512. These
+are arithmetic alternatives, not a newly approved paid scope or proof of capacity.
+Recommend explicit review of 4096 versus a smaller duplicate-reduced contract,
+then resume implementation; the plan prohibits automatic limit increases.
+Unchanged-v1 intent/required/progress/optional/unknown/evidence-level checklist,
+candidate requests, capacity results, alternatives and preservation audit:
+`.local/evaluation/phase33/contract-capacity-20261019-v1/alternatives.html`.
+Pure capacity tests **3 passed**; full backend **778 passed**, CLI help/whitespace
+checks passed. Runtime answer text unchanged, so frontend behavior checks are
+deferred with runtime wiring. Tokenizer packages/cache live only in /private/tmp;
+no project dependency added. Original **419 files / 471 usage rows**, permissions,
+current versions and **1,097 anchors** preserved. Old uncertain **3/USD 0.006801**
+untouched; new AI calls/charges zero. ANSWER_MODE=off; Phase 3.3 incomplete.
+
 **2026-10-19 approved model comparison CLOSED:** The owner approved the exact
 14-answer/USD 0.30 fixed-context proposal below. Both models completed all seven
 cases once: **Luna 4/7, Sol 4/7**. Decision/implementation linkage, reported adopted
@@ -1821,6 +1847,11 @@ The project remains a learning project; delivery from here follows the
 user-verifiable product slices in `ROADMAP.md`.
 
 ## Next
+
+First resolve the claim-contract output-capacity gate documented above and in
+ANSWER_EVIDENCE_CONTRACT_PLAN.md before wiring a schema/parser/renderer into
+normal answers. The initial gate is not passed; no new paid proposal is ready.
+Output-limit alternatives are unapplied and require an explicit scope decision.
 
 1. Review the closed comparison: both models 4/7, with shared progress-omission and
    insufficient/partial boundary failures. Do not adopt Sol from these results.

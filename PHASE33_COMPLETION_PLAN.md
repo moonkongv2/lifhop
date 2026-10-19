@@ -7,6 +7,24 @@ is also closed after its first query hit a database search timeout. The subseque
 11-call proposal was approved and is now closed after the first actual answer's
 context-selection/status failure, as recorded immediately below.
 
+## 다음 개선의 첫 용량 게이트: 입력 통과·출력 미통과 (2026-10-19)
+
+리뷰된 `ANSWER_EVIDENCE_CONTRACT_PLAN.md`의 첫 단계를 실행했다. 일반 5건의
+기존 문맥을 보존한 후보 요청 8,077–14,232 bytes는 입력 한도를 통과했다.
+출력은 Luna의 정확한 로컬 토크나이저 매핑이 없고 참고 인코딩의 최대 필드 합성
+예제가 1,493토큰이어서 512 수용을 확인하지 못했다. 이 값을 Luna의 실제 수치로
+해석하지 않는다. 계획의 중단 조건에 따라 제품 연결/실제 의미 검증은 아직 진행하지 않았다.
+
+구절/주장 후보는 오프라인 검사 도구에만 있으며 기존 모델·schema·설정 hash와
+ANSWER_MODE=off는 유지된다. 출력 상한 2,048/4,096의 미적용 산술 비교를 준비했다.
+회고/과거 512를 유지한 7건의 예약 합계는 USD 0.014195/0.019315이며 실행 승인이나
+전체 준비 완료를 뜻하지 않는다. 명시적인 상한/계약 대안 결정 후 구현을 재개해야 한다.
+기존 v1 기준/원본 판정/미확정 과금은 유지하며 추가 AI 호출/과금은 0이다.
+순수 용량 검사 3개, 전체 백엔드 778개 통과. 기존 419파일/471과금행·권한·현재
+버전·1,097 anchor 보존을 읽기 전용으로 확인했다. Phase 3.3 미완료/Phase 4 미착수.
+비공개 결과/범위별 체크리스트/미적용 비용표:
+`.local/evaluation/phase33/contract-capacity-20261019-v1/alternatives.html`.
+
 ## 승인된 14건 모델 비교 결과: 종료 (2026-10-19)
 
 사용자의 “승인할게 진행해”로 digest
