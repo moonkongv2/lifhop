@@ -1750,3 +1750,23 @@ Keep the public answer shape unchanged. This catches declared contradictions,
 not omitted unknowns or every conflict in free text. Semantic citation/completeness
 review remains necessary. New schema/instructions invalidate old answer protocols;
 existing embeddings and closed raw results remain unchanged.
+
+## 2026-10-19: Preserve descriptive identity in bounded answer context
+
+Ordinary answer inputs retain the exact approved text and add a small allowlist
+of title, provider/source kind and GitHub repository/path already exposed by the
+validated passage reader. Never forward the full imported payload or infer a
+missing commit SHA. These fields identify a cited source; they are untrusted data
+and do not prove adoption, testing, deployment or actual use. Source-kind plus a
+matching commit message and original citation can identify an implementation
+record without demanding a hash absent from the supplied evidence.
+
+Recommendation byte accounting and dispatch share one representation; source
+changes are rechecked before dispatch. Preparation hashes and review pages include
+the added metadata. Embedding bodies/configuration are unchanged. The answer
+configuration hash changes, so old closed approvals cannot authorize this input.
+Evidence status follows the question's requested level: a reported adoption is
+evidence of that report; independent code verification is a separate question.
+Structural output validation still cannot establish semantic grounding or recall
+completeness. The prepared model comparison is diagnostic, not a product model
+selection or a completed Phase 3.3 acceptance result.
