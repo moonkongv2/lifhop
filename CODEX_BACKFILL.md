@@ -9,12 +9,29 @@ Mac is offline.
 
 ## Setup
 
-Use installed Codex CLI **0.158.0 or 0.160.0**, the project's Python environment, and the
+Use installed Codex CLI **0.158.0, 0.160.0 or 0.163.0**, the project's Python environment, and the
 running backend/frontend from `README.md` / `frontend/README.md`. Apply the DB
 migration with `.venv/bin/alembic upgrade head`; Phase 2.3 head is
 `b23c7d91e042`; the session checkpoint adds `c04d8a12e673`. No import worker or object-storage service is required for this
 Codex flow. Sanitized text/evidence is stored in PostgreSQL. Raw rollouts and the
 Codex history DB stay on your Mac.
+
+The manual collector binds each exact verified CLI version to its own bundle
+parser tag. Other patch/minor versions fail with FORMAT_UNSUPPORTED until checked;
+0.163.0 support does not accept 0.163.1 automatically. Old reviewed parser tags
+remain readable, and no existing preview/config/device identity is rewritten.
+The older acquisition PoC (`app.acquisition.codex.probe`) remains pinned to 0.158.0.
+
+The 0.163.0 check followed [OpenAI's version-specific schema and stored-history
+read guidance](https://learn.chatgpt.com/docs/app-server). Locally generated RPC
+schemas and two already reviewed paginated jy_yamyam sessions verified the bounded
+read/normalization path: 14 matched primary items across seven relevant turns.
+Two normalized turns are complete; five retain partial markers for unavailable
+command output, unsupported omitted items or sensitive-content filtering. This
+is not a claim that every history format, full archive or real upload was tested.
+No resume/start/model RPC, auth/config copy, import or permission change occurred.
+Private hashes/counts are under
+`.local/evaluation/phase33/codex0163-compatibility-detail-f67afd9b5b8348fe88d93aff2b835188/`.
 
 ```bash
 .venv/bin/python -m app.collectors.codex init-config

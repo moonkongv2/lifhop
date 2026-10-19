@@ -10,7 +10,7 @@ from pathlib import Path
 from uuid import uuid4
 from app.acquisition.codex import inventory
 from app.acquisition.common import ProbeError
-from app.collectors.bundle import CollectorConfig, FILTER, FORMAT, PARSER, SUPPORTED_PARSERS, bytes_json, canonical_turn, digest, external_id, load_config, private_write, read_json, source_time
+from app.collectors.bundle import CLI_PARSERS, CollectorConfig, FILTER, FORMAT, SUPPORTED_PARSERS, bytes_json, canonical_turn, digest, external_id, load_config, private_write, read_json, source_time
 from app.collectors.reader import check_version, stored_thread, ReadFailure
 
 
@@ -36,7 +36,7 @@ def preview(home: Path, cfg: CollectorConfig, output: Path, *, cwd: list[str], t
     if not cwd and not threads and not all_accessible:
         raise ProbeError("Select --include-cwd, --thread or --all-accessible explicitly")
     cli = check_version()
-    parser_version = "codex-app-server-0.160.0-turn-v2" if cli == "codex-cli 0.160.0" else PARSER
+    parser_version = CLI_PARSERS[cli]
     summary, rows = inventory(home)
     discovered = sum(summary["files"].get(key, 0) for key in ("sessions", "archived_sessions"))
     def in_paths(value, roots):

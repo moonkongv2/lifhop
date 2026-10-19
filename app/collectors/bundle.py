@@ -10,7 +10,12 @@ from app.acquisition.common import ProbeError, _SECRET
 from app.importers.canonical import CanonicalItem, DevSessionPayload, CanonicalMessage, RecordedCommand, RecordedDiff, EvidenceRef
 
 PARSER = "codex-app-server-0.158.0-turn-v2"
-SUPPORTED_PARSERS = {"codex-app-server-0.158.0-turn-v1", PARSER, "codex-app-server-0.160.0-turn-v2"}
+CLI_PARSERS = {
+    "codex-cli 0.158.0": PARSER,
+    "codex-cli 0.160.0": "codex-app-server-0.160.0-turn-v2",
+    "codex-cli 0.163.0": "codex-app-server-0.163.0-turn-v2",
+}
+SUPPORTED_PARSERS = {"codex-app-server-0.158.0-turn-v1", *CLI_PARSERS.values()}
 FILTER = "codex-local-filter-v1"
 FORMAT = "lifhop-codex-preview-v1"
 

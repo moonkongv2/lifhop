@@ -9,8 +9,9 @@ import time
 from contextlib import closing, contextmanager
 from datetime import datetime
 from pathlib import Path
-from app.acquisition.codex import ReadOnlyAppServer, SUPPORTED_CLI
+from app.acquisition.codex import ReadOnlyAppServer
 from app.acquisition.common import ProbeError
+from app.collectors.bundle import CLI_PARSERS
 
 
 class ReadFailure(ProbeError):
@@ -213,6 +214,6 @@ def check_version():
         result = subprocess.run(["codex", "--version"], capture_output=True, text=True, timeout=10, check=True)
     except (OSError, subprocess.SubprocessError):
         raise ReadFailure("FORMAT_UNSUPPORTED") from None
-    if result.stdout.strip() not in {SUPPORTED_CLI, "codex-cli 0.160.0"}:
+    if result.stdout.strip() not in CLI_PARSERS:
         raise ReadFailure("FORMAT_UNSUPPORTED")
     return result.stdout.strip()

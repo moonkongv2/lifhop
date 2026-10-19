@@ -101,7 +101,7 @@ class Server:
 
 def preview_sample(tmp_path, monkeypatch, cfg=None, archived=False):
     home, file = source(tmp_path, archived=archived)
-    monkeypatch.setattr("app.collectors.codex.check_version", lambda: None)
+    monkeypatch.setattr("app.collectors.codex.check_version", lambda: "codex-cli 0.158.0")
     monkeypatch.setattr("app.collectors.reader.ReadOnlyAppServer", Server)
     cfg = cfg or config()
     out = tmp_path / "preview"
@@ -207,7 +207,7 @@ def test_snapshot_divergence_is_partial(tmp_path, monkeypatch):
 
 def test_source_selection_exclusion_and_explicit_all(tmp_path, monkeypatch):
     home, _ = source(tmp_path)
-    monkeypatch.setattr("app.collectors.codex.check_version", lambda: None)
+    monkeypatch.setattr("app.collectors.codex.check_version", lambda: "codex-cli 0.158.0")
     cfg = config()
     with pytest.raises(ProbeError, match="Select"):
         preview(home, cfg, tmp_path / "no", cwd=[], threads=[])
@@ -365,3 +365,87 @@ def test_real_http_bundle_apply_and_replay(tmp_path, monkeypatch, client, auth_h
         server.shutdown()
         worker.join(timeout=5)
         server.server_close()
+
+
+@pytest.mark.parametrize('version', ['0.158.0', '0.160.0', '0.163.0'])
+def test_verified_cli_selects_matching_bundle_parser(tmp_path, monkeypatch, version):
+    from app.collectors.bundle import CLI_PARSERS
+    from app.collectors.reader import check_version
+    monkeypatch.setattr('app.collectors.reader.subprocess.run', lambda *a, **kw:
+        subprocess.CompletedProcess(a, 0, f'codex-cli {version}\n', ''))
+    installed = check_version()
+    home, _ = source(tmp_path)
+    monkeypatch.setattr('app.collectors.reader.ReadOnlyAppServer', Server)
+    cfg = config()
+    directory = tmp_path / 'verified'
+    manifest = preview(home, cfg, directory, cwd=['/project'], threads=[])
+    assert manifest['parser_version'] == CLI_PARSERS[installed]
+    assert validate_bundle(directory, cfg)['manifest_digest'] == manifest['manifest_digest']
+    item = read_json(directory / manifest['items'][0]['file'], cfg.turn_bytes)
+    assert item['parser_version'] == manifest['parser_version']
+
+
+@pytest.mark.parametrize('version', ['0.163.1', '0.164.0', '9.9.9'])
+def test_unverified_cli_patch_and_future_versions_fail_closed(tmp_path, monkeypatch, version):
+    monkeypatch.setattr('app.collectors.reader.subprocess.run', lambda *a, **kw:
+        subprocess.CompletedProcess(a, 0, f'codex-cli {version}', ''))
+    directory = tmp_path / 'no-preview'
+    with pytest.raises(ReadFailure, match='FORMAT_UNSUPPORTED'):
+        preview(tmp_path, config(), directory, cwd=['/project'], threads=[])
+    assert not directory.exists()
+
+
+@pytest.mark.parametrize('failure', [None, 'foreign_item', 'active'])
+def test_paginated_snapshot_reads_both_cursors_and_preserves_originals(tmp_path, monkeypatch, failure):
+    import sqlite3
+    from app.acquisition.codex import inventory
+    home, file = source(tmp_path)
+    records = [json.loads(line) for line in file.read_text().splitlines()]
+    records[0]['payload']['history_mode'] = 'paginated'
+    records[0]['payload']['cli_version'] = '0.163.0'
+    file.write_text('\n'.join(json.dumps(r) for r in records) + '\n')
+    with sqlite3.connect(home / 'thread_history_1.sqlite') as db:
+        db.execute('CREATE TABLE thread_items(thread_id TEXT, turn_id TEXT, item_id TEXT, rollout_ordinal INT)')
+        db.executemany('INSERT INTO thread_items VALUES (?,?,?,?)',
+            [('thread', 'turn', item['id'], i) for i, item in enumerate(example_turn()['items'])])
+    for secret in ['auth.json', 'config.toml', 'state_5.sqlite']:
+        (home / secret).write_text('must-not-copy')
+    before = {p: p.read_bytes() for p in home.rglob('*') if p.is_file()}
+    methods = []
+    class PagedServer(Server):
+        def __init__(self, root):
+            super().__init__(root)
+            assert all(not (root / n).exists() for n in ['auth.json', 'config.toml', 'state_5.sqlite'])
+        def request(self, method, params):
+            methods.append((method, params))
+            if method == 'thread/read':
+                assert params['includeTurns'] is False
+                return dict(thread=dict(id='thread', historyMode='paginated'))
+            assert params['sortDirection'] == 'asc' and params['limit'] == 20
+            if method == 'thread/turns/list':
+                assert params['itemsView'] == 'notLoaded'
+                if 'cursor' not in params:
+                    return dict(data=[], nextCursor='turn-page-2')
+                assert params['cursor'] == 'turn-page-2'
+                return dict(data=[dict(id='turn', status='inProgress' if failure == 'active' else 'completed')], nextCursor=None)
+            assert method == 'thread/items/list' and params['turnId'] == 'turn'
+            items = example_turn()['items']
+            page = items[:2] if 'cursor' not in params else items[2:]
+            if 'cursor' in params:
+                assert params['cursor'] == 'item-page-2'
+            return dict(data=[dict(turnId='foreign' if failure == 'foreign_item' else 'turn', item=item) for item in page],
+                nextCursor='item-page-2' if 'cursor' not in params else None)
+    monkeypatch.setattr('app.collectors.reader.ReadOnlyAppServer', PagedServer)
+    def read():
+        with stored_thread(home, inventory(home)[1][0], config(), time.monotonic() + 5) as (_, turns, check):
+            values = list(turns)
+            assert values[0]['items'] == example_turn()['items']
+            assert check(values[0]) is None
+    if failure:
+        with pytest.raises(ReadFailure, match='ACTIVE_SESSION' if failure == 'active' else 'SOURCE_CONFLICT'):
+            read()
+    else:
+        read()
+        assert len(methods) == 5
+    assert {p: p.read_bytes() for p in home.rglob('*') if p.is_file()} == before
+    assert not Server.roots[-1].exists()
