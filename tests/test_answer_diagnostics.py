@@ -6,6 +6,9 @@ from app.services.embedding_transport import EmbeddingError
 
 
 def output(data):
+    if isinstance(data, dict) and 'status' in data:
+        data = dict(data)
+        data.setdefault('unconfirmed_aspects', ['Adoption is unconfirmed.'] if data['status']=='partial' else [])
     return dict(model=MODEL, status="completed", output=[dict(type="message",
         content=[dict(type="output_text", text=json.dumps(dict(result=data)))])])
 
@@ -31,7 +34,8 @@ def test_invalid_citation_and_length_contracts(data):
     dict(status="partial", answer="The plan is recorded; adoption is unconfirmed.", citation_ids=[4]),
 ])
 def test_valid_answer_status_contracts(data):
-    assert parse(output(data), {4}) == data
+    expected=dict(data,unconfirmed_aspects=['Adoption is unconfirmed.'] if data['status']=='partial' else [])
+    assert parse(output(data), {4}) == expected
 
 
 @pytest.mark.parametrize("kind", ["incomplete", "refusal", "invalid_json"])
@@ -83,12 +87,15 @@ def test_transmitted_schema_couples_status_to_citation_count():
     by_status={b['properties']['status']['enum'][0]:b for b in branches}
     for branch in branches:
         assert branch['additionalProperties'] is False
-        assert set(branch['required'])=={'status','answer','citation_ids'}
+        assert set(branch['required'])=={'unconfirmed_aspects','status','answer','citation_ids'}
     supported=by_status['supported']['properties']['citation_ids']
     insufficient=by_status['insufficient']['properties']['citation_ids']
     assert supported['minItems']==1 and supported['maxItems']==5
     assert insufficient['maxItems']==0
     assert by_status['partial']['properties']['citation_ids']==supported
+    assert by_status['supported']['properties']['unconfirmed_aspects']['maxItems']==0
+    assert by_status['insufficient']['properties']['unconfirmed_aspects']['maxItems']==0
+    assert by_status['partial']['properties']['unconfirmed_aspects']['minItems']==1
 
 
 @pytest.mark.parametrize('data', [
@@ -125,3 +132,37 @@ def test_unexpected_cache_accounting_is_not_silently_undercharged(details):
         input_tokens_details=details))
     with pytest.raises(EmbeddingError,match='ANSWER_USAGE_INVALID'):
         usage(raw,100)
+
+
+@pytest.mark.parametrize('status,unknowns,reason', [
+    ('supported', ['The requested implementation commit is unidentified.'], 'status_coverage_mismatch'),
+    ('partial', [], 'status_coverage_mismatch'),
+    ('insufficient', ['Unconfirmed request.'], 'status_coverage_mismatch'),
+    ('partial', [' '], 'coverage_shape'), ('partial', ['x'*201], 'coverage_shape'),
+    ('partial', [True], 'coverage_shape'), ('partial', ['Unknown', ' Unknown '], 'coverage_shape'),
+    ('partial', ['a','b','c','d','e','f'], 'coverage_shape'), ('supported', None, 'coverage_shape'),
+])
+def test_declared_unknowns_and_status_must_agree(status, unknowns, reason):
+    raw=output(dict(status=status,answer='Recorded policy; requested outcome is unconfirmed.',
+        citation_ids=[] if status=='insufficient' else [4],unconfirmed_aspects=unknowns))
+    with pytest.raises(AnswerOutputError) as error:parse(raw,{4})
+    assert error.value.reason==reason
+
+
+def test_legacy_three_field_answer_cannot_use_the_new_contract():
+    raw=output(dict(status='supported',answer='Recorded policy.',citation_ids=[4]))
+    data=json.loads(raw['output'][0]['content'][0]['text'])
+    data['result'].pop('unconfirmed_aspects')
+    raw['output'][0]['content'][0]['text']=json.dumps(data)
+    with pytest.raises(AnswerOutputError) as error:parse(raw,{4})
+    assert error.value.reason=='json_shape'
+
+
+@pytest.mark.parametrize('mode', ['current', 'retrospective', 'historical'])
+def test_synthetic_browser_preview_remains_compatible_with_current_output_contract(mode):
+    from scripts.preview_semantic import fake_answer
+    from app.services.answer_transport import payload
+    options=dict(retrospective=True) if mode=='retrospective' else dict(historical_as_of='2026-01-31') if mode=='historical' else {}
+    value,_=payload('Synthetic question?', [dict(id=4,text='Proposal: run a synthetic check.')], **options)
+    result=parse(fake_answer(value),{4},retrospective=mode=='retrospective')
+    assert result['status']=='supported' and result['unconfirmed_aspects']==[]

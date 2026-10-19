@@ -41,7 +41,7 @@ def fake_provider(inputs):
 def fake_answer(value):
     excerpts = json.loads(value["input"])["excerpts"]
     result = dict(status="supported", answer="[Synthetic] This answer cites the selected passage.",
-                  citation_ids=[excerpts[0]["id"]])
+                  citation_ids=[excerpts[0]["id"]], unconfirmed_aspects=[])
     if 'newline-separated items' in value['instructions']:
         def summary(item):
             category = 'Proposal' if 'proposal' in item['text'].lower() else 'Completed work' if 'completed' in item['text'].lower() else 'Recorded activity'

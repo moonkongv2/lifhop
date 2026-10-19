@@ -41,7 +41,7 @@ def retro_response(value):
     raw = response(value)
     excerpts = json.loads(value['input'])['excerpts']
     result = dict(status='supported', answer='\n'.join(f'[{x["id"]}] Proposal: A synthetic proposed check.' for x in excerpts),
-        citation_ids=[x['id'] for x in excerpts])
+        citation_ids=[x['id'] for x in excerpts], unconfirmed_aspects=[])
     raw['output'][0]['content'][0]['text'] = json.dumps(dict(result=result))
     return raw
 
@@ -177,7 +177,8 @@ def test_sampling_covers_early_and_late_records_and_has_explicit_omissions(answe
 @pytest.mark.parametrize('status', ['supported', 'partial'])
 def test_cited_retrospective_requires_each_line_to_reference_registered_citations(answer, ids, status):
     raw = dict(model=MODEL, status='completed', output=[dict(type='message', content=[dict(type='output_text',
-        text=json.dumps(dict(result=dict(status=status, answer=answer, citation_ids=ids))))])])
+        text=json.dumps(dict(result=dict(status=status, answer=answer, citation_ids=ids,
+            unconfirmed_aspects=['Final outcome unconfirmed.'] if status=='partial' else []))))])])
     with pytest.raises(AnswerOutputError): parse(raw, {1,2}, retrospective=True)
 
 
@@ -290,6 +291,7 @@ def test_partial_retrospective_keeps_cited_unknown_and_one_call_accounting(answe
         raw = retro_response(value)
         result = json.loads(raw['output'][0]['content'][0]['text'])['result']
         result['status'] = 'partial'
+        result['unconfirmed_aspects'] = ['Adoption is unconfirmed in the selected records.']
         first = result['citation_ids'][0]
         result['answer'] = f'[{first}] Unclear: A backup was proposed; adoption is unconfirmed in the selected records.'
         result['citation_ids'] = [first]

@@ -21,9 +21,10 @@ from test_embedding_jobs import actor
 from test_embedding_store import save
 
 
-def response(value, *, status="supported", ids=None):
+def response(value, *, status="supported", ids=None, unknowns=None):
     excerpts=json.loads(value["input"])["excerpts"]
     data=dict(status=status, answer="Synthetic answer from the selected passage.",
+        unconfirmed_aspects=unknowns if unknowns is not None else (['The final outcome is unconfirmed.'] if status=='partial' else []),
         citation_ids=ids if ids is not None else ([excerpts[0]["id"]] if status in {"supported", "partial"} else []))
     return dict(model=MODEL,status="completed",output=[dict(type="message",content=[
         dict(type="output_text",text=json.dumps(dict(result=data)))])],
@@ -217,7 +218,7 @@ def test_complementary_facts_return_provider_citations_without_adding_unused_sou
     def complementary_response(value):
         raw=response(value,ids=ids[:2])
         raw['output'][0]['content'][0]['text']=json.dumps(dict(result=dict(status='supported',
-            answer='The synthetic vehicle is a boat intended for children.',citation_ids=ids[:2])))
+            answer='The synthetic vehicle is a boat intended for children.',citation_ids=ids[:2],unconfirmed_aspects=[])))
         return raw
     sender.side_effect=complementary_response
     data=dict(q='What kind of synthetic vehicle is this, and who is it for?',passage_ids=ids,
@@ -241,6 +242,20 @@ def test_complementary_facts_return_provider_citations_without_adding_unused_sou
         assert len(rows)==1 and rows[0].status=='spent'
 
 
+def test_supported_with_declared_missing_request_is_rejected_without_rewrite_or_retry(answer_client):
+    client,headers,sender,vector_id,bind,owner,_=answer_client
+    sender.side_effect=lambda value:response(value,unknowns=['The requested implementation commit is unidentified.'])
+    data=ask(vector_id,q='What was the policy and which commit implemented it?')
+    result=client.post('/answers',headers=headers,json=data)
+    assert result.status_code==503 and result.json()['detail']=='ANSWER_OUTPUT_INVALID'
+    assert 'status' not in result.json()  # Do not rewrite the provider result to partial.
+    assert client.post('/answers',headers=headers,json=data).status_code==409
+    assert sender.call_count==1
+    with Session(bind) as db:
+        rows=list(db.scalars(select(AiUsageAttempt).where(AiUsageAttempt.owner_id==owner)))
+        assert len(rows)==1 and rows[0].status=='spent'
+
+
 @pytest.mark.parametrize('mode',['current','retrospective','historical'])
 def test_citation_coverage_contract_is_sent_for_each_answer_mode(mode):
     options=dict(retrospective=True) if mode=='retrospective' else dict(historical_as_of='2026-01-31') if mode=='historical' else {}
@@ -250,6 +265,8 @@ def test_citation_coverage_contract_is_sent_for_each_answer_mode(mode):
     assert 'set status to partial' in value['instructions']
     assert 'personal motivation' in value['instructions']
     assert 'unconfirmed within the supplied excerpts' in value['instructions']
+    assert 'ALL requested facts' in value['instructions']
+    assert 'a requested fact cannot be identified is partial' in value['instructions']
     assert json.loads(value['input'])['excerpts']==[dict(id=4,text='Synthetic evidence.')]
 
 

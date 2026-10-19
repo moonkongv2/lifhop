@@ -46,7 +46,7 @@ def test_four_routes_are_bounded_settled_and_never_replayed(answer_client, actor
             excerpts = inputs['excerpts']
             raw['output'][0]['content'][0]['text'] = json.dumps(dict(result=dict(status='supported',
                 answer='\n'.join(f'[{x["id"]}] Recorded activity: Synthetic recorded statement.' for x in excerpts),
-                citation_ids=[x['id'] for x in excerpts])))
+                citation_ids=[x['id'] for x in excerpts], unconfirmed_aspects=[])))
         return raw
     sender.side_effect = provider
     client.headers.update(headers)

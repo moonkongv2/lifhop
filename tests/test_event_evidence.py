@@ -156,7 +156,7 @@ def test_cross_source_answer_retrospective_history_and_citations(answer_client):
             answer = '\n'.join(f'[{x["id"]}] ' + ('Decision: Run the worker on the server.' if 'Decision:' in x['text']
                 else 'Completed work: Added the launch script.') for x in excerpts)
         raw['output'][0]['content'][0]['text'] = json.dumps(dict(result=dict(status='supported',
-            answer=answer, citation_ids=[x['id'] for x in excerpts])))
+            answer=answer, citation_ids=[x['id'] for x in excerpts], unconfirmed_aspects=[])))
         return raw
     sender.side_effect = combined
     result = client.post('/answers', headers=headers, json=dict(q='What was decided and implemented for the worker?',
