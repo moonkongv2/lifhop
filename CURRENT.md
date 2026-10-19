@@ -70,6 +70,44 @@ See AI_SOURCE_COVERAGE.md for scope and completion gates.
 
 ## Current product slice
 
+**2026-10-20 output-contract audit complete; simplification proposals not implemented:**
+
+Reviewed all three external-AI transports (answer/rerank/embedding), the three
+answer modes and their schema/parser/rendering consumers, local search/recommendation
+and question flow, plus evaluation specifications/runners/replays. No new personal
+archive/account reads, AI calls, reservations, dependencies or product-code changes.
+Findings and concrete candidate: OUTPUT_CONTRACT_REVIEW.md.
+Ordinary parts.complete/claim kinds/unknowns and cross-array part IDs duplicate
+fulfillment decisions; unused background is generated/validated then discarded.
+Retrospective inline IDs/categories and a separate citation list can disagree,
+with the backend validating prose and the UI parsing it again. Historical/period
+status/unknown cardinality is already schema-coupled, so this differs from the
+ordinary parser-only coverage invariant; narrative/unknown repetition remains.
+Legacy six-case preflight forces missing-proof=insufficient and cannot accept v2
+partial through that route. Current v2 used a separate frozen runner, so old raw
+results are not altered. Version the rubric/runner boundary rather than overwriting
+historical protocols. Review future stop policies separately: completed provider
+output rejected by the app with valid settled usage may be a measured quality
+failure; provider/schema rejection, unclear billing and policy/context changes
+still require stopping. The closed approval cannot be resumed under a new policy.
+Recommended ordinary candidate nests facts or known+required gap in a single
+answered/unresolved branch per question part; removes redundant complete/status,
+part-reference arrays and generated-but-unused background. Public text/citations
+and status stay server-derived. Keep exact-source checks, global count/byte bounds,
+explicit model judgment, scoped unknowns and semantic review; missing unknowns
+alone must not imply answered. Candidate is not a provider-ready replacement.
+Retrospective structured items with server-rendered old line syntax is a separate
+follow-up. Rerank IDs and embedding/ownership/consent/version/usage checks remain
+useful guards; do not simplify them away or rewrite all modes at once.
+Checks actually run: **203 related existing tests passed**; **13 synthetic audit/
+local candidate checks** matched expected results. An initial synthetic helper's
+exception-comparison bug was fixed and checks rerun. No full backend/frontend
+rerun or actual provider verification. Synthetic artifacts only:
+`.local/evaluation/phase33/output-contract-audit-20261020-v1/`.
+Product code and current v2 grading unchanged. ANSWER_MODE=off; original paid
+experiment closed, old uncertain reservations preserved, Phase 3.3/automatic
+retrieval acceptance incomplete, Phase 4 unstarted.
+
 **2026-10-20 approved policy-v2 experiment CLOSED after first contract failure:**
 
 The owner explicitly approved digest
@@ -1938,19 +1976,20 @@ user-verifiable product slices in `ROADMAP.md`.
 
 ## Next
 
-The approved policy-v2 pass is closed after one actual claim_coverage failure;
-12 calls were not sent and cannot be reused automatically. Review the original
-response/diagnosis above. Next locally design a smaller generation contract that
-reduces redundant completeness declarations without guessing that omitted unknowns
-mean all requested facts were answered. Preserve raw outputs, existing criteria
-and reservations. Keep ANSWER_MODE=off; any future paid scope needs new approval.
+Review OUTPUT_CONTRACT_REVIEW.md's per-part answered/unresolved candidate and
+mode-by-mode findings. The audit is complete; no replacement contract is wired.
+Next scope ordinary-contract implementation/capacity and unknown/source regressions
+first, with retrospective structure as a separate follow-up. Keep semantic quality
+and local structural checks distinct. Any future paid request/executor/stop policy
+needs a new finite approval; keep ANSWER_MODE=off.
 
-1. Separate schema acceptance, app contract consistency and semantic quality.
-   The first provider response was completed JSON and below the output cap, but
-   declared incomplete parts with no unknowns. No new seven-case score or repeated
-   quality result exists. Keep the old v1/v2 baselines unchanged. Do not adopt Sol
-   from old samples or count unsent cases as failures. Actual recovery, grounding
-   and automatic retrieval acceptance remain pending; no Phase 4 yet.
+1. The approved policy-v2 pass remains closed after one claim_coverage failure;
+   12 requests are unsent and cannot be reused. Preserve original v1/v2 baselines,
+   failure/usage artifacts and all ownership/version/budget guards. Neither the
+   13 synthetic audit checks nor 203 related tests establish new model quality.
+   Do not silently fix old outputs, automatically upgrade missing unknowns to
+   supported, or infer overall success from matching source quotes. Actual
+   recovery, grounding and automatic retrieval acceptance remain pending.
 
 2. Confirm GitHub repository browsing in Entries → repository → Commits/Documents
    → reader → return, and Search → Browse repository → return. Existing stored
