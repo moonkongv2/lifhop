@@ -70,7 +70,44 @@ See AI_SOURCE_COVERAGE.md for scope and completion gates.
 
 ## Current product slice
 
-**2026-10-19 staged paid-verification proposal prepared, NOT approved/executed:**
+**2026-10-19 approved staged verification CLOSED: A 2 passed / 5 failed.**
+The owner approved the prepared 25-call/USD 0.05 maximum proposal, including
+continuing independent quality cases within a stage. All seven A cases executed
+once through normal product handlers: four query embeddings and seven answers,
+**11 calls / USD 0.002301 settled**, 27 selected parent occurrences. A failed;
+B/C were skipped and this approval is closed. No retries, prompt/model changes,
+imports, indexing or permission expansion occurred. The internal schema was
+accepted in these seven samples, but does not prove grounding or completeness.
+
+| A case | Direct original-source review |
+| --- | --- |
+| Decision → implementation | Failed: actual commit selected, but omitted from returned commit identification/citation; partial is internally consistent. |
+| Reported adopted fix/reason | Failed: correctly recalled the user's adoption report, then unnecessarily required independent code verification and returned partial. |
+| Ordinary-life recall | Failed: grounded assistant recommendation and scoped unknowns, but omitted recorded coupon request/booking ETC progress. |
+| README citation regression | Failed: sole citation still does not establish child audience; vehicle-selection flow and Flutter omitted. |
+| Period retrospective | Passed: Seoul day corrected, recorded activity and unadopted proposals distinguished. |
+| Historical cutoff | Passed: user priority order and collection/observation cutoff correctly distinguished. |
+| Missing operational proof | Failed: no useful direct deployment evidence, but returned partial with a tangential citation instead of insufficient/empty citations. |
+
+Every returned original citation matched owner/version/range/hash/text. This
+anchor check does not erase the README semantic grounding failure. The rental
+case failed for omitted known progress, not for an unrecorded final outcome.
+Period/date success is one fixed-context sample, not a consistency guarantee.
+Read-only closure confirmed old **227 artifacts / 446 usage rows**, permissions,
+current versions and **1,097 anchors** unchanged. New uncertain usage: zero;
+old **3/USD 0.006801** untouched. Persistent ANSWER_MODE=off. No app code changed;
+application tests were not rerun (last full backend: 768 passed).
+Private originals, direct reviews, immutable ledger and report:
+`.local/evaluation/phase33/staged-execution-4fcc4aea0c0d4947a0da1a582428d918/report.html`.
+Next: review these failures, then make a focused local correction to source
+identity/context delivery, recorded-adoption/partial/insufficient distinctions,
+known-progress recovery and citation coverage. Inspect existing code first;
+source metadata must remain untrusted and respect the same size/access guards.
+The evidence supports examining these causes, not claiming a proven fix. Further
+paid testing needs a newly frozen scope and separate approval. Phase 3.3 remains
+incomplete; Phase 4 remains unstarted.
+
+**Historical preparation checkpoint — subsequently approved/executed above:**
 The owner requested an efficiency review allowing paid work in the plan and
 authorized preparation only. Recommend A: the same seven cases (11 calls), B:
 four fixed wording variants (8 calls, only if all A pass), C: two additional
@@ -1693,36 +1730,17 @@ user-verifiable product slices in `ROADMAP.md`.
 
 ## Next
 
-1. Review the new staged paid-verification proposal and changed quality-failure
-   stop rule in PHASE33_COMPLETION_PLAN.md; obtain explicit execution approval.
-   It binds the local selection/status correction to the same seven cases,
-   conditional wording variants and fixed-context samples. No new paid call is
-   authorized by preparation. Real-model compliance remains unverified and six
-   cases from the previous closed pass remain unexecuted.
-   Indexing remains 52 records/1,097 vectors.
-   No more import/indexing/permission expansion is needed for these findings.
-   Persistent ANSWER_MODE remains off. Phase 3.3 is incomplete.
-   Earlier checkpoint context: the guarded tooling and Seoul date correction
-   are committed and the approved 46-record indexing pass is complete. The
-   three-question integrated smoke pass is also closed, with a partial GitHub
-   citation-coverage finding. The common citation instruction correction is now
-   implemented and synthetically tested; actual model compliance remains unverified.
-   The owner clarified that useful recorded progress does not require a recorded
-   final outcome. Cited partial answers are implemented; real-model behavior is
-   unverified. Prepare minimal permitted source scopes using the rental progress and the
-   verified jy_yamyam decision/implementation chain before any separately
-   approved consolidated check. Verify collector compatibility before import.
-   The four-call selected-context pass is closed;
-   expected statuses matched, but the date defect prevents calling the period
-   check fully passed. Synthetic date regressions do not establish real-model
-   compliance. Validate the prepared cross-source decision and change-reason
-   cases, bounded ordinary-life recall and automatic
-   Semantic retrieval acceptance before declaring Phase 3.3 complete. Inspect
-   relevant permitted evidence locally first; do not expand permissions to fill
-   gaps. No further OpenAI calls or reindexing are authorized by these checks.
-   Preserve closed protocols, failures, raw answers and uncertain reservations.
-   Broader quality claims need a separately agreed fresh scope. Historical
-   samples do not establish general reconstruction or answer quality.
+1. Review the closed staged A results (2 passed / 5 failed) above and the
+   private report. Prepare focused local fixes for missing commit identity/citation,
+   unnecessary partial after reported adoption, omitted known progress, unsupported
+   cited facts and tangential-evidence status. Keep these independent failure
+   criteria; do not replace them with a status-only score. No additional import,
+   indexing or permission expansion is needed. Inspect the current implementation,
+   test observable behavior, and present the corrected slice for user review.
+   Repeated paid sampling is deferred until these failures are addressed; any new
+   paid run requires a newly frozen scope and explicit approval. All prior approvals
+   are closed. Preserve original failures/outputs and old uncertain reservations.
+   Persistent ANSWER_MODE=off; Phase 3.3 incomplete; do not start Phase 4.
 2. Confirm GitHub repository browsing in Entries → repository → Commits/Documents
    → reader → return, and Search → Browse repository → return. Existing stored
    GitHub Entries need no reimport for this UI. Repository browsing and the earlier
