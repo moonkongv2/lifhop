@@ -1,6 +1,6 @@
 """Synthetic end-to-end Semantic HTTP, policy, paid-dispatch and exact readers."""
 from unittest.mock import Mock
-from sqlalchemy import delete
+from sqlalchemy import delete, event
 from uuid import uuid4
 import pytest
 from fastapi.testclient import TestClient
@@ -153,9 +153,19 @@ def test_aliases_do_not_require_query_words_and_independently_check_policy(actor
             entries.append(entry.id)
         db.commit()
     client, headers, sender = semantic_client
-    result = client.post("/semantic/search", headers=headers, json=query(source="github"))
+    corpus_scans = []
+    def count_scans(conn, cursor, statement, parameters, context, executemany):
+        if 'semantic_candidates AS' in statement:
+            corpus_scans.append(statement)
+    event.listen(bind, 'before_cursor_execute', count_scans)
+    try:
+        result = client.post("/semantic/search", headers=headers, json=query(source="github"))
+    finally:
+        event.remove(bind, 'before_cursor_execute', count_scans)
     assert result.status_code == 200, result.text
     hit = next(h for h in result.json()["items"] if h["passage"]["alias_total"] == 2)
+    assert hit["passage"]["snapshot_count"] == 2
+    assert len(corpus_scans) == 1  # Alias metadata must not rescan the corpus per hit.
     assert len(result.json()["items"]) == (3 if changed_parent else 1)
     path = f'/semantic/slices/{hit["embedding_id"]}/locations'
     assert client.get(path, headers=headers).json()["total"] == 2

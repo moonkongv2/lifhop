@@ -74,15 +74,19 @@ def search_vectors(db, owner_id, filters, vector, coverage):
         order_by=[base.c.event_at.desc().nulls_last(), base.c.entry_id.desc(), base.c.embedding_id]).label("position"),
         func.min(base.c.distance).over(partition_by=base.c.group_id).label("group_distance"),
         func.count().over(partition_by=base.c.group_id).label("alias_total")).cte("semantic_groups")
-    rows = db.execute(select(grouped).where(grouped.c.position == 1).order_by(
+    # Count snapshots in the same statement; a per-hit aggregate repeats the
+    # entire eligibility scan (including large source-body checks).
+    snapshots = select(base.c.group_id, func.count(func.distinct(base.c.entry_id)).label("snapshot_count")).group_by(
+        base.c.group_id).cte("semantic_snapshots")
+    rows = db.execute(select(grouped, snapshots.c.snapshot_count).join(snapshots,
+        snapshots.c.group_id == grouped.c.group_id).where(grouped.c.position == 1).order_by(
         grouped.c.group_distance, grouped.c.event_at.desc().nulls_last(), grouped.c.embedding_id).limit(21)).mappings().all()
     items = []
     for row in rows[:20]:
         passage = read_slice(db, owner_id, row["embedding_id"])
         passage.alias_total = row["alias_total"]
         if passage.alias_total > 1:
-            passage.snapshot_count = db.scalar(select(func.count(func.distinct(base.c.entry_id))).where(
-                base.c.group_id == row["group_id"]))
+            passage.snapshot_count = row["snapshot_count"]
         items.append(SemanticHit(embedding_id=row["embedding_id"], distance=row["group_distance"], passage=passage))
     return SemanticResponse(items=items, coverage=coverage, truncated=len(rows) > 20)
 
