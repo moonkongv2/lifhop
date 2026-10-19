@@ -11,18 +11,21 @@ from app.services.answer_transport import payload, request, usage, parse, Answer
 from app.services.embedding_transport import EmbeddingError
 from app.services.passage_search import read_passage
 from app.services.entry_search import USER_TIMEZONE
+from app.services.answer_context import current_excerpt
 
 
 def answer_excerpts(db, owner_id, anchors, texts, retrospective):
     excerpts = []
     for a, value in zip(anchors, texts):
+        p = read_passage(db, owner_id, a["id"])
         item = dict(id=a["reference_id"], text=value)
         if retrospective:
-            p = read_passage(db, owner_id, a["id"])
             zone = ZoneInfo(USER_TIMEZONE)
             item.update(event_at=p.event_at.astimezone(zone).isoformat() if p.event_at else None,
                 added_at=p.created_at.astimezone(zone).isoformat(), completeness=p.completeness,
                 source=p.source, source_kind=p.repository_ref.kind if p.repository_ref else p.source)
+        else:
+            item = current_excerpt(p, reference_id=a["reference_id"], text=value)
         excerpts.append(item)
     return excerpts
 

@@ -1,5 +1,6 @@
 """Prepare a private, bounded answer review from saved retrieval; never dispatch."""
 from html import escape
+import json
 from sqlalchemy import select
 from app.evaluation.retrieval import check_binding
 from app.evaluation.schemas import EvaluationError, digest
@@ -7,6 +8,7 @@ from app.models.passage_embedding import PassageEmbedding
 from app.models.user import User
 from app.services.ai_policy import embedding_inputs
 from app.services.ai_usage import budget_summary
+from app.services.answer_context import current_excerpt
 from app.services.answer_transport import MODEL, CONFIG_HASH, OUTPUT_LIMIT, payload, cost_micro
 from app.services.semantic_search import read_slice
 
@@ -57,7 +59,7 @@ def prepare_answers(snapshot, dataset, captures, case_ids, settings, *, capture_
             vector = snapshot.db.get(PassageEmbedding, hit["id"])
             anchors.append(dict(id=vector.passage_id, passage_hash=vector.parent_hash,
                 start=vector.start, end=vector.end, slice_hash=vector.slice_hash))
-            excerpts.append(dict(id=hit["id"], text=p.text))
+            excerpts.append(current_excerpt(p, reference_id=hit["id"]))
             metadata.append(dict(embedding_id=hit["id"], entry_id=p.entry_id,
                 version_id=p.version_id, start=p.start, end=p.end, text_digest=digest(p.text)))
         checked = embedding_inputs(snapshot.db, user_id=snapshot.owner_id, passages=anchors, revision=revision)
@@ -68,6 +70,7 @@ def prepare_answers(snapshot, dataset, captures, case_ids, settings, *, capture_
         if estimate > 10000:
             raise EvaluationError("ANSWER_VALIDATION_COST_LIMIT")
         cases.append(dict(id=case_id, question_digest=digest(case.question),
+            input_digest=digest(excerpts),
             capture_digest=digest(capture), expected_outcome=case.expected_outcome,
             selected=metadata, input_upper_bound=upper, estimated_max_micro_usd=estimate))
         review.append(dict(id=case_id, question=case.question,
@@ -102,7 +105,7 @@ def review_html(protocol, review):
         for excerpt, anchor in zip(case["excerpts"], case["selected"]):
             passages.append(f'<h3>Slice {anchor["embedding_id"]} · Entry {anchor["entry_id"]} · '
                 f'Version {anchor["version_id"]} · Characters {anchor["start"]+1}–{anchor["end"]}</h3>'
-                f'<pre>{escape(excerpt["text"])}</pre>')
+                f'<pre>{escape(json.dumps(excerpt, ensure_ascii=False, indent=2))}</pre>')
         checklist = ''.join(f'<li>{escape(claim)}</li>' for claim in case.get("checklist", []))
         criterion = ("HTTP 200; supported; cover every required claim with supporting citations; no unsupported additions."
             if case["expected_outcome"] == "supported" else

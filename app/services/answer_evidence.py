@@ -7,6 +7,7 @@ from app.models.passage_embedding import PassageEmbedding
 from app.models.user import User
 from app.schemas.answer import RecommendationOmission, RecommendationResponse
 from app.services.answer_transport import payload
+from app.services.answer_context import current_excerpt
 from app.services.embedding_transport import EmbeddingError
 from app.services.passage_search import read_passage
 from app.services.semantic_search import filtered_vectors, read_slice
@@ -36,7 +37,7 @@ def choose_parents(question, candidates):
             reason = "count_limit"
         else:
             try:
-                _, upper = payload(question, [dict(id=p.id, text=p.text) for p in [*selected, parent]])
+                _, upper = payload(question, [current_excerpt(p) for p in [*selected, parent]])
                 request_bytes = upper - 1024
                 selected.append(parent)
             except EmbeddingError:

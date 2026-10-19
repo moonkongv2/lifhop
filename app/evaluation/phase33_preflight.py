@@ -1,5 +1,6 @@
 """Local draft evidence review for six acceptance cases; never activate or send."""
 from html import escape
+import json
 from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from sqlalchemy import func, select
@@ -14,6 +15,7 @@ from app.services.ai_policy import embedding_inputs
 from app.services.ai_sources import allowed_type
 from app.services.ai_usage import budget_summary
 from app.services.answer_call import answer_excerpts
+from app.services.answer_context import current_excerpt
 from app.services.answer_transport import CONFIG_HASH, MODEL, OUTPUT_LIMIT, cost_micro, payload
 from app.services.embedding_jobs import allowed_selection
 from app.services.embedding_store import STORAGE_CONFIG
@@ -145,7 +147,7 @@ def current_candidates(db, owner, case, revision):
         p = read_passage(db, owner, row['id'])
         embedding_inputs(db, user_id=owner, passages=[dict(id=p.id, passage_hash=p.passage_hash)], revision=revision)
         try:
-            payload(case.question, [dict(id=x.id, text=x.text) for x in [*selected, p]])
+            payload(case.question, [current_excerpt(x) for x in [*selected, p]])
         except EmbeddingError:
             skipped += 1
             continue
@@ -184,7 +186,7 @@ def prepare_acceptance(snapshot, spec, settings):
             scope = case.historical.model_dump(mode='json')
         else:
             passages, coverage = current_candidates(db, owner, case, revision)
-            excerpts = [dict(id=p.id, text=p.text) for p in passages]
+            excerpts = [current_excerpt(p) for p in passages]
         source_by_entry = dict(db.execute(select(Entry.id, func.coalesce(Entry.provider, 'unknown')).where(
             Entry.user_id == owner, Entry.id.in_([p.entry_id for p in passages]))).all())
         passage_data = [dict(p.model_dump(mode='json'), source=source_by_entry[p.entry_id]) for p in passages]
@@ -218,6 +220,7 @@ def prepare_acceptance(snapshot, spec, settings):
             start=p.start, end=p.end, passage_hash=p.passage_hash, source=source_by_entry[p.entry_id],
             passage_id=getattr(p, 'id', None)) for p in passages]
         cases.append(dict(id=case.id, endpoint='/retrospectives' if case.period else '/historical' if case.historical else '/answers',
+            input_digest=digest(excerpts),
             question_digest=digest(case.question), checklist_digest=digest(case.checklist),
             unconfirmed_aspects_digest=digest(case.unconfirmed_aspects),
             expected_outcome=case.expected_outcome, scope=scope, selected=selected, coverage=coverage,
@@ -225,6 +228,7 @@ def prepare_acceptance(snapshot, spec, settings):
             positive_category_unverified=case.expected_outcome == 'insufficient' and case.id != 'missing-proof',
             estimated_max_micro_usd=estimate, input_upper_bound=upper, gaps=gaps))
         review.append(dict(id=case.id, question=case.question, expected_outcome=case.expected_outcome,
+            excerpts=excerpts,
             checklist=case.checklist, unconfirmed_aspects=case.unconfirmed_aspects,
             passages=passage_data, gaps=gaps, deferred_reason=case.deferred_reason))
     budget = budget_summary(db, scope=settings.embedding_billing_scope,
@@ -255,6 +259,8 @@ def review_html(protocol, review):
     for case in review:
         paragraphs = ''.join(f'<h3>{escape(p["source"])} · Entry {p["entry_id"]} · Version {p["version_id"]}</h3>'
             f'<pre>{escape(p["text"])}</pre>' for p in case['passages'])
+        paragraphs += '<h3>Exact model excerpts (including descriptive metadata)</h3><pre>' + escape(
+            json.dumps(case.get('excerpts', []), ensure_ascii=False, indent=2)) + '</pre>'
         checks = ''.join(f'<li>{escape(x)}</li>' for x in case['checklist'])
         unknowns = ''.join(f'<li>{escape(x)}</li>' for x in case.get('unconfirmed_aspects', []))
         partial = ('<p>Partial answer: cite every recovered fact, explicitly bound the following unknowns to '

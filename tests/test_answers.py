@@ -73,7 +73,8 @@ def test_cited_answer_is_consent_based_and_durable_once(answer_client):
     assert body["citations"][0]["kind"]=="embedding"
     assert body["citations"][0]["passage"]["text"]=="A synthetic recorded answer."
     assert json.loads(sender.call_args.args[0]["input"])["excerpts"]==[
-        dict(id=vector_id,text="A synthetic recorded answer.")]
+        dict(id=vector_id,text="A synthetic recorded answer.", title="Synthetic vector test",
+            source="manual", source_kind="manual")]
     replay=client.post("/answers",headers=headers,json=data)
     assert replay.status_code==409 and replay.json()["detail"]=="ANSWER_REQUEST_ALREADY_USED"
     assert sender.call_count==1
@@ -116,6 +117,28 @@ def test_revocation_before_dispatch_releases_attempt(answer_client,monkeypatch):
         rows=list(db.scalars(select(AiUsageAttempt).where(AiUsageAttempt.owner_id==owner,
             AiUsageAttempt.purpose=="answer")))
         assert len(rows)==1 and rows[0].status=="released"
+
+
+def test_title_change_between_preparation_and_dispatch_is_blocked(answer_client, monkeypatch):
+    import app.services.answer_call as caller
+    client, headers, sender, vector_id, bind, owner, entry_id = answer_client
+    original = caller.prepare_payload
+    calls = 0
+    def prepare(*args, **kwargs):
+        nonlocal calls
+        calls += 1
+        if calls == 2:
+            with Session(bind) as other:
+                other.get(Entry, entry_id).title = 'Changed source identity'
+                other.commit()
+        return original(*args, **kwargs)
+    monkeypatch.setattr(caller, 'prepare_payload', prepare)
+    result = client.post('/answers', headers=headers, json=ask(vector_id))
+    assert result.status_code == 409 and result.json()['detail'] == 'ANSWER_CONTEXT_CHANGED'
+    sender.assert_not_called()
+    with Session(bind) as db:
+        row = db.scalar(select(AiUsageAttempt).where(AiUsageAttempt.owner_id == owner))
+        assert row.status == 'released'
 
 
 def test_insufficient_answer_has_no_citation(answer_client):
@@ -180,7 +203,8 @@ def test_local_passage_answer_needs_no_semantic_vector(answer_client):
     assert result.json()["citations"][0]["kind"]=="passage"
     assert result.json()["citations"][0]["source_id"]==passage_id
     assert json.loads(sender.call_args.args[0]["input"])["excerpts"]==[
-        dict(id=passage_id,text="A synthetic recorded answer.")]
+        dict(id=passage_id,text="A synthetic recorded answer.", title="Synthetic vector test",
+            source="manual", source_kind="manual")]
     assert client.post("/answers",headers=headers,json=data).status_code==409
     assert sender.call_count==1
     with Session(bind) as db:
@@ -230,7 +254,8 @@ def test_complementary_facts_return_provider_citations_without_adding_unused_sou
     assert 'yellow' not in result.json()['answer']
     sent=sender.call_args.args[0]
     assert json.loads(sent['input'])==dict(question=data['q'],
-        excerpts=[dict(id=i,text=t) for i,t in zip(ids,texts)])
+        excerpts=[dict(id=i,text=t,title="Synthetic vector test",source="manual",source_kind="manual")
+            for i,t in zip(ids,texts)])
     assert 'collectively support every factual claim' in sent['instructions']
     assert 'fact found only in an uncited excerpt' in sent['instructions']
     assert 'Omit optional factual details' in sent['instructions']

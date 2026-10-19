@@ -5,6 +5,7 @@ import re
 import httpx
 from app.evaluation.schemas import digest
 from app.services.embedding_transport import EmbeddingError
+from app.services.answer_context import CONTEXT_VERSION
 
 MODEL = "gpt-6-luna"
 INPUT_PRICE = 100000  # micro USD per million tokens; standard, short context
@@ -81,6 +82,7 @@ SCHEMA = dict(type="object", additionalProperties=False, required=["result"],
                     items=dict(type="integer"), maxItems=0)))
     ])))
 CONFIG_HASH = digest(dict(model=MODEL, instructions=INSTRUCTIONS, schema=SCHEMA,
+    context_version=CONTEXT_VERSION,
     output=OUTPUT_LIMIT, request_limit=REQUEST_LIMIT, store=False, price=PRICE_HASH,
     reasoning=REASONING_EFFORT, cache_mode=CACHE_MODE, temperature=0,
     retrospective_instructions=RETROSPECTIVE_INSTRUCTIONS, retrospective_format=RETROSPECTIVE_LINE.pattern, historical_instructions=HISTORICAL_INSTRUCTIONS))

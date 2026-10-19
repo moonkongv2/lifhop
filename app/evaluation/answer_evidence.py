@@ -7,6 +7,7 @@ from app.evaluation.schemas import EvaluationError, digest
 from app.models.passage import EntryPassage
 from app.models.user import User
 from app.services.answer_evidence import recommend
+from app.services.answer_context import current_excerpt
 from app.services.answer_transport import CONFIG_HASH, payload
 from app.services.passage_search import read_passage
 from app.services.semantic_search import read_slice
@@ -63,7 +64,7 @@ def compare_recommendations(snapshot, dataset, captures, binding):
                                     end=alias.start + p.end - source.start, rank=rank))
             return {name: any(a['status'] == 'valid' and a['selection'] == 'current' and
                 coverage_rank(locations, a) is not None for a in anchors) for name, anchors in groups.items()}
-        _, baseline_bound = payload(case.question, [dict(id=h['id'], text=p.text) for h, p in zip(hits[:3], baseline)])
+        _, baseline_bound = payload(case.question, [current_excerpt(p, reference_id=h['id']) for h, p in zip(hits[:3], baseline)])
         results.append(dict(case_id=case.id, expected_outcome=case.expected_outcome,
             baseline=coverage(baseline), proposal=coverage(proposal.passages),
             selected_ids=[p.id for p in proposal.passages],

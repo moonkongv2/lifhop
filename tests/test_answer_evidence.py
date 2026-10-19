@@ -9,6 +9,7 @@ from app.models.passage import EntryPassage
 from app.models.passage_embedding import PassageEmbedding
 from app.models.user import User
 from app.services.answer_evidence import choose_parents
+from app.services.answer_context import current_excerpt
 from app.services.answer_transport import payload, REQUEST_LIMIT
 from app.services.passage_search import read_passage
 from app.services.source_history import invalidate_context, record_version, select_version
@@ -91,7 +92,7 @@ def test_rank_order_deduplication_complete_text_and_visible_count_limit(actor):
         assert [p.id for p in selected] == [p.id for p in parents[:5]]
         assert all(p.text == parents[i].text for i, p in enumerate(selected))
         assert [o.reason for o in omitted] == ['duplicate_parent', 'duplicate_parent', 'count_limit', 'count_limit']
-        assert payload('Synthetic question?', [dict(id=p.id, text=p.text) for p in selected])[1] - 1024 == size
+        assert payload('Synthetic question?', [current_excerpt(p) for p in selected])[1] - 1024 == size
 
 
 def test_byte_limit_skips_whole_parent_and_continues_to_smaller_candidate(actor):
@@ -228,3 +229,31 @@ def test_commit_preference_does_not_bypass_policy_checks(answer_client, commit_c
     sender.assert_not_called()
     with Session(bind) as db:
         assert db.scalar(select(func.count()).select_from(AiUsageAttempt).where(AiUsageAttempt.owner_id == owner)) == 0
+
+
+def test_commit_identity_and_size_match_actual_dispatch(answer_client, commit_candidates):
+    import json
+    from uuid import uuid4
+    client, headers, sender, _, bind, owner, _ = answer_client
+    data = dict(request_data(bind, owner, [c[0] for c in commit_candidates]), q='Which commit implements this?')
+    proposal = client.post('/answers/recommendations', headers=headers, json=data).json()
+    ids = [p['id'] for p in proposal['passages']]
+    result = client.post('/answers', headers=headers, json=dict(q=data['q'], passage_ids=ids,
+        policy_revision=proposal['policy_revision'], confirm_external_ai=True, request_id=uuid4().hex))
+    assert result.status_code == 200, result.text
+    sent = sender.call_args.args[0]
+    commit = next(x for x in json.loads(sent['input'])['excerpts'] if x['source_kind'] == 'commit')
+    assert commit == dict(id=commit_candidates[-1][1].id,
+        text='Completed: added the worker launch script.', title='Synthetic github_commit',
+        source='github', source_kind='commit', repository='synthetic/worker', path=None)
+    assert 'PRIVATE-WORK' not in json.dumps(sent)
+    assert len(json.dumps(sent, ensure_ascii=False, separators=(',', ':')).encode()) == proposal['request_bytes']
+
+
+def test_metadata_bytes_are_counted_without_truncating_source(commit_candidates):
+    candidates = list(commit_candidates[:2])
+    vector, parent, group = candidates[0]
+    candidates[0] = (vector, parent.model_copy(update={'title': '🙂' * 4000}), group)
+    selected, omitted, _ = choose_parents('Which source?', candidates)
+    assert [p.id for p in selected] == [candidates[1][1].id]
+    assert omitted[0].reason == 'byte_limit'

@@ -20,6 +20,7 @@ def run_answers(protocol, review, *, approval_digest, client, output, root):
         raise EvaluationError("ANSWER_VALIDATION_APPROVAL_INVALID")
     for case, frozen in zip(review, protocol["cases"]):
         if (case["id"] != frozen["id"] or digest(case["question"]) != frozen["question_digest"] or
+                digest(case["excerpts"]) != frozen.get("input_digest") or
                 len(case["excerpts"]) != len(frozen["selected"]) or
                 any(x["id"] != a["embedding_id"] or digest(x["text"]) != a["text_digest"]
                     for x,a in zip(case["excerpts"],frozen["selected"]))):

@@ -10,11 +10,20 @@ def fixture():
     review=[dict(id="case",question="Synthetic question",excerpts=[dict(id=1,text="Synthetic text")])]
     protocol=dict(configuration_hash=CONFIG_HASH,call_limit=1,max_micro_usd=10000,
         automatic_retry=False,validation_runs=1,cases=[dict(id="case",question_digest=digest("Synthetic question"),
+        input_digest=digest(review[0]['excerpts']),
         selected=[dict(embedding_id=1,text_digest=digest("Synthetic text"))])])
     protocol["digest"]=digest(protocol)
     client=Mock()
     client.post.return_value=SimpleNamespace(status_code=200,json=lambda:dict(status="supported",answer="Synthetic answer"))
     return protocol,review,client
+
+
+def test_changed_descriptive_metadata_never_posts(tmp_path):
+    p, r, c = fixture()
+    r[0]['excerpts'][0]['title'] = 'Unreviewed source identity'
+    with pytest.raises(EvaluationError, match='INPUT_CHANGED'):
+        run_answers(p, r, approval_digest=p['digest'], client=c, output=tmp_path, root=tmp_path)
+    c.post.assert_not_called()
 
 
 def test_run_marker_prevents_second_paid_run(tmp_path):
