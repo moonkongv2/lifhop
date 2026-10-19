@@ -41,6 +41,29 @@ every claim.
 
 ## Citation coverage instruction update (2026-10-18)
 
+### Local follow-up (2026-10-19)
+
+Automatic recommendation now considers the first validated commit candidate
+immediately after the leading parent when the question explicitly requests a
+commit in Korean/English. Other candidates retain their relative rank; common
+explicit exclusions keep ordinary ordering. It only uses the already checked
+retrieval candidates, without a source quota, known answer or fixed IDs. Complete
+text, five-parent/14 KiB limits and policy/version checks remain. A preferred
+candidate can still be omitted by byte limits and is not proof of relevance.
+
+The provider-only result has a required `unconfirmed_aspects` list: empty for
+supported/insufficient, 1–5 distinct nonblank items of at most 200 characters each
+for partial. The schema/parser reject disagreement without changing status or
+replaying the call. Instructions require all question parts to be checked and
+partial unknowns explained in the answer text. The public API/UI shape is unchanged.
+This follows the existing nested-union [Structured Outputs contract](https://developers.openai.com/api/docs/guides/structured-outputs).
+It validates declared unknowns, not whether the model omitted a missing fact or
+contradicted its prose. Real model/schema acceptance and grounding need a fresh
+approved check; the answer config hash changed and old protocols remain closed.
+
+The text below preserves the earlier correction, before partial answers were
+introduced; current partial behavior follows the contract above.
+
 The bounded integrated check found a fact supported by selected context but absent
 from the one excerpt actually cited. The common answer instructions now require
 the cited excerpts collectively to support every factual claim, including all

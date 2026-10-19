@@ -70,6 +70,42 @@ See AI_SOURCE_COVERAGE.md for scope and completion gates.
 
 ## Current product slice
 
+**2026-10-19 local evidence-selection and status-contract correction:** For a
+question explicitly requesting a commit (Korean/English), local recommendation
+keeps the leading retrieved parent and considers the first validated commit
+candidate next. Other candidates retain their relative rank; common explicit
+exclusion phrases retain the old order. No source IDs, gold answers, provider
+quota or additional retrieval is used. The five-parent/14 KiB limits, complete
+text, deduplication and owner/policy/version/filter guards remain. This is a
+narrow requested-kind preference, not general composite-question decomposition
+or proof that a retrieved commit is relevant.
+The internal provider result now declares `unconfirmed_aspects`: supported and
+insufficient require none; partial requires 1–5 distinct nonblank bounded items.
+The strict schema/parser reject contradictions without rewriting the answer or
+retrying. All question parts must be assessed, and partial unknowns must also be
+explained in the answer. Public API/UI shape is unchanged. Undeclared unknowns,
+prose contradictions and factual grounding still need semantic review; this
+validator cannot prove completeness. The answer config hash changed; old paid
+approvals are closed and cannot authorize this contract. Embeddings are unchanged.
+Saved-candidate local replay now selects the commit plus all four policy/decision/
+implementation parents, within 9,821 request bytes. Annotated local copies verify
+the new status guard; they are not replacement provider responses. Original files
+203/usage rows 446, settings/current versions and uncertain 3/USD 0.006801 remain
+unchanged. AI calls/new charges/import/indexing/permission changes: zero.
+Private replay/limitations:
+`.local/evaluation/phase33/local-selection-status-466d7dc67b444472bdd184c2ffe33720/report.html`.
+Final full backend **768 passed**; focused answer/selection/period/history **158
+passed** and event/run **34 passed**. Initial failures were old synthetic
+responses missing the new required unknown declaration; fixtures were corrected
+without relaxing the parser. Diff whitespace passed. No public schema/frontend,
+dependency or migration change; no frontend checks reran. Review the local report's
+selected evidence, annotated-fixture labels and limitations; no user paid replay
+is needed to verify this local change.
+Implementation commits: `412f08b` (explicit commit evidence preference) and
+`47471d3` (declared-unknown/status validation and compatible synthetic providers).
+Actual model compliance and the remaining answer/date gates remain unverified;
+Phase 3.3 is incomplete, ANSWER_MODE=off, Phase 4 has not started.
+
 **2026-10-19 new 7-case approval executed; closed after first answer failure:**
 The owner approved digest
 `26652b31d956a98c4c1e8340ae25f5cf70e0110925880e83af74db9ff53d72c1`
@@ -1630,11 +1666,12 @@ user-verifiable product slices in `ROADMAP.md`.
 
 ## Next
 
-1. Review the latest closed actual-answer failure in PHASE33_COMPLETION_PLAN.md.
-   The first case found its commit at rank 9 but omitted it from the five-parent
-   context, and the incomplete answer incorrectly returned supported. Design
-   and verify a general local correction before proposing another paid pass;
-   six later cases remain unexecuted. Indexing remains 52 records/1,097 vectors.
+1. Review the local selection/status-contract correction and preserved closed
+   actual-answer failure in PHASE33_COMPLETION_PLAN.md. The saved-candidate
+   check now includes the retrieved commit; real-model compliance with this new
+   contract is unverified. Prepare a fresh reviewed scope/configuration binding
+   before any separately approved paid pass. Six later cases remain unexecuted.
+   Indexing remains 52 records/1,097 vectors.
    No more import/indexing/permission expansion is needed for these findings.
    Persistent ANSWER_MODE remains off. Phase 3.3 is incomplete.
    Earlier checkpoint context: the guarded tooling and Seoul date correction

@@ -1729,3 +1729,24 @@ indexing run, not every possible egress from an enabled Entry. It grants no
 permission, and complete selected parent text must be reviewed before a fresh
 transmission approval. Rewriting excerpts as fake originals or indexing an entire
 long record under an excerpt-only grant would lose provenance or expand scope.
+
+## 2026-10-19: Prefer an explicitly requested commit within retrieved evidence
+
+The rank-only five-parent recommendation dropped an actual implementation commit
+already present at rank nine. For an explicit Korean/English commit request,
+consider the first validated commit candidate immediately after the leading
+parent, then keep the relative order of all other retrieved candidates. Recognize
+common explicit exclusions. This is a narrow question-kind preference, not a
+provider-diversity quota, model reranker or hidden reference answer. It uses no
+project/source/Entry IDs or gold labels and does not change Semantic ranking.
+Complete-text, deduplication, owner/current-policy/filter and byte/count limits
+still apply; a preferred commit can be too large or irrelevant. Other evidence
+kinds and general question decomposition remain unimplemented.
+
+The common internal provider result also declares bounded unconfirmed requested
+aspects before its status. Couple supported/insufficient to empty declarations
+and partial to a nonempty list; reject disagreement without rewriting/retrying.
+Keep the public answer shape unchanged. This catches declared contradictions,
+not omitted unknowns or every conflict in free text. Semantic citation/completeness
+review remains necessary. New schema/instructions invalidate old answer protocols;
+existing embeddings and closed raw results remain unchanged.
