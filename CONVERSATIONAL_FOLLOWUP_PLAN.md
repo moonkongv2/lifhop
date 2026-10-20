@@ -1,8 +1,9 @@
 # 저장된 대화에서 이어 묻기 구현 계획
 
-2026-10-20. 개정2: 사용자별 PostgreSQL 저장 방식으로 변경. 구현 전 계획이며,
-이번 `agy-plan-review-loop 2`는 이 개정안만 검토했으며2회 지적 반영을 완료했다. 제품 구현/새 유료 답변
-실행/Phase3.3 완료를 승인한 문서는 아니다. 이전 탭 한정 계획을 대체한다.
+2026-10-20. 개정3: 현재 코드 대조에서 확인한 전송 검증·잠금·상태 전이·
+의존성 누적·의미품질 리스크를 반영하고, 저장 대화의 문맥 예산을 확대했다.
+개정2의 `agy-plan-review-loop 2` 결과와 이번 개정3의 정적 점검은 구분한다.
+제품 구현/새 유료 답변 실행/Phase3.3 완료를 승인한 문서는 아니다. 이전 탭 한정 계획을 대체한다.
 
 ## 1. 사용자 흐름과 완료 기준
 
@@ -37,7 +38,8 @@
 | `app/api/answers.py`, `app/schemas/answer.py` | 기존 단일 질문은 호환 유지; 별도 conversations API/schema |
 | `app/services/answer_call.py`, `answer_transport.py` | DB에서 검증한 대화와 해석 질문을 일반 모드에만 선택적으로 전달 |
 | `app/services/answer_evidence.py`, `app/api/semantic.py` | history 포함 wire 크기·검색→선택 서버 내부 연결 |
-| `app/services/ai_usage.py` | followup 생성 호출의 가격/예약/정산/reconcile·stage ID 연결 |
+| `app/services/ai_usage.py` | followup 생성 호출과 대화 전용 입력 profile의 가격/예약/정산/reconcile·stage ID 연결 |
+| `app/services/ai_policy.py`, 신규 `conversation_context.py` | Passage ID에 의존하지 않는 metadata 우선 anchor 검증·shared owner lock·허용된 본문 읽기 |
 | `app/services/source_history.py`, `app/services/citation_read.py` | 삭제된 기록의 파생 답변 제거·안정적인 과거 인용 읽기 |
 | `frontend/src/components/QuestionAnswer.tsx`, `frontend/src/api/questions.ts` | 첫 질문 저장/새 대화 경로 연결; legacy 경로 보존 |
 | `frontend/src/main.tsx`, `App.tsx` | `/conversations`, `/conversations/:id`와 대화 목록 이동 |
@@ -46,7 +48,9 @@
 현재 모델/답변 계약은 part-results-v3, 일반 request14KiB/output4096 후보,
 회고·과거512. ANSWER_MODE=off. 마지막 로컬 backend819/frontend198·lint/build와
 실제 v3 13회(계약13/13, 기본7건 v2 4/7, USD0.005012)를 구분한다.
-총485 usage행/기존미확정3건USD0.006801과 기존 미커밋 변경을 건드리지 않는다.
+총485 usage행/기존미확정3건USD0.006801과 사용자 작업을 건드리지 않는다.
+위14KiB는 현재 legacy 구현값이다. 신규 저장 대화에 적용할24KiB planner/64KiB answer는
+§7의 구현 계획이며 현재 코드나 기존 검증 결과에 적용됐다는 뜻이 아니다.
 
 ## 3. 저장 모델과 보관 정책
 
@@ -67,8 +71,8 @@ previous_response_id는 추가하지 않고 provider store=false를 유지한다
 | 모델(신규 `app/models/answer_conversation.py`) | 필수 데이터/제약 |
 | --- | --- |
 | `AnswerConversation` | id(무작위32hex), user_id FK, 첫 질문 기반의 짧은 제목, 고정 검색필터, active/closed 상태, context_epoch, revision, created_at/updated_at |
-| `AnswerTurn` | id, conversation_id+user_id의 composite FK, seq, owner당 unique request_id, base_revision, epoch, 원래 q, 선택적 base_turn_id, evidence_reference_turn_id/context_root_turn_id, 검증한 history turn IDs, resolved_q/분기, state/outcome, 표시 답변/status/미확인, 안전한 오류코드, config/format version, stage별 dispatch marker·lease·usage IDs, 시각 |
-| `AnswerTurnSource` | turn FK(cascade), entry/version/field/start/end/hash/projection_version의 안정 anchor, direct_selected/inherited/dispatch_intent/cited의 독립 flags; 같은 turn+anchor unique; entry/version으로 역조회 index |
+| `AnswerTurn` | id, conversation_id+user_id의 composite FK, seq, owner당 unique request_id, base_revision, epoch, 원래 q, 선택적 base_turn_id, evidence_reference_turn_id/context_root_turn_id, 검증한 history turn IDs, resolved_q/분기, state/outcome, 표시 답변/status/미확인, 안전한 오류코드, claim fingerprint, config/format version, stage별 history IDs·payload hash·dispatch marker·lease·usage IDs, 시각 |
+| `AnswerTurnSource` | turn FK(cascade), entry/version/field/start/end/hash/projection_version의 안정 anchor, direct_selected/inherited/dispatch_intent/cited의 독립 flags, direct 선택 순서; 같은 turn+anchor unique; entry/version으로 역조회 index |
 
 추가 제약/index:
 - conversation은 `(id,user_id)` unique, 목록은 `(user_id,updated_at,id)` index.
@@ -82,7 +86,17 @@ previous_response_id는 추가하지 않고 provider store=false를 유지한다
 전이적 의존성 anchor를 TurnSource에 펼쳐 저장한다. inherited도 삭제하지 않으므로
 여러 턴 전 비인용 자료의 제외/삭제를 감지할 수 있다. 현재 문맥epoch의 의존성이
 500개 anchor를 넘으면 무전송으로 새 문맥을 안내한다. 저장된 대화 전체를 삭제하거나
-임의 턴 수로 만료시키는 제한과는 다르다. 물리 저장량/조회 비용을 로컬에서 측정한다.
+임의 턴 수로 만료시키는 제한과는 다르다. 500개는 새 turn에 상속·선택할 고유 anchor의
+합집합 상한으로, 대화 전체의 행 수 제한이 아니다. 매 턴5개를 새로 누적 상속하는
+100턴 예시는 총25,250행이다. 오래된 의존성 하나의 변경도 후속 전송을 차단할 수 있다.
+UI는 차단된 근거와 영향받는 턴을 소유권 범위 안에서 설명하고 새 문맥 전환을 안내한다.
+
+100턴/25,250행 및 여러 epoch를 가진1,000턴 대화를 합성해 DB 크기,50턴 페이지의
+쿼리 수·응답 bytes·지연, 공통 원문 삭제의 영향 행 수·lock 대기·transaction 시간을
+측정한다. metadata 검사는 anchor 단위 N+1 조회 대신 제한된 batch 조회로 구현한다.
+삭제 hook의 원자성을 유지하며 성능 문제를 이유로 stale 본문을 먼저 반환하지 않는다.
+로컬 DB5초/lock2초 예산을 넘으면 query/index를 개선하고 재검증한다. 측정 전에는
+장기 대화의 성능을 검증 완료로 표시하지 않는다.
 
 기존의 disposable Passage ID는 영구 인용 키로 쓰지 않는다. 저장 인용은
 `CitationAnchor`의 version/field/range/hash를 사용한다. 표시 링크는 기존
@@ -90,7 +104,25 @@ previous_response_id는 추가하지 않고 provider store=false를 유지한다
 저장 대화의 TurnResponse는 별도 stable citation schema로 반환하며, 복원 시 폐기된
 Passage ID를 가짜로 만들거나 legacy AnswerResponse 형식을 바꾸지 않는다.
 모델 재사용은 retained-version 로컬 reader를 그대로 전송에 쓰지 않고, 해당 버전이
-현재 AI 허용 primary projection과 일치하는지 기존 AI gate로 별도 확인한다.
+현재 AI 허용 primary projection과 일치하는지 별도 확인한다. 현재 `embedding_inputs()`는
+Passage ID로 본문을 읽은 뒤 정책을 검사하므로 그대로 재사용하면 이 계획을 충족하지 못한다.
+`read_citation()`의 열람 성공도 AI 전송 허용을 의미하지 않는다.
+
+신규 `conversation_context.py`에 다음 두 단계의 공통 경계를 둔다.
+
+1. owner shared lock 아래 stable anchor의 Entry/EntryVersion 연결·현재 버전·삭제 여부·
+   record/source AI 정책·허용 type·projection version과 정확한 primary range를 검사한다.
+   이 단계에서는 source/assistant 본문을 SELECT하거나 ORM lazy-load하지 않는다.
+   projection 범위 검증에는 현재 index의 metadata만 사용하며, ID 대신 version/field/
+   range/hash로 대응한다. projection 누락·버전 불일치 시 로컬 backfill 안내 후 차단한다.
+2. 모든 의존성이 통과한 뒤 필요한 history와 direct source의 bounded body만 읽고
+   hash·범위를 확인한다. 상속만 된 anchor의 본문은 읽지 않는다. PROJECT_EVENT도
+   검증된 primary 범위만 허용하며 원문 전체/payload를 먼저 materialize하지 않는다.
+
+planner/query/answer 및 final 저장이 이 metadata 경계를 공유한다. 로컬 과거 인용
+reader와 legacy 전송 계약은 유지한다. 동일 projection의 Passage 재생성 뒤 ID가 달라도
+열람/재사용할 수 있고, projection 자체가 달라지면 열람만 유지하고 재사용은 차단한다.
+금지된 anchor 검증에서 본문 SELECT가0회인지 SQL 관찰 테스트로 확인한다.
 
 ### 보관·삭제
 
@@ -156,7 +188,7 @@ resolved_q/pending clarification을 NULL/redacted로 만들고 진행 중 단계
 | `GET /answer-conversations/{id}` | owner 상세·턴50개/가용성·안정 인용, unfinished turn_id/state/lease_expires_at/action_expires_at. provider0 |
 | `POST /answer-conversations/{id}/close`, `/reopen` | 종료/재개, id+expected_revision 검사. provider0 |
 | `DELETE /answer-conversations/{id}` | 본인 대화/턴 삭제, provider0 |
-| `POST /answer-conversations/{id}/turns` | q≤256자, request_id, expected_revision, base_turn_id?, context_mode=continue|fresh, confirm_external_ai=true. 사용자 질문·고정 동작을 DB에 claim |
+| `POST /answer-conversations/{id}/turns` | q≤256자, request_id, expected_revision, base_turn_id?, context_mode=continue\|fresh, confirm_external_ai=true. 사용자 질문·고정 동작을 DB에 claim |
 | `POST /answer-conversations/{id}/turns/{turn_id}/plan` | 동일 request_id+명시 동의. 최초/fresh는 로컬 search 계획; 후속은 planner 최대1회 |
 | `POST .../turns/{turn_id}/search` | search분기만. query embedding1회→로컬 Semantic→서버 내부 근거선택/저장 |
 | `POST .../turns/{turn_id}/evidence` | reuse분기만. DB의 evidence reference 턴 근거 재확인/선택, provider0 |
@@ -202,6 +234,37 @@ DB turn state는 created→planning→planned→searching 또는 selecting→rea
 completed이며, clarification/no_evidence는 해당 단계에서 completed가 된다.
 failed/stopped/interrupted도 terminal이고 이력에는 남지만 모델 대화에 넣지 않는다.
 state/outcome을 DB CheckConstraint로 제한하고 전환은 조건부 UPDATE/CAS로 검사한다.
+
+revision은 대화 생성 시0이며 claim, 각 stage 상태 변경, terminal 전환, close/reopen,
+원문 삭제에 따른 redaction마다 해당 transaction에서1씩 증가한다. 변화 없는 재요청은
+증가시키지 않는다. claim의 base_revision과 각 stage CAS에 사용할 현재 revision은
+구분한다. claim 이후 자신의 단계 진행으로 증가한 revision을 원래 base_revision과
+비교해 거부하지 않는다. stage 결과에는 최신 revision/state를 반환한다.
+
+| 현재 상태·요청 | 결과/응답 | 유료 호출 |
+| --- | --- | ---: |
+| active·unfinished 없음 + 새 claim | expected_revision 일치 시 created, fresh면 epoch 증가 | 0 |
+| 동일 request_id·동일 claim 내용 재POST | revision 검사 전에 owner/대화와 입력 fingerprint 확인 후 기존 turn/state 반환 | 0 |
+| 동일 request_id·다른 q/base/context_mode/동의 계약 또는 base_revision |409 REQUEST_ID_CONFLICT; 다른 대화 소유권은404 | 0 |
+| unfinished 있음 + 다른 request_id claim |409 CONVERSATION_BUSY | 0 |
+| created + plan | planning→planned 또는 completed/clarification; fresh는 로컬 planned | 후속만≤1 |
+| planned/search + search | searching→ready 또는 completed/no_evidence | query≤1 |
+| planned/reuse + evidence | selecting→ready 또는 completed/no_evidence | 0 |
+| ready + answer | answering→completed, 오류 시 failed | answer≤1 |
+| 같은 stage 재POST | marker 존재 시 현재 state/저장된 안전한 결과 반환; 진행 중202, 종료200; 다음 stage 자동 실행 없음 | 0 |
+| 미실행 stage의 역순/다른 분기 요청 |409 TURN_STAGE_CONFLICT | 0 |
+| unfinished + stop | 즉시 stopped; 이미 terminal이면 현재 상태만 반환 | 0 |
+| unfinished + interrupt | action 또는 lease 만료 시 interrupted; 미만료409 | 0 |
+| unfinished + close |409 CONVERSATION_BUSY; UI에서 stop 후 close | 0 |
+| unfinished 없음 + close/reopen | expected_revision 검사 후 closed/active; 이미 같은 상태면 변경 없음 | 0 |
+| closed + 새 claim |409 CONVERSATION_CLOSED | 0 |
+| 임의 상태 + delete | owner 조건으로 cascade 삭제; late 결과 저장 불가 | 0 |
+
+claim fingerprint는 정규화한 불변 입력의 hash만 보관하며 원문을 로그에 기록하지 않는다.
+단계 재요청도 현재 권한/redaction을 반영한 결과만 반환한다. 실패·중단 뒤 미실행 단계는
+409로 막는다. GET은 상태를 변경하지 않으며 응답 유실 뒤 completed 결과를 읽어도
+provider를 재호출하지 않는다.
+
 lease와 단계별 once marker를 commit한 **뒤** reserve/dispatch한다. marker가 있으면
 released usage 행도 같은 stage를 재시도할 수 없다. ledger의 active-only call count에만
 의존하지 않는다. model 호출 중 conversation row lock을 오래 잡고 있지 않는다.
@@ -221,8 +284,12 @@ terminal로 만든다. 이전 요청을 인메모리에서 기억할 필요가 �
 보낸 provider는 정산될 수 있지만 늦은 body는 폐기한다. 다른 active paid call이 아직
 billing slot을 점유하면 새 질문의 전송은 busy로 차단하고 자동 반복하지 않는다.
 created/planned/ready처럼 아직 다음 stage를 안 부른 턴도 stop 가능하다.
-action_expires_at은 claim 시 고정한90초 후보이며 새 dispatch마다 서버도 확인한다.
-만료된 action/lease는 interrupt POST로 닫고 다음 질문은 새 동작으로만 시작한다.
+action_expires_at은 claim 시 고정한120초 후보이며 새 dispatch마다 서버도 확인한다.
+action 만료는 새 dispatch를 금지하는 기준이다. 만료 전에 획득한 dispatch의 정상 결과는
+stage lease 안이며 stop/delete/interrupt가 없고 final 검증을 통과하면 만료 후에도 저장한다.
+lease가 만료된 결과는 저장하지 않는다. 브라우저가 timeout 후 stop에 성공하면 결과는
+폐기하고, stop이 전달되지 않았다면 GET에서 저장 결과 또는 unfinished 상태를 확인한다.
+만료된 unfinished action/lease는 interrupt POST로 닫고 다음 질문은 새 동작으로만 시작한다.
 자동 갱신되는 lease로 영구 미완료 질문을 만들지 않는다. 결과 저장 전에 서버가
 죽었으면 ‘과금될 수 있지만 저장된 답변 없음’을 알린다. 자동 복구·retry/resume은 없다.
 다음 질문은 새 request_id/동의로 가능하며 미확정 사용량은 기존 예산에 계속 포함된다.
@@ -283,12 +350,19 @@ UI는 pending 질문을 입력 대상으로 사용하지 않고 변경 사유와
 
 검색은 resolved_question만 embedding하여 기존 query256자/2048byte 상한을 유지한다.
 검색 순위 후보는 클라이언트를 왕복하지 않고 같은 서버 단계 안에서 full parent로
-선택한다. 새 검색 후보를 우선하고 evidence reference 턴 근거의 중복되지 않는 후보를 뒤에 결합한다.
+선택한다. 기존 근거는 무조건 새 후보 뒤에 붙여 모두 탈락시키지 않는다. search 분기에서
+reference가 있으면 새 검색의 최상위 후보1개와 reference의 direct_selected 첫 후보1개를
+우선 배치(동일 anchor면 중복 제거)하고, 남은 새 후보→남은 reference 순으로 최대5개를
+선택한다. reference 순서는 당시 선택 순서를 보관해 재현한다. 새 후보가 없으면 허용된
+reference 후보로만 답할 수 있으며 검색 hit0을 공개한다. 양쪽 후보가 있는 경우 양쪽에서
+최소1개씩 담을 공간을 확보한다. 이 규칙은 비교 근거 보존을 위한 최소 보호이며 의미적
+관련성을 증명하지 않는다. 추가 LLM reranker나 질문별 하드코딩은 도입하지 않는다.
 reuse는 고정 evidence reference 턴의 direct_selected anchors를 현재 허용 projection으로
 다시 해석해 원문을 읽는다. 단순히 직전 seq의 근거를 가져오지 않는다.
 원문을 최신 버전으로 조용히 치환하거나 재인덱싱하지 않는다.
 
-no_hits/byte_limit/no_usable_evidence는 provider 오류와 구분한 no_evidence 완료 턴으로
+새 검색과 reference를 결합해도 후보가 없는 no_hits/no_usable_evidence, 필수 문맥·근거가
+함께 들어가지 않는 byte_limit은 provider 오류와 구분한 no_evidence 완료 턴으로
 저장하고 답변 생성은0회다. 서버의 범위 한정 안내를 표시하며 다음 질문은 이어갈 수
 있다. 기존 의존성은 유지하고 새 source를 발견한 것처럼 표시하지 않는다.
 해석 오류/전송/usage 오류·권한 변경은 동작 종료, 자동 search/재생성 fallback은 없다.
@@ -302,21 +376,62 @@ None이면 기존 wire와 지침을 유지하고, dialogue 전용 지침/structu
 
 ## 7. 문맥 길이·버전·표시 UI
 
-**보관 이력은 오래 유지하되, 매번 전체를 모델에 보내지 않는다.** 최근2턴·epoch 최초
-질문·선택된 base answer·필수 pending을 최대8KiB history 후보에 구성한다.
-중복 turn은 한 번만 넣고, 초과하면 가장 오래된 선택적 턴 전체를 제외해 context_summary에
-실제 보낸 턴/제외 이유를 표시한다. 필수 base/pending조차 못 넣으면 무전송 오류와
-독립 질문/새 문맥 안내를 제공한다. 저장된 이력을 절단하거나 자동 요약하지 않는다.
+**보관 이력은 오래 유지하되, 매번 전체를 모델에 보내지 않는다.** 문맥 부족으로
+원문이 탈락하는 문제를 줄이기 위해 대화 전용 상한을 늘린다. 상한을 채우려고 무관한
+이력/원문을 추가하지 않으며, 최근2턴·epoch 최초 질문·base·pending 선택 범위는 유지한다.
 
-모델 wire 상한 후보:
-- 사용자 질문256자/2048bytes 유지. planner full request12KiB/output1024 후보.
-- answer full request14KiB/output4096 후보, sources≤5·각full parent≤2000자.
-- `choose_parents`가 history 포함 실제 payload로 byte/count budget을 검사한다.
-  원문/문장 중간 절단 금지. 제외 근거는 omissions로 공개,0개면 answer 호출0.
-- 새로운 conversations POST/PATCH의 HTTP body64KiB streaming cap을 JSON decode 전에
-  적용(Content-Length 없음도 포함). 모델 wire 상한과 HTTP 한도를 혼동하지 않는다.
-- 기존14,185byte 문맥의 무절단 복사 검사와 합성 최대 한도 검사를 구분한다.
-  body 저장 크기/500anchor 증가량/페이지50개 조회 비용도 함께 측정한다.
+| 항목 | 개정2 | 개정3 구현 예산 |
+| --- | ---: | ---: |
+| history 후보 |8KiB |16KiB |
+| planner 전체 wire |12KiB |24KiB |
+| answer 전체 wire |14KiB |64KiB |
+| planner/answer 최대 output |1024/4096 tokens |1024/4096 tokens 유지 |
+| 직접 근거 |최대5개·각2000자 |동일; 원문 무절단 |
+| 질문/query |256자/2048 bytes |동일 |
+
+KiB는 UTF-8 bytes 기준이며 전체 wire는 instructions/schema/metadata/중첩 JSON escaping을
+모두 포함한 실제 직렬화 크기다. history16KiB는 내부 JSON 크기이며 wire 크기 보장이 아니다.
+64KiB는 한글 원문5개×2000자(본문 약30KB), history16KiB 및 schema/metadata 여유를
+함께 고려한 값이다. 이모지/escaping/긴 metadata 조합은 상한을 넘을 수 있어 항상 실제
+payload로 검사한다. legacy 단일질문14KiB 및 회고·과거의 계약은 변경하지 않는다.
+저장 대화는 첫/fresh 질문도 별도 dialogue profile을 명시해64KiB를 적용한다.
+`dialogue=None`인 legacy 호출은 기존 wire/hash/예산을 유지한다.
+
+선택 순서와 부족 시 처리는 다음과 같다.
+
+1. 현재 q·context root·명시적/고정 base·필수 pending을 보존한다. 중복 turn은 한 번만
+   넣고 history16KiB 또는 planner24KiB를 넘으면 오래된 선택적 최근 턴부터 통째로 제외한다.
+   필수 history 자체가 들어가지 않으면 planner 예약 전 context_limit으로 중단한다.
+2. answer에서 §6의 우선 근거(일반적으로 선두1개, 새/기존 결합 시 양쪽1개)와 필수
+   history를 먼저 확보한다. 추가 근거를 담을 때 선택적 최근 턴을 먼저 줄여 원문 공간을
+   확보한다. 이후에도 부족하면 낮은 우선순위의 근거 전체를 제외한다. 선택적 history를
+   이유로 우선 근거를 버리지 않는다. 필수 history+우선 근거가 함께 들어가지 않으면
+   answer 호출0, no_evidence/byte_limit과 새 문맥 안내를 반환한다.
+3. 각 단계의 실제 history IDs/제외 이유와 선택 anchor/omissions/정확한 payload hash를
+   DB에 고정한다. planner와 answer의 전달 이력이 다르면 context_summary에 각각 표시한다.
+   body를 절단하거나 자동 요약하지 않고, 후보에서 제외한 history의 이미 상속된
+   의존성을 지워 전송 검사를 우회하지 않는다.
+
+`choose_parents`는 대화 profile과 history를 받도록 확장하며 선택·재검사·dispatch가 같은
+serializer/profile을 쓴다. 실제 크기가 작으면 그 크기+1024로 예약하고 최대액을 항상
+예약하지 않는다. 새 profile은 서버가 선택하며 클라이언트가 임의 상한을 제출할 수 없다.
+새 conversations POST의 HTTP body64KiB streaming cap은 JSON decode 전에 적용한다.
+사용자는 원문/history를 제출하지 않으므로 HTTP body와 provider wire의 같은 숫자는
+독립적인 한도다. Content-Length 없는 요청도 검사한다.
+
+용량 검증은 기존14,185-byte 입력을 그대로 보존한 legacy 검사와, 그 원문에 필수
+history를 더한 대화 검사를 분리한다. 한글/이모지/따옴표·역슬래시/긴 metadata/16KiB
+history/최대5개 원문 조합에서 실제 남은 근거와 제외 이유를 확인한다. 원문이 충분히
+들어가는데 history만 남고 근거가 탈락하는 회귀를 허용하지 않는다.
+
+지연 후보: planner30초, query10초, answer45초의 provider 전체 timeout, browser/action
+120초, stage lease120초. lease는 stage claim 시 고정하고 연장하지 않는다. 매 dispatch는
+action 잔여시간을 확인하며 실제 timeout은 단계 상한과 잔여시간 중 작은 값으로 제한한다.
+legacy timeout은 유지한다. 로컬 DB statement5초/lock2초 예산은 별도로 적용한다.
+합성 검증은 경계 동작만 증명한다. 별도 승인된 실제 검증에서 요청 bytes/입출력 tokens,
+단계별·전체 지연, 비용, 근거 보존율을 보고한다. 소표본에서는 p95를 일반 성능으로
+주장하지 않고 개별값/최댓값을 함께 기록한다. 큰 문맥으로 품질·지연이 나빠지면 원문
+보존을 우선해 선택적 history를 줄이며 출력량/모델 호출 수를 자동 확대하지 않는다.
 
 프론트 신규 `api/answerConversations.ts`, `pages/ConversationsPage.tsx`,
 `pages/ConversationPage.tsx`, 필요한 작은 턴/입력 component를 추가한다.
@@ -338,32 +453,72 @@ metadata를 current owner/version/record+source AI policy와 대조한다. sourc
 이 검사를 통과한 뒤에만 읽는다. 기존 read_citation은 로컬 열람용이므로 AI gate로
 간주하지 않는다. planner/query/answer 모두 파생 대화의 검사 대상이다.
 
-동작 중 dispatch는 기존 shared owner lock으로 정책/원문 쓰기와 직렬화한다.
-`query_check`, `prepare_payload`에 DB snapshot/관련 의존성 검사를 연결한다.
-source writer는 기존 exclusive owner lock→conversation/turn cleanup lock 순서를
-지킨다. source 검사/final 저장은 shared owner lock→conversation/turn lock 순서다.
-대화 전용 stop/close/delete는 source body를 읽거나 바꾸지 않으므로 owner-exclusive
-lock을 얻지 않고 owner조건+conversation→turn row lock만 짧게 쓴다. 이 transaction
-안에서 뒤늦게 owner/billing lock을 획득하지 않는다. 진행 중 provider의 owner-shared
-lock 때문에 사용자 stop이120초동안 대기하는 구현으로 만들지 않는다. 장시간 row lock 상태에서
-별도 connection의 같은 row를 기다리거나 billing lock을 반대 순서로 획득하지 않는다.
-ledger 정산은 owner lock을 풀고 수행하며 final body저장은 다시 current검사를 한다.
+현재 `current_read()`는 shared owner lock을 쓰지만 `embedding_inputs()`는
+exclusive `owner_lock()`을 사용하며 일반 query 전송은 같은 lock을 자동 획득하지 않는다.
+따라서 신규 대화 경로에 shared reader helper를 명시적으로 추가한다. 같은 advisory key
+12022를 써 기존 exclusive source writer와 직렬화하고, shared lock 아래 기존 exclusive
+helper를 다시 호출하는 lock upgrade는 하지 않는다. legacy 경로의 잠금을 일괄 변경하지 않는다.
+
+| 작업 | 획득 순서/유지 범위 |
+| --- | --- |
+| claim/history metadata·본문 준비 | owner shared→conversation→turn; 짧은 transaction 후 해제 |
+| stage once marker/lease | conversation→turn; commit 후 모두 해제, owner/billing 획득 안 함 |
+| 예약/dispatch pending 회계 | 기존 call_slot→run/billing; owner/row lock 없는 별도 transaction |
+| 전송 직전 검사/intent | call_slot 유지, owner shared→conversation→turn; metadata/body/hash/state 재검사 |
+| provider 호출 | owner shared만 source 보호용으로 유지, conversation/turn row lock 없음; call_slot도 유지 |
+| 정산 | owner/row lock 해제 후 기존 billing transaction, spent/uncertain 보존 |
+| final 결과 저장 | owner shared→conversation→turn, 상태/lease/revision/의존성 재검사 후 원자 commit |
+| source 변경/삭제 | owner exclusive→conversation→turn cleanup, commit까지 유지 |
+| stop/interrupt/close/reopen/delete | owner 조건의 conversation→turn만; owner/billing lock 미획득 |
+
+transaction-scoped advisory lock과 row lock을 동일 transaction에서 획득하면 row lock만
+commit으로 해제할 수 없다. 전송 구현은 owner shared lock을 가진 별도 guard connection과
+짧은 상태 transaction을 사용하고, guard connection은 conversation/turn row를 잠그지 않는다.
+상태 transaction은 owner/billing lock을 추가 획득하지 않으며 provider 전에 commit한다.
+본문/hash 검증은 guard connection에서 수행하고 마지막 짧은 상태 transaction에서 intent를
+확정한다. intent 뒤 stop이 이기면 이미 허가된 호출은 과금될 수 있으나 결과는 저장하지 않는다.
+prepare와 실제 dispatch 모두 guard로 재검사하며 예약 전 guard는 해제한다. 모든 예외에서
+connection/lock 반환을 보장하고 연결 풀 사용량도 측정한다. 장기 row lock을 가진 채
+다른 connection에서 같은 row를 기다리지 않는다. 여러 대화/턴을 cleanup할 때는
+conversation ID→turn seq의 고정 순서로 잠근다. ledger 정산 후 final 검증은 새로 수행한다.
+
+실제 PostgreSQL 연결2개 이상과 event/barrier를 사용해 provider를 대기시킨 상태에서
+stop/delete가 provider 종료 전에 완료되는지 확인한다. 동시에 source 변경은 guard가
+풀릴 때까지 대기하거나 정해진 lock timeout으로 실패해야 한다. source 삭제와 final 저장,
+중복 stage, 서버 중단/정산 실패도 실제 transaction으로 검증한다. 순차 mock만으로
+잠금 안전성을 통과 처리하지 않는다.
 
 followup은 실제 생성 호출이므로 ai_usage의 허용 purpose/priced/출력상한/정산/
 reconcile/summary에 별도 분기를 추가한다. 기존String(16)purpose에는 새 enum migration이
 필요 없지만 대화3테이블의 migration은 필수다. 기존 회계행/모델 가격/불확실 과금을
-재분류하지 않는다. config/profile과 request별 output bound를 ledger에 저장한다.
+재분류하지 않는다. config/profile과 request별 input/output bound를 ledger에 저장한다. 현재 reserve의
+비-rerank upper≤16000 조건은24/64KiB를 거부하므로 서버 정의 profile allowlist로
+분리한다: legacy answer profile은 기존 wire에서 유도한15360, dialogue answer는66560,
+followup은25600 상한이다. legacy의 기존 유효 요청은 계속 수용한다.
+query/document/rerank의 기존 한도는 확대하지 않는다. profile별 CONFIG_HASH와 가격을
+고정하고 ledger 필드 추가가 필요하면 migration에 포함한다. reconcile은 현재 설정이
+아닌 각 행의 가격/상한을 사용한다. answer stage run_limit10000 microUSD는 유지한다.
 
-로컬 코드의 Luna 입력0.10/출력0.50 USD per million, bytes+1024 예약을 기준으로
-planner12KiB+1024입력/output1024의 보수 예약은1844microUSD다.
+로컬 코드의 고정 Luna 입력0.10/출력0.50 USD per million과 bytes+1024 예약식으로
+계산한다. 이는 현재 공급자 가격 재조회나 실제 평균 비용 추정이 아니다.
 
-| 사용자 질문 경로 | 최대 외부 호출 | 단계 합계 상한 후보 |
+- planner: (24×1024+1024) 입력 상한 +1024 output →3072 microUSD.
+- dialogue answer: (64×1024+1024) 입력 상한 +4096 output →8704 microUSD.
+- query: 보수적으로2048-byte 한도와 기존 ceil(bytes/50) →41 microUSD 이하.
+
+| 사용자 질문 경로 | 최대 외부 호출 | payload 최대치 기준 예약 합계 |
 | --- | ---: | ---: |
-| 최초/fresh 질문 | query+answer=2 | USD0.011 |
-| 후속 reuse | planner+answer=2 | USD0.011844 |
-| 후속 search | planner+query+answer=3 | USD0.012844 |
-| clarify | planner=1 | USD0.001844 |
+| 최초/fresh 질문 | query+answer=2 | USD0.008745 |
+| 후속 reuse | planner+answer=2 | USD0.011776 |
+| 후속 search | planner+query+answer=3 | USD0.011817 |
+| clarify | planner=1 | USD0.003072 |
 | 대화 열기/재개/종료/삭제 | 0 | USD0 |
+
+개정2 표는 query/answer의 run_limit을 합친 여유 한도였다. 위 표는 확대된 wire에서
+계산한 예약 상한이므로 숫자가 작아져도 비용 개선을 뜻하지 않는다. 실제 예약은 실제
+payload 크기 기준이고 실제 과금은 검증된 usage 기준이다. planner stage run_limit은
+4000 microUSD, answer10000, query1000으로 둔다. 후속 search의 이 정책 한도 합계는
+USD0.015이며 payload 예약 합계USD0.011817과 구분한다.
 
 금액은 구현 시 payload/가격hash와 함께 재검증할 후보이며 실행 승인이 아니다.
 각 stage run_id는 owner+conversation+turn+action+단계 domain으로 분리하고 최대1회,
@@ -374,7 +529,7 @@ planner12KiB+1024입력/output1024의 보수 예약은1844microUSD다.
 필요시 검색·최대5개 허용원문의 전송 범위/호출상한을 고지한다. 예전 전송 동의가
 재로그인 후 새 질문을 승인하지 않는다. 고정 source/date scope를 넓히거나 mode를
 바꾸려면 새 대화를 만들며 새 범위 동의를 받는다. source 권한을 자동 확장하지 않는다.
-총 browser deadline90초 후보, provider timeout/DB deadline과 각각 검사한다.
+총 browser/action deadline120초 후보이며 §7의 provider/DB/lease deadline과 각각 검사한다.
 로그아웃/abort가 이미 시작된 요청·정산을 되돌린다는 약속을 하지 않는다.
 
 ## 9. 구현 순서와 회귀·검증
@@ -386,7 +541,9 @@ planner12KiB+1024입력/output1024의 보수 예약은1844microUSD다.
    새 schema에서 head upgrade/기존 사용자 무변경/DB제약/삭제cascade 검증.
 2. CRUD/복원/삭제+상태머신:owner query·pagination·revision/once/lease·원문삭제 hook,
    단계별 성공/중단/서버죽음·재접속 조회/정리 테스트까지 먼저 만든다.
-3. planner/정산+query/evidence/answer 연결:작은 서비스 추출, DB snapshot gate,
+3. 안정 anchor metadata/body 경계와 shared guard를 먼저 구현하고 실제 PostgreSQL
+   경합/금지 본문 SELECT0/Passage 재생성 검사를 통과시킨다. 그 뒤
+   planner/정산+query/evidence/answer 연결:작은 서비스 추출, DB snapshot gate,
    일반 optional history·full source budget·완료 결과 원자 저장.
 4. UI:목록/상세 route·Search연결·턴입력/되묻기·원문·닫기/재개/삭제·로그아웃 복원.
    OpenAPI로 TS types재생성, legacy 단일질문/manual/period/history 유지.
@@ -404,13 +561,25 @@ planner12KiB+1024입력/output1024의 보수 예약은1844microUSD다.
 | 출처/파생물 | 비인용 원문 및 여러턴전 inherited의 제외/수정/삭제가 planner/query/answer를 차단; 삭제시파생본문redact |
 | 과거 표시 | 버전변경은 옛답변 표시+badge, source없으면 표시제한; Passage backfill후 stable citation 유지 |
 | 대화 해석 | A/B와첫번째/그업체, 오래된base와다른epoch 지정, reference 우선순위/가용성 차단, 연속clarify/짧은확인, no_evidence뒤 이어묻기; 이전오답을 사실로승격 안함; pending 중 source 수정/AI제외/삭제 시409·모델0 |
-| 용량 | recent2+base/pending/history8KiB/planner12KiB/answer14KiB/원문무절단/500anchor/큰페이지와본문 cap |
+| 용량 | history16KiB/planner24KiB/dialogue answer64KiB·legacy14KiB, 필수 근거 보존·escaping·profile 예약 상한·원문무절단 |
+| 장기 대화 |100턴25,250 anchor행/1,000턴 여러epoch·50턴 조회·공통원문 삭제·query 수/응답크기/lock·연결풀 측정 |
+| 경합/전이 | 실제 DB 연결2개 이상, provider 진행 중 stop/delete 완료, close 거부, request fingerprint 충돌, revision 증가, action/lease 경계·late 결과 처리 |
 | UI | 모바일,새대화/닫기/재개/삭제/다른계정캐시/late응답/Stop/가용성off, 원문링크에서복귀 provider0 |
 | 회귀 | answer/usage/reconcile/questionflow/recommend/semantic/period/history/source권한, 전체backend/frontend·lint/build/diff |
 
 합성 transport/browser는 외부답변/embedding 전송0, AI제외 개인원문 읽기0,
 추가import/인덱싱0으로 수행한다. 합성통과를 실제 문맥해석·검색·의미품질로 주장하지 않는다.
 영속화된 오류도 없애지 않고 안전한 상태/비용으로 남겨 사용자가 구분할 수 있게 한다.
+
+실제 의미품질은 별도 동결된 시나리오로 평가한다: 업체 A/B와‘첫 번째’,‘그 뒤 취소’,
+오래된 base, 연속 clarify, no_evidence 다음 질문, 기존/새 기록 비교, 이전 오답의 반복
+유도. 각 사례에 기대 대상·허용 분기·필수 근거·허용 unknown을 실행 전에 기록한다.
+새 사실 탐색을 reuse로 막거나 질문에 조건을 추가하는 것은 schema 성공이어도 실패다.
+대상 불명확은 clarify, 새 사실은 search, 기존 근거 재설명은 reuse를 기본 기대값으로 둔다.
+비교 사례는 신·구 근거가 모두 선택됐는지 별도 판정하고, 해석 정확성/분기/근거 보존/
+최종 인용 지지를 각각 기록한다. 필수 사례가 실패하면 해당 완료 기준은 미충족으로
+남기며 자동 유료 fallback/retry로 가리지 않는다. 표본 수·호출 수·비용은 별도 실험 승인
+시에 고정하며 이번 문서 수정으로 실행하지 않는다.
 
 commit 후보는 DB+CRUD/tests → 보호/정산+서비스/tests → UI/통합검증/문서다.
 독립 호환을 유지 못하면 backend 단위를 합친다. 사용자 승인 없이 커밋하지 않는다.
@@ -424,7 +593,7 @@ commit 후보는 DB+CRUD/tests → 보호/정산+서비스/tests → UI/통합�
 DB 영속화 방식이 검증됐다는 뜻이 아니다. 이번 사용자의 명시적 요청에 따라3테이블/
 owner별 저장·로그아웃 후 복원·삭제/회계·경합 계획으로 교체했다.
 
-이번 개정2를 Antigravity `--sandbox --mode plan` compact 모드로 새로2회 검토했다.
+이전 개정2를 Antigravity `--sandbox --mode plan` compact 모드로 새로2회 검토했다.
 - 1차3지적 모두 채택: claim/plan/search/evidence/answer의 source 저장·flag·gate 시점,
   재접속 직후 unfinished 조회/lease전 stop, 유효성 잃은 pending의409 차단을 구체화했다.
 - 2차1지적 채택: 오래된base/clarify/no_evidence 뒤의 evidence reference 우선순위와
@@ -442,3 +611,15 @@ owner별 저장·로그아웃 후 복원·삭제/회계·경합 계획으로 교
 완료 계획 문서에 이 설계 방향과 미구현 상태를 반영했다. 기본 결정은 DECISIONS의
 2026-10-20 persisted-conversation 항목, 구현 명세는 이 문서를 기준으로 한다.
 제품 구현·새 유료 실험·과거 점수/원본 수정은 포함하지 않는다.
+
+
+### 개정3 — 현재 코드 대조 및 문맥 예산 확대
+
+사용자 요청에 따라6개 리스크를 반영했다: 안정 anchor의 metadata 우선 전송 경계,
+실제 잠금 차이와 guard/row transaction 분리, 문맥·원문 예산 배분, 전이적 의존성의
+장기 비용, 명시적 상태/revision/재요청 계약, planner·근거 결합의 의미품질 검증.
+문맥 후보는 history16KiB/planner24KiB/dialogue answer64KiB로 확대하고 출력/근거 개수는
+유지했다. 회계 입력 상한/profile·보수 예약·deadline도 함께 정렬했다.
+이번 개정은 문서 수정과 정적 일관성/산술 점검이며 agy 리뷰를 추가 실행하지 않았다.
+개정2의 리뷰 통과를 개정3의 독립 리뷰나 제품 실행 검증으로 표시하지 않는다.
+제품 코드·DB·기존 실측 원본/회계는 변경하지 않았다.
