@@ -31,17 +31,22 @@ Opening an original and **Back to conversation** do not repeat paid work.
 The new profile allows history16KiB, planner wire24KiB, answer wire64KiB. Original
 passages are whole (five maximum,2000 characters each); optional history is dropped
 before priority evidence. Context details show actual history IDs and omissions.
-Ordinary instructions now use `part-results-v4`; the part-result JSON schema and
+Ordinary instructions now use `part-results-v5`; the part-result JSON output shape and
 4096 output tokens remain unchanged; planner output1024. Maximal
 payload reservations under the code's pinned prices: first/fresh USD0.008745,
 follow-up reuse USD0.011776, search USD0.011817, clarify USD0.003072. Actual costs
 use validated usage. These bounds are not a paid experiment authorization.
 
-The v4 instructions preserve relevant explicit source qualifications on recorded
+The instructions preserve relevant explicit source qualifications on recorded
 progress, split assertions needing different evidence, place an absent requested
 outcome in a scoped unresolved gap, and label simple arithmetic with quoted
 operands and its operation. They do not invent missing-outcome checklists or demand
-final success before reporting progress. Historical/period narrative instructions
+final success before reporting progress. V5 adds field-level schema descriptions
+and a contrasting price/unknown-activation example, separating subjects whose
+coverage differs. This adds guidance without new output fields or a semantic
+validator; the known price-cited absence can still be structurally accepted if
+the model misclassifies it. See `OUTPUT_CONTRACT_REVIEW.md` section8.
+Historical/period narrative instructions
 retain their existing contract. Quote/schema checks cannot enforce these semantic
 rules; provider compliance after this change has not been retested. Existing saved
 answers and closed real-run artifacts are preserved.
@@ -67,7 +72,7 @@ answers and closed real-run artifacts are preserved.
    another account cannot open it, and deletion removes it. Any real-provider
    quality experiment still requires its separately frozen scope/cost approval.
 
-Current checks: full backend881 passed after preparing the targeted quality recheck.
+Current checks: full backend885 passed after the v5 contract-guidance correction.
 Frontend205 tests/lint/build passed before the original real pilot; no frontend
 code changed in the instruction/recheck work. The UI includes the abort/Stop refresh-race fix.
 Build retains a~500.76kB single-chunk warning.

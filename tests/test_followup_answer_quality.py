@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from app.models.entry import Entry
 from app.models.ai_usage import AiUsageAttempt
 from app.security import create_access_token
-from app.services.answer_transport import payload, MODEL, DIALOGUE_CONFIG_HASH
+from app.services.answer_transport import payload, parse, MODEL, DIALOGUE_CONFIG_HASH
 from app.services.source_history import record_version, select_version
 from test_answer_conversations import chat, create, claim, step
 from test_embedding_jobs import actor
@@ -136,3 +136,47 @@ def test_explicit_base_followup_preserves_limits_and_calculation_without_new_sea
     assert restored['turns'][1]['answer']==CASES[2][2]['facts'][0]['text']
     assert restored['turns'][1]['base_turn_id']==base['id']
     assert answer.call_count==2 and planner.call_count==query.call_count==1
+
+
+@pytest.mark.parametrize('dialogue',[None,[]])
+def test_fact_gap_boundaries_are_delivered_at_schema_fields_without_new_output_fields(dialogue):
+    value,_=payload('가격과 활성화 상태?', [dict(id=1,text='Service A costs 10 units.')],dialogue=dialogue)
+    schema=value['text']['format']['schema']
+    answered,unresolved=schema['properties']['result']['properties']['parts']['items']['anyOf']
+    assert answered['required']==['request','kind','facts']
+    assert unresolved['required']==['request','kind','known','gap']
+    assert schema['$defs']['fact']['required']==['text','evidence']
+    assert 'explicit source qualifications' in schema['$defs']['fact']['properties']['text']['description']
+    assert 'cannot prove absence' in schema['$defs']['fact']['properties']['evidence']['description']
+    assert 'Split subjects' in answered['properties']['request']['description']
+    assert 'gap has no evidence quote' in unresolved['properties']['gap']['description']
+    assert 'split the price into answered/facts' in value['instructions']
+    assert 'activation into unresolved/known=[]' in value['instructions']
+
+
+def test_separate_subjects_preserve_explicit_limits_and_scoped_gap_without_repair():
+    parts=[
+        dict(request='알파·베타 가격',kind='answered',facts=[
+            fact('알파는30만원, 베타는35만원이다.','알파 견적은 30만원, 베타 견적은 35만원이었다.')]),
+        dict(request='알파 예약 진행',kind='answered',facts=[
+            fact('알파에 예약 요청을 보냈다고 말했다.','사용자는 알파에 예약 요청을 보냈다고 말했다.'),
+            fact('이 기록에는 예약 확정·결제·실제 이용 확인이 없다.','이 기록에는 예약 확정, 결제, 실제 차량 이용을 확인하는 내용이 없다.'),
+            fact('사용자는 최종 선택을 보고하지 않았다.','사용자는 아직 업체를 최종 선택했다고 말하지 않았다.')]),
+        dict(request='베타 예약 진행',kind='unresolved',known=[],gap='베타 예약 진행은 제공 기록에서 확인되지 않는다.')]
+    original=deepcopy(parts)
+    result=parse(response(parts),{1},excerpts={1:BODY},question=FIXTURE['turns'][0]['q'])
+    assert result['status']=='partial' and result['citation_ids']==[1]
+    assert result['answer'].splitlines()==[f['text'] for p in parts for f in p.get('facts',[])]+[parts[-1]['gap']]
+    assert result['unconfirmed_aspects']==[parts[-1]['gap']]
+    assert parts==original
+
+
+def test_schema_guidance_does_not_create_a_semantic_validator():
+    # Reproduces the known T1 boundary without copying or repairing paid artifacts.
+    # Even the strengthened schema cannot detect a wrongly declared answered fact.
+    quote='알파 견적은 30만원, 베타 견적은 35만원이었다.'
+    parts=[dict(request='베타 예약 진행',kind='answered',facts=[
+        fact('베타 예약 진행은 기록되어 있지 않다.',quote)])]
+    result=parse(response(parts),{1},excerpts={1:BODY},question='베타 예약 진행?')
+    assert result['status']=='supported'  # Structural status, not semantic acceptance.
+    assert result['answer']==parts[0]['facts'][0]['text']

@@ -70,6 +70,26 @@ See AI_SOURCE_COVERAGE.md for scope and completion gates.
 
 ## Current product slice
 
+**2026-10-20 T1 계약 보완 v5 — 로컬 검증 완료, 의미품질 미검증:**
+
+실행기·최소 재검증·결과를 `29f346f`로 커밋했다. T1 실패를 검토하고 새 분류/완료
+필드를 늘리기보다 기존 request/fact.text/evidence/gap의 schema 설명과 대비 예시를
+보완했다. 근거 충족 여부가 다른 대상/항목을 나누고, 가격 사실과 미확인 활성화
+상태를 answered/unresolved로 분리하는 예시를 전달한다. 명시적 기록 제한은 해당
+구절로 뒷받침하도록 했다. `OUTPUT_CONTRACT_REVIEW.md` section8에 대안·한계를 기록했다.
+
+출력 필드/분기·조립/검증 로직·API/DB·문맥/출력 상한은 유지한다. v5 schema annotation/
+지침으로 configuration hash는 바뀌므로 종료된 이전 제안/승인은 재사용할 수 없다.
+인용 존재만으로 부재 주장의 의미를 판정할 수 없으며, 잘못된 answered fact가 여전히
+구조상 supported로 통과하는 한계도 회귀로 재현했다. 모델이 v5를 실제 준수하거나
+최종 선택 미확인 누락이 해결됐다고 주장하지 않는다. 과거 답변/유료 결과는 보존했다.
+
+관련130개/전체backend885개(69.41초), diff 검사 통과. 올바른 대상별 분리 응답의
+partial/gap/인용 보존과 일반/대화 요청의 필드 설명 전달, 알려진 의미검증 한계를
+검사했다. 프론트 변경이 없어 frontend 검사는 재실행하지 않았다. 실제 AI 호출0,
+새 실측 제안/승인0이다. 다음은 v5 변경 검토와 소유자 브라우저 피드백이며 필요 시
+별도 실측 범위를 동결한다. 개인 기록 회수/긴 문맥 성능·Phase3.3 exit는 미확인이다.
+
 **2026-10-20 최소 품질 재검증 종료 — 의미품질2개 충족/1개 부분 충족:**
 
 품질 지침 보완은 `8ae1eb8`로 커밋했다. 기존 원문3개를 유지하고 같은 T1/T5/T8
@@ -2221,12 +2241,13 @@ user-verifiable product slices in `ROADMAP.md`.
 ## Next
 
 The bounded saved-conversation real pilot is closed:8 branches matched; its
-semantic review remains partial. The v4 instruction correction and synthetic
-regressions are complete locally; real-provider compliance is not retested.
+semantic review remains partial.
 The targeted3-question/7-call recheck is now closed: T5 arithmetic labeling and
 T8 isolation passed; T1 still omitted the final-choice limit and used a price-cited
-absence fact with supported status. Next review a minimal output-contract change
-for this remaining failure. Owner browser feedback is separate.
+absence fact with supported status. V5 field-level schema descriptions and contrast
+examples are implemented and tested locally; they do not add a semantic validator
+or establish real-provider improvement. Next review this correction and owner
+browser feedback, then freeze a new paid scope only if needed.
 Preserve raw outputs and keep owner browser acceptance, long-context performance
 and broad archive retrieval as separate open checks.
 Any future paid retest needs a new finite approval; keep ANSWER_MODE=off.

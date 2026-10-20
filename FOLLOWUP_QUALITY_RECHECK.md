@@ -151,6 +151,9 @@ Post-run original/quote/explicit-base/fresh-context/accounting/cleanup checks an
 `real-run-quality-v1/REVIEW.md`, compare saved answers with the three synthetic
 originals, and inspect `audit.json` for usage/cleanup.
 
-Next: review a minimal output-contract change for T1's missing-proof fact and
-status classification. No additional paid test is scheduled. Broad archive recall,
+The subsequent minimal contract review is recorded in `OUTPUT_CONTRACT_REVIEW.md`
+section8. V5 adds field-level explanations and contrasting examples while keeping
+the output shape and parser. It cannot mechanically detect the known semantic
+misclassification. No v5 real test is scheduled; this closed proposal is stale
+against the new code/config and cannot be reused. Broad archive recall,
 long-context performance and owner browser acceptance remain open.
