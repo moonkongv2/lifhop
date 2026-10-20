@@ -70,7 +70,29 @@ See AI_SOURCE_COVERAGE.md for scope and completion gates.
 
 ## Current product slice
 
-**2026-10-21 C1 매핑 완료 — C2 주요 흐름 사용자 수용·재시작 회귀 완료:**
+**2026-10-21 C2 환경 준비·추가 합성 브라우저 검증 완료 — 나머지 사용자 수용 대기:**
+
+C1 매핑/재시작 회귀를 `40567d8`로 커밋했다. 사용자의 다음 진행 지시로 기존
+additive migration `h60f5a47e286`을 개인 앱 DB에 적용했다. 대화3테이블/인덱스/
+제약조건만 추가했으며 기존 원문·버전·passage 수와 body-free 과금행 해시가 동일하다.
+answer mode는 off를 유지했다. 기존 평가 protocol의 소유자/DB fingerprint를 확인한
+계정에 합성 검증 질문만 저장하고 Uvicorn을 순차 종료/재실행해 이력 동일·미완료
+created 유지·새 과금0을 확인했다. 임시 대화는 삭제하고 검증 서버는 종료했다.
+개인 DB의 완성 답변/인용이나 사용자 브라우저 재시작을 확인한 것으로 확대하지 않는다.
+
+내장 브라우저 연결 실패 후 별도 headless Chromium으로 기존 합성 데모의 원문
+왕복(호출/과금행 무변경), 특정 답변 기준 후속/동의, 독립 문맥의 이전 대화0을
+확인했다. 합성6호출만 발생했고 브라우저 예외/외부 origin 요청은0이다. 새 검증
+대화만 삭제했으며 기존 사용자 데모 대화는 유지했다. C2 나머지 직접 수용 응답은
+아직 없으므로 C2/C3–C6 및 Phase3.3은 미완료다. 실제 AI 호출/원문 열람/권한 변경0.
+증거는 `.local/verification/phase33-app-restart-20261021-v1/`와
+`.local/verification/conversation-context-20261021-v2/`에 private 보존했다.
+초기 검증 도구는 다계정 안전 검사와 로그인 완료 대기에서 멈췄고, 소유자/DB 연결
+확인 및 대기 보완 후 각각 통과했다. 제품 코드/의존성 변경은 없다. 이번 검증은
+migration/실제 Uvicorn 재시작·합성 Chromium 통과이며, 직전 커밋의 backend886/
+관련18개 통과 결과는 재사용했다. 다음은 나머지 UX 사용자 피드백 후 C3 범위 준비다.
+
+**2026-10-21 이전 checkpoint — C1 매핑·주요 흐름 사용자 수용·재시작 회귀:**
 
 기존 승인/종료된 private artifact에서 E1–E6 및 인용 회귀7건의 질문·기대/금지 범위·
 필수 근거·과거 판정을 연결했다. 결과는 `.local/evaluation/phase33/exit-map-20261021-v1/`
