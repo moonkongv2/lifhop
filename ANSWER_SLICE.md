@@ -1,5 +1,17 @@
 # Phase 3.3 selected-passage answers
 
+2026-10-20 status: ordinary generation now uses `part-results-v3` with per-part
+answered/facts or unresolved/known/gap and server-derived text/status/citations.
+Ordinary output is 4,096 tokens; period/historical remain at 512. The dated narrative
+contract changes and test counts below are historical. See
+`OUTPUT_CONTRACT_REVIEW.md` and `CURRENT.md` for the current contract/results.
+
+Answers still live only in browser memory. The
+[saved-conversation follow-up plan](CONVERSATIONAL_FOLLOWUP_PLAN.md) is the agreed
+next direction, **not implemented**. Its per-user storage/re-login restoration
+applies to the planned ordinary Search & ask flow; this advanced selected-passage
+flow and period/historical behavior are outside that first change.
+
 Current simple flow: Search → **Answer with sources** runs retrieval, local
 evidence selection and cited answering with one combined consent/action. See
 `UNIFIED_ANSWER.md` for current limits and synthetic verification. The selected-
@@ -32,8 +44,9 @@ every claim.
   when the provider call has already been charged.
 - The answer model is `gpt-6-luna`, with explicit reasoning effort `none` and
   no prompt caching (explicit mode without breakpoints). Each Responses request
-  uses structured output, no API-side response storage, at most 512 output tokens, and the
-  existing monthly AI budget. Its durable request cap is one call and USD 0.01.
+  uses structured output, no API-side response storage, at most 4,096 output
+  tokens for ordinary answers (512 for period/historical), and the existing monthly
+  AI budget. Its durable request cap is one call and USD 0.01.
   Uncertain charges and invalid responses are not retried automatically.
 - Answer text and question vectors are not stored by lifhop. The response remains
   in browser memory while the search result is present. Citations are validated
@@ -62,7 +75,9 @@ contradicted its prose. Real model/schema acceptance and grounding need a fresh
 approved check; the answer config hash changed and old protocols remain closed.
 
 The text below preserves the earlier correction, before partial answers were
-introduced; current partial behavior follows the contract above.
+introduced; that intermediate partial contract above was later superseded for
+ordinary answers by part-results-v3, as noted at the top. Period/historical
+retain their separate narrative contract.
 
 The bounded integrated check found a fact supported by selected context but absent
 from the one excerpt actually cited. The common answer instructions now require

@@ -260,6 +260,7 @@ Avoid introducing infrastructure purely to make the architecture look sophistica
 - `SEMANTIC_PRODUCT.md` — Semantic search UI/demo, pgvector setup, explicit indexing and worker verification
 - `ANSWER_SLICE.md` — selected-passage cited-answer demo, policy/cost boundary and verification
 - `UNIFIED_ANSWER.md` — consolidated search/questions, combined consent, stop/replay limits and synthetic verification
+- `CONVERSATIONAL_FOLLOWUP_PLAN.md` — planned per-user saved conversations, re-login resumption, source checks and implementation/review scope (not implemented)
 - `RETROSPECTIVES.md` — bounded period summaries, date meaning, coverage and per-item citations
 - `HISTORICAL_QUESTIONS.md` — observed version cutoffs, local history preview and cited answers
 - `AI_SOURCE_COVERAGE.md` — primary event evidence, index compatibility and bounded Phase 3.3 acceptance
@@ -267,6 +268,17 @@ Avoid introducing infrastructure purely to make the architecture look sophistica
 The repository is the source of truth for the project. ChatGPT, Codex CLI, Antigravity CLI, and other coding agents should read the project documentation before making changes.
 
 ## Current Status
+
+Active work is **Phase 3.3**; exit acceptance is incomplete and Phase 4 has not
+started. Current answers are independent requests held in browser memory.
+The agreed next direction is to save lifhop question/answer conversations in the
+existing PostgreSQL database under their owner, so the owner can close a chat,
+log out and later reopen it to ask a follow-up. This is separate from importing
+ChatGPT/Codex source conversations. Storage, conversation lists and contextual
+follow-ups are **planned, not implemented**. See
+[the implementation plan](CONVERSATIONAL_FOLLOWUP_PLAN.md) and `CURRENT.md`.
+The plan retains provider `store=false`, rechecks source permissions/versions
+before each new AI request, and requires fresh consent for new questions.
 
 The learning-through-F3 baseline is marked by Git tag
 `learning-complete-f3`; F0–F3 was completed on 2026-09-28. The project

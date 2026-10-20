@@ -1,5 +1,32 @@
 # One-action answers with sources
 
+## Current behavior and planned saved conversations (2026-10-20)
+
+The implemented flow below is still a single independent question. Question and
+answer bodies remain in browser memory; there is no saved conversation list,
+re-login restoration or contextual follow-up yet. Closing/leaving the panel or
+logging out loses that screen context. Provider `store=false` is separate from
+whether lifhop itself saves a conversation.
+
+The owner-selected next direction is
+[per-user PostgreSQL conversation storage](CONVERSATIONAL_FOLLOWUP_PLAN.md),
+**not implemented**. It will retain chats across closing/logout/restart and
+restore them through authenticated, owner-scoped local reads. The planned default
+is retention until user deletion. Each new follow-up will still require consent,
+bounded history and revalidation of source/record permissions and versions.
+Past-answer display and AI retransmission are distinct; deleting a source must
+also suppress its derived saved answers. Reopening a conversation will not resume
+unfinished paid stages. Incomplete requests will have inspectable stop/error and
+billing states. The plan's larger follow-up call/cost bounds are candidates, not
+current endpoint limits or new execution approval.
+
+Current ordinary output uses `part-results-v3`: per-part answered/facts or
+unresolved/known/gap, with server-rendered text/status/citations. Ordinary output
+is capped at 4,096 tokens; period/historical remain at 512. The current API protection
+and closed actual verification results are recorded in `CURRENT.md` and
+`OUTPUT_CONTRACT_REVIEW.md`. The dated verification counts below describe their
+original executions, not validation of saved conversations.
+
 2026-10-18 source coverage update: validated Codex questions/final answers and
 GitHub commit/discussion primary text can now qualify as AI evidence. Commands,
 patches and unknown assistant phases remain outside this scope. Existing records
@@ -116,7 +143,8 @@ The answer must distinguish support from insufficiency under the existing contra
 Limits reuse the existing backend guards:
 
 - Query: one call, at most USD 0.001.
-- Answer: one call, at most USD 0.01; 512 output tokens; 14 KiB serialized request;
+- Answer: one call, at most USD 0.01; 4,096 ordinary output tokens (512 for period/historical);
+  14 KiB serialized request;
   at most five full Passages, each at most 2,000 characters.
 - Combined maximum: two provider calls, USD 0.011 for one action. Each backend
   stage also enforces the shared configured monthly allowance. The second stage

@@ -324,6 +324,25 @@ and show if a cited source subsequently changed or was deleted in lifhop.
 Project-resume questions use these same flows; a separate briefing dashboard
 and automatic project classification are deferred.
 
+Owner scope update, 2026-10-20 — **planned, not implemented**: ordinary Search & ask
+must support saved conversations and contextual follow-up questions. Use the
+existing PostgreSQL database with per-user ownership of conversations, turns and
+source anchors. Closing a chat, logging out or restarting the app must preserve
+history; reopening it is a local read and must not replay a paid request. Each
+new follow-up requires consent and current source/record AI-policy and version
+checks. Distinguish stored-history viewing from retransmitting derived content;
+a deleted source must not reappear through a saved answer. Preserve body-free
+billing when deleting a conversation, and prevent late responses from restoring it.
+This adds no scheduled collection or new infrastructure. Period/historical modes
+keep their existing scope. Details and bounded-context limits live in
+[CONVERSATIONAL_FOLLOWUP_PLAN.md](CONVERSATIONAL_FOLLOWUP_PLAN.md).
+
+**Saved-conversation user check:** Ask a cited question, close the conversation,
+log out, log in to the same account, open the saved chat and ask a contextual
+follow-up. Another account cannot read its content. Opening/reopening makes no
+AI call; changed/excluded/deleted evidence is handled before retransmission.
+Deleting the conversation removes its messages while retaining accounting.
+
 **Phase exit:** Review the evaluation set, including answers combining sources,
 and inspect citations. Record failures, latency, and per-query cost. No observed
 ownership leak, prohibited AI transmission, or deleted-content resurfacing is

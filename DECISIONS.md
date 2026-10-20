@@ -1819,3 +1819,72 @@ costs. The owner rejected an arbitrary USD 0.03 ceiling; budget flexibility itse
 is not paid approval. The proposed 13-call repetition scope needs separate explicit
 approval, is finite/hash-bound and never retries. Product mode stays off; old
 uncertain reservations, source permissions and original evidence are preserved.
+
+
+## 2026-10-20: Choose one ordinary result branch per requested part
+
+Ordinary `part-results-v3` replaces repeated complete flags, claim kinds and
+cross-array part references with `answered` + nonempty `facts`, or `unresolved`
++ possibly empty `known` + mandatory scoped `gap`. The model still judges the
+requested evidence level, relevance and completeness; the server derives public
+status from those explicit branches, never from an absent unknown list alone.
+Retain useful facts/progress and source-explicit verification limits, scoped to
+the actual record. Do not turn a review's nonexecution into operational failure.
+Remove generated-but-unused background, not source/permission/usage safeguards.
+
+The server renders facts and gaps in part order and unions their cited IDs.
+All-unresolved with no known facts remains insufficient with empty public arrays;
+its answer retains the scoped gaps. Global six-fact/eight-reference/five-source,
+text/quote/gap/request bounds remain enforced. Shared `$defs` avoids transmitting
+the fact schema twice without trimming the original input. Ordinary output stays
+4096 candidate, narrative modes 512. The configuration hash changes; old outputs
+are never upgraded or repaired. Period/historical restructuring is separate.
+Exact quotes and valid branches do not prove semantic entailment, correct part
+classification or complete question coverage. Local tests are not live quality.
+
+Future independent-case experiments may continue after a completed response fails
+only app output validation, but only with verified usage durably spent and all
+frozen guards intact. Provider/schema rejection, transport/timeouts, uncertain
+billing and permission/context/version/configuration/budget changes stop all.
+This policy is part of a new unapproved proposal, never retroactive authorization
+for the old closed run. ANSWER_MODE remains off; no Phase3.3 gate is waived.
+
+
+## 2026-10-20: Persist owner-scoped conversations for later follow-up (implementation pending)
+
+The owner requires closing a conversation, logging out and later returning to
+continue it. Persist lifhop conversations and their turns in the existing
+PostgreSQL database, scoped to the authenticated user. A per-user database,
+Redis, provider-side conversation storage and a browser-only signed transcript
+are unnecessary for this requirement. The earlier tab-only 30-minute/six-turn
+proposal is superseded. This is the accepted design direction; tables, migrations,
+conversation APIs/UI and contextual follow-ups are **not implemented yet**.
+Concrete candidate schema/stages and review findings are in
+[CONVERSATIONAL_FOLLOWUP_PLAN.md](CONVERSATIONAL_FOLLOWUP_PLAN.md).
+
+Keep original questions, displayed answers/statuses, safe execution state and
+stable version/range/hash evidence links; do not duplicate source bodies or
+persist raw provider requests/responses in the product database. Track all
+supplied sources, including uncited and inherited dependencies, so stored derived
+text cannot bypass later source restrictions. Existing private experiment
+artifacts remain separate and unchanged. Provider `store=false` remains.
+
+The planned default is to retain chats until the owner deletes them. Closing,
+logging out or starting another chat preserves history; reading/reopening it
+causes no AI call. Load a bounded selection of eligible history for each new
+question, rather than sending the full stored conversation. Authenticate and
+check ownership anew after login, and require fresh transmission consent.
+
+Viewing an old answer is distinct from retransmitting it. Check current source
+ownership, version and AI policy before sending derived history to any planner,
+query embedding or answer model. Changed/excluded evidence blocks reuse; deleted
+originals must not resurface through stored answers. Permit a new independent
+context explicitly, without silently substituting source versions or editing
+old results. Conversation deletion removes its messages/evidence links while
+preserving body-free usage accounting; in-flight responses cannot recreate it.
+Backups/restore must include these tables in the later Phase5 deletion policy.
+
+This extends the planned ordinary Phase3.3 flow and supersedes ephemeral-only
+storage for that future flow; today's independent-request behavior and legacy
+period/historical/manual flows remain. It does not waive exit gates, change prior
+scores or authorize implementation, paid verification or Phase4 collection.

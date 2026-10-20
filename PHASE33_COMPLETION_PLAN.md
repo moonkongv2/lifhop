@@ -1,11 +1,76 @@
 # Phase 3.3 remaining acceptance
 
-Status: 2026-10-19. The selected-context, 46-record indexing and three-question
-integrated smoke passes are closed. Phase 3.3 remains incomplete; this plan does
-not authorize another provider request. The later combined 37-slice pass below
-is also closed after its first query hit a database search timeout. The subsequent
-11-call proposal was approved and is now closed after the first actual answer's
-context-selection/status failure, as recorded immediately below.
+Status: 2026-10-20. Phase3.3 acceptance remains incomplete; Phase4 has not
+started. All earlier provider approvals are closed. Latest v3 fixed-context
+results are recorded below and remain unchanged. This document does not authorize
+new transmissions or replace the original raw results.
+
+## 다음 방향 — 저장 대화와 후속 질문 (계획만 완료·미구현)
+
+사용자는 현재 답변 수준을 사용 관점에서 허용 가능하다고 밝혔고, 재로그인 후에도
+이어 묻는 사용자별 DB 대화 저장 계획으로 바꾸도록 지시했다.
+[CONVERSATIONAL_FOLLOWUP_PLAN.md](CONVERSATIONAL_FOLLOWUP_PLAN.md) 개정2는
+agy 계획 리뷰2회/4지적 반영을 마쳤다. PostgreSQL 대화·턴·안정 근거 저장,
+owner 목록/상세/삭제, 종료/재로그인 후 복원, 문맥 해석·검색/되묻기를 계획한다.
+현재는 여전히 브라우저 메모리의 독립 답변이며 schema/API/UI/migration은 없다.
+
+저장 이력 보기와 AI 재전송을 분리하고 모든 전이적 근거의 현재 권한/버전을 다시
+검사한다. 삭제된 원문을 저장 답변으로 되살리지 않는다. 재접속/재개는 provider0이며
+미완료 요청은 자동 복구/재시도하지 않는다. 새 동작은 새 동의·stage별 과금 검증을
+거친다. 회고/과거/수동 모드는 첫 구현 범위에 넣지 않는다.
+
+기존 v1/v2 점수·실패·원본·과금은 보존하며, 사용자의 허용 의견을 과거 실패의
+통과 재분류나 Phase3.3 완료조건 면제로 사용하지 않는다. 자동 검색과 나머지 기존
+완료 검증도 남는다. 먼저 한 묶음의 로컬 구현/합성·회귀 결과를 제시하고, 실제 대화
+검증이 필요하면 시나리오/요청/횟수/비용/중단 조건을 완성해 새 별도 승인을 받는다.
+ANSWER_MODE=off/기존미확정3건USD0.006801/Phase4 미착수 유지.
+
+## v3 승인 실행 종료 — 계약13/13, v2 의미품질4/7 (2026-10-20)
+
+사용자가 새13회/최대예약USD0.038808를 승인했고 동결 요청 전체를1회씩 보냈다.
+재시도0/미전송0, provider schema 및 앱 계약13/13 통과. 기본7건의 직접 원문 검토는
+4/7이다. 삭제 정책/구현·회고Seoul날짜·과거cutoff·배포검증한계는 통과했다.
+해결안 질문은 불필요한 후속 Apply패치 적용 여부를 추가해 partial이 됐고,
+렌터카는 예약 진행, README는 탈것 선택이 누락됐다. 반복 결과는 렌터카0/3,
+README0/3, 배포검증한계3/3. 기준은 기존 동결v2이며 구형 missing-proof의
+insufficient/빈인용 판정을 재사용하지 않았다. 이전 Luna5/7·Sol6/7은 동일 기존
+출력의 v2 기준선으로 보존한다. 새Luna4/7로 품질 개선을 주장하지 않는다.
+
+실제USD0.005012 정산/새미확정0, 기존472행 보존/현재485행,
+기존미확정3건USD0.006801 유지. 원본560파일·권한/버전·1097anchor 보존,
+parse/usage재생13건과 반환 인용본문21건 읽기전용 대조 통과. 출력126–404토큰,
+4.45–8.51초/회. 최대4096용량이나 자동검색 품질을 측정한 것은 아니다.
+승인 종료/재사용 금지, ANSWER_MODE=off. 결과/원본/직접판정:
+`.local/evaluation/phase33/part-results-v3-review-20261020-v1/execution/report.html`.
+제품코드 변경/새import·인덱싱/권한확대/추가AI호출0. 이번 전체테스트 재실행 없음;
+직전819/198 및 lint/build와 이번 실제모델 검증을 구분한다. diff whitespace 통과.
+Phase3.3 미완료/Phase4 미착수. 사용자 결과 확인 후 질문범위/핵심회수 개선을
+검토하며 승인 종료 뒤의 자동 실험은 하지 않는다.
+
+## 이전 준비 이력: 일반 계약 단순화 v3 로컬 완료 (당시 미승인)
+
+부분별 answered/facts 또는 unresolved/known/gap 단일 분기를 구현했다.
+서버가 표시/인용 합집합/공개 상태를 조립하고 전역 상한·구절·권한·버전·과금을
+유지한다. 구형 출력 자동 보정 없음. 회고/과거의 구조화는 별도 후속 변경이다.
+최종 backend819/frontend198 및 lint/build/diff 통과. 합성 검사는 실제 품질이 아니다.
+질문 부분 누락/오분류/인용 의미 오류는 남는다. 상세: OUTPUT_CONTRACT_REVIEW.md 6절.
+
+무절단 기존7건 input 동일, 일반5건 full bytes8030–14185/14336,
+회고·과거 full request 동일, output4096/512. 새 schema 실제 수용/최대 용량 미검증.
+새 미승인 묶음: `.local/evaluation/phase33/part-results-v3-review-20261020-v1/report.html`.
+동일7문맥+렌터카/README/배포검증한계 추가2회씩=새13호출/최대예약USD0.038808.
+7건만의 별도 대안USD0.019290. 기준은 기존 v2, 모델Luna, 새 검색/embedding/import/
+인덱싱/권한확대/재시도 없음. 실행기/요청/비용/원본·원장/코드·설정 해시 동결,
+읽기전용 사전 검사와 승인 부재 차단, 오프라인 중단 분기9검사 통과.
+완료된 응답의 앱 계약 실패는 유효usage/spent가 확인된 경우만 자체 실패로 보존 후
+다음 독립 사례 계속; provider/schema 거부·전송·timeout·불명확 과금·보호 변경은 중단.
+이는 새 제안일 뿐이며 이전 승인의 중단 조건이나 남은12회를 재사용하지 않는다.
+
+기존560파일 hash/472과금행/미확정3건USD0.006801/1097anchor 보존 확인.
+새 전송·예약·과금0, ANSWER_MODE=off. 기존824/61과 이후203+13 검사는 각각
+이전 실행 시점의 결과다. 기존 v1 Luna/Sol4/7과 재생성 없는 v2 Luna5/7·Sol6/7
+기준선은 유지하며 새7건 점수는 없다. Phase3.3 미완료/Phase4 미착수.
+다음은 사용자 로컬 결과 검토와 새로운 명시적 유료 범위 승인 여부 결정이다.
 
 ## 승인된 v2 검증 종료: 첫 계약 오류에서 중단 (2026-10-20)
 
