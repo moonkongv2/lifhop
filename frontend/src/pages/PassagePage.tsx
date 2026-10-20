@@ -11,12 +11,13 @@ export default function PassagePage({ semantic = false }: { semantic?: boolean }
   const location = useLocation();
   const context = resolveEntryContext(location.search);
   const anchor = new URLSearchParams(location.search);
+  const conversationReturn = /^\/conversations\/[a-f0-9]{32}$/.test(anchor.get("returnTo") ?? "") ? anchor.get("returnTo") : null;
   const pinned = ["version_id", "field", "start", "end", "passage_hash"].some(key => anchor.has(key));
   const token = localStorage.getItem("access_token");
   const { data, error, isLoading, isFetching, refetch } = useQuery<Passage | components["schemas"]["CitationResponse"]>({ queryKey: [semantic ? "semantic-slice" : "passage", id, location.search, token], queryFn: ({ signal }) => pinned ? fetchCitation(anchor, signal) : semantic ? fetchSemanticSlice(id, signal) : fetchPassage(id, signal),
-    enabled: Boolean(localStorage.getItem("access_token") && /^\d+$/.test(id)), retry: false, gcTime: 0, refetchOnMount: "always" as const });
+    enabled: Boolean(localStorage.getItem("access_token") && (pinned || /^\d+$/.test(id))), retry: false, gcTime: 0, refetchOnMount: "always" as const });
   if (!localStorage.getItem("access_token")) return <Navigate to="/login" replace />;
-  return <><Link to={listTarget(context)}>Back to search</Link>
+  return <><Link to={conversationReturn ?? listTarget(context)}>{conversationReturn ? "Back to conversation" : "Back to search"}</Link>
     {isLoading && <p role="status">Loading passage...</p>}
     {error && <><p role="alert">{error.message}</p><button onClick={() => void refetch()}>Retry</button></>}
     {data && !isFetching && !error && <><header className="page-header"><div><p className="eyebrow">Original passage</p><h2>{data.title}</h2><p className="subtitle">Version {data.version_id} · {data.field} · Characters {data.start+1}–{data.end}</p></div></header>

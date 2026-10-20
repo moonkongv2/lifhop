@@ -1,31 +1,77 @@
 # One-action answers with sources
 
-## Current behavior and planned saved conversations (2026-10-20)
+## Saved conversations (2026-10-20)
 
-The implemented flow below is still a single independent question. Question and
-answer bodies remain in browser memory; there is no saved conversation list,
-re-login restoration or contextual follow-up yet. Closing/leaving the panel or
-logging out loses that screen context. Provider `store=false` is separate from
-whether lifhop itself saves a conversation.
+Ordinary **Search & ask → Get an answer with sources → consent → Ask from my
+records** now creates an owner-scoped PostgreSQL conversation and saves its result.
+Use **Conversations** to list/open it after closing, logout or a server restart.
+Opening/refreshing/reopening makes no model call or reservation. Chats remain until
+you delete them; provider `store=false` is independent of this app retention.
 
-The owner-selected next direction is
-[per-user PostgreSQL conversation storage](CONVERSATIONAL_FOLLOWUP_PLAN.md),
-**not implemented**. It will retain chats across closing/logout/restart and
-restore them through authenticated, owner-scoped local reads. The planned default
-is retention until user deletion. Each new follow-up will still require consent,
-bounded history and revalidation of source/record permissions and versions.
-Past-answer display and AI retransmission are distinct; deleting a source must
-also suppress its derived saved answers. Reopening a conversation will not resume
-unfinished paid stages. Incomplete requests will have inspectable stop/error and
-billing states. The plan's larger follow-up call/cost bounds are candidates, not
-current endpoint limits or new execution approval.
+In an active conversation, enter a new question and grant fresh transmission
+consent. The planner chooses reuse, search or clarification. Clarifications are
+saved; answer them in the same input. Select **Follow up on this answer** for an
+older answer. **Start an independent context** explicitly clears inherited context
+for the new question while retaining history. Source/date filters stay fixed;
+start another conversation to change scope. No message editing or branching.
 
-Current ordinary output uses `part-results-v3`: per-part answered/facts or
-unresolved/known/gap, with server-rendered text/status/citations. Ordinary output
-is capped at 4,096 tokens; period/historical remain at 512. The current API protection
-and closed actual verification results are recorded in `CURRENT.md` and
-`OUTPUT_CONTRACT_REVIEW.md`. The dated verification counts below describe their
-original executions, not validation of saved conversations.
+Close/reopen preserves messages. Stop unfinished questions before closing.
+Unfinished stages after reconnect are shown with state/lease and billing status;
+use **Stop unfinished question** immediately or **Clear expired question** after
+expiry. There is no automatic resume/retry. Already sent requests can finish and
+be charged, but Stop/deletion wins over late answer storage. Deleting a conversation
+removes its text/anchors while preserving body-free accounting.
+
+An updated/excluded source leaves an old local answer visible with a badge but
+blocks contextual retransmission. A deleted/missing source suppresses derived text;
+source deletion redacts dependent stored assistant/resolved text in the same
+transaction. Stable version/range/hash citations survive disposable Passage rebuilds.
+Opening an original and **Back to conversation** do not repeat paid work.
+
+The new profile allows history16KiB, planner wire24KiB, answer wire64KiB. Original
+passages are whole (five maximum,2000 characters each); optional history is dropped
+before priority evidence. Context details show actual history IDs and omissions.
+Ordinary output remains `part-results-v3`/4096 tokens; planner output1024. Maximal
+payload reservations under the code's pinned prices: first/fresh USD0.008745,
+follow-up reuse USD0.011776, search USD0.011817, clarify USD0.003072. Actual costs
+use validated usage. These bounds are not a paid experiment authorization.
+
+### Setup and verification
+
+1. With PostgreSQL running and the usual local `.env`, apply `.venv/bin/alembic upgrade head`.
+   This adds tables; no personal backfill/indexing or source-policy change is required.
+2. Start backend `.venv/bin/uvicorn app.main:app --reload --port 8000` and frontend
+   `npm run dev --prefix frontend`. Open `http://localhost:5173/conversations` and
+   log in. Keep `ANSWER_MODE=off` for local read-only verification: listing/opening
+   is available, sending is disabled. The agent has not applied this migration to
+   the personal DB or changed the persisted AI configuration.
+3. Run `.venv/bin/pytest tests/test_answer_conversations.py -q` for synthetic
+   first question→follow-up→new-token restoration→delete, source revocation/deletion,
+   clarification, IDOR, once-only billing, live DB concurrency and capacity checks.
+   Tests create/drop an isolated schema in the disposable `_test` database and
+   mock only provider I/O. `npm test --prefix frontend` includes saved-chat UI,
+   first-search routing, citation return and account-change/cancellation checks.
+4. Owner browser acceptance with an authorized AI configuration: ask a question,
+   see a saved cited answer, ask a contextual follow-up, close/logout/login and
+   reopen it. Confirm opening does not dispatch AI, new questions require consent,
+   another account cannot open it, and deletion removes it. Any real-provider
+   quality experiment still requires its separately frozen scope/cost approval.
+
+Local checks: backend836 tests (including17 saved-conversation tests), frontend204
+tests, lint and build pass. Build reports a slightly-over500kB single-chunk warning.
+Browser automation was attempted twice but its tool
+failed before connection (`sandboxPolicy` metadata missing), so mobile/layout and
+owner browser acceptance are pending. Actual planner interpretation, combined
+retrieval/answer quality and larger-context provider latency remain unmeasured.
+The long-history synthetic case measured1000 turns/29,750 anchors:50-turn page
+257 queries/22,442bytes/~0.102s; source redaction~0.059s on this local test DB.
+This does not establish production performance; flattened dependencies grow with
+history and a changed old dependency can require a new independent context.
+
+Legacy `mode=answer`, manual, period and historical flows retain their earlier
+contracts; their ephemeral results and dated checkpoints below describe those
+flows. The implementation plan is [CONVERSATIONAL_FOLLOWUP_PLAN.md](CONVERSATIONAL_FOLLOWUP_PLAN.md).
+Phase3.3 exit acceptance remains incomplete; no scheduled collection was added.
 
 2026-10-18 source coverage update: validated Codex questions/final answers and
 GitHub commit/discussion primary text can now qualify as AI evidence. Commands,
@@ -37,7 +83,7 @@ Implemented 2026-10-17. Agent synthetic browser verification passed; the owner
 authorized the checkpoint commit. Separate owner browser confirmation was not
 reported. No real-provider evaluation or new transmission was performed.
 
-## Observable flow
+## Earlier independent-answer checkpoint (legacy behavior)
 
 Search → **Search & ask** → enter the question/filters → **Search**. This first
 returns local record excerpts and makes no provider/status request for answering.
@@ -93,7 +139,8 @@ UI parameters are stripped from API requests. Legacy unmoded phrase URLs and
 `mode=passages|semantic|answer|historical|retrospective` URLs remain readable.
 New submissions use the consolidated form. Citation return paths retain the
 purpose, question, filters, exact/version options and page. Answer panels and
-results remain ephemeral; returning/reloading never replays paid stages.
+results in legacy modes remain ephemeral. Ordinary saved answers now return to
+the conversation; returning/reloading never replays paid stages.
 
 Draft or purpose/version changes and closing the answer panel synchronously
 abort pending stages; the controller is created on click before mutation work

@@ -9,6 +9,8 @@ import ImportsPage from "./pages/ImportsPage";
 import ImportJobPage from "./pages/ImportJobPage";
 import SourcesPage from "./pages/SourcesPage";
 import App from "./App";
+import ConversationsPage from "./pages/ConversationsPage";
+import ConversationPage from "./pages/ConversationPage";
 import LoginPage from "./pages/LoginPage";
 import EntryListPage from "./pages/EntryListPage";
 import EntrySearchPage from "./pages/EntrySearchPage";
@@ -25,6 +27,9 @@ const router = createBrowserRouter([
     path: "/",
     element: <App />,
     children: [
+      { path: "citations", element: <PassagePage /> },
+      { path: "conversations", element: <ConversationsPage /> },
+      { path: "conversations/:id", element: <ConversationPage /> },
       { path: "passages/:id", element: <PassagePage /> },
       { path: "semantic/slices/:id", element: <PassagePage semantic /> },
       { path: "repositories/github", element: <GitHubRepositoryPage /> },

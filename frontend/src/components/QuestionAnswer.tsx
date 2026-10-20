@@ -8,6 +8,7 @@ import type { QuestionStage } from "../api/questions";
 import { fetchSemanticStatus } from "../api/semantic";
 import { listContext, listTarget } from "../utils/entryNavigation";
 import SemanticResults from "./SemanticResults";
+import SavedQuestion from "./SavedQuestion";
 
 const stages = { search: "Finding related records...", evidence: "Choosing original passages locally...", answer: "Generating an answer with sources..." };
 
@@ -75,6 +76,7 @@ export default function QuestionAnswer({ params, productView = false }: { params
     {fresh && !ready && <p role="status">AI answers are unavailable for these filters. You can still search your records.</p>}
     {fresh && coverage.data && answers.data && !sameRevision && <p role="status">Records or permissions changed. Refresh availability before asking.</p>}
     {!sameRevision || coverage.error || answers.error ? <button onClick={refresh}>Refresh availability</button>
+      : productView ? <SavedQuestion key={`${revision}:${serialized}`} params={params} available={fresh && ready} />
       : !manual && <QuestionRun key={`${revision}`} params={params} revision={revision!} available={fresh && ready} refresh={refresh} productView={productView} />}
     {!productView && <button aria-expanded={manual} onClick={() => setManual(!manual)}>{manual ? "Return to automatic answer" : "Choose evidence manually (advanced)"}</button>}
     {!productView && manual && <SemanticResults params={params} />}

@@ -58,7 +58,7 @@ it("focuses search on the correct child page and retains its return URL",async()
   await screen.findByText("Preserved review answer");
   await waitFor(()=>expect(screen.getByTestId("position").textContent).toContain("thread_offset=20"));
   expect(screen.getByRole("link",{name:/Back to search/}).getAttribute("href")).toBe("/search?q=review");
-  const record=screen.getByRole("link",{name:"Open record and history"}).getAttribute("href")!;
+  const record=(await screen.findByRole("link",{name:"Open record and history"})).getAttribute("href")!;
   expect(new URLSearchParams(record.split("?")[1]).get("repositoryReturn")).toContain("thread_offset=20");
 });
 it("reads retained children when the parent is absent",async()=>{

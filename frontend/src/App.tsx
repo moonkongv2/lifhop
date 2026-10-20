@@ -30,6 +30,7 @@ function App() {
           <Link to="/entries" className={activeView === "/entries" ? "active" : ""} aria-current={activeView === "/entries" ? "page" : undefined}><Icon name="archive" />Entries</Link>
           <Link to="/search" className={activeView === "/search" ? "active" : ""} aria-current={activeView === "/search" ? "page" : undefined}><Icon name="search" />Search</Link>
           <NavLink to="/imports" className={({ isActive }) => isActive || location.pathname.startsWith("/import-jobs/") ? "active" : ""}><Icon name="import" />Import</NavLink>
+          <NavLink to="/conversations">Conversations</NavLink>
           <NavLink to="/sources"><Icon name="sources" />Sources</NavLink>
         </nav>
         {token ? <button className="account-link" onClick={() => { clearSession(); cache.clear(); navigate("/login", { replace: true }); }}>Logout</button>

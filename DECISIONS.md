@@ -1858,7 +1858,8 @@ PostgreSQL database, scoped to the authenticated user. A per-user database,
 Redis, provider-side conversation storage and a browser-only signed transcript
 are unnecessary for this requirement. The earlier tab-only 30-minute/six-turn
 proposal is superseded. This is the accepted design direction; tables, migrations,
-conversation APIs/UI and contextual follow-ups are **not implemented yet**.
+conversation APIs/UI and contextual follow-ups were **not implemented at this decision checkpoint**;
+see the implementation note below for the subsequent owner-authorized work.
 Concrete candidate schema/stages and review findings are in
 [CONVERSATIONAL_FOLLOWUP_PLAN.md](CONVERSATIONAL_FOLLOWUP_PLAN.md).
 
@@ -1888,3 +1889,30 @@ This extends the planned ordinary Phase3.3 flow and supersedes ephemeral-only
 storage for that future flow; today's independent-request behavior and legacy
 period/historical/manual flows remain. It does not waive exit gates, change prior
 scores or authorize implementation, paid verification or Phase4 collection.
+
+
+### Implementation note — 2026-10-20 saved-conversation slice
+
+The owner authorized implementation after revision3 and committed that plan as
+`56fb726`. Migration `h60f5a47e286` adds the three tables. The app owns persisted
+questions, displayed answers and stable dependencies; retention is until explicit
+conversation deletion. Closing/logout preserves history, and GET never resumes
+paid stages. Entry deletion redacts dependent assistant/resolved text in the same
+transaction; metadata gates also suppress unavailable derived text on reads.
+
+New conversation-only profiles allow history16KiB, planner24KiB, answer64KiB,
+with unchanged1024/4096 output and five2000-character sources. Existing wire limits
+remain for legacy callers. Reservations pin profile configuration, prices and
+input/output bounds. Prior usage is neither migrated nor reclassified.
+
+Dispatch uses a shared owner guard on a separate connection and short state
+transactions, releasing row locks before provider I/O. Stop/delete never acquire
+owner/billing locks. Settlement releases source guards before billing and final
+storage rechecks sources/state; a paid late response cannot restore deleted data.
+Global billing concurrency stays bounded by the existing call slot. This costs
+extra short-lived DB connections; pool behavior and long-history queries remain
+operational considerations for the later private deployment slice.
+
+Synthetic DB/HTTP/UI verification is distinct from provider semantic quality and
+owner browser checks. No live provider run, indexing or permission expansion was
+part of implementation. Phase3.3 acceptance remains incomplete.

@@ -324,7 +324,8 @@ and show if a cited source subsequently changed or was deleted in lifhop.
 Project-resume questions use these same flows; a separate briefing dashboard
 and automatic project classification are deferred.
 
-Owner scope update, 2026-10-20 — **planned, not implemented**: ordinary Search & ask
+Owner scope update, 2026-10-20 — **implemented; owner/browser and real-model
+acceptance pending**: ordinary Search & ask
 must support saved conversations and contextual follow-up questions. Use the
 existing PostgreSQL database with per-user ownership of conversations, turns and
 source anchors. Closing a chat, logging out or restarting the app must preserve

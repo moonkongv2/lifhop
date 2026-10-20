@@ -33,11 +33,16 @@ def call_slot(engine, scope):
 
 
 def reserve(db, *, scope, owner_id, run_id, purpose, upper, monthly_limit, run_limit, at=None,
-            dispatch_id=None, call_limit=None, output_limit=None):
-    if output_limit is not None and (purpose != "answer" or type(output_limit) is not int):
+            dispatch_id=None, call_limit=None, output_limit=None, profile=None):
+    if output_limit is not None and (purpose not in {"answer", "followup"} or type(output_limit) is not int):
         raise EmbeddingError("INVALID_RESERVATION")
-    priced = purpose in {"rerank", "answer"}
-    if purpose not in {"document", "query", "rerank", "answer"} or not 0 < upper <= (525312 if purpose == "rerank" else 16000) or not 0 < run_limit <= (1000000 if priced else 250000):
+    priced = purpose in {"rerank", "answer", "followup"}
+    profile_bound = {('answer', 'dialogue-v1'): 66560, ('followup', 'planner-v1'): 25600}.get((purpose, profile))
+    if profile is not None and profile_bound is None:
+        raise EmbeddingError("INVALID_RESERVATION")
+    if purpose == 'followup' and profile != 'planner-v1':
+        raise EmbeddingError("INVALID_RESERVATION")
+    if purpose not in {"document", "query", "rerank", "answer", "followup"} or not 0 < upper <= (profile_bound or (525312 if purpose == "rerank" else 16000)) or not 0 < run_limit <= (1000000 if priced else 250000):
         raise EmbeddingError("INVALID_RESERVATION")
     # A scope configuration change must not reset an existing run's limits.
     db.execute(text("SELECT pg_advisory_xact_lock(13034, :key)"),
@@ -50,8 +55,11 @@ def reserve(db, *, scope, owner_id, run_id, purpose, upper, monthly_limit, run_l
     if priced:
         from app.services import rerank_transport as rt
         from app.services import answer_transport as at
-        pricing = rt if purpose == "rerank" else at
+        from app.services import followup_transport as ft
+        pricing = rt if purpose == "rerank" else ft if purpose == "followup" else at
         bound = pricing.OUTPUT_LIMIT if output_limit is None else output_limit
+        if purpose == "followup" and bound != 1024:
+            raise EmbeddingError("INVALID_RESERVATION")
         if purpose == "answer" and bound not in {pricing.OUTPUT_LIMIT, pricing.CONTEXT_OUTPUT_LIMIT}:
             raise EmbeddingError("INVALID_RESERVATION")
         amount = pricing.cost_micro(upper, bound)
@@ -74,6 +82,8 @@ def reserve(db, *, scope, owner_id, run_id, purpose, upper, monthly_limit, run_l
         input_upper_bound=upper, reserved_micro_usd=amount, status="reserved")
     if priced:
         row.model, row.configuration_hash = pricing.MODEL, pricing.CONFIG_HASH
+        if profile == 'dialogue-v1':
+            row.configuration_hash = pricing.DIALOGUE_CONFIG_HASH
         row.output_upper_bound = bound
         row.input_price_micro, row.output_price_micro, row.price_hash = pricing.INPUT_PRICE, pricing.OUTPUT_PRICE, pricing.PRICE_HASH
     db.add(row)
@@ -92,7 +102,7 @@ def settle(db, attempt_id, *, status, tokens=None, input_tokens=None, output_tok
     if status not in {"uncertain", "spent", "released"}:
         raise EmbeddingError("INVALID_SETTLEMENT")
     if status == "spent":
-        if row.purpose in {"rerank", "answer"}:
+        if row.purpose in {"rerank", "answer", "followup"}:
             if (type(input_tokens) is not int or type(output_tokens) is not int
                     or not 0 < input_tokens <= row.input_upper_bound
                     or not 0 <= output_tokens <= row.output_upper_bound):
@@ -116,8 +126,8 @@ def reconcile(db, *, owner_id, scope, attempt_id, assume_max_spent=False, confir
         raise EmbeddingError("CONFIRM_SETTLEMENT")
     settle(db, attempt_id, status="spent" if assume_max_spent else "released",
         tokens=row.input_upper_bound if assume_max_spent else None,
-        input_tokens=row.input_upper_bound if assume_max_spent and row.purpose in {"rerank", "answer"} else None,
-        output_tokens=row.output_upper_bound if assume_max_spent and row.purpose in {"rerank", "answer"} else None,
+        input_tokens=row.input_upper_bound if assume_max_spent and row.purpose in {"rerank", "answer", "followup"} else None,
+        output_tokens=row.output_upper_bound if assume_max_spent and row.purpose in {"rerank", "answer", "followup"} else None,
         error_code="MANUAL_MAX_SETTLEMENT" if assume_max_spent else "MANUAL_NO_CHARGE")
 
 

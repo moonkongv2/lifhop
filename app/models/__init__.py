@@ -24,3 +24,4 @@ from app.models.passage import EntryPassage, PassageIndexState
 from app.models.ai_usage import AiUsageAttempt
 from app.models.passage_embedding import PassageEmbedding
 from app.models.embedding_job import EmbeddingRun, EmbeddingJob
+from app.models.answer_conversation import AnswerConversation, AnswerTurn, AnswerTurnSource

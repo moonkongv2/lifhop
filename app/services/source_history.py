@@ -96,6 +96,8 @@ def queue_purge(db: Session, *, user_id: int, key: str, artifact_id: int | None 
 def delete_record(db: Session, entry: Entry) -> None:
     owner_lock(db, entry.user_id)
     db.refresh(entry)
+    from app.services.conversation_context import redact_sources
+    redact_sources(db, entry.user_id, entry.id)
     identity = entry.external_id
     if not identity and entry.provider == "markdown":
         identity = markdown_identity(entry.content or "")
