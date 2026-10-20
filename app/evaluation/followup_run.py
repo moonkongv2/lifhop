@@ -26,7 +26,12 @@ def preflight(proposal, approval_digest, fresh):
         raise PilotError('FOLLOWUP_PROPOSAL_STALE')
     if approval_digest!=proposal['digest']:
         raise PilotError('FOLLOWUP_APPROVAL_REQUIRED')
-    if proposal['max_total_calls']!=18 or proposal['max_micro_usd']!=79537:
+    limits={
+        'followup-validation-synthetic-v1':(18,79537,dict(document=1,planner=6,query=4,answer=7)),
+        'followup-quality-recheck-v1':(7,29279,dict(document=1,planner=1,query=2,answer=3)),
+    }
+    if (proposal.get('version') not in limits or
+            (proposal['max_total_calls'],proposal['max_micro_usd'],proposal['max_calls'])!=limits[proposal['version']]):
         raise PilotError('FOLLOWUP_LIMIT_MISMATCH')
 
 
@@ -35,7 +40,8 @@ class PilotGuard:
         self.proposal=proposal;self.output=Path(output);self.fresh=fresh
         self.ledger_engine=ledger_engine;self.owner=owner;self.dry_run=dry_run
         self.stage=None;self.turn=None;self.action_deadline=None;self.calls=[];self.started=time.monotonic()
-        self.maxima={'document':1,'plan':6,'search':4,'answer':7}
+        caps=proposal['max_calls']
+        self.maxima={'document':caps['document'],'plan':caps['planner'],'search':caps['query'],'answer':caps['answer']}
 
     def check(self):
         preflight(self.proposal,self.proposal['digest'],self.fresh())
@@ -57,7 +63,7 @@ class PilotGuard:
             raise PilotError('FOLLOWUP_STAGE_SCOPE')
         if any(c['run_id']==run_id for c in self.calls):
             raise PilotError('FOLLOWUP_REPLAY_BLOCKED')
-        if sum(c['stage']==stage for c in self.calls)>=self.maxima[stage] or len(self.calls)>=18:
+        if sum(c['stage']==stage for c in self.calls)>=self.maxima[stage] or len(self.calls)>=self.proposal['max_total_calls']:
             raise PilotError('FOLLOWUP_CALL_LIMIT')
         if stage=='plan' and (self.turn is None or not self.turn['planner']):
             raise PilotError('FOLLOWUP_UNAPPROVED_PLANNER')

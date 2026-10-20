@@ -16,12 +16,13 @@ def load_script(name):
     return module
 
 
-def proposal():return load_script('prepare_followup_validation').prepare()
+def proposal(profile='full'):return load_script('prepare_followup_validation').prepare(profile)
 
 
 @pytest.mark.parametrize('change',['approval','code','scope','limit'])
-def test_stale_or_unapproved_proposal_rejected_before_io(change):
-    p=proposal();fresh=deepcopy(p);approval=p['digest']
+@pytest.mark.parametrize('profile',['full','quality'])
+def test_stale_or_unapproved_proposal_rejected_before_io(change,profile):
+    p=proposal(profile);fresh=deepcopy(p);approval=p['digest']
     if change=='approval':approval='0'*64
     if change=='code':fresh['code_hashes']['app/services/conversation_stages.py']='0'*64
     if change=='scope':p['turns'][0]['q']='A different question.'
@@ -29,19 +30,20 @@ def test_stale_or_unapproved_proposal_rejected_before_io(change):
     with pytest.raises(PilotError):preflight(p,approval,fresh)
 
 
-def guard(tmp_path):
-    p=proposal();g=PilotGuard(p,tmp_path,fresh=lambda:p,ledger_engine=None,owner=-1,dry_run=True)
+def guard(tmp_path,profile='full'):
+    p=proposal(profile);g=PilotGuard(p,tmp_path,fresh=lambda:p,ledger_engine=None,owner=-1,dry_run=True)
     g.stage='plan';g.turn=p['turns'][1];g.ledger=lambda:[]
     value,upper=ft.payload(g.turn['q'],[])
     return g,value,upper
 
 
 @pytest.mark.parametrize('fault',['uncertain','budget','replay','owner','upper','scope','output','call_limit'])
-def test_guard_stops_before_reservation_and_transport(tmp_path,fault):
-    g,value,upper=guard(tmp_path)
+@pytest.mark.parametrize('profile',['full','quality'])
+def test_guard_stops_before_reservation_and_transport(tmp_path,fault,profile):
+    g,value,upper=guard(tmp_path,profile)
     owner=-1;run='a'*32
     if fault=='uncertain':g.ledger=lambda:[dict(status='uncertain')]
-    if fault=='budget':g.ledger=lambda:[dict(status='spent',spent_micro_usd=79537)]
+    if fault=='budget':g.ledger=lambda:[dict(status='spent',spent_micro_usd=g.proposal['max_micro_usd'])]
     if fault=='replay':g.calls=[dict(run_id=run,stage='plan')]
     if fault=='owner':owner=-2
     if fault=='upper':upper+=1
@@ -50,18 +52,34 @@ def test_guard_stops_before_reservation_and_transport(tmp_path,fault):
         obj=json.loads(value['input']);obj['question']='Unapproved';value['input']=json.dumps(obj,ensure_ascii=False)
         upper=len(json.dumps(value,ensure_ascii=False,separators=(',',':')).encode())+1024
     if fault=='output':value['max_output_tokens']=99999
-    if fault=='call_limit':g.calls=[dict(run_id=str(i),stage='plan') for i in range(6)]
+    if fault=='call_limit':g.calls=[dict(run_id=str(i),stage='plan') for i in range(g.maxima['plan'])]
     with pytest.raises(PilotError):g.before_reserve(owner,run,'plan',value,upper)
     assert not list(tmp_path.iterdir())
 
 
-def test_execute_rejects_missing_approval_before_database(tmp_path,monkeypatch):
+@pytest.mark.parametrize('profile',['full','quality'])
+def test_execute_rejects_missing_approval_before_database(tmp_path,monkeypatch,profile):
     module=load_script('run_followup_validation')
     import json
-    path=tmp_path/'proposal.json';path.write_text(json.dumps(proposal()))
+    path=tmp_path/'proposal.json';path.write_text(json.dumps(proposal(profile)))
     monkeypatch.setattr(module,'fixture_database',lambda *a:pytest.fail('database must not open'))
     with pytest.raises(PilotError,match='APPROVAL_REQUIRED'):
         module.execute(SimpleNamespace(proposal=path,dry_run=False,approve_digest=None))
+
+
+def test_full_approval_cannot_authorize_quality_recheck():
+    quality=proposal('quality')
+    with pytest.raises(PilotError,match='APPROVAL_REQUIRED'):
+        preflight(quality,proposal()['digest'],deepcopy(quality))
+
+
+@pytest.mark.parametrize('field',['max_total_calls','max_micro_usd','max_calls'])
+def test_quality_envelope_cannot_be_expanded_even_with_a_matching_digest(field):
+    p=proposal('quality')
+    if field=='max_calls':p[field]['answer']+=1
+    else:p[field]+=1
+    p['digest']=digest({k:v for k,v in p.items() if k!='digest'})
+    with pytest.raises(PilotError,match='LIMIT_MISMATCH'):preflight(p,p['digest'],deepcopy(p))
 
 
 def test_dry_run_guard_never_uses_network(tmp_path,monkeypatch):

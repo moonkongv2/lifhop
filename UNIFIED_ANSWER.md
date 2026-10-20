@@ -67,8 +67,9 @@ answers and closed real-run artifacts are preserved.
    another account cannot open it, and deletion removes it. Any real-provider
    quality experiment still requires its separately frozen scope/cost approval.
 
-Current checks: full backend853 and frontend205 tests, frontend lint/build passed
-before the frozen real pilot. The UI includes the abort/Stop refresh-race fix.
+Current checks: full backend881 passed after preparing the targeted quality recheck.
+Frontend205 tests/lint/build passed before the original real pilot; no frontend
+code changed in the instruction/recheck work. The UI includes the abort/Stop refresh-race fix.
 Build retains a~500.76kB single-chunk warning.
 
 The in-app browser remains unavailable, but separate installed headless Chromium
@@ -78,6 +79,10 @@ synthetic browser verification is complete; owner acceptance remains pending.
 The separately approved8-question18-call real-model pilot completed once:
 all branches matched, USD0.001643 settled, no new uncertain usage. Source review
 was partial: T1 omitted some unknowns and T5 did not label arithmetic as derived.
+After the instruction correction, the approved3-question7-call recheck settled
+USD0.000693, no new uncertain usage: T5 arithmetic labeling/T8 isolation passed,
+T1 remained partial due to final-choice omission and a price-cited absence fact.
+Both approvals are closed; saved original outputs remain unchanged.
 See [reproduction and actual pilot findings](FOLLOWUP_VALIDATION.md). The pilot's
 synthetic schema was removed; existing accounting rows/personal sources and off
 settings are untouched. Long-context and broad archive quality remain unverified.

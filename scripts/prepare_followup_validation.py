@@ -9,10 +9,18 @@ from app.config import settings
 ROOT=Path(__file__).resolve().parents[1]
 
 
-def prepare():
+def prepare(profile='full'):
+    if profile not in {'full','quality'}:
+        raise ValueError('Unknown follow-up profile')
     fixture_path=ROOT/'tests/fixtures/followup_validation.json'
     raw=fixture_path.read_bytes()
     fixture=json.loads(raw)
+    recheck_path=ROOT/'tests/fixtures/followup_quality_recheck.json'
+    if profile=='quality':
+        recheck=json.loads(recheck_path.read_text())
+        original={t['id']:t for t in fixture['turns']}
+        fixture['version']=recheck['version']
+        fixture['turns']=[dict(original[t['id']],expected=t['expected']) for t in recheck['turns']]
     texts=[r['content'] for r in fixture['corpus']]
     assert all(len(s)<=600 for s in texts)
     document_upper=embedding.input_bound(texts)
@@ -30,7 +38,7 @@ def prepare():
         *ROOT.glob('app/api/*.py'),ROOT/'app/schemas/answer_conversation.py',
         ROOT/'app/auth.py',ROOT/'app/security.py',ROOT/'app/db.py',ROOT/'app/config.py',
         ROOT/'app/evaluation/followup_run.py',ROOT/'scripts/run_followup_validation.py',
-        fixture_path,Path(__file__)])
+        fixture_path,Path(__file__),*([recheck_path] if profile=='quality' else [])])
     hashes={str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in files}
     plan=dict(version=fixture['version'],status='prepared-not-authorized',fixture_sha256=hashlib.sha256(raw).hexdigest(),
         corpus=fixture['corpus'],turns=fixture['turns'],code_hashes=hashes,
@@ -44,7 +52,7 @@ def prepare():
         billing=dict(corpus='isolated-loopback-test-schema',live_ledger='existing-app-ai-usage',
             scope=settings.embedding_billing_scope,
             monthly_limit_micro_usd=settings.embedding_monthly_limit_micro_usd,
-            owner_domain='negative-protocol-digest',existing_rows='unchanged',max_new_rows=18),
+            owner_domain='negative-protocol-digest',existing_rows='unchanged',max_new_rows=sum(calls.values())),
         stop_on=['scope/code/config/permission/version change','unexpected branch before next dispatch',
             'provider or transport/usage error','uncertain accounting','output contract failure','deadline/budget exhaustion'])
     plan['digest']=hashlib.sha256(json.dumps(plan,sort_keys=True,ensure_ascii=False,separators=(',',':')).encode()).hexdigest()
@@ -53,9 +61,10 @@ def prepare():
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--profile',choices=['full','quality'],default='full')
     parser.add_argument('--out',type=Path,default=ROOT/'.local/verification/followup-validation/proposal.json')
     args=parser.parse_args()
-    plan=prepare()
+    plan=prepare(args.profile)
     args.out.parent.mkdir(parents=True,exist_ok=True,mode=0o700)
     with args.out.open('x',encoding='utf-8') as f:
         import os

@@ -70,6 +70,37 @@ See AI_SOURCE_COVERAGE.md for scope and completion gates.
 
 ## Current product slice
 
+**2026-10-20 최소 품질 재검증 종료 — 의미품질2개 충족/1개 부분 충족:**
+
+품질 지침 보완은 `8ae1eb8`로 커밋했다. 기존 원문3개를 유지하고 같은 T1/T5/T8
+질문만 사용하는 named quality profile을 기존 실행기에 추가했다. 질문3개,
+최대7호출(document1/planner1/query2/answer3), 예약USD0.029279, 재시도0.
+첫 답변의 명시적 제한/주장별 근거, T1 기준 계산 출처, fresh 베타 확정 미확인을
+분리 판정한다. 축소된 대화이므로 엄격한 prompt-only 효과 비교로 주장하지 않는다.
+`FOLLOWUP_QUALITY_RECHECK.md`에 질문·판정·예산·중단·보존 범위를 기록했다.
+
+제안 `.local/verification/followup-validation/proposal-quality-v1.json`, digest
+`5849702fbce2ec97bfec1cbc4dfc4cbd2119c0888b3a5ea770db2aee22129d72`.
+관련45개/전체backend881개(68.06초) 통과. `dry-run-quality-v1`에서 합성7단계를
+완료하고 T1 base 유지·T8 dialogue=[]·격리 원장7spent를 확인했다. 임시 schema
+삭제, 새 프로토콜 중앙 원장0행, 설정 ANSWER_MODE=off도 읽기 검증했다.
+프론트 변경이 없어 frontend 검사는 재실행하지 않았다. 위 내용은 실행 전 준비 검증이다.
+사용자가 이 digest/범위의 실행을 승인하여 `real-run-quality-v1`에서 실제7호출을
+완료했다. 세 분기는 예상과 일치하고 중앙7행 모두 spent, 로컬 정산USD0.000693,
+새 reserved/uncertain0이다. 실제 예약 합계USD0.009007로 승인 상한 이내였다.
+기존503회계행이 필드까지 동일하고 임시 schema 삭제/기본ANSWER_MODE=off를 확인했다.
+
+T5는 “기록된 금액을 계산하면 … 35만원 - 30만원 = 5만원”으로 개선돼 rubric 충족,
+T8도 dialogue=[]·범위 한정된 베타 확정 미확인으로 충족했다. T1은 확정/결제/이용
+미확인은 추가했지만 최종 선택 미확인을 빠뜨리고, 가격 인용을 붙인 베타 예약 부재
+fact를 answered/supported로 반환했다. 전체 의미품질은 여전히 partial이다.
+인용5개 출현의 범위/hash와 원시 quote10개 일치, 필수 근거 누락0이다. 질문별
+provider 시간 합계7.41/10.03/4.88초이며 전체API/UI·긴 문맥 성능을 뜻하지 않는다.
+원본은 변경하지 않고 private `REVIEW.md`/`audit.json`에 별도 검토를 보존했다.
+실행 중 코드 변경이 없어 테스트 재실행은 없고 결과/회계/문맥/정리 검증을 수행했다.
+이번 승인은 종료했다. 다음은 T1의 부재 주장과 상태 분류를 분리하는 최소 출력 계약
+검토다. 소유자 브라우저 수용·긴 문맥/개인 기록 품질과 Phase3.3 완료는 미확인이다.
+
 **2026-10-20 후속 답변 품질 지침 보완 — 로컬 검증 완료, 실제 모델 재검증 전:**
 
 Stop 경합 수정·브라우저 도구·동결 실험 실행기·실측 결과를 `579d5a9`로 커밋했다.
@@ -2192,7 +2223,10 @@ user-verifiable product slices in `ROADMAP.md`.
 The bounded saved-conversation real pilot is closed:8 branches matched; its
 semantic review remains partial. The v4 instruction correction and synthetic
 regressions are complete locally; real-provider compliance is not retested.
-Next review owner browser feedback and scope any needed new finite real test.
+The targeted3-question/7-call recheck is now closed: T5 arithmetic labeling and
+T8 isolation passed; T1 still omitted the final-choice limit and used a price-cited
+absence fact with supported status. Next review a minimal output-contract change
+for this remaining failure. Owner browser feedback is separate.
 Preserve raw outputs and keep owner browser acceptance, long-context performance
 and broad archive retrieval as separate open checks.
 Any future paid retest needs a new finite approval; keep ANSWER_MODE=off.

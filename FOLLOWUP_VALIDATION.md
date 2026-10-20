@@ -249,3 +249,10 @@ The old proposal-v4 and real-run-v4 are preserved as the pre-correction baseline
 They are closed and now stale against the new code/config hashes; do not edit or
 reuse their approval. The commands above create a new **unapproved** proposal and
 run it offline only. No new paid experiment is prepared or authorized by this change.
+
+Subsequent preparation is now complete: [targeted quality recheck](FOLLOWUP_QUALITY_RECHECK.md)
+keeps the3 originals and selects T1/T5/T8, with a new frozen digest and a fixed
+7-call/USD0.029279 envelope. After owner approval the live recheck completed at
+USD0.000693, no new uncertain usage, semantic2 passes/1 partial. Arithmetic labeling
+improved; T1 still omitted final-choice unknown and price-cited booking absence.
+That approval is closed. The default full profile and closed prior outputs remain.

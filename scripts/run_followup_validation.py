@@ -30,10 +30,10 @@ from app.security import create_access_token, ALGORITHM
 from app.evaluation.followup_run import PilotError, PilotGuard, preflight, digest, ROOT
 
 
-def fresh_proposal():
+def fresh_proposal(profile='full'):
     spec=importlib.util.spec_from_file_location('followup_prepare',ROOT/'scripts/prepare_followup_validation.py')
     module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
-    return module.prepare()
+    return module.prepare(profile)
 
 
 @contextmanager
@@ -188,7 +188,9 @@ def run_turns(client,guard,entries,bind):
 
 def execute(args):
     proposal=json.loads(args.proposal.read_text())
-    preflight(proposal,proposal['digest'] if args.dry_run else args.approve_digest,fresh_proposal())
+    profile='quality' if proposal.get('version')=='followup-quality-recheck-v1' else 'full'
+    fresh=lambda:fresh_proposal(profile)
+    preflight(proposal,proposal['digest'] if args.dry_run else args.approve_digest,fresh())
     if not args.dry_run and (not settings.openai_api_key or args.approve_digest is None):
         raise PilotError('FOLLOWUP_KEY_OR_APPROVAL_MISSING')
     output=args.out.resolve()
@@ -206,7 +208,7 @@ def execute(args):
                 with Session(ledger) as db:
                     if db.scalar(select(AiUsageAttempt.id).where(AiUsageAttempt.owner_id==owner).limit(1)):
                         raise PilotError('FOLLOWUP_PROTOCOL_ALREADY_USED')
-                guard=PilotGuard(proposal,output,fresh=fresh_proposal,ledger_engine=ledger,owner=owner,dry_run=args.dry_run)
+                guard=PilotGuard(proposal,output,fresh=fresh,ledger_engine=ledger,owner=owner,dry_run=args.dry_run)
                 runtime=SimpleNamespace(embedding_mode='openai',answer_mode='openai',
                     openai_api_key=SecretStr('synthetic-key') if args.dry_run else settings.openai_api_key,
                     embedding_billing_scope='followup-dry-'+uuid4().hex if args.dry_run else settings.embedding_billing_scope,

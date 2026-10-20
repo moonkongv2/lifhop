@@ -261,6 +261,7 @@ Avoid introducing infrastructure purely to make the architecture look sophistica
 - `ANSWER_SLICE.md` — selected-passage cited-answer demo, policy/cost boundary and verification
 - `UNIFIED_ANSWER.md` — consolidated search/questions, saved conversations, consent and stop/replay limits
 - `FOLLOWUP_VALIDATION.md` — synthetic browser reproduction, Stop race fix and actual bounded real-model findings
+- `FOLLOWUP_QUALITY_RECHECK.md` — closed3-question real-model retest, arithmetic improvement and remaining T1 failure
 - `CONVERSATIONAL_FOLLOWUP_PLAN.md` — saved-conversation design, bounded context, source checks and implementation/review scope
 - `RETROSPECTIVES.md` — bounded period summaries, date meaning, coverage and per-item citations
 - `HISTORICAL_QUESTIONS.md` — observed version cutoffs, local history preview and cited answers
