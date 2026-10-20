@@ -70,6 +70,22 @@ See AI_SOURCE_COVERAGE.md for scope and completion gates.
 
 ## Current product slice
 
+**2026-10-20 Phase3.3 종료 체크리스트 통합 — 문서 정리 완료:**
+
+`PHASE33_COMPLETION_PLAN.md` 상단을 현재 종료 판단의 기준 목록으로 통합했다.
+저장 대화 미구현이라는 오래된 설명을 바로잡고, C0–C6 종료 절차/E1–E6 실제 기록
+범주/B0–B6 사용자 화면 확인을 기존 증거·미확인과 연결했다. C0 문서 통합만 완료,
+나머지는 증거 확보/사용자 확인 전 미체크다. 기존 실측 실패/승인/원장은 보존했다.
+일부 회고·과거 통과는 적용 가능성 확인 후 재사용하고, 최종 결과가 없는 생활 기록도
+기록된 진행+정확한 인용+미확인으로 평가한다. 새20회 실측이나 완벽한 생성 성능을
+종료 조건으로 추가하지 않는다. 보호 위반·근거 없는 단정은 실패로 남긴다.
+다음은 C1 실제 사례와 기존 증거 매핑, 이어 C2 소유자 브라우저 확인이다. 부족한
+실제 통합 실측은 그 피드백 이후 별도 범위 동결/승인으로 진행한다. 이번 변경은
+문서만이며 코드/개인 데이터/권한/migration/AI 호출/과금 변경0이다. Phase3.3 종료와
+Phase4 착수는 승인하지 않았고, v5 품질의 기존 미검증도 그대로다.
+검증: 로컬 문서 링크10개, C/E/B 항목 구성과 체크 상태, 과거 실행 이력의 무변경을
+검사했고 diff 검사도 통과했다. 문서만 수정했으므로 앱 테스트는 재실행하지 않았다.
+
 **2026-10-20 T1 계약 보완 v5 — 로컬 검증 완료, 의미품질 미검증:**
 
 실행기·최소 재검증·결과를 `29f346f`로 커밋했다. T1 실패를 검토하고 새 분류/완료
@@ -2239,6 +2255,11 @@ The project remains a learning project; delivery from here follows the
 user-verifiable product slices in `ROADMAP.md`.
 
 ## Next
+
+Use `PHASE33_COMPLETION_PLAN.md`'s consolidated C/E/B checklist for current exit
+work: map existing cases/evidence (C1), obtain owner browser feedback (C2), then
+prepare only remaining real integrated checks (C3) with a new finite approval.
+Checklist consolidation itself completes C0 only and grants no provider calls.
 
 The bounded saved-conversation real pilot is closed:8 branches matched; its
 semantic review remains partial.

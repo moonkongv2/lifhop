@@ -1,5 +1,10 @@
 # Primary event evidence and Phase 3.3 acceptance
 
+Current exit tracking: [consolidated checklist](PHASE33_COMPLETION_PLAN.md).
+Its C/E/B items distinguish implementation/synthetic checks, real-source/model
+evidence and owner acceptance. Dated results below retain their original scope;
+they are not new execution approval or a declaration that Phase3.3 is complete.
+
 Implemented 2026-10-18. Verification uses disposable PostgreSQL schemas,
 synthetic records and mocked providers. No personal archive was read, no real
 database was rebuilt, and no new OpenAI request or indexing approval was made.
