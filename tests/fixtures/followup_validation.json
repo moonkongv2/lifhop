@@ -1,0 +1,18 @@
+{
+  "version": "followup-validation-synthetic-v1",
+  "corpus": [
+    {"id": "comparison", "title": "합성 업체 비교", "event_at": "2026-04-02T12:00:00+09:00", "content": "[합성 기록] 2026년 4월 2일, 사용자는 렌터카 업체 알파와 베타를 이 순서로 비교했다. 알파 견적은 30만원, 베타 견적은 35만원이었다. 사용자는 아직 업체를 최종 선택했다고 말하지 않았다."},
+    {"id": "booking", "title": "합성 알파 예약 진행", "event_at": "2026-04-03T12:00:00+09:00", "content": "[합성 기록] 2026년 4월 3일, 사용자는 알파에 예약 요청을 보냈다고 말했다. 이 기록에는 예약 확정, 결제, 실제 차량 이용을 확인하는 내용이 없다."},
+    {"id": "cancellation", "title": "합성 알파 취소 요청", "event_at": "2026-04-05T12:00:00+09:00", "content": "[합성 기록] 2026년 4월 5일, 사용자는 알파에 취소 요청을 보냈다고 말했다. 취소 완료나 환불 완료를 확인하는 기록은 남기지 않았다."}
+  ],
+  "turns": [
+    {"id": "T1", "q": "알파, 베타 순서로 두 업체의 견적과 기록된 예약 진행을 알려줘.", "context_mode": "continue", "branch": "search", "planner": false, "evidence": ["comparison", "booking"], "expected": "알파30만원/베타35만원, 알파 예약 요청을 회수하고 최종 선택·확정·결제·이용은 미확인으로 구분한다."},
+    {"id": "T2", "q": "첫 번째 업체의 예약 진행을 다시 설명해줘.", "context_mode": "continue", "branch": "reuse", "planner": true, "evidence": ["booking"], "expected": "첫 번째를 알파로 해석하고 예약 요청과 확정을 구분한다."},
+    {"id": "T3", "q": "그 업체의 이후 취소 진행 기록도 찾아줘.", "context_mode": "continue", "branch": "search", "planner": true, "evidence": ["cancellation"], "expected": "알파의 후속 취소 요청을 새로 검색하고 완료·환불은 미확인으로 구분한다."},
+    {"id": "T4", "q": "방금 확인한 취소 진행과 완료 여부를 다시 설명해줘.", "context_mode": "continue", "branch": "reuse", "planner": true, "relogin_before": true, "evidence": ["cancellation"], "expected": "새 로그인으로 같은 대화를 복원한 뒤 취소 요청과 완료 미확인을 유지한다. 복원 GET은 모델0이다."},
+    {"id": "T5", "q": "그 답변의 두 업체 가격 차이를 다시 비교해줘.", "context_mode": "continue", "branch": "reuse", "planner": true, "base_turn": "T1", "evidence": ["comparison"], "expected": "명시한 T1 기준으로 알파·베타를 비교한다. 차액5만원을 원문가격에서 유도한 계산으로 설명한다."},
+    {"id": "T6", "q": "두 업체 중 어느 쪽을 말하는지 아직 정하지 않았어. 그 업체의 예약 진행을 알려줘.", "context_mode": "continue", "branch": "clarify", "planner": true, "evidence": [], "expected": "알파/베타 중 대상을 짧게 확인하고 query/answer를 호출하지 않는다."},
+    {"id": "T7", "q": "알파를 뜻했어. 그 업체의 취소 기록도 찾아줘.", "context_mode": "continue", "branch": "search", "planner": true, "evidence": ["cancellation"], "expected": "pending 확인질문과 연결해 알파로 해석하고 취소 기록을 새로 검색한다."},
+    {"id": "T8", "q": "베타 업체의 예약 확정 기록이 있나?", "context_mode": "fresh", "branch": "search", "planner": false, "evidence": [], "expected": "앞선 대화 문맥을 보내지 않는다. 허용 원문에서 베타 예약 확정을 확인할 수 없다고 범위를 한정하고 알파 진행을 베타로 옮기지 않는다."}
+  ]
+}

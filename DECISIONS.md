@@ -1916,3 +1916,20 @@ operational considerations for the later private deployment slice.
 Synthetic DB/HTTP/UI verification is distinct from provider semantic quality and
 owner browser checks. No live provider run, indexing or permission expansion was
 part of implementation. Phase3.3 acceptance remains incomplete.
+
+
+### 2026-10-20: Central accounting for isolated follow-up validation
+
+Synthetic source fixtures for the bounded real-model pilot remain in a disposable
+local `_test` schema. Conversation dispatch may receive an internal runtime-only
+`ledger_engine` and pre-reservation guard; ordinary product requests keep their
+existing engine and cannot select these through HTTP. This avoids hiding real
+validation charges in a test ledger outside the application's monthly allowance.
+
+If the separately approved real run is executed, its new body-free attempts use
+the existing billing scope/slot/ledger and a negative protocol-derived synthetic
+owner ID. Existing user/source data and accounting rows are unchanged. Dry-runs use
+only isolated accounting. Persistent usage plus a protocol lock blocks paid replay;
+uncertain/spent attempts survive synthetic-schema cleanup. Request/raw-output
+artifacts are private evaluation files and are not product conversation storage.
+No real call or central accounting write occurred while preparing this executor.

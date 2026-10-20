@@ -259,7 +259,8 @@ Avoid introducing infrastructure purely to make the architecture look sophistica
 - `SEMANTIC_PRODUCT_PLAN.md` — approved optional Semantic implementation sequence after closing B1 tuning
 - `SEMANTIC_PRODUCT.md` — Semantic search UI/demo, pgvector setup, explicit indexing and worker verification
 - `ANSWER_SLICE.md` — selected-passage cited-answer demo, policy/cost boundary and verification
-- `UNIFIED_ANSWER.md` — consolidated search/questions, combined consent, stop/replay limits and synthetic verification
+- `UNIFIED_ANSWER.md` — consolidated search/questions, saved conversations, consent and stop/replay limits
+- `FOLLOWUP_VALIDATION.md` — synthetic browser reproduction, Stop race fix and actual bounded real-model findings
 - `CONVERSATIONAL_FOLLOWUP_PLAN.md` — saved-conversation design, bounded context, source checks and implementation/review scope
 - `RETROSPECTIVES.md` — bounded period summaries, date meaning, coverage and per-item citations
 - `HISTORICAL_QUESTIONS.md` — observed version cutoffs, local history preview and cited answers
@@ -278,8 +279,10 @@ permissions/version checks before planner, query and answer dispatch. Source
 and conversation deletion suppress derived answers while preserving body-free
 accounting. Provider `store=false` remains. Legacy independent/manual/period/
 historical flows remain available. Apply the new migration before using the API.
-Local synthetic checks pass; owner browser and real-model follow-up quality
-remain unverified. See `CURRENT.md`, [usage/setup](UNIFIED_ANSWER.md), and
+Local synthetic checks pass. The approved8-question real-model pilot matched all
+branches; semantic review remains partial (omitted unknowns/calculation labeling).
+Owner browser acceptance, long-context behavior and broad archive quality remain
+unverified. See `CURRENT.md`, [usage/setup](UNIFIED_ANSWER.md), and
 [the design plan](CONVERSATIONAL_FOLLOWUP_PLAN.md).
 
 The learning-through-F3 baseline is marked by Git tag

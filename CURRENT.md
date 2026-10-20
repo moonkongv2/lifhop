@@ -70,7 +70,79 @@ See AI_SOURCE_COVERAGE.md for scope and completion gates.
 
 ## Current product slice
 
-**2026-10-20 저장된 대화의 후속 질문 — 구현 및 로컬 합성 검증:**
+**2026-10-20 후속 질문 실제 모델 검증 완료 — 품질 보완 남음:**
+
+사용자는 직접 브라우저 확인을 나중으로 미루고 다음 작업 진행을 요청했다.
+동결 실험 실행기 `scripts/run_followup_validation.py`와 공통 guard를 추가했다.
+승인 digest/코드·설정·질문·원문/입출력 상한/중복·동시 실행/호출 수·총예산/
+미확정 과금을 검사하며, 예상과 다른 분기는 다음 유료 단계 전에 중단한다.
+원문은 격리된 테스트 DB, 승인된 실제 호출의 새 회계행은 기존 중앙 원장을 사용한다.
+기본 제품 경로는 그대로이며 내부 runtime에서만 ledger engine을 지정할 수 있다.
+
+최신 제안은 `.local/verification/followup-validation/proposal-v4.json`, digest
+`40b21995a9ee1a77d52f7e42cd06639dfd1d4cbc4a9795ff7af2abe955172598`.
+기존 제안/원본은 보존하며 새 코드/과금 경계를 포함하도록 교체했다. 범위는 여전히
+합성 원문3개/질문8개/최대18호출/예약USD0.079537/재시도0이다.
+`dry-run-v4`에서 전체18단계를 무과금 완료했고 의미품질은 not-reviewed로 남긴다.
+최종 전체 backend853개(실행기 guard16개 포함), 프론트205개/lint/build 통과.
+기존500kB 번들 경고는 유지한다.
+공유 원장 테스트의 초기 DB URL 마스킹 문제는 테스트 설정에서 수정 후 통과했다.
+
+사용자가 위 범위를 승인하여 `real-run-v4`를 1회 실행했다. 실제18호출
+(문서1/planner6/query4/answer7), 8개 질문의 분기는 모두 예상과 일치했다.
+중앙 원장18행 모두 spent, 사용량 기반 로컬 가격 정산USD0.001643,
+새 reserved/uncertain0. 기존485행은 필드까지 동일하고 격리 schema는 삭제됐다.
+개인 DB migration/원문·권한 변경은 없으며 설정 ANSWER_MODE는 off이다.
+
+원문 대조 결과 T2/3/4/6/7/8은 해당 rubric을 충족했다. T1은 가격·예약 요청은
+정확하지만 최종 선택/결제/이용 미확인을 모두 명시하지 않았고, 베타 진행 부재를
+가격 인용과 같은 fact에 넣었다. T5는 차액5만원이 맞지만 원문 숫자에서 계산한
+결과임을 명시하지 않았다. 따라서 의미품질 전체 통과로 처리하지 않는다.
+인용10개 출현의 원문 범위/hash와 필수 근거 선택은 일치했다. T4는 새 토큰으로
+같은 답변을 복원하며 호출0, T8은 과거 dialogue 없이 베타 확정 미확인을 유지했다.
+공급자 호출 시간 합계는 질문별2.18–6.45초(단일 호출 최대5.12초)이며 DB/HTTP/UI
+처리를 포함한 전체 응답 시간은 아니다. 작은 합성 원문으로 긴 문맥 성능이나
+개인 기록 검색 품질을 입증하지 않는다.
+
+결과·브라우저 없는 확인 방법은 `FOLLOWUP_VALIDATION.md`, 원본 및 별도 검토는
+`.local/verification/followup-validation/real-run-v4/`에 보존했다. 이번 승인 범위는
+종료했고 재시도/추가 유료 호출은 없다. 다음은 누락된 미확인 사항과 계산 출처
+표시를 위한 오프라인 계약/회귀 보완이다. 직접 브라우저 수용 확인은 사용자가
+가능할 때로 미루며 Phase3.3 완료나 Phase4 착수를 주장하지 않는다.
+
+**이전 checkpoint — 2026-10-20 합성 브라우저 검증 및 Stop 화면 경합 수정:**
+
+아래 실행 미승인/미측정 표시는 당시 상태다. 최신 제안v4의 승인·실측 결과는 위에 기록했다.
+
+인앱 브라우저는 같은 설정 오류로 연결되지 않았으나, 설치된 별도 headless Chromium과
+격리된 `_test` schema에서 실제 프론트→API 검증을 완료했다. 첫 질문 저장, 안정 인용
+복귀, reuse/search/clarify, 닫기·로그아웃·재로그인·복원, 타계정 차단, 모바일390px,
+실제 합성 provider 대기 중 Stop와 대화 삭제/late 응답 폐기를 확인했다.
+합성14호출(plan6/query2/answer6), 회계14spent/uncertain0, 브라우저 예외0.
+외부 AI 호출/실제 과금0이며 개인 DB·설정·원문·인덱스/권한을 변경하지 않았다.
+
+브라우저에서 Stop 후 DB는 stopped인데 화면이 answering으로 되돌아오는 결함을
+재현했다. abort finally가 시작한 GET이 Stop snapshot을 덮어쓰던 경합이다.
+중단 시 자동 refresh를 생략하고 이전 detail query를 취소한 뒤 Stop 결과를 적용한다.
+재현 테스트 포함 frontend205/lint/build 통과(기존500kB chunk 경고 유지).
+관련 backend17개와 오프라인 실험안1개, 총18개 통과. 새 테스트의 초기 script import
+경로 오류는 기존 저장소의 importlib 방식으로 수정 후 재실행했다. 전체 backend836은 이전 구현
+checkpoint 결과이며 이번 프론트 수정에서 전체를 재실행한 것으로 표시하지 않는다.
+
+재현 도구: `scripts/preview_conversations.py`, `scripts/check_conversations_browser.mjs`.
+스크린샷/보고서: `.local/verification/conversations-browser/`.
+정확한 실행법과 검증안: [FOLLOWUP_VALIDATION.md](FOLLOWUP_VALIDATION.md).
+개인 DB migration 및 소유자 본인의 브라우저 수용 확인은 아직 미완료다.
+
+실제 모델 제안은 합성 원문3개·질문8개, 문서 embedding1 + planner6 + query4 + answer7
+=최대18호출/예약USD0.079537/재시도0으로 오프라인 동결했다. JSON은
+`.local/verification/followup-validation/proposal.json`, digest는
+`b4b2027da5ec5fbe0c1bfbbc7d052a9946fbb7e3a597dceb38d13e1d69198333`.
+아직 실행 승인이 아니고 모델 의미품질/지연은 미측정이다. 다음은 소유자 UI 피드백 반영,
+실험 실행기의 digest·범위·예산·불일치 중단 preflight와 dry-run 검증, 그 후 구체 범위의
+실측 실행 승인이다. 이번 단계에서는 실제 AI 호출을 시작하지 않는다. Phase3.3 미완료.
+
+**이전 구현 checkpoint — 2026-10-20 저장된 대화의 후속 질문:**
 
 사용자의 구현 지시에 따라 개정3 계획을 `56fb726`으로 먼저 커밋하고, 기존 PostgreSQL에
 소유자별 대화·턴·안정 근거 anchor의3테이블/migration `h60f5a47e286`을 추가했다.
@@ -2098,12 +2170,13 @@ user-verifiable product slices in `ROADMAP.md`.
 
 ## Next
 
-Review OUTPUT_CONTRACT_REVIEW.md's per-part answered/unresolved candidate and
-mode-by-mode findings. The audit is complete; no replacement contract is wired.
-Next scope ordinary-contract implementation/capacity and unknown/source regressions
-first, with retrospective structure as a separate follow-up. Keep semantic quality
-and local structural checks distinct. Any future paid request/executor/stop policy
-needs a new finite approval; keep ANSWER_MODE=off.
+The bounded saved-conversation real pilot is closed:8 branches matched; semantic
+review remains partial because T1 omitted unknowns and T5 omitted an explicit
+arithmetic derivation label. Next scope focused offline contract/regression work
+for those findings. Preserve raw outputs and keep owner browser acceptance,
+long-context performance and broad archive retrieval as separate open checks.
+Any future paid retest needs a new finite approval; keep ANSWER_MODE=off.
+The older checkpoints below retain their own historical scope/status.
 
 1. The approved policy-v2 pass remains closed after one claim_coverage failure;
    12 requests are unsent and cannot be reused. Preserve original v1/v2 baselines,

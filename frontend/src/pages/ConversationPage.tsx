@@ -40,7 +40,11 @@ function ConversationView({ id, token }: { id: string; token: string | null }) {
   const stop = async () => {
     controller.current?.abort();
     const current = active.current ?? (value?.unfinished ? { id: value.id, turn: value.unfinished } : null);
-    if (current) update(await conversationStage(current.id, current.turn, "stop"));
+    if (current) {
+      const stopped = await conversationStage(current.id, current.turn, "stop");
+      await cache.cancelQueries({ queryKey: key, exact: true });
+      update(stopped);
+    }
   };
   const run = async () => {
     if (!value || pending.current) return;
@@ -54,8 +58,16 @@ function ConversationView({ id, token }: { id: string; token: string | null }) {
       update(claimed); setQ("");
       await runTurn(claimed, control.signal, update);
       setBase(undefined); setFresh(false);
-    } catch (e) { if (getAccessToken() === token) setError((e as Error).message); }
-    finally { window.clearTimeout(timer); pending.current = false; if (getAccessToken() === token) { setBusy(false); setConsent(false); void query.refetch(); } }
+    } catch (e) { if (getAccessToken() === token) setError((e as Error).name === "AbortError" ? "Stopped. A request already sent may have been charged." : (e as Error).message); }
+    finally {
+      window.clearTimeout(timer);
+      pending.current = false;
+      if (getAccessToken() === token) {
+        setBusy(false); setConsent(false);
+        // Stop owns the terminal snapshot; an abort refresh can overwrite it with pre-stop state.
+        if (!control.signal.aborted) void query.refetch();
+      }
+    }
   };
   const act = async (action: "close" | "reopen" | "delete" | "stop" | "interrupt") => {
     if (!value) return;

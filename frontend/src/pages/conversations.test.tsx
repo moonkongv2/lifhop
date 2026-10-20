@@ -94,3 +94,32 @@ it("creates and executes a saved first question only after explicit consent", as
   await screen.findByRole("heading", { name: "My saved chat" });
   expect(requests.filter(r => r.method === "POST").map(r => r.path.split("/").at(-1))).toEqual(["answer-conversations", "turns", "plan", "evidence", "answer"]);
 });
+
+it("keeps the stopped snapshot when aborting an in-flight answer", async () => {
+  const original = vi.mocked(fetch).getMockImplementation()!;
+  let answerStarted = false;
+  let stopSent = false;
+  let readsAfterAbort = 0;
+  vi.stubGlobal("fetch", vi.fn(async (path: string, init: RequestInit = {}) => {
+    if (path.endsWith("/answer")) {
+      answerStarted = true;
+      return new Promise<Response>((_, reject) => init.signal!.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError"))));
+    }
+    if (path.endsWith("/stop")) {
+      stopSent = true;
+      // Let the answer abort handler/finally run before stop returns, as in a real browser.
+      await new Promise(resolve => setTimeout(resolve, 20));
+    }
+    if (stopSent && path === `/api/answer-conversations/${id}` && (!init.method || init.method === "GET")) readsAfterAbort++;
+    return original(path, init);
+  }));
+  mount(); await screen.findByText(savedTurn.answer);
+  fireEvent.change(screen.getByRole("textbox", { name: "Question" }), { target: { value: "Slow answer" } });
+  fireEvent.click(screen.getByRole("checkbox", { name: "Allow this question and its context to be sent to OpenAI" }));
+  fireEvent.click(screen.getByRole("button", { name: "Send question" }));
+  await waitFor(() => expect(answerStarted).toBe(true));
+  fireEvent.click(screen.getByRole("button", { name: "Stop unfinished question" }));
+  await screen.findByText(/Stopped\. A request already sent/);
+  await waitFor(() => expect(screen.queryByRole("button", { name: "Stop unfinished question" })).toBeNull());
+  expect(readsAfterAbort).toBe(0);
+});

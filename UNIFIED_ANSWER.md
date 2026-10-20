@@ -57,12 +57,21 @@ use validated usage. These bounds are not a paid experiment authorization.
    another account cannot open it, and deletion removes it. Any real-provider
    quality experiment still requires its separately frozen scope/cost approval.
 
-Local checks: backend836 tests (including17 saved-conversation tests), frontend204
-tests, lint and build pass. Build reports a slightly-over500kB single-chunk warning.
-Browser automation was attempted twice but its tool
-failed before connection (`sandboxPolicy` metadata missing), so mobile/layout and
-owner browser acceptance are pending. Actual planner interpretation, combined
-retrieval/answer quality and larger-context provider latency remain unmeasured.
+Current checks: full backend853 and frontend205 tests, frontend lint/build passed
+before the frozen real pilot. The UI includes the abort/Stop refresh-race fix.
+Build retains a~500.76kB single-chunk warning.
+
+The in-app browser remains unavailable, but separate installed headless Chromium
+now passed synthetic desktop/mobile verification including provider-in-flight
+Stop/delete, logout/login restoration and account isolation. Agent-controlled
+synthetic browser verification is complete; owner acceptance remains pending.
+The separately approved8-question18-call real-model pilot completed once:
+all branches matched, USD0.001643 settled, no new uncertain usage. Source review
+was partial: T1 omitted some unknowns and T5 did not label arithmetic as derived.
+See [reproduction and actual pilot findings](FOLLOWUP_VALIDATION.md). The pilot's
+synthetic schema was removed; existing accounting rows/personal sources and off
+settings are untouched. Long-context and broad archive quality remain unverified.
+
 The long-history synthetic case measured1000 turns/29,750 anchors:50-turn page
 257 queries/22,442bytes/~0.102s; source redaction~0.059s on this local test DB.
 This does not establish production performance; flattened dependencies grow with

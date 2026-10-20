@@ -96,11 +96,16 @@ def paid(engine, config, owner, cid, tid, rid, stage):
     purpose = {'plan':'followup', 'search':'query', 'answer':'answer'}[stage]
     profile = {'plan':'planner-v1', 'search':None, 'answer':'dialogue-v1'}[stage]
     run_id = digest([owner,cid,tid,rid,stage])[:32]
-    with call_slot(engine, config.embedding_billing_scope) as connection:
+    # Isolated validation corpora can share the application's durable billing ledger.
+    ledger_engine = getattr(config, 'ledger_engine', engine)
+    with call_slot(ledger_engine, config.embedding_billing_scope) as connection:
         # Prepare and release the owner guard before acquiring billing locks.
         with Session(engine) as db:
             value, upper, context = prepare(db,owner,cid,tid,rid,stage)
         output = value['max_output_tokens'] if stage != 'search' else None
+        before_reserve = getattr(config, 'before_reserve', None)
+        if before_reserve is not None:
+            before_reserve(owner, run_id, stage, value, upper)
         with Session(connection) as db:
             attempt = reserve(db,scope=config.embedding_billing_scope, owner_id=owner,run_id=run_id,
                 purpose=purpose,upper=upper,output_limit=output,profile=profile,
