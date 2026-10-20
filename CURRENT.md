@@ -1,6 +1,6 @@
 # lifhop Current Status
 
-Last updated: 2026-10-20
+Last updated: 2026-10-21
 
 ## Roadmap checkpoint (2026-10-18)
 
@@ -69,6 +69,35 @@ Phase 3.3 is incomplete; do not start scheduled collection yet.
 See AI_SOURCE_COVERAGE.md for scope and completion gates.
 
 ## Current product slice
+
+**2026-10-21 C1 매핑 완료 — C2 주요 흐름 사용자 수용·재시작 회귀 완료:**
+
+기존 승인/종료된 private artifact에서 E1–E6 및 인용 회귀7건의 질문·기대/금지 범위·
+필수 근거·과거 판정을 연결했다. 결과는 `.local/evaluation/phase33/exit-map-20261021-v1/`
+의 `mapping.json`/`REVIEW.md`다. 실제 질문/원문 ID는 Git에 추가하지 않는다.
+최신 고정 문맥의 E1은 통과였음을 확인해 과거 실패와 구분했다. E4/E5는 현재 코드의
+요청 JSON 값/입력 상한이 동일하여 기존 내용 판정 재사용 후보로 기록했다. 최신 DB
+권한/버전/제품 선택이나 일반 v5 품질이 통과했다는 뜻은 아니다. 과거7건4통과/3실패는 유지했다.
+
+일반2건은 최신 지침을 포함하면 legacy14KiB 상한에서 거부되며, 일반5건의 같은
+원문은 저장 대화64KiB에 들어감을 오프라인 확인했다. 원문/상한/제품 코드는 바꾸지 않았다.
+원래20건은 모두draft(12건 Candidate claim), 별도10건은reviewed 상태만 확인했다.
+seed RPM은 미검토 후보 gap으로, 생활 seed는 E3의 기존 부분 회수 기준으로 연결했다.
+평가셋 전체/seed RPM의 수용은 C5까지 미해결로 남긴다. 기존7artifact 해시를 보존했다.
+
+`PHASE33_COMPLETION_PLAN.md`의 C1을 추가 체크했다. 사용자는 기존 합성 데모에서
+질문·후속·닫기·재로그인 복원이 문제없다고 확인했다. 원문 왕복/특정 답변 기준/독립
+문맥까지 확인한 것으로 확대하지 않고 그 나머지 UX의 직접 관찰도 요청했다. C2 전체는 미체크다.
+독립 API 프로세스3개를 순차 종료/실행하는 회귀를 추가해 같은 pytest DB에서 답변/
+인용 유지·미완료 단계 자동 재개0·과금행 무변경을 확인했다. 사용자 데모는 초기화/
+재시작하지 않았다. 이는 실제 브라우저+Uvicorn 재시작의 사용자 관찰과 구분한다.
+개인 DB는 read-only 메타데이터 조회로 `g59e4f36d175`, 대화3테이블 없음, answer off를
+확인했다. 실제 앱 migration 적용과 재시작 확인은 남는다. 제품 코드/개인 원문·권한/
+설정 변경 및 실제 AI/중앙 과금은0, 새 실측/승인은0이다. 다음은 C2 나머지 UX와
+실제 앱 준비 범위 정리이며, 그 피드백 후 남은 C3 범위를 준비한다.
+검증: 매핑7건/범주6개·재구성/입력 상한·기존해시·private 권한/ignore·체크 상태·이력/
+문서 링크 및 diff 검사 통과. 재시작 회귀 포함 관련18개/전체backend886개(73.79초)
+통과. 프론트는 수정하지 않아 frontend 검사는 재실행하지 않았다.
 
 **2026-10-20 Phase3.3 종료 체크리스트 통합 — 문서 정리 완료:**
 
@@ -2257,9 +2286,9 @@ user-verifiable product slices in `ROADMAP.md`.
 ## Next
 
 Use `PHASE33_COMPLETION_PLAN.md`'s consolidated C/E/B checklist for current exit
-work: map existing cases/evidence (C1), obtain owner browser feedback (C2), then
+work: C1 existing-case mapping is complete; obtain owner browser feedback (C2), then
 prepare only remaining real integrated checks (C3) with a new finite approval.
-Checklist consolidation itself completes C0 only and grants no provider calls.
+The C0/C1 documents grant no provider calls; seed/evaluation-set gaps remain in C5.
 
 The bounded saved-conversation real pilot is closed:8 branches matched; its
 semantic review remains partial.

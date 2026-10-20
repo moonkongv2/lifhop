@@ -1,5 +1,9 @@
 """Synthetic saved-conversation HTTP, billing, restoration and source protection."""
 import json
+import os
+import subprocess
+import sys
+from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 from threading import Event
 from uuid import uuid4
@@ -102,6 +106,39 @@ def test_persistent_followup_relogin_close_replay_and_delete(chat):
     with Session(bind) as db:
         assert db.scalar(select(AnswerTurn.id).where(AnswerTurn.conversation_id==c['id'])) is None
         assert len(list(db.scalars(select(AiUsageAttempt).where(AiUsageAttempt.owner_id==owner))))==4
+
+
+def test_fresh_api_processes_restore_history_and_never_resume_unfinished_work(chat):
+    client,h,bind,owner,eid,answer,planner,query=chat
+    c=complete(chat)
+    original=c['turns'][0]
+    with Session(bind) as db:
+        schema=db.scalar(text('SELECT current_schema()'))
+    def probe(action):
+        args=dict(database_url=bind.url.render_as_string(hide_password=False),schema=schema,
+            owner=owner,conversation_id=c['id'],action=action)
+        result=subprocess.run([sys.executable,str(Path(__file__).with_name('conversation_restart_probe.py'))],
+            input=json.dumps(args),capture_output=True,text=True,timeout=20,
+            env={**os.environ,'PYTHONPATH':str(Path.cwd())})
+        assert result.returncode==0,result.stderr
+        value=json.loads(result.stdout)
+        assert value['usage_unchanged'] and value['usage_rows']==2
+        return value
+    # These API processes terminate in order while the same isolated DB survives.
+    closed=probe('close')
+    assert closed['conversation']['state']=='closed'
+    reopened=probe('reopen')
+    assert reopened['conversation']['state']=='active'
+    for result in [closed,reopened]:
+        restored=result['conversation']['turns'][0]
+        assert {k:restored[k] for k in ['id','q','answer','answer_status','citations']}=={
+            k:original[k] for k in ['id','q','answer','answer_status','citations']}
+    c,_=claim(chat,reopened['conversation'],'A pending synthetic question.')
+    pending=probe('inspect')
+    assert pending['conversation']['unfinished']['state']=='created'
+    assert pending['conversation']['turns'][-1]['id']==c['turns'][-1]['id']
+    assert len({closed['pid'],reopened['pid'],pending['pid']})==3
+    assert answer.call_count==query.call_count==1 and planner.call_count==0
 
 
 def test_claim_once_conflict_order_stop_and_close(chat):
