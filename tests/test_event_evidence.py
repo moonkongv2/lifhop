@@ -158,7 +158,7 @@ def test_cross_source_answer_retrospective_history_and_citations(answer_client):
         result = dict(status='supported', answer=answer, citation_ids=[x['id'] for x in excerpts], unconfirmed_aspects=[])
         if value['text']['format']['name']=='claim_evidence_answer':
             result=claim_result(excerpts,ids=[x['id'] for x in excerpts])
-            result['claims'][0]['text']=answer
+            result['parts'][0]['facts'][0]['text']=answer
         raw['output'][0]['content'][0]['text'] = json.dumps(dict(result=result))
         return raw
     sender.side_effect = combined

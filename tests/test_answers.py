@@ -25,10 +25,14 @@ def claim_result(excerpts, *, status='supported', ids=None, unknowns=None):
     selected = ids if ids is not None else ([excerpts[0]['id']] if status != 'insufficient' else [])
     unknowns = unknowns if unknowns is not None else (['The final outcome is unconfirmed.'] if status in {'partial', 'insufficient'} else [])
     bodies = {item['id']: item['text'] for item in excerpts}
-    return dict(parts=[dict(id=1, text='The requested recorded fact.', complete=status == 'supported')],
-        claims=[dict(part=1, kind='answer', text='Synthetic answer from the selected passage.',
-            evidence=[dict(id=i, quote=bodies.get(i, 'Unknown source.')[:120]) for i in selected])] if selected else [],
-        unknowns=[dict(part=1, text=t) for t in unknowns])
+    facts = [dict(text='Synthetic answer from the selected passage.',
+        evidence=[dict(id=i, quote=bodies.get(i, 'Unknown source.')[:120]) for i in selected])] if selected else []
+    part = dict(request='The requested recorded fact.', kind='answered', facts=facts)
+    if status != 'supported':
+        part = dict(request=part['request'], kind='unresolved', known=facts, gap=unknowns[0])
+    elif unknowns:
+        part['gap'] = unknowns[0]  # Invalid branch mixture, never silently repair it.
+    return dict(parts=[part])
 
 
 def response(value, *, status="supported", ids=None, unknowns=None):
@@ -39,7 +43,7 @@ def response(value, *, status="supported", ids=None, unknowns=None):
     if value["text"]["format"]["name"] == "claim_evidence_answer":
         data=claim_result(excerpts,status=status,ids=ids,unknowns=unknowns)
         if status == "insufficient" and ids:
-            data["unknowns"]=[]  # Incomplete declaration without its required unknown.
+            data["parts"][0].pop("gap")  # Unresolved declaration without its required gap.
     return dict(model=MODEL,status="completed",output=[dict(type="message",content=[
         dict(type="output_text",text=json.dumps(dict(result=data)))])],
         usage=dict(input_tokens=10,output_tokens=10,total_tokens=20))
@@ -257,7 +261,7 @@ def test_complementary_facts_return_provider_citations_without_adding_unused_sou
     def complementary_response(value):
         raw=response(value,ids=ids[:2])
         data=claim_result(json.loads(value['input'])['excerpts'],ids=ids[:2])
-        data['claims'][0]['text']='The synthetic vehicle is a boat intended for children.'
+        data['parts'][0]['facts'][0]['text']='The synthetic vehicle is a boat intended for children.'
         raw['output'][0]['content'][0]['text']=json.dumps(dict(result=data))
         return raw
     sender.side_effect=complementary_response
@@ -301,7 +305,7 @@ def test_citation_coverage_contract_is_sent_for_each_answer_mode(mode):
     value,_=payload('Synthetic question?',[dict(id=4,text='Synthetic evidence.')],**options)
     if mode == 'current':
         assert 'exact nonblank body quotes' in value['instructions']
-        assert 'Complete parts need an answer claim and no unknown' in value['instructions']
+        assert 'Choose exactly one result per part' in value['instructions']
         assert value['text']['format']['name']=='claim_evidence_answer'
         assert value['max_output_tokens']==4096
     else:
