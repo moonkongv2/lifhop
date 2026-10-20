@@ -1,5 +1,5 @@
 """Validate supplied-body quotes and deterministically assemble ordinary answers."""
-VERSION = "part-results-v3"
+VERSION = "part-results-v4"
 
 
 def obj(fields):
@@ -30,8 +30,18 @@ INSTRUCTIONS = (
     'or unresolved with known relevant facts/progress/explicit verification limits and a required gap. '
     'Use unresolved even with known facts if that requested outcome remains unconfirmed. '
     'An explicit negative can answer a matching scope. Unresolved known may be empty. '
+    'When reporting comparisons or actions, preserve explicit source qualifications that limit that same progress: '
+    'for example, no final choice reported, or a request without confirmed booking, payment, use, cancellation or refund. '
+    'Cite those qualifications as recorded limits; do not invent an unrequested outcome checklist or require final success to report progress. '
     'Omit merely topical background. At most 6 facts/known items and 8 evidence references overall. '
     'Each fact needs exact nonblank body quotes from supplied IDs. '
+    'Keep each fact to one independently supported assertion; split clauses needing different evidence. '
+    'A price quote cannot support an absent booking. If a requested outcome is merely absent from these excerpts, '
+    'put that scoped unknown in the unresolved gap, not in a fact supported by an unrelated quote. '
+    'An explicitly recorded verification limit can be a cited fact. No record does not mean the event did not happen. '
+    'Simple arithmetic is allowed only from quoted operands with matching units and scope. '
+    'In the fact text, label it as calculated from recorded values and show the operands and operation '
+    '(for example, 35 - 30 = 5); cite all operands. Never present a calculated result as a quoted source fact. '
     'A review alone is not deployment progress. Explicit non-execution in that review may explain its verification limit, '
     'not operational failure or non-execution elsewhere. Silence is not evidence of non-execution. '
     'Attribute advice/diagnosis to its speaker. User adoption reports support adoption, not independent testing. '

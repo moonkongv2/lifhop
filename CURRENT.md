@@ -70,6 +70,25 @@ See AI_SOURCE_COVERAGE.md for scope and completion gates.
 
 ## Current product slice
 
+**2026-10-20 후속 답변 품질 지침 보완 — 로컬 검증 완료, 실제 모델 재검증 전:**
+
+Stop 경합 수정·브라우저 도구·동결 실험 실행기·실측 결과를 `579d5a9`로 커밋했다.
+이어 일반/저장 대화의 `answer_claims` 지침을 v4로 보완했다. 기록된 진행에 붙은
+명시적 제한을 보존하고, 서로 다른 근거가 필요한 주장을 나누며, 단순 근거 부재는
+질문 범위의 gap에 둔다. 원문 숫자로 계산한 값은 피연산자·계산식·계산 출처를
+표시하도록 했다. 불필요한 최종결과 체크리스트를 추가하지 않는다.
+JSON schema/조립 로직/문맥·출력 상한은 유지하고 과거 답변/유료 원본도 수정하지 않는다.
+지침 변경은 기존 configuration hash에 반영되며, 종료된 proposal-v4는 이제 stale이다.
+
+전체 backend861개 통과(68.11초), 최종 회귀9개 통과(전체 수집 이후 추가한 명시적
+base 후속 테스트1개 포함). 새 회귀는 지침 전달, 원문 보존, 미확인/계산/insufficient
+답변 저장·복원·중복 단계 호출 방지와 기존 narrative 계약을 검사한다. 이번 변경은
+프론트 수정이 없어 frontend 검사는 재실행하지 않았다. `git diff --check` 통과.
+실제 AI 호출/새 유료 실험/개인 원문·권한 변경은0이다. 이 검증은 합성 응답의 전달과
+저장 보존 검사이며 모델의 누락 방지·인용 의미·계산 정확도를 자동 보장하지 않는다.
+다음은 소유자 브라우저 피드백 및 새 지침의 실측 필요 범위 검토이다. 재검증이 필요하면
+새 질문/원문/예산/code hash로 동결·승인하며 이전 승인/결과를 재사용하지 않는다.
+
 **2026-10-20 후속 질문 실제 모델 검증 완료 — 품질 보완 남음:**
 
 사용자는 직접 브라우저 확인을 나중으로 미루고 다음 작업 진행을 요청했다.
@@ -2170,11 +2189,12 @@ user-verifiable product slices in `ROADMAP.md`.
 
 ## Next
 
-The bounded saved-conversation real pilot is closed:8 branches matched; semantic
-review remains partial because T1 omitted unknowns and T5 omitted an explicit
-arithmetic derivation label. Next scope focused offline contract/regression work
-for those findings. Preserve raw outputs and keep owner browser acceptance,
-long-context performance and broad archive retrieval as separate open checks.
+The bounded saved-conversation real pilot is closed:8 branches matched; its
+semantic review remains partial. The v4 instruction correction and synthetic
+regressions are complete locally; real-provider compliance is not retested.
+Next review owner browser feedback and scope any needed new finite real test.
+Preserve raw outputs and keep owner browser acceptance, long-context performance
+and broad archive retrieval as separate open checks.
 Any future paid retest needs a new finite approval; keep ANSWER_MODE=off.
 The older checkpoints below retain their own historical scope/status.
 

@@ -31,10 +31,20 @@ Opening an original and **Back to conversation** do not repeat paid work.
 The new profile allows history16KiB, planner wire24KiB, answer wire64KiB. Original
 passages are whole (five maximum,2000 characters each); optional history is dropped
 before priority evidence. Context details show actual history IDs and omissions.
-Ordinary output remains `part-results-v3`/4096 tokens; planner output1024. Maximal
+Ordinary instructions now use `part-results-v4`; the part-result JSON schema and
+4096 output tokens remain unchanged; planner output1024. Maximal
 payload reservations under the code's pinned prices: first/fresh USD0.008745,
 follow-up reuse USD0.011776, search USD0.011817, clarify USD0.003072. Actual costs
 use validated usage. These bounds are not a paid experiment authorization.
+
+The v4 instructions preserve relevant explicit source qualifications on recorded
+progress, split assertions needing different evidence, place an absent requested
+outcome in a scoped unresolved gap, and label simple arithmetic with quoted
+operands and its operation. They do not invent missing-outcome checklists or demand
+final success before reporting progress. Historical/period narrative instructions
+retain their existing contract. Quote/schema checks cannot enforce these semantic
+rules; provider compliance after this change has not been retested. Existing saved
+answers and closed real-run artifacts are preserved.
 
 ### Setup and verification
 

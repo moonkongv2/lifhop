@@ -71,11 +71,12 @@ The exact synthetic text/questions/rubric live in
 `tests/fixtures/followup_validation.json`. Offline preparation command:
 
 ```sh
-.venv/bin/python -m scripts.prepare_followup_validation
+.venv/bin/python -m scripts.prepare_followup_validation \
+  --out .local/verification/followup-validation/proposal-user-current.json
 ```
 
 It exclusively creates a private JSON proposal, refuses to overwrite it, reads no
-DB, and calls no provider. Proposal:
+DB, and calls no provider. Use a new output filename each time. The closed real-run proposal was:
 `.local/verification/followup-validation/proposal-v4.json`.
 Digest: `40b21995a9ee1a77d52f7e42cd06639dfd1d4cbc4a9795ff7af2abe955172598`.
 Earlier proposal/dry-run revisions remain preserved and are superseded for execution.
@@ -161,7 +162,7 @@ for review; semantic quality is not automatically declared successful.
 
 ```sh
 .venv/bin/python -m scripts.run_followup_validation --dry-run \
-  --proposal .local/verification/followup-validation/proposal-v4.json \
+  --proposal .local/verification/followup-validation/proposal-user-current.json \
   --out .local/verification/followup-validation/dry-run-user-1
 ```
 
@@ -221,6 +222,30 @@ Review without a browser: open `real-run-v4/REVIEW.md`, compare each saved
 and inspect `audit.json` for accounting/cleanup. No setup or extra AI calls needed.
 Existing backend853/frontend205 tests and frontend lint/build passed before this
 unchanged frozen run; this turn added only documentation/private review artifacts.
-Next: offline regression/contract work for explicit unknowns and derived arithmetic,
-then a separately scoped proposal if real-model retesting is needed. Broad archive
-recall, long-context behavior and owner browser acceptance remain open.
+The offline correction below now addresses instruction delivery and result
+preservation; separately scope a new proposal if real-model retesting is needed.
+Broad archive recall, long-context behavior and owner browser acceptance remain open.
+
+## Offline correction after the closed pilot
+
+`answer_claims` v4 strengthens instructions for relevant explicit source limits,
+independently supported facts, scoped missing-proof gaps and arithmetic labeled
+with its recorded operands/operation. It keeps the JSON schema, output/context
+caps and deterministic assembler. No semantic detector, numeric verifier or
+keyword-based completeness check was added: quote membership cannot prove
+entailment, complete unknowns or arithmetic correctness.
+
+`tests/test_followup_answer_quality.py` uses the same synthetic originals with
+constructed provider responses to verify instruction delivery, source preservation,
+saved display/status/citations, scoped insufficiency, restoration/replay without
+new calls and an explicit-base calculation follow-up. These checks establish
+contract plumbing, not actual provider obedience. Historical/period narrative
+instructions remain unchanged. No post-correction real-provider call was made.
+Checks: full backend861 passed; final quality regression9 passed, including one
+explicit-base case added after full-suite collection. `git diff --check` passed.
+No frontend code changed in this correction, so frontend checks were not rerun.
+
+The old proposal-v4 and real-run-v4 are preserved as the pre-correction baseline.
+They are closed and now stale against the new code/config hashes; do not edit or
+reuse their approval. The commands above create a new **unapproved** proposal and
+run it offline only. No new paid experiment is prepared or authorized by this change.
