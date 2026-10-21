@@ -359,6 +359,14 @@ Do not turn an assistant recommendation into the owner's adopted choice or reuse
 this clarification to excuse unsupported claims or incomplete returned citations.
 Wholly irrelevant/missing evidence still requires an appropriate refusal.
 
+Owner clarification, 2026-10-21: preserve first-response judgments and also
+evaluate whether at most two natural follow-up questions recover missing facts.
+Use no answer hashes, source IDs or original-location hints; stop after success.
+Report extra turns, latency and cost separately. A faithful partial answer may
+recover through dialogue; unsafe claims and output/citation failures remain
+failures and cannot be bypassed. See
+[bounded recovery evaluation](CONVERSATION_RECOVERY_EVALUATION.md).
+
 ## Phase 4 — Scheduled collection from both new sources
 
 ### 4.1 Codex and GitHub incremental collection

@@ -1933,3 +1933,18 @@ only isolated accounting. Persistent usage plus a protocol lock blocks paid repl
 uncertain/spent attempts survive synthetic-schema cleanup. Request/raw-output
 artifacts are private evaluation files and are not product conversation storage.
 No real call or central accounting write occurred while preparing this executor.
+
+### 2026-10-21: Evaluate first response and bounded dialogue recovery separately
+
+The owner approved adding up to two natural follow-ups to evaluate useful recall.
+Preserve original first-response judgments and raw evidence; later recovery does
+not promote the first result. Stop on success, after two follow-ups, or on invalid
+output/unsafe evidence. Never supply answer hashes, source IDs or location hints
+to make a case pass. New-fact requests require search; explanation may reuse.
+
+Use source-based review independently of the generating model's status. Synthetic
+oracle results establish wiring only. Additional turns, costs and elapsed time
+belong beside first-response quality. Existing paid approvals remain closed;
+personal-record recovery requires a new finite protocol/approval. This changes
+evaluation, not retrieval architecture or source policy. Details live in
+`CONVERSATION_RECOVERY_EVALUATION.md`.

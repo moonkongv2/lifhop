@@ -70,6 +70,83 @@ See AI_SOURCE_COVERAGE.md for scope and completion gates.
 
 ## Current product slice
 
+**2026-10-21 제한된 후속 회수 평가 구현·합성 검증 완료:**
+
+소유자가 첫 응답 성적을 유지하고 최대2회 자연스러운 후속으로 회수 성공을 따로
+평가하도록 지시했다. `CONVERSATION_RECOVERY_EVALUATION.md`와 ROADMAP/DECISIONS에
+정답 hint 금지·원문 대조 검토·성공 시 조기 종료·인용/안전 실패 우회 금지를 기록했다.
+`app/evaluation/conversation_recovery.py`는 첫 판정 불변/검토 순서/상한을 다루고,
+`scripts/check_conversation_recovery.py`는 실제 전송 모드 없이 synthetic dry-run만 한다.
+합성 제품 API 검증은 첫 partial → 후속 search로 구현 기록/인용 회수 → 두 번째
+미전송을 확인했다. 첫 턴도 그대로다. query vector/답변은 가짜이며 실제 R1 회수는
+미검증이다. 합성5호출/spent5행, 실제AI/개인DB조회·쓰기0, 임시 schema 삭제 완료.
+관련29개/전체backend915개(74.17초), py_compile/diff 통과. 프론트/의존성/스키마/
+제품 검색·답변 계약/순위는 바꾸지 않았다. 결과는 private
+`.local/evaluation/phase33/conversation-recovery-dry-20261021-v2/`에 보존했다.
+다음 실제 후보는 기존 R1 대화에 최대2회 search 후속(추가6호출/USD0.023634)이다.
+기존 인용 지지 주의 항목의 안전 검토와 개인 기록용 단계 adapter·현재 대화 revision/
+history·원문 metadata/코드를 동결한 새 protocol/dry-run·유한 승인이 먼저 필요하다.
+기존 C3 실패/승인은 종료 상태로 보존한다. R2는 인용 생성 보완이 여전히 필요하다.
+C3–C6 및 Phase3.3은 미완료다.
+
+**2026-10-21 C3 승인 실행 중단·승인 종료 — 인용/검색 보완 남음:**
+
+소유자가 protocol `c721a67e…8199fd`의1회 실행을 승인했다. S1/R1/R2의 실제5호출
+(answer3/query2)이 모두 응답/사용량 검증/spent로 USD0.001473 정산됐다. 실제 예약
+합USD0.010846, 신규 uncertain0이다. R2의 원문과 다른120자 인용2개가 `claim_evidence`로
+거부돼 앱 HTTP503/`ANSWER_OUTPUT_INVALID`에서 중단했다. JSON/공급자 응답 오류나
+네트워크 장애가 아니며 재시도하지 않았다. S1은 명시 제한/베타 gap 누락·supported
+분류가 남아 부분 충족, R1은 필수 구현 커밋 검색/선택 누락으로 실패다. R2는 채택/
+이유 근거를 회수했으나 인용 검증 실패로 답변 미저장이다. R3–R6/남은8호출은 미전송이다.
+생성한 개인 대화는2개이며 answer off GET으로 R1 completed/partial, R2 failed/답변없음
+복원을 확인했다. 반환 citation2개 원문 hash/범위와 raw quote14개 출현을 대조했다.
+기존 원장 전체/uncertain3건 USD0.006801·52기록/1097벡터·정책은 보존됐고 조회로 새
+호출/원장 변경은0이다. 이번 승인은 종료했으며 출력 경로 변경/재개로 재사용하지 않는다.
+private 원본: `.local/evaluation/phase33/c3-protocol-20261021-v1/real-run-v1/`.
+raw/report는 유지하고 별도 audit/REVIEW/closed에 검토를 남겼다. 성공 result의 action
+시간에는 guard도 포함되며 R2 전체 동작 시간은 미계측이다. 코드 변경이 없어 직전
+backend903개 통과를 재사용하고 테스트는 재실행하지 않았다. 결과는
+`PHASE33_C3_SCOPE.md`에 반영했다. 다음은 무과금 인용 불일치/보호 유지·R1 커밋의
+선택 단계 누락 분석이며 새 실측에는 새 protocol/dry-run/유한 승인이 필요하다.
+C3–C6 및 Phase3.3은 계속 미완료다.
+
+**2026-10-21 C3 실행기·무과금 dry-run 완료 — 실제 실행 승인 대기:**
+
+`scripts/run_c3_validation.py`와 `app/evaluation/c3_validation.py`를 추가했다.
+프로토콜 digest/코드·설정/소유자·정책/원문 allowlist/이력·질문·단계/예산·중복과
+기존 회계를 검사하고 전송 원본/결과를 private capture한다. live는 승인 digest가
+없으면 DB 연결 전 거절한다. dry는 실제 DB read-only snapshot의 허용52기록/1097벡터만
+격리 `_test` schema에 복사해 제품 API/예약/정산을 통과시켰다. 로그인/첨부/기존 원장은
+복사하지 않는다. 외부 HTTP/AWS 및 기본 앱 DB 연결은 dry 실행 중 차단했다.
+새17개/전체backend903개(66.72초), py_compile/diff 통과. 초기 모듈/fixture 수집 오류는
+연결 보완 후 해소했다. 프론트/의존성/제품 API 변경은 없다.
+dry-run7동작/13단계·대화4개·합성spent13행 완료. R5 이력1개/R6 이력0 확인,
+개인 DB쓰기/실제AI0, 기존 과금행 불변, 격리 schema 삭제, answer mode=off다.
+원본은 `.local/evaluation/phase33/c3-protocol-20261021-v1/`의 protocol/REVIEW 및
+`dry-run-v1/`에 있다. query vector와 답변은 가짜이므로 grounding/검색 성능은 미채점이다.
+실행기 action 시간에는 보호 검사가 포함되며 브라우저 UI 지연은 측정하지 않았다.
+승인 대상은 `PHASE33_C3_SCOPE.md`의 실행 digest와 최대13호출/USD0.064205다.
+실제 전송·새 중앙 과금/개인 대화 생성은 아직 없다. 다음은 유한 실제 실행 승인 후
+1회 실행과 원문별 의미 검토다. C3–C6 및 Phase3.3은 계속 미완료다.
+
+**2026-10-21 C2 소유자 수용 완료 / C3 범위 준비 완료·실행기 보완 전:**
+
+C4 증거 문서를 `8757c80`로 커밋했다. 사용자가 나머지 원문 왕복/특정 답변 후속/
+독립 문맥0을 확인했다고 답해 C2를 수용으로 기록했다. 개인 DB의 완성 답변이나
+브라우저+서버 재시작 직접 관찰로 확대하지 않는다. C3 권장 범위는 합성T1의 v5
+계약1동작과 실제 개인 기록6동작(새 질문4/특정 답변 후속1/독립 문맥1)이다.
+최대13호출(answer7/planner1/query5), 예약USD0.064205, 재시도0이며 새 indexing은 없다.
+기간/과거 E4/E5는 요청 동일성을 재확인해 기존 고정 문맥 내용 판정만 재사용한다.
+현재 제품 선택/권한·버전의 별도 로컬 대조는 남는다. RPM seed/평가셋 전체는 C5에 유지한다.
+읽기 전용 DB snapshot의 기존52기록/1097벡터 metadata에 필수 근거12범위가 포함된다.
+새 원문 본문/개인 설정 변경이나 AI 전송 없이 질문·rubric·allowlist·상한을
+`.local/evaluation/phase33/c3-scope-20261021-v1/`에 private 동결했다.
+공개 요약은 `PHASE33_C3_SCOPE.md`다. 기존 실행기는 이 개인 기록 조합을 지원하지
+않으므로 다음은 guard/중앙 회계/capture·무과금 dry-run 최소 구현 후 실행 protocol
+재동결이다. 아직 실행 승인 대상으로 쓰지 않는다. 실제AI/DB쓰기0, 제품코드 변경0.
+상한/근거metadata·요청동일·파일hash/링크/diff를 확인했고 앱 테스트는 재실행하지 않았다.
+직전 backend886 통과를 재사용한다. C3–C6 및 Phase3.3은 계속 미완료다.
+
 **2026-10-21 C4 보호·운영 증거 연결 — 전체 완료 보류:**
 
 환경/브라우저 상태 문서를 `d20a04f`로 커밋했다. C2 나머지 직접 수용 응답이 없어
@@ -2323,9 +2400,14 @@ user-verifiable product slices in `ROADMAP.md`.
 ## Next
 
 Use `PHASE33_COMPLETION_PLAN.md`'s consolidated C/E/B checklist for current exit
-work: C1 existing-case mapping is complete; obtain owner browser feedback (C2), then
-prepare only remaining real integrated checks (C3) with a new finite approval.
-The C0/C1 documents grant no provider calls; seed/evaluation-set gaps remain in C5.
+work: C0–C2 are complete and C3 scope is prepared in `PHASE33_C3_SCOPE.md`.
+The approved C3 execution stopped at R2 quote validation after5 spent calls
+(USD0.001473); approval is closed and R3–R6 remain unsent. The bounded recovery
+evaluation/synthetic dry-run is implemented. Next source-review R1's safety and
+freeze a new step executor/protocol for at most two hint-free follow-ups; retain
+the original first-response failure. R2 quote generation still needs correction.
+Any later paid check requires a new protocol, dry-run and finite approval.
+The scope document grants no provider calls; seed/evaluation-set gaps remain in C5.
 
 The bounded saved-conversation real pilot is closed:8 branches matched; its
 semantic review remains partial.

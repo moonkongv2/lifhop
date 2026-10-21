@@ -1,0 +1,19 @@
+{
+  "case": {
+    "id": "synthetic-linked-change-recovery",
+    "initial_question": "기록 삭제 정책은 무엇이며, 그 변경을 구현한 커밋은 무엇인가요?",
+    "followups": [
+      {"question": "그 변경을 구현한 커밋도 찾아줘.", "branch": "search"},
+      {"question": "앞서 정한 정책과 직접 연결되는 구현 기록이 있는지 근거를 보여줘.", "branch": "search"}
+    ],
+    "forbidden_hints": ["dry-commit-7e2c", "Fixture commit evidence"]
+  },
+  "decision": "[Synthetic] Deleting a note keeps attachments unless linked deletion is selected.",
+  "commit": "[Synthetic] Commit dry-commit-7e2c implements the optional linked deletion policy.",
+  "fillers": [
+    "[Synthetic] A neutral note about the archive screen.",
+    "[Synthetic] A neutral note about note sorting.",
+    "[Synthetic] A neutral note about navigation labels.",
+    "[Synthetic] A neutral note about date display."
+  ]
+}
