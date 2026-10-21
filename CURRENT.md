@@ -70,6 +70,20 @@ See AI_SOURCE_COVERAGE.md for scope and completion gates.
 
 ## Current product slice
 
+**2026-10-21 v6 고정 문맥 재검증 준비·dry-run 완료 — 승인 대기:**
+
+v6 보완을 `69cb7ea`로 커밋했다. S1/R1/R2 첫 질문·기존 선택 발췌문·빈 이력을
+고정한 answer3회/USD0.011054 재검증 실행기를 준비했다. 원문 권한/버전/범위와
+payload/코드/설정/가격/기존 원장·corpus를 확인하고 중앙 회계·재실행 차단을 사용한다.
+개인 대화는 변경하지 않는다. 생성 진단이며 검색·저장 대화·후속 회수 통과는 아니다.
+최종 protocol과 범위/명령/검토 기준은 `QUOTE_RECHECK.md`에 있다. 실제 전송은 미승인이다.
+dry-run3회/합성spent3행·outstanding0, 실제AI/개인DB쓰기0, 임시 schema 삭제 완료다.
+원장515행 전체 필드·52기록/1097벡터 불변을 독립 대조했다. 새16개/전체backend954개
+(77.37초), py_compile/diff/audit 통과. 초기 fixture/입력 보존 오류는 보완해 해소했다.
+private `.local/evaluation/phase33/quote-recheck-20261021-v2/`에 최종 protocol/dry/audit를
+보존했다. digest는 `56b3b9fb…67d81e9`, 로컬 단가 기준 최대USD0.011054다.
+기존 C3 승인/실패와 R1/R2 후속 차단은 보존한다. C3–C6/Phase3.3은 미완료다.
+
 **2026-10-21 v6 인용 생성 지침 보완·무과금 검증:**
 
 사전 검토 도구를 `27b5575`로 커밋했다. `answer_claims.py`의 지침/quote·fact 필드 설명을
@@ -2443,8 +2457,9 @@ evaluation/synthetic dry-run is implemented. Offline source review now blocks th
 existing R1 for an unsupported clause in its returned citations; R2's nonexact
 quotes also remain blocked. Capture-bound review tooling preserves both failures.
 V6 quote-copy/per-claim instructions and offline regressions are implemented;
-real-model improvement remains unverified. Next freeze a finite first-response
-retest protocol/dry-run. Review any newly generated first-response candidate for
+real-model improvement remains unverified. A finite three-answer fixed-context
+retest executor/protocol is prepared in QUOTE_RECHECK.md; actual sending needs
+separate approval; final dry-run and954 backend tests passed. Review any newly generated candidate for
 safety before preparing the personal follow-up step executor.
 Do not recover either blocked answer through follow-ups or edit its raw output.
 Any later paid check requires a new protocol, dry-run and finite approval.
