@@ -1948,3 +1948,33 @@ belong beside first-response quality. Existing paid approvals remain closed;
 personal-record recovery requires a new finite protocol/approval. This changes
 evaluation, not retrieval architecture or source policy. Details live in
 `CONVERSATION_RECOVERY_EVALUATION.md`.
+
+### 2026-10-21: Conditionally close Phase3.3 and carry quality work forward
+
+After CE1/CE2 protection/evidence and result/error/accounting reconciliation,
+the owner explicitly accepted the conditional exit and requested status-document
+updates and a commit. Phase3.3 is conditionally closed for the personal alpha;
+current work moves to Phase4.1 planning. Scheduled collectors remain unimplemented.
+
+Separate an individual answer's score from permission to advance development.
+Keep C3/C4 full acceptance unmet and old failed/unverified judgments unchanged.
+C5/C6 accept the documented exception scope; they do not certify general recall
+or semantic quality. Register [D01–D09](PHASE33_CONDITIONAL_EXIT_PLAN.md): citation
+errors, selection/answer omissions, personal follow-up and integration gaps,
+restore/performance limits, evaluation/seed gaps, old uncertain accounting and
+error usability. Revisit at the Phase4 exit review; agree remaining Phase5 use
+scope explicitly. A broad semantic validator or quote-ID redesign is not an
+added requirement to start Phase4 planning.
+
+Retain ownership, current source policy/version, deletion, consent, replay/Stop
+and shared-budget protections. Keep rejected output rejected, AI answers off by
+default and existing3 uncertain reservations/USD0.006801 conservative; no manual
+settlement without evidence. The accepted evidence binds functional code17ad489
+to prior backend954 checks and the unchanged UI's earlier205/lint/build result,
+with limited real measurements; none proves all-environment safety or quality.
+
+Next prepare a bounded GitHub collect-now/scheduled-flow plan, then Codex, within
+the existing two-source Phase4 scope. This acceptance grants no new personal
+ingestion, external transmission, paid AI/embedding, automatic AI enabling or AWS
+resources. Prior paid protocols stay closed. [Exit evidence](PHASE33_OPERATIONAL_EVIDENCE.md)
+and [completion record](PHASE33_COMPLETION_PLAN.md) retain the limitations.

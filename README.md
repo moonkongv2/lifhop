@@ -267,13 +267,18 @@ Avoid introducing infrastructure purely to make the architecture look sophistica
 - `HISTORICAL_QUESTIONS.md` — observed version cutoffs, local history preview and cited answers
 - `AI_SOURCE_COVERAGE.md` — primary event evidence, index compatibility and bounded Phase 3.3 acceptance
 - `PHASE33_COMPLETION_PLAN.md` — consolidated exit checklist, existing evidence and remaining owner/real-flow verification
+- `PHASE33_CONDITIONAL_EXIT_PLAN.md` — accepted conditional exit, D01–D09 carryovers and review points
+- `PHASE33_OPERATIONAL_EVIDENCE.md` — current protection, error, accounting and verification evidence
 
 The repository is the source of truth for the project. ChatGPT, Codex CLI, Antigravity CLI, and other coding agents should read the project documentation before making changes.
 
 ## Current Status
 
-Active work is **Phase 3.3**; exit acceptance is incomplete and Phase 4 has not
-started. Ordinary Search & ask now saves owner-scoped conversations in PostgreSQL.
+Active work is **Phase 4.1 planning**; scheduled collectors are not implemented.
+On 2026-10-21 the owner accepted **conditional closure of Phase 3.3** for the
+personal alpha, carrying known quality defects and unverified behavior under
+[D01–D09](PHASE33_CONDITIONAL_EXIT_PLAN.md). Old failed/unverified evaluations
+remain unchanged. Ordinary Search & ask saves owner-scoped conversations in PostgreSQL.
 The owner can close a chat, log out and later reopen it to ask a follow-up; this
 is separate from imported ChatGPT/Codex source conversations. Opening saved chats
 makes no AI call. Contextual follow-ups use bounded history and current source
@@ -281,11 +286,15 @@ permissions/version checks before planner, query and answer dispatch. Source
 and conversation deletion suppress derived answers while preserving body-free
 accounting. Provider `store=false` remains. Legacy independent/manual/period/
 historical flows remain available. Apply the new migration before using the API.
-Local synthetic checks pass. The approved8-question real-model pilot matched all
-branches; semantic review remains partial (omitted unknowns/calculation labeling).
-Owner browser acceptance, long-context behavior and broad archive quality remain
-unverified. See `CURRENT.md`, [usage/setup](UNIFIED_ANSWER.md), and
-[the design plan](CONVERSATIONAL_FOLLOWUP_PLAN.md).
+Owner browser flow acceptance and bounded synthetic checks are recorded. Real
+checks still show citation generation failures, omissions and missing selected
+evidence; personal-record follow-up quality, long-context behavior and some
+restart checks remain unverified. AI answers remain off by default; a failed sent
+request may still cost money. Ownership/source/deletion/budget/replay protections
+remain required. Next is planning GitHub collect-now and scheduled collection,
+followed by Codex; no new personal ingestion, AI calls or AWS resources are
+authorized by this milestone change. See `CURRENT.md`, [usage/setup](UNIFIED_ANSWER.md),
+and [the accepted exit scope](PHASE33_CONDITIONAL_EXIT_PLAN.md).
 
 The learning-through-F3 baseline is marked by Git tag
 `learning-complete-f3`; F0–F3 was completed on 2026-09-28. The project

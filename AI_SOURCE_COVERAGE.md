@@ -1,6 +1,9 @@
 # Primary event evidence and Phase 3.3 acceptance
 
 Current exit tracking: [consolidated checklist](PHASE33_COMPLETION_PLAN.md).
+On2026-10-21 the owner accepted [conditional Phase3.3 closure](PHASE33_CONDITIONAL_EXIT_PLAN.md)
+and D01–D09 carryovers. Current work is Phase4.1 planning; the coverage/evaluation
+gaps below are not resolved or newly approved for collection/transmission.
 Its C/E/B items distinguish implementation/synthetic checks, real-source/model
 evidence and owner acceptance. Dated results below retain their original scope;
 they are not new execution approval or a declaration that Phase3.3 is complete.

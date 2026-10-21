@@ -1,6 +1,11 @@
 # lifhop Product Roadmap
 
-Last revised: 2026-10-19
+Last revised: 2026-10-21
+
+Current checkpoint: **Phase3.3 conditionally closed by the owner on 2026-10-21;
+Phase4.1 planning next, scheduled collection not implemented.** The accepted
+[conditional scope and D01–D09](PHASE33_CONDITIONAL_EXIT_PLAN.md) preserve all
+failed/unverified results and ownership/source/deletion/budget protections.
 
 ## Purpose and release boundary
 
@@ -349,6 +354,18 @@ and inspect citations. Record failures, latency, and per-query cost. No observed
 ownership leak, prohibited AI transmission, or deleted-content resurfacing is
 acceptable for release. Report unsupported conclusions as failures to fix.
 
+**Accepted conditional exit, 2026-10-21:** The owner accepted the implemented
+personal-alpha flow with CE1/CE2 evidence reconciliation and D01–D09 carryovers.
+Citation generation errors, retrieval/answer omissions, personal follow-up and
+remaining integration/restore/performance/evaluation gaps remain failed or
+unverified. Existing uncertain accounting remains conservatively reserved.
+C3/C4 full acceptance is deferred, not scored as passed; C5/C6 record the explicit
+conditional scope acceptance. AI remains off by default and rejected outputs are
+not bypassed. Revisit carryovers at the Phase4 exit review and explicitly agree
+their Phase5 use scope. See [exit record](PHASE33_COMPLETION_PLAN.md) and
+[evidence](PHASE33_OPERATIONAL_EVIDENCE.md). No new paid call, personal collection,
+external transmission, automatic AI enabling or AWS provisioning is authorized.
+
 Owner clarification, 2026-10-19: real conversations need not contain a reported
 final decision or outcome. A useful answer may recover recorded recommendations,
 comparisons, requests and progress, cite those facts, and explicitly state which
@@ -370,6 +387,11 @@ failures and cannot be bypassed. See
 ## Phase 4 — Scheduled collection from both new sources
 
 ### 4.1 Codex and GitHub incremental collection
+
+Current work is preparation of the first development plan. Start with a bounded
+GitHub collect-now/scheduled-run flow using existing collectors and synthetic
+local verification, then cover Codex offline/wake behavior. Neither collector
+schedule nor new personal-data execution has been implemented by the exit update.
 
 Reuse backfill adapters with configurable schedules and collect-now controls.
 Codex runs on the Mac, uploads over an authenticated connection, and catches up

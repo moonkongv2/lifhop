@@ -2,15 +2,23 @@
 
 Last updated: 2026-10-21
 
-## Roadmap checkpoint (2026-10-18)
+## Roadmap checkpoint (2026-10-21)
 
-Active stage: **Phase 3.3, implementation present but exit acceptance incomplete**.
+Active stage: **Phase4.1 planning; scheduled collection is not implemented**.
+Phase3.3 is **conditionally closed by the owner on2026-10-21**, with known defects
+and unverified paths carried as D01–D09 in `PHASE33_CONDITIONAL_EXIT_PLAN.md`.
+CE1–CE4 are complete; C3/C4 full acceptance remains unmet, while C5/C6 record
+conditional scope acceptance. First prepare a GitHub collect-now/scheduled-flow
+development plan, followed by Codex. AI remains off; no new paid call, personal
+collection/external transmission or AWS resources are authorized by this change.
 Phase 1 archive and Phase 2 manual collectors/history/policies are implemented;
 selected-source coverage and older owner-confirmation notes still need reconciliation.
 Phase 3.1 evaluation tooling and Phase 3.2 indexing/search are implemented, with
 real quality checks concentrated on GitHub documents and selected known cases.
 Phase 4 scheduled Codex/GitHub collection and Phase 5 private AWS daily use remain
 unimplemented. Existing import/embedding workers are not scheduled collectors.
+
+## Prior source-coverage checkpoint (2026-10-18; historical)
 
 The audit's PROJECT_EVENT coverage gap is addressed in code: a shared source gate
 now admits validated Codex user/explicit final-answer text and GitHub commit
@@ -69,6 +77,31 @@ Phase 3.3 is incomplete; do not start scheduled collection yet.
 See AI_SOURCE_COVERAGE.md for scope and completion gates.
 
 ## Current product slice
+
+**2026-10-21 Phase3.3 조건부 종료 수용·상태 반영 완료:**
+
+CE1/CE2 증거 정리 후 소유자가 “수용할게 커밋해줘. Decision, current, readme 등
+문서도 업데이트해줘”라고 답했다. CE3 수용과 CE4 문서 반영을 완료했다. D01–D09의
+품질 결함/미검증·기존 uncertain3건/USD0.006801을 이월하고 기존 C/E 실패/원본은
+보존한다. 기능 기준17ad489, 기존backend954 및 불변 UI205/lint/build를 재사용했다.
+최신 증거는 `PHASE33_OPERATIONAL_EVIDENCE.md`, 수용 범위/재검토는 조건부 종료안,
+지속 결정은 DECISIONS에 연결했다. 문서 검증만 수행하며 코드·DB·AI 호출은 없다.
+다음 작업은 **Phase4.1 첫 개발계획 작성**이다. GitHub collect-now/예약 실행의
+동일 수집 경로·상태·중복 방지 로컬 합성 흐름을 먼저 계획하고 Codex까지 확장한다.
+정기 수집은 아직 미구현이며 새 개인 수집/외부 전송/유료 AI/AWS 실행은 승인하지 않았다.
+
+### Prior Phase3.3 checkpoints (historical; superseded by the accepted exit above)
+
+**2026-10-21 CE1·CE2 완료 — 조건부 종료 수용 전:**
+
+`796c1f9`의 권장안 지시에 따라 보호 증거표를17ad489/기존backend954에 연결하고,
+C/E 결과·오류/기과금 표시·원장과 D01–D09를 정리했다. d20a04f 이후 서비스 변경은
+v6 지침/설명이고 보호 경로/프론트는 불변이다. 이전 UI205/lint/build 재사용 범위도
+명시했다. 새 앱 테스트/브라우저/제품 AI/DB 조회·쓰기/개인 원문 내용 검토는 없고 문서/
+코드 비교·테스트22심볼·기존 검증 집계 metadata/로컬 상한을 대조해 통과했다. 상세는
+`PHASE33_OPERATIONAL_EVIDENCE.md` 및 조건부 종료안 CE1/CE2의 완료 표시를 따른다.
+새 유료 승인은 없으며 기존 uncertain3건/USD0.006801은 보존한다. CE3 소유자 예외 수용과
+CE4 상태 반영은 남았다. C3–C6/Phase3.3은 미완료, Phase4 미착수다.
 
 **2026-10-21 조건부 종료안·이월 목록 작성/리뷰 완료 — 종료 수용 전:**
 
@@ -2488,6 +2521,16 @@ user-verifiable product slices in `ROADMAP.md`.
 
 ## Next
 
+Phase3.3 conditional closure is accepted and CE1–CE4 are complete. Next prepare
+the Phase4.1 first development plan: GitHub collect-now and scheduled execution
+through existing collectors, status visibility and duplicate prevention in a
+local synthetic flow; then Codex offline/wake collection. No scheduled collector
+is implemented yet. Maintain D01–D09 and revisit them at the Phase4 exit review
+and before agreeing Phase5 use scope. No new paid call, personal collection or
+external transmission, automatic AI enabling or AWS resource is authorized.
+
+### Historical Phase3.3 next-work notes (superseded)
+
 Use `PHASE33_COMPLETION_PLAN.md`'s consolidated C/E/B checklist for current exit
 work: C0–C2 are complete and C3 scope is prepared in `PHASE33_C3_SCOPE.md`.
 The approved C3 execution stopped at R2 quote validation after5 spent calls
@@ -2500,8 +2543,8 @@ the separately approved fixed-context three-call recheck is closed at R2's
 nonexact41-character quote (USD0.001491 spent, no new uncertain). S1 still omits
 requested limits/gaps; R1 avoids the old unsupported clause but misses the commit
 and still groups assertions. Old scores/conversations stay unchanged.
-Next evaluate deterministic source-quote candidate IDs and their input/splitting
-tradeoffs before another implementation or paid proposal. Keep completeness and
+Deterministic source-quote candidate IDs and their input/splitting tradeoffs are
+backlogged under D01 rather than an added exit blocker. Keep completeness and
 semantic support separate. Prior954 backend checks remain applicable; no code changed.
 Do not recover either blocked answer through follow-ups or edit its raw output.
 Any later paid check requires a new protocol, dry-run and finite approval.
