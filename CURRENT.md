@@ -70,6 +70,17 @@ See AI_SOURCE_COVERAGE.md for scope and completion gates.
 
 ## Current product slice
 
+**2026-10-21 조건부 종료안·이월 목록 작성/리뷰 완료 — 종료 수용 전:**
+
+소유자가 과도한 종료 기준과 다음 단계 진행 가능성 검토 후 조건부 종료안 작성을
+요청했다. `PHASE33_CONDITIONAL_EXIT_PLAN.md`에 보호 기준 유지, 품질/미검증 D01–D09
+이월, CE1–CE4 정리/소유자 수용, Phase4 첫 계획 범위와 재검토 조건을 제안했다.
+아직 종료 수용/Phase4 착수 승인이 아니며 C3–C6은 미체크다. 제품 AI 호출/개인 원문
+전송·DB·코드 변경은 없다. 별도 요청한 agy-plan-review-loop 2는 sandbox/plan의1차 지적0건으로 규칙에 따라
+조기 종료했다(1/최대2회). 링크/항목 ID/기존 체크·이력 보존/diff 통과, 앱 테스트는
+문서 변경만 있어 미실행. 소유자가 계획 커밋을 지시했다. 다음은 CE1/CE2 증거 연결과
+소유자 예외 수용이다. 이번 커밋 지시는 CE3 종료 수용을 대신하지 않는다.
+
 **2026-10-21 v6 실제 재검증 종료 — R2 인용 불일치 남음:**
 
 수신처 OpenAI API 명시 승인을 받은 뒤 protocol `56b3b9fb…67d81e9`를1회 실행했다.
