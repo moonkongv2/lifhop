@@ -69,4 +69,4 @@ if __name__ == "__main__":
     try:
         main()
     except HTTPError as error:
-        raise SystemExit(f"Local API returned HTTP {error.code}; check login, source collection policy, and HISTORY.md") from None
+        raise SystemExit(f"Local API returned HTTP {error.code}; check login, source collection policy, and docs/guides/HISTORY.md") from None

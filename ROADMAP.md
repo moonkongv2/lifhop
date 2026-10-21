@@ -3,8 +3,9 @@
 Last revised: 2026-10-21
 
 Current checkpoint: **Phase3.3 conditionally closed by the owner on 2026-10-21;
-Phase4.1 planning next, scheduled collection not implemented.** The accepted
-[conditional scope and D01–D09](PHASE33_CONDITIONAL_EXIT_PLAN.md) preserve all
+Phase4.1 S1 GitHub collect-now implemented, owner verification pending;
+scheduled collection not implemented.** The accepted
+[conditional scope and D01–D09](docs/evaluation/phase33/PHASE33_CONDITIONAL_EXIT_PLAN.md) preserve all
 failed/unverified results and ownership/source/deletion/budget protections.
 
 ## Purpose and release boundary
@@ -12,7 +13,7 @@ failed/unverified results and ownership/source/deletion/budget protections.
 Finish a private, daily-use release for the owner before planning a commercial
 service. lifhop remains a learning project, with delivery organized around
 observable product results. The learning baseline is `learning-complete-f3`;
-`CURRENT.md` records actual implementation status, not planned capabilities.
+[CURRENT.md](CURRENT.md) records actual implementation status, not planned capabilities.
 
 Personal priorities, in order:
 
@@ -81,7 +82,11 @@ add a small CI workflow in Phase 1. Keep OpenAPI and generated frontend types
 aligned. Use migrations and verify upgrade behavior for persistent changes.
 Keep private samples, evaluation answers, credentials, and archives out of Git.
 
-The existing backend supports authenticated user-owned Entry CRUD, attachments,
+The following is the historical `learning-complete-f3` foundation, before Phase1
+product delivery. It explains the sequence below, not the current implementation.
+See [CURRENT.md](CURRENT.md) for active status.
+
+At that baseline, the backend supported authenticated user-owned Entry CRUD, attachments,
 Markdown import, preserved import artifacts, and asynchronous ChatGPT ZIP
 processing through ImportJob/SQS/a worker. ZIP and Capture API paths reuse
 canonical normalization and external Entry upsert. Local S3 is the default;
@@ -341,7 +346,7 @@ a deleted source must not reappear through a saved answer. Preserve body-free
 billing when deleting a conversation, and prevent late responses from restoring it.
 This adds no scheduled collection or new infrastructure. Period/historical modes
 keep their existing scope. Details and bounded-context limits live in
-[CONVERSATIONAL_FOLLOWUP_PLAN.md](CONVERSATIONAL_FOLLOWUP_PLAN.md).
+[CONVERSATIONAL_FOLLOWUP_PLAN.md](docs/plans/reference/CONVERSATIONAL_FOLLOWUP_PLAN.md).
 
 **Saved-conversation user check:** Ask a cited question, close the conversation,
 log out, log in to the same account, open the saved chat and ask a contextual
@@ -362,8 +367,8 @@ unverified. Existing uncertain accounting remains conservatively reserved.
 C3/C4 full acceptance is deferred, not scored as passed; C5/C6 record the explicit
 conditional scope acceptance. AI remains off by default and rejected outputs are
 not bypassed. Revisit carryovers at the Phase4 exit review and explicitly agree
-their Phase5 use scope. See [exit record](PHASE33_COMPLETION_PLAN.md) and
-[evidence](PHASE33_OPERATIONAL_EVIDENCE.md). No new paid call, personal collection,
+their Phase5 use scope. See [exit record](docs/evaluation/phase33/PHASE33_COMPLETION_PLAN.md) and
+[evidence](docs/evaluation/phase33/PHASE33_OPERATIONAL_EVIDENCE.md). No new paid call, personal collection,
 external transmission, automatic AI enabling or AWS provisioning is authorized.
 
 Owner clarification, 2026-10-19: real conversations need not contain a reported
@@ -382,16 +387,17 @@ Use no answer hashes, source IDs or original-location hints; stop after success.
 Report extra turns, latency and cost separately. A faithful partial answer may
 recover through dialogue; unsafe claims and output/citation failures remain
 failures and cannot be bypassed. See
-[bounded recovery evaluation](CONVERSATION_RECOVERY_EVALUATION.md).
+[bounded recovery evaluation](docs/evaluation/phase33/CONVERSATION_RECOVERY_EVALUATION.md).
 
 ## Phase 4 — Scheduled collection from both new sources
 
 ### 4.1 Codex and GitHub incremental collection
 
-Current work is preparation of the first development plan. Start with a bounded
-GitHub collect-now/scheduled-run flow using existing collectors and synthetic
-local verification, then cover Codex offline/wake behavior. Neither collector
-schedule nor new personal-data execution has been implemented by the exit update.
+S1 GitHub collect-now is implemented with synthetic verification; owner browser,
+live selected-source and separate-process runtime acceptance remain open.
+Scheduling, bounded incremental reconciliation and the Codex agent remain pending.
+See [the collection plan](docs/plans/PHASE41_COLLECTION_PLAN.md) and
+[S1 setup and limits](docs/guides/PHASE41_COLLECTION.md). Overall4.1 is not complete.
 
 Reuse backfill adapters with configurable schedules and collect-now controls.
 Codex runs on the Mac, uploads over an authenticated connection, and catches up
@@ -489,7 +495,7 @@ usage), with all of the following checked:
 
 **Release boundary:** Mark the private release complete only after these
 checks. Record measured limits, remaining gaps, and operating instructions in
-`CURRENT.md` and deployment documentation.
+[CURRENT.md](CURRENT.md) and deployment documentation.
 
 ## Next stage — Commercial service and later improvements
 

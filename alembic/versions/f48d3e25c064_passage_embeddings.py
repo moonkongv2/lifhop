@@ -13,7 +13,7 @@ def upgrade():
     connection = op.get_bind()
     available = connection.scalar(sa.text("SELECT count(*) FROM pg_available_extensions WHERE name = 'vector'"))
     if not available:
-        raise RuntimeError("pgvector server extension is unavailable. Use the pinned PostgreSQL 17 image; see SEMANTIC_PRODUCT.md.")
+        raise RuntimeError("pgvector server extension is unavailable. Use the pinned PostgreSQL 17 image; see docs/guides/SEMANTIC_PRODUCT.md.")
     installed_schema = connection.scalar(sa.text("SELECT n.nspname FROM pg_extension e JOIN pg_namespace n ON n.oid=e.extnamespace WHERE e.extname='vector'"))
     if installed_schema and installed_schema != "public":
         raise RuntimeError("pgvector must be installed in public; ask the database administrator before migrating.")

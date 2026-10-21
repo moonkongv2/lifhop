@@ -4,10 +4,18 @@ This document records durable design decisions that are expected to affect multi
 
 The intent is not to freeze the architecture permanently. Each decision should be revisited when new source types or operational constraints provide evidence that the current rule no longer fits.
 
-Capture/acquisition details and the risk register are maintained in `CAPTURE.md`.
+Capture/acquisition details and the risk register are maintained in [CAPTURE.md](docs/design/CAPTURE.md).
 References to numbered Steps in older decisions describe the learning plan
-at the time of those decisions. `ROADMAP.md` is the active delivery order
+at the time of those decisions. [ROADMAP.md](ROADMAP.md) is the active delivery order
 after the `learning-complete-f3` baseline.
+
+Historical decisions retain their original scope and implementation status.
+For active delivery status use [CURRENT.md](CURRENT.md). In particular, the
+saved-conversation proposal's “implementation pending” heading describes that
+decision checkpoint; its [implementation note](#implementation-note--2026-10-20-saved-conversation-slice)
+records the subsequent work. The [conditional Phase3.3 exit](#2026-10-21-conditionally-close-phase33-and-carry-quality-work-forward)
+and [S1 collection decision](#2026-10-21-separate-github-collect-now-jobs-from-immutable-collection-batches)
+supersede earlier next-step status without changing old failed results or approvals.
 
 ---
 
@@ -465,7 +473,7 @@ LIMITED GO
 NO-GO
 ```
 
-and document the reasons in `CAPTURE.md` / `CURRENT.md` before later productization.
+and document the reasons in [CAPTURE.md](docs/design/CAPTURE.md) / [CURRENT.md](CURRENT.md) before later productization.
 
 ### Progress note — 2026-09-25
 
@@ -694,7 +702,7 @@ all accessible records within an explicit source/branch/content scope; missing
 historical data must be reported, not invented. Codex source format/access and
 GitHub repository inventory still need verification.
 
-`ROADMAP.md` now defines the sequence. This refines ADR-007/008: low recurring
+[ROADMAP.md](ROADMAP.md) now defines the sequence. This refines ADR-007/008: low recurring
 effort is required for Codex and GitHub, while manual ChatGPT ZIP imports remain
 the planning default. ADR-009's experimental DOM status is unchanged.
 Commercial onboarding, billing, and broad provider expansion follow private
@@ -1020,7 +1028,7 @@ page walk is an explicit gap and never proof of deletion. Enumerated branches
 are not automatically selected for ingestion. Full commits/documents followed
 by PR/review/issue collection remains Phase 2.4.
 
-Real evidence and owner verification steps are recorded in `ACQUISITION.md`.
+Real evidence and owner verification steps are recorded in [ACQUISITION.md](docs/guides/ACQUISITION.md).
 
 
 ---
@@ -1076,7 +1084,7 @@ serving a restore; current denies must also be reapplied, with restored AI off
 until verified. Content backup expiry target is 30 days; automatic journal,
 backups, expiry and restore supervision remain Phase 5. Logical deletion does
 not promise secure erasure of PostgreSQL pages/WAL or owner source originals.
-Operator commands and user verification are in HISTORY.md.
+Operator commands and user verification are in [HISTORY.md](docs/guides/HISTORY.md).
 
 ---
 
@@ -1125,7 +1133,7 @@ Sources shows run outcomes and coverage separately from record completeness.
 Completed means the selected reviewed manifest has durable outcomes, not complete
 recovery of every historical source or continuously current collection. Scheduled
 collection and browser collect-now remain Phase 4. Operational commands and
-verification boundaries are in `CODEX_BACKFILL.md`.
+verification boundaries are in [CODEX_BACKFILL.md](docs/guides/CODEX_BACKFILL.md).
 
 ---
 
@@ -1798,7 +1806,7 @@ paid provider calls and does not complete Phase 3.3.
 
 ## 2026-10-20: Preserve explicit verification limits and version question-aligned grading
 
-On the owner's instruction to implement ANSWER_EVIDENCE_POLICY_PLAN.md, ordinary
+On the owner's instruction to implement [ANSWER_EVIDENCE_POLICY_PLAN.md](docs/plans/reference/ANSWER_EVIDENCE_POLICY_PLAN.md), ordinary
 claims add limitation: source-explicit verification limits relevant to the question
 are useful partial information and retain their citations. They cannot alone mark
 a question part complete. Attribute non-execution to its actual review/record;
@@ -1861,7 +1869,7 @@ proposal is superseded. This is the accepted design direction; tables, migration
 conversation APIs/UI and contextual follow-ups were **not implemented at this decision checkpoint**;
 see the implementation note below for the subsequent owner-authorized work.
 Concrete candidate schema/stages and review findings are in
-[CONVERSATIONAL_FOLLOWUP_PLAN.md](CONVERSATIONAL_FOLLOWUP_PLAN.md).
+[CONVERSATIONAL_FOLLOWUP_PLAN.md](docs/plans/reference/CONVERSATIONAL_FOLLOWUP_PLAN.md).
 
 Keep original questions, displayed answers/statuses, safe execution state and
 stable version/range/hash evidence links; do not duplicate source bodies or
@@ -1947,7 +1955,7 @@ oracle results establish wiring only. Additional turns, costs and elapsed time
 belong beside first-response quality. Existing paid approvals remain closed;
 personal-record recovery requires a new finite protocol/approval. This changes
 evaluation, not retrieval architecture or source policy. Details live in
-`CONVERSATION_RECOVERY_EVALUATION.md`.
+[CONVERSATION_RECOVERY_EVALUATION.md](docs/evaluation/phase33/CONVERSATION_RECOVERY_EVALUATION.md).
 
 ### 2026-10-21: Conditionally close Phase3.3 and carry quality work forward
 
@@ -1959,7 +1967,7 @@ current work moves to Phase4.1 planning. Scheduled collectors remain unimplement
 Separate an individual answer's score from permission to advance development.
 Keep C3/C4 full acceptance unmet and old failed/unverified judgments unchanged.
 C5/C6 accept the documented exception scope; they do not certify general recall
-or semantic quality. Register [D01–D09](PHASE33_CONDITIONAL_EXIT_PLAN.md): citation
+or semantic quality. Register [D01–D09](docs/evaluation/phase33/PHASE33_CONDITIONAL_EXIT_PLAN.md): citation
 errors, selection/answer omissions, personal follow-up and integration gaps,
 restore/performance limits, evaluation/seed gaps, old uncertain accounting and
 error usability. Revisit at the Phase4 exit review; agree remaining Phase5 use
@@ -1976,5 +1984,29 @@ with limited real measurements; none proves all-environment safety or quality.
 Next prepare a bounded GitHub collect-now/scheduled-flow plan, then Codex, within
 the existing two-source Phase4 scope. This acceptance grants no new personal
 ingestion, external transmission, paid AI/embedding, automatic AI enabling or AWS
-resources. Prior paid protocols stay closed. [Exit evidence](PHASE33_OPERATIONAL_EVIDENCE.md)
-and [completion record](PHASE33_COMPLETION_PLAN.md) retain the limitations.
+resources. Prior paid protocols stay closed. [Exit evidence](docs/evaluation/phase33/PHASE33_OPERATIONAL_EVIDENCE.md)
+and [completion record](docs/evaluation/phase33/PHASE33_COMPLETION_PLAN.md) retain the limitations.
+
+
+## 2026-10-21: Separate GitHub collect-now jobs from immutable collection batches
+
+Phase4.1 S1 uses PostgreSQL subscriptions/jobs and durable manual request mappings.
+Coalesced requests retain their original job even after it finishes. A partial
+unique index allows only one active job per source; the existing short owner lock
+serializes claims, policy changes and writes. Every worker write checks a90-second
+lease, generation and configuration revision; no provider I/O holds this lock.
+Collection disable/cancel fences in-flight work. Manual batch writes conflict
+with active jobs, and cannot mutate a job-bound batch through ordinary endpoints.
+
+Extract the existing batch creation/ingestion/finish service so manual uploads
+and the server worker share canonical upsert, version, suppression and atomic
+receipt behavior. A source/job/config-bound private spool retains sealed batches
+for restart/replay. New jobs use fresh transport caches. Keep the worker explicit
+and source-selected in S1; no scheduler, upload credential, agent installation,
+new queue, external-AI enrollment or cloud service is introduced. GitHub provider
+credentials remain runtime secrets, separate from lifhop authentication.
+
+S1 deliberately reuses bounded historical traversal. Persisted incremental graph
+frontiers, mutable discussion reconciliation, retry scheduling and Codex remain
+later Phase4.1 slices. Synthetic fixtures establish behavior only; live selected
+source approval/acceptance and overall A7 remain open. See [PHASE41_COLLECTION.md](docs/guides/PHASE41_COLLECTION.md).

@@ -108,7 +108,7 @@ common importer/canonical normalization boundary.
 The private release must retain collected versions, prevent deleted records
 from being reimported, and support repository/record-level exclusions from
 external AI, including embeddings. These foundations are implemented in Phase 2.2; current
-selection uses freshness/completeness guards and keeps observed versions. See `ROADMAP.md` for the agreed scope and checks.
+selection uses freshness/completeness guards and keeps observed versions. See [ROADMAP.md](ROADMAP.md) for the agreed scope and checks.
 
 ## Long-Term Architecture Direction
 
@@ -182,16 +182,16 @@ Current backend stack includes:
 - AWS S3
 - AWS SQS
 - boto3
+- PostgreSQL Full Text Search
+- pgvector
+- Optional LLM APIs (answers off by default)
+- GitHub Actions checks
 
 Later additions may include:
 
-- PostgreSQL Full Text Search
-- pgvector
-- LLM APIs
 - ECS Fargate
 - RDS
 - Terraform
-- GitHub Actions
 - CloudWatch / production observability
 
 Technology choices may change as the project progresses. Significant architecture changes should be documented rather than silently introduced.
@@ -221,14 +221,14 @@ PostgreSQL ImportJob rows as a durable local queue. Run the import worker with
 `python -m app.workers.import_worker`; local Markdown and ZIP import require no
 AWS requests when `S3_MODE=local` is also selected. `QUEUE_MODE=aws` intentionally
 uses SQS and requires `SQS_IMPORT_QUEUE_URL` and AWS credentials. See
-`frontend/README.md` for setup, limits, retry behavior, and synthetic samples.
+[frontend/README.md](frontend/README.md) for setup, limits, retry behavior, and synthetic samples.
 
 ## Development Philosophy
 
 This remains a learning project. Through the frontend learning interlude, the
 implementation followed an incremental learning sequence. From the
 `learning-complete-f3` baseline onward, development is organized into small,
-user-verifiable product results described in `ROADMAP.md`.
+user-verifiable product results described in [ROADMAP.md](ROADMAP.md).
 
 Preferred process:
 
@@ -244,40 +244,26 @@ Avoid introducing infrastructure purely to make the architecture look sophistica
 
 ## Project Documentation
 
-- `README.md` — project purpose and architecture overview
-- `ROADMAP.md` — active product delivery sequence and user-visible checks
-- `AGENTS.md` — working rules for AI coding agents
-- `CURRENT.md` — concise working status and next product slice
-- `DECISIONS.md` — durable architecture decisions
-- `CAPTURE.md` — capture/acquisition strategy and risk register
-- `ACQUISITION.md` — Phase 2.1 read-only source checks and private preview guide
-- `HISTORY.md` — Phase 2.2 browser checks, retention policy and restore procedure
-- `GITHUB_DISCUSSIONS.md` — Phase 2.4B collector and synthetic browser verification
-- `EVALUATION.md` — Phase 3.1 private question authoring and keyword-retrieval baselines
-- `PASSAGE_SEARCH.md` — Phase 3.2A local passage search, backfill and verification
-- `SEMANTIC_SEARCH.md` — Phase 3.2B1 scoped embedding comparison and usage accounting
-- `SEMANTIC_PRODUCT_PLAN.md` — approved optional Semantic implementation sequence after closing B1 tuning
-- `SEMANTIC_PRODUCT.md` — Semantic search UI/demo, pgvector setup, explicit indexing and worker verification
-- `ANSWER_SLICE.md` — selected-passage cited-answer demo, policy/cost boundary and verification
-- `UNIFIED_ANSWER.md` — consolidated search/questions, saved conversations, consent and stop/replay limits
-- `FOLLOWUP_VALIDATION.md` — synthetic browser reproduction, Stop race fix and actual bounded real-model findings
-- `FOLLOWUP_QUALITY_RECHECK.md` — closed3-question real-model retest, arithmetic improvement and remaining T1 failure
-- `CONVERSATIONAL_FOLLOWUP_PLAN.md` — saved-conversation design, bounded context, source checks and implementation/review scope
-- `RETROSPECTIVES.md` — bounded period summaries, date meaning, coverage and per-item citations
-- `HISTORICAL_QUESTIONS.md` — observed version cutoffs, local history preview and cited answers
-- `AI_SOURCE_COVERAGE.md` — primary event evidence, index compatibility and bounded Phase 3.3 acceptance
-- `PHASE33_COMPLETION_PLAN.md` — consolidated exit checklist, existing evidence and remaining owner/real-flow verification
-- `PHASE33_CONDITIONAL_EXIT_PLAN.md` — accepted conditional exit, D01–D09 carryovers and review points
-- `PHASE33_OPERATIONAL_EVIDENCE.md` — current protection, error, accounting and verification evidence
+- [Documentation map](docs/README.md) — guides, plans, design, evaluation evidence and history
+- [CURRENT.md](CURRENT.md) — working status, open gates and next slice
+- [ROADMAP.md](ROADMAP.md) — product delivery sequence and acceptance criteria
+- [DECISIONS.md](DECISIONS.md) — durable architecture decisions
+- [AGENTS.md](AGENTS.md) — working rules for coding agents
+- [Frontend setup](frontend/README.md) — local setup and synthetic samples
 
-The repository is the source of truth for the project. ChatGPT, Codex CLI, Antigravity CLI, and other coding agents should read the project documentation before making changes.
+The repository documentation is the source of truth. Read the current status before following historical plans or execution records.
 
 ## Current Status
 
-Active work is **Phase 4.1 planning**; scheduled collectors are not implemented.
+Active work is **Phase 4.1 S1 GitHub collect-now owner verification**.
+Exact source registration, durable jobs, an explicit one-shot server worker and
+Sources collect/cancel/status controls are implemented. Apply migration
+`i71a6b58f397`; follow [the synthetic walkthrough](docs/guides/PHASE41_COLLECTION.md).
+Scheduled collectors, bounded incremental reconciliation and the Codex agent
+are not implemented. Phase4.1 remains incomplete.
 On 2026-10-21 the owner accepted **conditional closure of Phase 3.3** for the
 personal alpha, carrying known quality defects and unverified behavior under
-[D01–D09](PHASE33_CONDITIONAL_EXIT_PLAN.md). Old failed/unverified evaluations
+[D01–D09](docs/evaluation/phase33/PHASE33_CONDITIONAL_EXIT_PLAN.md). Old failed/unverified evaluations
 remain unchanged. Ordinary Search & ask saves owner-scoped conversations in PostgreSQL.
 The owner can close a chat, log out and later reopen it to ask a follow-up; this
 is separate from imported ChatGPT/Codex source conversations. Opening saved chats
@@ -291,10 +277,10 @@ checks still show citation generation failures, omissions and missing selected
 evidence; personal-record follow-up quality, long-context behavior and some
 restart checks remain unverified. AI answers remain off by default; a failed sent
 request may still cost money. Ownership/source/deletion/budget/replay protections
-remain required. Next is planning GitHub collect-now and scheduled collection,
-followed by Codex; no new personal ingestion, AI calls or AWS resources are
-authorized by this milestone change. See `CURRENT.md`, [usage/setup](UNIFIED_ANSWER.md),
-and [the accepted exit scope](PHASE33_CONDITIONAL_EXIT_PLAN.md).
+remain required. Next is S1 owner verification, then GitHub scheduled collection/reconciliation,
+followed by the Codex agent; no new personal ingestion, AI calls or AWS resources are
+authorized by this milestone change. See [CURRENT.md](CURRENT.md), [usage/setup](docs/guides/UNIFIED_ANSWER.md),
+and [the accepted exit scope](docs/evaluation/phase33/PHASE33_CONDITIONAL_EXIT_PLAN.md).
 
 The learning-through-F3 baseline is marked by Git tag
 `learning-complete-f3`; F0–F3 was completed on 2026-09-28. The project
@@ -316,7 +302,7 @@ unreliable, so it is not a dependable product capture path.
 
 Phase 1.1 now supports creating and managing a text Entry through the browser,
 with local automated checks complete and owner browser verification confirmed. See
-`frontend/README.md` for setup, user checks, and isolated test commands.
+[frontend/README.md](frontend/README.md) for setup, user checks, and isolated test commands.
 Phase 1.2 adds browser Markdown/ChatGPT ZIP upload, job status/results/retry,
 protected original downloads, and bounded local processing. Local automated
 checks, a real local-storage/worker integration check, and owner browser
@@ -329,20 +315,20 @@ source/type/date filters, URL-preserved search state, and browser pagination.
 Local checks are complete; owner browser verification is pending. This is
 followed by Codex/GitHub historical collection,
 source-grounded answers and period retrospectives, scheduled collection from
-both new sources, and private daily-use deployment in `ROADMAP.md`.
+both new sources, and private daily-use deployment in [ROADMAP.md](ROADMAP.md).
 
 Phase 2.1 provides a read-only CLI for Codex and selected GitHub history previews.
 Real historical Codex messages/commands/changes and a GitHub commit/diff/document
 were verified locally, with coverage and omissions recorded. These previews do
-not create Entries or run collectors. See `ACQUISITION.md`; owner review is pending.
+not create Entries or run collectors. See [ACQUISITION.md](docs/guides/ACQUISITION.md); owner review is pending.
 
 Phase 2.2 adds observed versions and provenance, imported read-only content with
 personal annotations, source deletion markers, reimport suppression and durable
 original purge, and independent collection/external-AI permissions. Existing
 records have initial observed versions. Local checks pass; owner browser
-verification is next using the synthetic walkthrough in `HISTORY.md`.
+verification is next using the synthetic walkthrough in [HISTORY.md](docs/guides/HISTORY.md).
 
-See `CURRENT.md` for the active product slice and `ROADMAP.md` for its
+See [CURRENT.md](CURRENT.md) for the active product slice and [ROADMAP.md](ROADMAP.md) for its
 completion criteria.
 
 Phase 2.3 adds manual Codex historical backfill: private filtered previews,
@@ -350,17 +336,17 @@ authenticated turn ingestion, durable replay receipts, Sources coverage and
 readable message/command/diff evidence. Local tests and synthetic HTTP/browser
 checks pass; owner preview review is confirmed, personal apply verification is
 pending. Setup, exclusions,
-device identity recovery, resume and cleanup are in `CODEX_BACKFILL.md`.
+device identity recovery, resume and cleanup are in [CODEX_BACKFILL.md](docs/guides/CODEX_BACKFILL.md).
 
 The Codex session checkpoint groups turn Entries for browsing, retains message
 phase/order, separates commentary from primary reading/search, and focuses search
-matches within sessions. Synthetic verification commands are in `CODEX_BACKFILL.md`.
+matches within sessions. Synthetic verification commands are in [CODEX_BACKFILL.md](docs/guides/CODEX_BACKFILL.md).
 
 Phase 2.4A adds manual GitHub commit/diff and historical Markdown collection with
 private resumable preparation, reviewed apply and Sources/evidence readers. Local
 checks pass; all 415 selected-source items were prepared and verified through
 isolated PostgreSQL/HTTP/browser checks. Owner account apply and browser
-confirmation are next. See `GITHUB_BACKFILL.md` for synthetic and real-source
+confirmation are next. See [GITHUB_BACKFILL.md](docs/guides/GITHUB_BACKFILL.md) for synthetic and real-source
 commands. Owner confirmation of this slice remains pending; discussion collection
 is described below.
 
@@ -368,18 +354,18 @@ Phase 2.4B adds manual PR/issue/review/comment preparation and apply, independen
 observed versions, repository Discussions browsing and search focus. The selected
 repository currently has no PRs/issues; empty-source and synthetic HTTP/browser
 checks are complete; the owner confirmed synthetic browsing. Live nonempty/private
-source checks remain pending. See `GITHUB_DISCUSSIONS.md`.
+source checks remain pending. See [GITHUB_DISCUSSIONS.md](docs/guides/GITHUB_DISCUSSIONS.md).
 
 Phase 3.1 adds a local private evaluation CLI with fixed question/evidence revisions,
 read-only PostgreSQL snapshots, current/historical passage references, keyword search
 baselines and local reports. A separate approved three-question pilot is measured;
 the original about-20-question diverse set remains incomplete. Synthetic verification
-is separate. See `EVALUATION.md` for authoring and review commands.
+is separate. See [EVALUATION.md](docs/guides/EVALUATION.md) for authoring and review commands.
 
 Phase 3.2A adds local PostgreSQL passage retrieval beside Exact phrase search,
 source-version ranges, grouped identical document snapshots and original passage
 readers. Current-record changes synchronize the derived index atomically; old
 accounts use authenticated resumable backfill. No embeddings or generated answers
 are added, and external-AI-denied records remain locally searchable. See
-`PASSAGE_SEARCH.md`; owner browser checks, including note create/edit/delete search
+[PASSAGE_SEARCH.md](docs/guides/PASSAGE_SEARCH.md); owner browser checks, including note create/edit/delete search
 updates, are confirmed.

@@ -88,7 +88,7 @@ for this UI update. Imports and original-file purge still need the storage/worke
 5. Save a personal annotation, then open View history and provenance and inspect
    a retained version. The main reader should continue showing the current version.
    The existing synthetic demo at `/entries/1270` can be used while available;
-   see [HISTORY.md](../HISTORY.md) for generating another disposable demo.
+   see [HISTORY.md](../docs/guides/HISTORY.md) for generating another disposable demo.
 6. Open the three-dot Record actions menu → Delete → Cancel. The confirmation
    should appear near the top of the reader; Cancel should keep the record.
 7. Open Import, a job, Sources, New note, and Login. Forms/buttons should use the
@@ -322,7 +322,10 @@ still examine owned rows; real-corpus performance requires later measurement.
 Offset pages can shift during concurrent changes. Asia/Seoul is fixed initially.
 Job history shows the latest 20 jobs; each job's result Entries have
 pagination. Earlier Entries/jobs do not have reconstructed artifact/result
-links. Markdown reupload creates a new Entry. Tokens remain in localStorage
+links. Identical Markdown uploads reuse their canonical text identity and upsert
+the same Entry while preserving each uploaded artifact. Explicit document IDs
+and source timestamps support version history; older duplicate Entries remain.
+Tokens remain in localStorage
 for development;
 production authentication remains later roadmap work. Imported-record
 version/deletion policies are implemented in Phase 2.2. The owner confirmed the Phase 1.1 browser flow. GitHub
@@ -338,11 +341,11 @@ status filters, and Sources collection/AI/reimport controls. Imported text is
 read-only; manual notes stay editable. Deletion removes versions immediately,
 blocks automatic reimport and queues original purge through the import worker.
 Shared ZIP deletion removes the whole original while retaining other record text.
-See [HISTORY.md](../HISTORY.md) for the precise browser walkthrough, synthetic demo,
+See [HISTORY.md](../docs/guides/HISTORY.md) for the precise browser walkthrough, synthetic demo,
 retention/restore policy, and AWS/backup verification boundaries.
 ## Phase 2.3 Codex verification
 
-After preview review and explicit apply using `../CODEX_BACKFILL.md`, open
+After preview review and explicit apply using [../CODEX_BACKFILL.md](../docs/guides/CODEX_BACKFILL.md), open
 `http://localhost:5173/sources` to inspect backfill counts, session coverage,
 timestamps and gap reasons. Results refresh every five seconds and paginate.
 Search with source Codex, open a record, then inspect Notes & history for ordered
@@ -364,7 +367,9 @@ checkbox applied on submit. Unknown legacy phases/order remain explicit.
 
 Use `.venv/bin/python scripts/seed_codex_session_demo.py --email YOUR_EMAIL` from
 the repository root after starting the API to create a labelled disposable
-25-turn session. Follow the browser steps in `../CODEX_BACKFILL.md`: grouping,
+25-turn session. Follow the browser steps in [../CODEX_BACKFILL.md](../docs/guides/CODEX_BACKFILL.md): grouping,
 turn pagination, work toggle, opt-in search, matching later-page focus, history/
-annotation/delete and return context. Local agent checks use synthetic responses;
-owner actual-history browser checks remain pending.
+annotation/delete and return context. Local agent checks use synthetic responses.
+As recorded by 2026-10-21 in [CURRENT.md](../CURRENT.md), the owner confirmed Codex
+reading screens. Final apply-run/account/current-version diagnostics and broader
+source coverage remain separate checks; reading confirmation does not close them.
