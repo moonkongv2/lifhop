@@ -70,6 +70,24 @@ See AI_SOURCE_COVERAGE.md for scope and completion gates.
 
 ## Current product slice
 
+**2026-10-21 v6 인용 생성 지침 보완·무과금 검증:**
+
+사전 검토 도구를 `27b5575`로 커밋했다. `answer_claims.py`의 지침/quote·fact 필드 설명을
+v6로 갱신해 짧은 연속 원문 인용·Markdown/공백 보존·주장 절별 직접 지지를 강조했다.
+120자는 상한이고80자는 권장값이다. parser/응답 필드/문맥·가격·검색은 바꾸지 않았다.
+answer/dialogue 설정 hash는 갱신됐다. 대표 S1/R1/R2 새 요청은 원 질문/발췌문/이력을
+그대로 유지하며 각 요청 상한 이내다. 대표 요청당727바이트 늘어 상한의 여유는 줄며
+대화64KiB는 유지한다. 초기1,437바이트 증가로 기존 큰 원문 선택2개가 실패해 지침을
+압축했고 기존 테스트/상한 변경 없이 관련48개가 통과했다. 기존 R2 raw는 계속 거부된다.
+합성 대화 dry-run은 첫 partial/후속 search·회수/후속2 미전송/첫 턴 불변을 통과했다.
+실제AI/개인DB조회·쓰기/추가과금0, 합성5호출·schema 삭제 완료다. private 결과는
+`.local/evaluation/phase33/quote-fidelity-20261021-v2/`에 있다. 실제 모델의 인용/의미
+지지 개선과 지연/비용은 미검증이다. 다음은 새 첫 응답 후보 확보용 유한 재검증
+protocol/dry-run 준비이며 유료 전송은 별도 승인 후다. 기존 R1/R2 차단과 C3–C6
+미완료는 유지한다. 상세/검증 절차는 `CONVERSATION_RECOVERY_EVALUATION.md`를 따른다.
+최종 전체backend938개(74.11초), 관련48개, py_compile/diff와 offline audit 통과.
+초기 전체 검증의2실패/936통과는 지침 압축 후 해소했다. 프론트는 미변경으로 미실행.
+
 **2026-10-21 후속 대상 사전 검토 완료 — 기존 R1/R2 차단:**
 
 준비 작업을 `83fa75b`(C3 실행기), `b194881`(후속 회수 평가)로 커밋했다.
@@ -2424,8 +2442,10 @@ The approved C3 execution stopped at R2 quote validation after5 spent calls
 evaluation/synthetic dry-run is implemented. Offline source review now blocks the
 existing R1 for an unsupported clause in its returned citations; R2's nonexact
 quotes also remain blocked. Capture-bound review tooling preserves both failures.
-Next correct quote generation and per-claim support, verify offline, and review a
-safe new first-response candidate before preparing the personal step executor.
+V6 quote-copy/per-claim instructions and offline regressions are implemented;
+real-model improvement remains unverified. Next freeze a finite first-response
+retest protocol/dry-run. Review any newly generated first-response candidate for
+safety before preparing the personal follow-up step executor.
 Do not recover either blocked answer through follow-ups or edit its raw output.
 Any later paid check requires a new protocol, dry-run and finite approval.
 The scope document grants no provider calls; seed/evaluation-set gaps remain in C5.

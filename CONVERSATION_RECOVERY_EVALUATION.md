@@ -59,9 +59,56 @@ audit를 통과했다. 관련 재실행 중 sandbox의 로컬 DB 연결 제한�
 `output_valid=false`, 둘의 `followups_used=0`/`authorization=none`을 확인하면 된다.
 브라우저 검증은 필요 없고 프론트 검사도 재실행하지 않았다.
 
-다음 순서는 원문 인용을 정확히 복사하고 각 주장 절의 지지를 분리하는 답변 생성 보완과
-무과금 회귀다. 이후 새 첫 응답을 검토해 근거에 충실한 partial 사례를 확보한 다음에만
-단계 실행기·새 protocol/dry-run/유한 승인을 준비한다. 기존 실패 답변은 고쳐 저장하지 않는다.
+후속 보완/검증 상태는 아래 v6 항목을 따른다. 기존 실패 답변은 고쳐 저장하지 않는다.
+
+## v6 인용 생성 지침 보완 — 실제 모델 개선은 미검증
+
+사전 검토 도구를 `27b5575`로 커밋한 뒤 `answer_claims.py`의 지침과 필드 설명을
+`part-results-v6`로 갱신했다. 120자까지 채우는 대신 가급적80자 이내의 짧은 연속 구간을
+복사하도록 안내한다. 80자는 권장값이며 기존120자 hard limit은 그대로다. Markdown/
+backtick/공백/문장부호/원어를 JSON 복호화 후에도 보존하며 의역·정규화·번역·중간
+생략으로 인용을 만들지 않는다. 주장별 직접 지지가 필요한 절은 나누고, 찾기/조회
+가능하다는 설명을 변경/삭제 사실의 근거로 쓰지 않도록 명시했다. 같은 발췌문 안의
+다른 내용이나 이전 답변으로 인용 지지를 대신할 수 없다. 일반 합성 예시만 사용했다.
+
+wire 필드·parser·입출력/문맥 상한·가격·검색/선택·소유자/권한 gate는 바꾸지 않았다.
+지침/필드 설명 변경으로 answer/dialogue 설정 hash는 바뀐다. 구승인을 재사용하지 않는다.
+대표 S1/R1/R2 요청을 offline으로 재구성했으며 질문/발췌문/이력은 그대로다. 요청은
+각각7,258/14,995/23,765바이트로 적용 상한 이내다(S1 legacy14KiB, R1/R2 대화64KiB).
+대표 요청은 이전보다727바이트 늘었으며 상한에 가까운 입력의 여유는 그만큼 줄어든다.
+초기 지침은1,437바이트 늘어 큰 원문 선택 회귀2개가 실패했다. 중복 설명을 압축해
+기존1900자 다중 바이트 원문을 통째로 선택하는 동작과 commit 선택의 byte gate를 복구했다.
+해당 기존 테스트를 수정하거나 요청 상한을 늘리지 않았다.
+추가 모델 호출/재시도나 인용 자동 보정은 없고 실제 지연·비용 변화는 측정하지 않았다.
+
+합성 회귀는 정확한 Markdown/개행/다중 공백/Unicode/한글 인용을 수용하고, 정규화/
+번역/중간 생략 인용을 거부하며, 긴 원문의 짧은 구간·분리된 주장과120자 경계를 확인한다.
+기존 R2 raw는 여전히 `claim_evidence`로 거부되며 기존 R1의 의미 지지 실패도 보존한다.
+기존 합성 대화 dry-run도 첫 partial → search 후속 → 회수 → 후속2 미전송/첫 턴 불변을
+통과했다. 실제AI/개인DB조회·쓰기0, 합성5호출, 임시 schema 삭제 완료다.
+private 요청 재구성/기존 응답 replay/dry-run은
+`.local/evaluation/phase33/quote-fidelity-20261021-v2/`에 보존했다(v1은 초기안 이력).
+
+브라우저 없이 다음 명령으로 원문 보존/거부와 큰 원문 선택48개를 확인할 수 있다.
+로컬 `_test` DB가 필요하며 외부 AI는 호출하지 않는다.
+
+```sh
+.venv/bin/pytest -q tests/test_answer_quote_fidelity.py tests/test_answer_evidence.py
+.venv/bin/python -m scripts.check_conversation_recovery --dry-run \
+  --out .local/evaluation/phase33/quote-fidelity-user-1
+```
+
+dry-run report는 first_response partial, 회수 passed, 후속1회/두 번째 미전송,
+first_turn_unchanged=true, provider_calls=0, semantic_quality=not-evaluated가 기대값이다.
+최종 전체backend938개(74.11초), 관련48개, py_compile/diff 및 offline audit를 통과했다.
+초기 전체 실행의2실패/936통과는 지침 압축 후 해소했다. 프론트는 미변경으로 미실행.
+
+이는 생성 지침과 보호의 검증이며 실제 모델의 정확한 복사·의미 지지 개선을 입증하지
+않는다. [OpenAI 공식 문서](https://developers.openai.com/api/docs/guides/structured-outputs#handling-mistakes)도
+구조화 출력에 내용 오류가 남을 수 있음을 명시한다. 다음은 새 첫 응답 후보 확보용
+유한 재검증 protocol/무과금 dry-run 준비다. 실제 전송은 별도 승인을 받고, 새 응답이
+원문 검토를 통과한 뒤에만 개인 기록용 후속 단계 실행기를 준비한다. R1/R2 차단과
+C3–C6 미완료는 유지한다.
 
 ## 보존한 최초 적용안 — 기존 R1 (현재 실행 금지)
 

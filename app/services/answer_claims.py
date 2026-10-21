@@ -1,5 +1,5 @@
 """Validate supplied-body quotes and deterministically assemble ordinary answers."""
-VERSION = "part-results-v5"
+VERSION = "part-results-v6"
 
 
 def obj(fields):
@@ -25,10 +25,14 @@ SCHEMA['$defs'] = dict(fact=FACT)
 # completion flags or pretending that quote membership proves entailment.
 FACT['properties']['text']['description'] = (
     'Only assert what these evidence quotes support, including explicit source qualifications. '
+    'One assertion per fact; inspection capability does not prove modification. '
     'A requested fact absent from the excerpts belongs in an unresolved gap, not here.')
 FACT['properties']['evidence']['description'] = (
     'Quotes must support every clause of this fact. A quote about another attribute cannot prove absence. '
     'For a recorded limitation, quote that limitation itself.')
+FACT['properties']['evidence']['items']['properties']['quote']['description'] = (
+    'Verbatim contiguous body span, preferably <=80 characters, maximum120. '
+    'Preserve Markdown/whitespace/language after JSON decoding; no rewriting or ellipses.')
 answered, unresolved = SCHEMA['properties']['result']['properties']['parts']['items']['anyOf']
 for branch in (answered, unresolved):
     branch['properties']['request']['description'] = (
@@ -50,7 +54,11 @@ INSTRUCTIONS = (
     'Cite those qualifications as recorded limits; do not invent an unrequested outcome checklist or require final success to report progress. '
     'Omit merely topical background. At most 6 facts/known items and 8 evidence references overall. '
     'Each fact needs exact nonblank body quotes from supplied IDs. '
+    'Prefer short contiguous quotes <=80 characters (120 maximum, not a target). '
+    'Preserve Markdown/backticks, whitespace, punctuation and language after JSON decoding; no rewriting, translation or ellipses. '
     'Keep each fact to one independently supported assertion; split clauses needing different evidence. '
+    'Use that fact\'s attached quotes, not uncited excerpts or prior answers. Finding an item does not prove removing it. '
+    'Leave requested facts unresolved if direct support cannot be quoted. '
     'A price quote cannot support an absent booking. If a requested outcome is merely absent from these excerpts, '
     'put that scoped unknown in the unresolved gap, not in a fact supported by an unrelated quote. '
     'An explicitly recorded verification limit can be a cited fact. No record does not mean the event did not happen. '
@@ -69,7 +77,8 @@ INSTRUCTIONS = (
     'and activation into unresolved/known=[]/gap="Activation status is not established in these excerpts." '
     'Do not cite the price to assert that activation is unrecorded or never occurred. '
     'If another source explicitly says "Activation was requested; completion is unconfirmed.", '
-    'quote both the request and its limitation when reporting progress, without claiming completion.'
+    'quote both the request and its limitation when reporting progress, without claiming completion. '
+    'Quote example: "The `draft` flag is **kept**." must not become "The draft flag is kept."'
 )
 
 
