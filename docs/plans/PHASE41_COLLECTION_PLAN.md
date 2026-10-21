@@ -1,9 +1,11 @@
 # Phase 4.1 — Incremental Codex and GitHub collection
 
-Status: implementation authorized by the owner on2026-10-21. S1 GitHub collect-now
-is implemented with synthetic verification; owner browser acceptance is pending.
-See [implementation/setup and remaining limits](../guides/PHASE41_COLLECTION.md). S2–S5,
-scheduled collection and live-source verification remain unimplemented/unverified;
+Status: implementation authorized by the owner on2026-10-21. S1 collect-now and
+S2 scheduling/retry are implemented with synthetic verification. On2026-10-22
+the owner deferred remaining S1 browser checks and requested S2 development;
+initial synthetic collection was confirmed, other owner checks remain pending.
+See [implementation/setup and remaining limits](../guides/PHASE41_COLLECTION.md). S3–S5
+and live-source acceptance remain unimplemented/unverified;
 this is not overall Phase4.1 completion.
 
 ## Goal and boundaries
@@ -176,6 +178,13 @@ do not defer all visible behavior to S5. Scope credentials and fencing must land
 before enabling unattended uploads. Commit at each passing, reviewable boundary,
 for example `feat: add GitHub collect-now jobs`, then
 `feat: schedule and resume GitHub collection`. Do not combine unrelated tuning.
+
+The2026-10-22 owner deferral permits S2 development before the remaining S1
+walkthrough. It preserves all open owner/live acceptance items; synthetic passes
+do not close them. S2 uses explicitly started source-selected polling (no daemon
+installation), paused-by-default schedules, four total attempts per job and
+seven-day expiry for nonrecoverable terminal caches. Failed/recoverable caches
+remain until operator action, bounded by the source-local spool quota.
 
 ## Acceptance and verification
 

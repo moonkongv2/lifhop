@@ -26,6 +26,9 @@ def update_policy(source_id: int, data: PolicyUpdate, db: DB, current_user: Owne
     policy = db.scalar(select(SourcePolicy).where(SourcePolicy.id == source_id, SourcePolicy.user_id == current_user.id))
     if policy is None:
         raise HTTPException(404, "Source not found")
+    if not data.collection_enabled:
+        from app.services.collection_jobs import cancel_source
+        cancel_source(db, current_user.id, policy.provider, policy.scope)
     policy.collection_enabled = data.collection_enabled
     policy.external_ai_allowed = data.external_ai_allowed
     invalidate_context(db, current_user.id)

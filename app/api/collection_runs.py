@@ -1,15 +1,14 @@
 from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select, func
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 from app.auth import get_current_user
 from app.db import get_db
 from app.models.user import User
 from app.models.collection_run import CollectionRun, CollectionRunItem
-from app.importers.canonical import CanonicalItem
-from app.schemas.collection_run import AnyRunCreate, AnyRunResponse, AnyCollectorItem, Receipt, OutcomeReport, payload_digest
-from app.services.collection_runs import get_run, receipt, blocked_code, run_response, now
-from app.services.source_history import owner_lock, source_policy
+from app.schemas.collection_run import AnyRunCreate, AnyRunResponse, AnyCollectorItem, Receipt, OutcomeReport
+from app.services.collection_runs import (get_run, receipt, blocked_code, run_response,
+    create_batch, ingest_batch_item, finish_batch, save_receipt)
 from app.services.external_entries import upsert_external_entry_with_outcome
 
 router = APIRouter(prefix="/collection-runs", tags=["collection-runs"])
@@ -19,21 +18,9 @@ Owner = Annotated[User, Depends(get_current_user)]
 
 @router.post("", response_model=AnyRunResponse)
 def create_run(data: AnyRunCreate, db: DB, owner: Owner):
-    owner_lock(db, owner.id)
-    run = db.scalar(select(CollectionRun).where(CollectionRun.user_id == owner.id,
-        CollectionRun.client_run_uuid == str(data.client_run_uuid)))
-    values = data.model_dump(mode="json")
-    values["client_run_uuid"] = str(data.client_run_uuid)
-    if run:
-        if any(getattr(run, key) != value for key, value in values.items()):
-            raise HTTPException(409, "Run manifest changed; create a new preview")
-    else:
-        source_policy(db, owner.id, data.provider, data.scope)
-        run = CollectionRun(user_id=owner.id, **values)
-        db.add(run)
-    run.last_seen_at = now()
+    result = create_batch(db, owner.id, data)
     db.commit()
-    return run_response(db, run)
+    return result
 
 
 @router.get("", response_model=list[AnyRunResponse])
@@ -67,47 +54,9 @@ def preflight(run_id: int, external_id: Annotated[str, Query(min_length=1, max_l
             "receipt": Receipt.model_validate(old).model_dump() if old else None}
 
 
-def save_receipt(db: Session, run: CollectionRun, identity: str, digest: str, outcome: str, error: str | None = None):
-    old = receipt(db, run, identity)
-    if old and old.payload_digest != digest:
-        raise HTTPException(409, "Payload differs from the retained run receipt")
-    if old is None:
-        count = db.scalar(select(func.count()).select_from(CollectionRunItem).where(CollectionRunItem.run_id == run.id))
-        if count >= run.expected_items:
-            raise HTTPException(409, "Run item count exceeds the manifest")
-        old = CollectionRunItem(run_id=run.id, external_id=identity, payload_digest=digest, outcome=outcome)
-        db.add(old)
-    if old.outcome == "failed" or old.error_code is None and old.outcome == outcome:
-        old.outcome, old.error_code = outcome, error
-    if outcome in {"blocked", "failed"} and old.outcome == outcome:
-        old.error_code = error
-    run.last_seen_at = now()
-    db.flush()
-    return old
-
-
 @router.post("/{run_id}/items", response_model=Receipt)
 def ingest_item(run_id: int, data: AnyCollectorItem, db: DB, owner: Owner):
-    run = get_run(db, owner.id, run_id, lock=True)
-    if data.provider != run.provider or data.source_scope != run.scope or data.parser_version != run.parser_version or data.payload.filter_version != run.filter_version:
-        raise HTTPException(422, "Item does not match run scope/parser/filter")
-    if run.provider == "github" and data.payload.repository != run.coverage["repository"]:
-        raise HTTPException(422, "Repository name does not match run")
-    digest = payload_digest(data)
-    old = receipt(db, run, data.external_id)
-    if old and old.payload_digest != digest:
-        raise HTTPException(409, "Payload differs from the retained run receipt")
-    code = blocked_code(db, run, data.external_id)
-    if code:
-        result = Receipt(external_id=data.external_id, payload_digest=digest, outcome="blocked", error_code=code)
-        save_receipt(db, run, data.external_id, digest, "blocked", code)
-    elif old and old.outcome != "failed":
-        result = Receipt.model_validate(old)
-        run.last_seen_at = now()
-    else:
-        canonical = CanonicalItem.model_validate(data.model_dump(mode="json"))
-        outcome = upsert_external_entry_with_outcome(db, user_id=owner.id, item=canonical).outcome
-        result = Receipt.model_validate(save_receipt(db, run, data.external_id, digest, outcome))
+    result = ingest_batch_item(db, owner.id, run_id, data, upsert=upsert_external_entry_with_outcome)
     db.commit()
     return result
 
@@ -115,6 +64,8 @@ def ingest_item(run_id: int, data: AnyCollectorItem, db: DB, owner: Owner):
 @router.post("/{run_id}/outcomes", response_model=Receipt)
 def report_outcome(run_id: int, data: OutcomeReport, db: DB, owner: Owner):
     run = get_run(db, owner.id, run_id, lock=True)
+    from app.services.collection_jobs import assert_manual_run
+    assert_manual_run(db, run)
     if data.error_code != "INVALID_ITEM" and blocked_code(db, run, data.external_id) != data.error_code:
         raise HTTPException(409, "Reported policy block is no longer current")
     result = save_receipt(db, run, data.external_id, data.payload_digest,
@@ -125,20 +76,6 @@ def report_outcome(run_id: int, data: OutcomeReport, db: DB, owner: Owner):
 
 @router.post("/{run_id}/finish", response_model=AnyRunResponse)
 def finish_run(run_id: int, db: DB, owner: Owner):
-    run = get_run(db, owner.id, run_id, lock=True)
-    counts = run_response(db, run).counts
-    if sum(counts.values()) != run.expected_items:
-        raise HTTPException(409, "Some manifest items have no durable receipt; resume collection")
-    if run.provider == "github" and run.coverage.get("discussions"):
-        declared = run.coverage["discussions"]["records"]
-        kind = func.split_part(CollectionRunItem.external_id, ":", 3)
-        actual = dict(db.execute(select(kind, func.count())
-            .where(CollectionRunItem.run_id == run.id).group_by(kind)).all())
-        if any(actual.get(kind, 0) != count for kind, count in declared.items()):
-            raise HTTPException(409, "Discussion receipt kinds differ from manifest counts")
-    success = sum(counts.get(key, 0) for key in ("new", "unchanged", "updated", "retained"))
-    gaps = run.coverage["gaps"] or counts.get("failed") or counts.get("blocked") or (run.provider == "github" and run.coverage["lower_bound"])
-    run.status = ("partial" if success else "failed") if gaps else ("completed" if success else "empty")
-    run.completed_at = run.last_seen_at = now()
+    result = finish_batch(db, owner.id, run_id)
     db.commit()
-    return run_response(db, run)
+    return result

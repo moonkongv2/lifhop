@@ -1,10 +1,10 @@
 # lifhop Product Roadmap
 
-Last revised: 2026-10-21
+Last revised: 2026-10-22
 
 Current checkpoint: **Phase3.3 conditionally closed by the owner on 2026-10-21;
-Phase4.1 S1 GitHub collect-now implemented, owner verification pending;
-scheduled collection not implemented.** The accepted
+Phase4.1 S1/S2 GitHub collect-now and source-selected scheduling implemented;
+remaining owner checks deferred, reconciliation/Codex pending.** The accepted
 [conditional scope and D01–D09](docs/evaluation/phase33/PHASE33_CONDITIONAL_EXIT_PLAN.md) preserve all
 failed/unverified results and ownership/source/deletion/budget protections.
 
@@ -393,9 +393,10 @@ failures and cannot be bypassed. See
 
 ### 4.1 Codex and GitHub incremental collection
 
-S1 GitHub collect-now is implemented with synthetic verification; owner browser,
-live selected-source and separate-process runtime acceptance remain open.
-Scheduling, bounded incremental reconciliation and the Codex agent remain pending.
+S1 collect-now and S2 source-selected scheduling/retry are implemented with
+synthetic verification, including a separate worker process/restart. Remaining
+S1/S2 owner browser checks are deferred; live selected-source acceptance remains
+open. Bounded incremental reconciliation and the Codex agent remain pending.
 See [the collection plan](docs/plans/PHASE41_COLLECTION_PLAN.md) and
 [S1 setup and limits](docs/guides/PHASE41_COLLECTION.md). Overall4.1 is not complete.
 

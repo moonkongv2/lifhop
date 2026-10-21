@@ -2010,3 +2010,31 @@ S1 deliberately reuses bounded historical traversal. Persisted incremental graph
 frontiers, mutable discussion reconciliation, retry scheduling and Codex remain
 later Phase4.1 slices. Synthetic fixtures establish behavior only; live selected
 source approval/acceptance and overall A7 remain open. See [PHASE41_COLLECTION.md](docs/guides/PHASE41_COLLECTION.md).
+
+## 2026-10-22: Bound source-selected polling and keep recovery explicit
+
+S2 extends the existing PostgreSQL jobs without a new queue/service. Schedules
+start paused (900 seconds; configurable60 seconds–7 days). The operator explicitly
+starts a worker for one selected source/spool. Due slots serialize under the
+existing owner lock, have unique source/slot identity, and merge into active work;
+missed intervals become one catch-up job rather than a backlog.
+
+Pending retry is still an active source job. Persist attempt count and next retry;
+rate limit, timeout and read failures get at most three automatic retries after
+the first claim, with30/60/120-second exponential backoff,0–25% jitter and a later
+provider retry time respected. Crashed-worker takeovers consume the same budget.
+Auth/permanent failures, exhausted retries and partial batches pause scheduling.
+Pause fences active work; collection re-enable does not restore a schedule.
+Explicit retry reopens only the latest failed job with its frozen spool/receipts
+and a new bounded attempt budget; fresh collect-now starts separate discovery.
+
+One stable private spool per source/database retains failed/recoverable jobs for
+operator action, under the existing512MiB root guard. Before a claimed job runs,
+the locked worker removes only identity-checked completed/empty/partial/cancelled
+caches older than seven days. Archive Entries and receipts remain; global disk
+quota and process supervision belong to deployment. No background agent is installed.
+
+The owner deferred remaining S1 browser verification and requested continuation;
+this permits S2 development without treating open checks as passed. Synthetic
+local process tests do not establish live-provider, Mac wake or cloud acceptance.
+See [setup and remaining checks](docs/guides/PHASE41_COLLECTION.md).

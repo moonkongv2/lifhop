@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Literal
 
 from pydantic import Field, SecretStr
@@ -38,7 +39,7 @@ class Settings(BaseSettings):
     local_s3_secret_key: str = "lifhoplocal123"
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=Path(__file__).resolve().parents[1] / ".env",
         env_file_encoding="utf-8",
     )
 

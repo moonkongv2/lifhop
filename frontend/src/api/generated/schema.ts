@@ -603,6 +603,92 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/collection-subscriptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Subscriptions */
+        get: operations["list_subscriptions_collection_subscriptions_get"];
+        put?: never;
+        /** Create Subscription */
+        post: operations["create_subscription_collection_subscriptions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/collection-subscriptions/{subscription_id}/collect-now": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Collect Now */
+        post: operations["collect_now_collection_subscriptions__subscription_id__collect_now_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/collection-subscriptions/{subscription_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel */
+        post: operations["cancel_collection_subscriptions__subscription_id__cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/collection-subscriptions/{subscription_id}/schedule": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Schedule */
+        patch: operations["schedule_collection_subscriptions__subscription_id__schedule_patch"];
+        trace?: never;
+    };
+    "/collection-subscriptions/{subscription_id}/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Retry */
+        post: operations["retry_collection_subscriptions__subscription_id__retry_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/archive": {
         parameters: {
             query?: never;
@@ -1555,6 +1641,14 @@ export interface components {
             /** Thread Id */
             thread_id: string;
         };
+        /** CollectNow */
+        CollectNow: {
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+        };
         /** CollectorItem */
         CollectorItem: {
             /**
@@ -2003,6 +2097,54 @@ export interface components {
             omissions?: string[];
             /** Filter Version */
             filter_version: string;
+        };
+        /** GitHubConfig */
+        GitHubConfig: {
+            /** Repository */
+            repository: string;
+            /** Repository Id */
+            repository_id: number;
+            /** Branches */
+            branches?: string[];
+            /** Documents */
+            documents?: string[];
+            /** Exclude Paths */
+            exclude_paths?: string[];
+            /**
+             * Field Bytes
+             * @default 65536
+             */
+            field_bytes: number;
+            /**
+             * Turn Bytes
+             * @default 1048576
+             */
+            turn_bytes: number;
+            /**
+             * Document Bytes
+             * @default 1048576
+             */
+            document_bytes: number;
+            /**
+             * Bundle Bytes
+             * @default 268435456
+             */
+            bundle_bytes: number;
+            /**
+             * Max Pages
+             * @default 1000
+             */
+            max_pages: number;
+            /**
+             * Max Requests
+             * @default 1000
+             */
+            max_requests: number;
+            /**
+             * Run Seconds
+             * @default 600
+             */
+            run_seconds: number;
         };
         /** GitHubCoverage */
         GitHubCoverage: {
@@ -3051,6 +3193,32 @@ export interface components {
             /** Active */
             active: boolean;
         };
+        /** JobResponse */
+        JobResponse: {
+            /** Id */
+            id: number;
+            /** Status */
+            status: string;
+            /** Revision */
+            revision: number;
+            /** Attempts */
+            attempts: number;
+            /** Retry At */
+            retry_at: string | null;
+            /** Scheduled For */
+            scheduled_for: string | null;
+            /** Run Id */
+            run_id: number | null;
+            /** Error Code */
+            error_code: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Finished At */
+            finished_at: string | null;
+        };
         /** OutcomeReport */
         OutcomeReport: {
             /** External Id */
@@ -3482,6 +3650,16 @@ export interface components {
             /** Entry Id */
             entry_id: number;
         };
+        /** ScheduleUpdate */
+        ScheduleUpdate: {
+            /** Enabled */
+            enabled: boolean;
+            /**
+             * Interval Seconds
+             * @default 900
+             */
+            interval_seconds: number;
+        };
         /** SemanticCoverage */
         SemanticCoverage: {
             /**
@@ -3668,6 +3846,35 @@ export interface components {
              * @default false
              */
             confirm_external_ai: boolean;
+        };
+        /** SubscriptionCreate */
+        SubscriptionCreate: {
+            config: components["schemas"]["GitHubConfig"];
+        };
+        /** SubscriptionResponse */
+        SubscriptionResponse: {
+            /** Id */
+            id: number;
+            /** Provider */
+            provider: string;
+            /** Scope */
+            scope: string;
+            config: components["schemas"]["GitHubConfig"];
+            /** Revision */
+            revision: number;
+            /** Schedule Enabled */
+            schedule_enabled: boolean;
+            /** Interval Seconds */
+            interval_seconds: number;
+            /** Next Due At */
+            next_due_at: string | null;
+            /** Schedule Error */
+            schedule_error: string | null;
+            /** Last Checked At */
+            last_checked_at: string | null;
+            /** Last Success At */
+            last_success_at: string | null;
+            job: components["schemas"]["JobResponse"] | null;
         };
         /** SuppressionResponse */
         SuppressionResponse: {
@@ -5079,6 +5286,191 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RunResponse"] | components["schemas"]["GitHubRunResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_subscriptions_collection_subscriptions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubscriptionResponse"][];
+                };
+            };
+        };
+    };
+    create_subscription_collection_subscriptions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubscriptionCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubscriptionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    collect_now_collection_subscriptions__subscription_id__collect_now_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                subscription_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CollectNow"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cancel_collection_subscriptions__subscription_id__cancel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                subscription_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubscriptionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    schedule_collection_subscriptions__subscription_id__schedule_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                subscription_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScheduleUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubscriptionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    retry_collection_subscriptions__subscription_id__retry_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                subscription_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobResponse"];
                 };
             };
             /** @description Validation Error */
