@@ -70,6 +70,24 @@ See AI_SOURCE_COVERAGE.md for scope and completion gates.
 
 ## Current product slice
 
+**2026-10-21 후속 대상 사전 검토 완료 — 기존 R1/R2 차단:**
+
+준비 작업을 `83fa75b`(C3 실행기), `b194881`(후속 회수 평가)로 커밋했다.
+기존 R1의 보상 칸 제거절은 붙인 인용이 직접 지지하지 않으므로 후속 대상에서
+차단했다. 다른 선택 발췌문에 설명이 있다는 이유로 반환 인용을 통과시키지 않는다.
+첫 failed-retrieval/원본은 유지하고 추가 검토를 별도 저장했다. R2도 기존 parser로
+claim_evidence 거부를 재현했다. 둘 다 후속0회/실제AI·개인DB조회·쓰기·추가과금0이다.
+새 offline 사전 검토 도구는 capture hash/모든 주장 검토의 일치와 제품 인용 검증을
+확인하고 검토 누락·변조·unsupported를 차단한다. 의미 지지는 원문 대조 검토이며
+도구의 eligibility는 실행 승인이 아니다. private 결과는
+`.local/evaluation/phase33/recovery-eligibility-20261021-v1/`에 보존했다.
+다음은 정확한 인용·주장별 지지를 위한 답변 생성 보완과 무과금 회귀다. 안전한 새
+첫 응답 후보 없이 기존 R1용 유료 단계 adapter/protocol을 진행하지 않는다.
+개인 기록용 adapter/실제 회수·C3–C6은 계속 미완료다.
+전체backend925개(73.09초), py_compile/diff 및 원본 capture 불변 audit 통과.
+관련 재실행은 sandbox의 로컬 DB 연결 제한으로39개 setup error가 발생해
+테스트 DB 접근 권한으로 재실행해39개 통과했다. 제품 assertion 실패는 아니었다.
+
 **2026-10-21 제한된 후속 회수 평가 구현·합성 검증 완료:**
 
 소유자가 첫 응답 성적을 유지하고 최대2회 자연스러운 후속으로 회수 성공을 따로
@@ -83,7 +101,7 @@ See AI_SOURCE_COVERAGE.md for scope and completion gates.
 관련29개/전체backend915개(74.17초), py_compile/diff 통과. 프론트/의존성/스키마/
 제품 검색·답변 계약/순위는 바꾸지 않았다. 결과는 private
 `.local/evaluation/phase33/conversation-recovery-dry-20261021-v2/`에 보존했다.
-다음 실제 후보는 기존 R1 대화에 최대2회 search 후속(추가6호출/USD0.023634)이다.
+당시 검토 후보는 기존 R1 대화에 최대2회 search 후속(추가6호출/USD0.023634)이었다.
 기존 인용 지지 주의 항목의 안전 검토와 개인 기록용 단계 adapter·현재 대화 revision/
 history·원문 metadata/코드를 동결한 새 protocol/dry-run·유한 승인이 먼저 필요하다.
 기존 C3 실패/승인은 종료 상태로 보존한다. R2는 인용 생성 보완이 여전히 필요하다.
@@ -2403,9 +2421,12 @@ Use `PHASE33_COMPLETION_PLAN.md`'s consolidated C/E/B checklist for current exit
 work: C0–C2 are complete and C3 scope is prepared in `PHASE33_C3_SCOPE.md`.
 The approved C3 execution stopped at R2 quote validation after5 spent calls
 (USD0.001473); approval is closed and R3–R6 remain unsent. The bounded recovery
-evaluation/synthetic dry-run is implemented. Next source-review R1's safety and
-freeze a new step executor/protocol for at most two hint-free follow-ups; retain
-the original first-response failure. R2 quote generation still needs correction.
+evaluation/synthetic dry-run is implemented. Offline source review now blocks the
+existing R1 for an unsupported clause in its returned citations; R2's nonexact
+quotes also remain blocked. Capture-bound review tooling preserves both failures.
+Next correct quote generation and per-claim support, verify offline, and review a
+safe new first-response candidate before preparing the personal step executor.
+Do not recover either blocked answer through follow-ups or edit its raw output.
 Any later paid check requires a new protocol, dry-run and finite approval.
 The scope document grants no provider calls; seed/evaluation-set gaps remain in C5.
 
