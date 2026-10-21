@@ -70,7 +70,17 @@ See AI_SOURCE_COVERAGE.md for scope and completion gates.
 
 ## Current product slice
 
-**2026-10-21 v6 고정 문맥 재검증 준비·dry-run 완료 — 승인 대기:**
+**2026-10-21 v6 재검증 실행 차단 — 외부 수신처 명시 승인 대기:**
+
+사용자의 승인/커밋 지시로 실행기를 `17ad489`에 커밋했다. 유료 명령은 자동 승인
+검토가 개인 원문 외부 전송의 구체 수신처 미명시를 이유로 프로세스 시작 전에
+거절했다. 실제 호출/추가 과금0, live marker/output 없음이며 우회/재시도하지 않았다.
+실제 목적지는 OpenAI `https://api.openai.com/v1/responses`, 입력은 frozen 질문/
+원문·출처 metadata이며 store=false다. 동일 protocol의 수신처 명시 승인만 추가로
+요청한다. 범위/예산 승인은 유지하며 기존515행/corpus/policy 불변을 read-only 대조했다.
+private rejection 기록을 남겼다. 코드 변경이 없어 직전954개 통과를 재사용한다.
+
+**2026-10-21 v6 고정 문맥 재검증 준비·dry-run 완료:**
 
 v6 보완을 `69cb7ea`로 커밋했다. S1/R1/R2 첫 질문·기존 선택 발췌문·빈 이력을
 고정한 answer3회/USD0.011054 재검증 실행기를 준비했다. 원문 권한/버전/범위와
@@ -2459,7 +2469,9 @@ quotes also remain blocked. Capture-bound review tooling preserves both failures
 V6 quote-copy/per-claim instructions and offline regressions are implemented;
 real-model improvement remains unverified. A finite three-answer fixed-context
 retest executor/protocol is prepared in QUOTE_RECHECK.md; actual sending needs
-separate approval; final dry-run and954 backend tests passed. Review any newly generated candidate for
+explicit recipient consent after automatic approval review rejected the scoped
+owner-approved command before process creation. No real calls/cost or live marker.
+Final dry-run and954 backend tests passed. Review any newly generated candidate for
 safety before preparing the personal follow-up step executor.
 Do not recover either blocked answer through follow-ups or edit its raw output.
 Any later paid check requires a new protocol, dry-run and finite approval.
