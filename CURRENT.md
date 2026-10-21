@@ -70,6 +70,24 @@ See AI_SOURCE_COVERAGE.md for scope and completion gates.
 
 ## Current product slice
 
+**2026-10-21 v6 실제 재검증 종료 — R2 인용 불일치 남음:**
+
+수신처 OpenAI API 명시 승인을 받은 뒤 protocol `56b3b9fb…67d81e9`를1회 실행했다.
+answer3회 모두 정상 사용량/spent, 실제USD0.001491(예약USD0.011054), 신규 uncertain0.
+R2의41자 인용이 중간 Markdown 강조 기호를 빼고 구간을 이어 `claim_evidence`로
+거부돼 종료했다. 재시도/추가호출0이며 이번 승인은 소비·종료했다. 원본은 유지한다.
+S1은6/6 정확한 인용이나 최종 선택 제한/베타 scoped gap 누락·supported 분류로 미통과다.
+R1은7/7 정확하고 기존 근거 없는 보상 칸 제거절은 쓰지 않았다. 다중 절 fact와 커밋
+누락은 남아 부분 개선만 기록하며 기존 failed-retrieval/저장 대화 차단을 해제하지 않는다.
+기존515개 과금행/uncertain3건 USD0.006801·52기록/1097벡터·정책 불변, 신규spent3행만
+추가됐다. 개인 대화/원문 쓰기 없음, answer off다. private 결과는
+`.local/evaluation/phase33/quote-recheck-20261021-v2/real-run/`의 raw/report와 별도
+source-review/독립 원장 audit/closed에 있다. 응답 확보4.24–4.81초(예약/gate 포함),
+R2 전체 action 시간은 미계측이다. 코드 변경이 없어 직전954개 통과를 재사용했다.
+다음은 자유 문자열 대신 원문 인용 후보 ID를 선택하는 설계의 장단점·문맥/분할 위험을
+검토하는 일이다. 의미 지지/요청 누락은 별도이며 추가 유료 승인은 없다. 상세 결과는
+`QUOTE_RECHECK.md`. C3–C6/Phase3.3은 미완료다.
+
 **2026-10-21 v6 재검증 실행 차단 — 외부 수신처 명시 승인 대기:**
 
 사용자의 승인/커밋 지시로 실행기를 `17ad489`에 커밋했다. 유료 명령은 자동 승인
@@ -2467,12 +2485,13 @@ evaluation/synthetic dry-run is implemented. Offline source review now blocks th
 existing R1 for an unsupported clause in its returned citations; R2's nonexact
 quotes also remain blocked. Capture-bound review tooling preserves both failures.
 V6 quote-copy/per-claim instructions and offline regressions are implemented;
-real-model improvement remains unverified. A finite three-answer fixed-context
-retest executor/protocol is prepared in QUOTE_RECHECK.md; actual sending needs
-explicit recipient consent after automatic approval review rejected the scoped
-owner-approved command before process creation. No real calls/cost or live marker.
-Final dry-run and954 backend tests passed. Review any newly generated candidate for
-safety before preparing the personal follow-up step executor.
+the separately approved fixed-context three-call recheck is closed at R2's
+nonexact41-character quote (USD0.001491 spent, no new uncertain). S1 still omits
+requested limits/gaps; R1 avoids the old unsupported clause but misses the commit
+and still groups assertions. Old scores/conversations stay unchanged.
+Next evaluate deterministic source-quote candidate IDs and their input/splitting
+tradeoffs before another implementation or paid proposal. Keep completeness and
+semantic support separate. Prior954 backend checks remain applicable; no code changed.
 Do not recover either blocked answer through follow-ups or edit its raw output.
 Any later paid check requires a new protocol, dry-run and finite approval.
 The scope document grants no provider calls; seed/evaluation-set gaps remain in C5.
