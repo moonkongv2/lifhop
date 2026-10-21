@@ -4,7 +4,8 @@ Last updated: 2026-10-22
 
 ## Current product slice
 
-**Phase4.1 S1 collect-now and S2 GitHub scheduling/retry are implemented;
+**Phase4.1 S1–S3 GitHub collect-now, scheduling/retry and incremental reconciliation
+are implemented with synthetic verification;
 remaining owner verification is deferred.**
 The owner confirmed the initial synthetic GitHub collection result in Sources
 on2026-10-22. Repeat/unchanged, cancel and deletion-protection browser checks
@@ -15,9 +16,14 @@ collect/cancel controls and immutable batch receipts are available. S2 adds
 paused-by-default schedule controls, explicit source-selected polling, bounded
 retry/backoff and same-job manual retry. Pause/collection disable fences active
 work; auth/permanent failures, partial batches and retry exhaustion pause schedules.
-Collection still repeats bounded historical traversal; incremental reconciliation
-and the Codex agent are not implemented. Overall Phase4.1 and live/A7 remain open.
-See [S1/S2 setup and owner walkthrough](docs/guides/PHASE41_COLLECTION.md) and
+S3 now walks persisted parent-SHA frontiers, refreshes changed head documents and
+optionally rotates through PR/issue/comment/review pages. Sources shows observed/
+completed/document SHA, pending graph/thread work and reconciliation age. Existing
+sources keep discussions disabled until explicitly selected. Selection changes
+fence work, pause scheduling and start a new revision with cleared coverage/times.
+Legacy pre-S3 jobs retain their original frozen backfill path. The Codex agent
+is not implemented. Overall Phase4.1 and live/A7 remain open.
+See [S1–S3 setup and owner walkthrough](docs/guides/PHASE41_COLLECTION.md) and
 [the remaining collection plan](docs/plans/PHASE41_COLLECTION_PLAN.md).
 
 Maintenance scope: [efficiency/cleanup plan](docs/plans/EFFICIENCY_CLEANUP_PLAN.md), authorized
@@ -42,8 +48,8 @@ Existing failed/unverified judgments and closed paid approvals remain unchanged.
 - Canonical source ingestion with retained observations, freshness/completeness
   guards, current versions, deletion suppression and separate collection/AI policy.
   Missing/equal source clocks still require explicit current-version review.
-- Manual Codex/GitHub collectors and bounded GitHub S1/S2 collect-now and schedules.
-  Apply migrations through `j82b7c69a408`; use the documented setup before use.
+- Manual Codex/GitHub collectors and bounded GitHub S1–S3 collection/reconciliation.
+  Apply migrations through `k93c8d70b519`; use the documented setup before use.
   Collection does not enroll sources in external AI.
 - Private evaluation tooling; policy-bound pgvector storage, bounded indexing jobs
   and optional Semantic search. Old projection configurations require explicit local
@@ -57,12 +63,11 @@ Existing failed/unverified judgments and closed paid approvals remain unchanged.
 1. Review maintenance A's document/file changes; then continue B search and C saved
    conversation read improvements in independently verified slices. D/E are related
    follow-ups, not new prerequisites for all Phase4 development.
-2. When the owner has the environment available, perform remaining S1 and S2
+2. When the owner has the environment available, perform remaining S1–S3
    browser checks using fictional sources in the
    [walkthrough](docs/guides/PHASE41_COLLECTION.md). They are deferred, not passed.
    Live selected-source acceptance remains open.
-3. Present S2 for feedback before starting S3 bounded graph
-   and mutable-record reconciliation, then S4 Codex agent/credentials and remaining
+3. Present S3 for feedback before starting S4 Codex agent/credentials and remaining
    acceptance. Keep GitHub and Codex in scope, including Mac offline/wake behavior.
 4. Revisit D01–D09 at Phase4 exit and explicitly agree remaining Phase5 use scope.
    Private deployment, backup/restore and daily-use acceptance remain later work.
@@ -85,6 +90,20 @@ Existing failed/unverified judgments and closed paid approvals remain unchanged.
   with local DB access succeeded. One new test initially omitted a required
   source-policy field; corrected before these final passing runs. The application
   database was not migrated; apply the documented upgrade before running this UI.
+- S1/S2 were committed as `a2db2bc` before the owner-authorized S3 implementation.
+  S3 final full backend **995 passed** (84.56s), GitHub-focused **82 passed**,
+  frontend **210 passed**; collection UI
+  **5 passed**, ESLint/build passed (existing about507KiB chunk warning).
+  Synthetic checks cover old newly reachable commits, cross-job/multi-branch
+  graph traversal, changed documents/refs, old-thread/comment/review edits,
+  child pagination/rate-limit resume, partial/cancelled cursor protection,
+  per-family receipt counts and frozen replay. Old-thread reconciliation keeps
+  a slot while discovery has a backlog. Migration upgrade/downgrade preserves legacy jobs.
+  The two-revision fictional owner walkthrough is tested. Initial GitHub-focused
+  checks exposed five old full-traversal expectations (updated for S3/legacy
+  compatibility) and three mixed-batch receipt errors (fixed). No live source,
+  inference/embedding or AWS request, application DB migration or owner browser
+  acceptance was performed. Diff checks passed.
 - The independent audit passed frontend ESLint/type checks, Python AST parsing of
   287 files and diff checks. It did not run tests, migrations, live providers or
   performance measurements. Maintenance results belong in the
@@ -138,6 +157,12 @@ Existing failed/unverified judgments and closed paid approvals remain unchanged.
   retry and may require manual cleanup. Nonrecoverable terminal caches expire
   after seven days on a later claimed job. Quota is local to that spool root;
   no hosted supervision or global disk quota is implemented.
+- S3 successful cycles may leave graph/thread work pending. Mutable snapshots
+  are not atomic and reconciliation lag grows with corpus size. A missing ref/
+  record is not proof of deletion. Large diffs/document trees retain existing
+  per-run bounds; PR membership is limited to250 commits. Resource/partial/auth
+  failures pause rather than falsely closing coverage. Old revision cursor
+  metadata and archive versions remain; live completeness/capacity are unverified.
 - Prior local validation misdirected cleanup; restored originals and the remaining
   two unverified September artifact originals are documented in the preserved
   [incident](docs/history/CURRENT_HISTORY_20261021.md#local-validation-incident).

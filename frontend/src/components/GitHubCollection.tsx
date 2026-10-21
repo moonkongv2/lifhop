@@ -18,6 +18,23 @@ function ScheduleControls({ sub, disabled, update }: { sub: Subscription; disabl
   </form>;
 }
 
+function DiscussionControls({ sub, disabled, update }: { sub: Subscription; disabled: boolean;
+  update: (enabled: boolean, excluded: number[]) => void }) {
+  const [enabled, setEnabled] = useState(sub.discussion_selection.enabled);
+  const [excluded, setExcluded] = useState(sub.discussion_selection.exclude_numbers.join(","));
+  return <form onSubmit={event => {
+    event.preventDefault();
+    const values = excluded.trim() ? excluded.split(",").map(value => Number(value.trim())) : [];
+    if (values.some(value => !Number.isSafeInteger(value) || value < 1)) return;
+    update(enabled, values);
+  }}>
+    <label><input type="checkbox" checked={enabled} onChange={e => setEnabled(e.target.checked)} />Collect PRs, issues, comments and reviews for {sub.scope}</label>
+    <label>Excluded PR/issue numbers for {sub.scope}<input pattern="[0-9, ]*" value={excluded} onChange={e => setExcluded(e.target.value)} /></label>
+    <p>Changing this selection pauses the schedule and cancels current work. Archived records remain.</p>
+    <button disabled={disabled} type="submit">Save discussion selection</button>
+  </form>;
+}
+
 export default function GitHubCollection({ policies }: { policies: Policy[] }) {
   const cache = useQueryClient();
   const [repository, setRepository] = useState("");
@@ -38,7 +55,7 @@ export default function GitHubCollection({ policies }: { policies: Policy[] }) {
   const patterns = (value: string) => value.split(",").map(p => p.trim()).filter(Boolean);
   return <section aria-label="GitHub collect now">
     <h3>GitHub collect now</h3>
-    <p>Register an exact repository and selected branches/documents. Registration makes no provider request. Schedules need an explicitly started polling worker; stopping it leaves jobs pending until restart. Discussion reconciliation is pending. AI permission stays separate.</p>
+    <p>Register an exact repository and selected branches/documents. Registration makes no provider request. Schedules need an explicitly started polling worker; stopping it leaves jobs pending until restart. New work collects bounded changes across cycles. Discussion collection requires a separate selection. AI permission stays separate.</p>
     <form onSubmit={event => {
       event.preventDefault();
       change.mutate({ path: "/collection-subscriptions", data: { config: {
@@ -60,12 +77,24 @@ export default function GitHubCollection({ policies }: { policies: Policy[] }) {
       return <article key={sub.id}>
         <h4>{sub.config.repository} · {sub.scope}</h4>
         <p>Subscription ID: {sub.id}</p>
+        <DiscussionControls key={`${sub.id}-${sub.revision}`} sub={sub} disabled={change.isPending}
+          update={(enabled, excluded) => change.mutate({ path: `/collection-subscriptions/${sub.id}/discussions`,
+            method: "PATCH", data: { enabled, exclude_numbers: excluded } })} />
         <p>Selected branches: {sub.config.branches?.join(", ")}. Schedule: {sub.schedule_enabled ? "enabled" : "paused"}.</p>
         <p>Next scheduled check: {formatEntryDate(sub.next_due_at)}. {sub.schedule_error}</p>
         <ScheduleControls key={`${sub.id}-${sub.interval_seconds}`} sub={sub} disabled={change.isPending || !allowed}
           update={(enabled, interval) => change.mutate({ path: `/collection-subscriptions/${sub.id}/schedule`,
             method: "PATCH", data: { enabled, interval_seconds: interval } })} />
         <p>Last check: {formatEntryDate(sub.last_checked_at)} · Last success: {formatEntryDate(sub.last_success_at)}</p>
+        {Object.entries(sub.incremental.branches).map(([name, branch]) => <p key={name}>
+          {name}: observed {branch.observed_head?.slice(0, 10) ?? "unknown"}, graph completed {branch.completed_head?.slice(0, 10) ?? "pending"},
+          documents checked {branch.documents_head?.slice(0, 10) ?? "pending"}, pending steps {branch.pending_steps}.
+        </p>)}
+        <p>Discussion inventory: {sub.incremental.known_threads} known, {sub.incremental.unchecked_threads} unchecked,
+          {" "}{sub.incremental.pending_threads} with pages pending. Inventory page: {sub.incremental.inventory_page}.
+          Last inventory pass: {formatEntryDate(sub.incremental.inventory_completed_at)}.
+          Oldest thread check: {formatEntryDate(sub.incremental.oldest_thread_check)}.</p>
+        <p>Last success describes one bounded cycle. Pending history and thread checks may remain; unavailable sources do not erase archived records.</p>
         {sub.job && <p>Job #{sub.job.id}: {sub.job.status}. Attempts: {sub.job.attempts}. {sub.job.run_id && `Batch #${sub.job.run_id}.`} {sub.job.error_code}
           {sub.job.retry_at && ` Next retry: ${formatEntryDate(sub.job.retry_at)}.`}</p>}
         {sub.job?.status === "failed" && <button disabled={change.isPending || !allowed} onClick={() => change.mutate({

@@ -10,10 +10,12 @@ let fail: boolean;
 let scheduleEnabled: boolean;
 let intervalSeconds: number;
 let failedJob: boolean;
+let discussionSelection: { enabled: boolean; exclude_numbers: number[] };
 
 beforeEach(() => {
   registered = false; active = false; calls = []; fail = false;
   scheduleEnabled = false; intervalSeconds = 900; failedJob = false;
+  discussionSelection = { enabled: false, exclude_numbers: [] };
   localStorage.setItem("access_token", "synthetic-token");
   vi.stubGlobal("fetch", vi.fn(async (path: string, options: RequestInit = {}) => {
     const body = options.body ? JSON.parse(options.body as string) : undefined;
@@ -31,8 +33,17 @@ beforeEach(() => {
       return Response.json({ id: 1 });
     }
     if (path.endsWith("/retry")) { active = true; failedJob = false; return Response.json({ id: 7 }); }
+    if (path.endsWith("/discussions")) {
+      expect(options.method).toBe("PATCH");
+      discussionSelection = body; scheduleEnabled = false; active = false;
+      return Response.json({ id: 1 });
+    }
     return Response.json(registered ? [{ id: 1, scope: "repo:123", provider: "github", revision: 1,
       config: { repository: "example/repo", repository_id: 123, branches: ["main"] },
+      discussion_selection: discussionSelection,
+      incremental: { branches: { main: { observed_head: "a".repeat(40), completed_head: null, documents_head: "a".repeat(40), pending_steps: 2 } },
+        known_threads: 4, unchecked_threads: 1, pending_threads: 2, inventory_page: 3,
+        inventory_completed_at: null, oldest_thread_check: null },
       last_checked_at: null, last_success_at: null,
       schedule_enabled: scheduleEnabled, interval_seconds: intervalSeconds,
       next_due_at: scheduleEnabled ? "2026-10-22T01:00:00Z" : null, schedule_error: failedJob ? "AUTH_FAILED" : null,
@@ -99,4 +110,19 @@ it("shows a failed job and retries it while leaving the schedule paused", async 
   expect(calls.some(c => c.path.endsWith("/retry"))).toBe(true);
   expect(screen.getByRole("button", { name: "Enable schedule" })).toBeTruthy();
   expect(screen.getByText(/Next retry:/)).toBeTruthy();
+});
+
+it("requires an explicit discussion selection and shows pending graph/thread coverage", async () => {
+  registered = true; scheduleEnabled = true; active = true;
+  mount();
+  const toggle = await screen.findByLabelText("Collect PRs, issues, comments and reviews for repo:123");
+  expect((toggle as HTMLInputElement).checked).toBe(false);
+  fireEvent.click(toggle);
+  fireEvent.change(screen.getByLabelText("Excluded PR/issue numbers for repo:123"), { target: { value: "7, 9" } });
+  fireEvent.click(screen.getByRole("button", { name: "Save discussion selection" }));
+  await screen.findByRole("button", { name: "Enable schedule" });
+  expect(calls.find(c => c.path.endsWith("/discussions"))?.body).toEqual({ enabled: true, exclude_numbers: [7, 9] });
+  expect(screen.getByText(/pending steps 2/)).toBeTruthy();
+  expect(screen.getByText(/4 known, 1 unchecked/)).toBeTruthy();
+  expect(calls.some(c => c.path.endsWith("/collect-now"))).toBe(false);
 });

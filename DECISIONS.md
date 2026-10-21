@@ -2038,3 +2038,40 @@ The owner deferred remaining S1 browser verification and requested continuation;
 this permits S2 development without treating open checks as passed. Synthetic
 local process tests do not establish live-provider, Mac wake or cloud acceptance.
 See [setup and remaining checks](docs/guides/PHASE41_COLLECTION.md).
+
+## 2026-10-22: Persist graph frontiers and rotate mutable GitHub checks
+
+After committing S1/S2 as `a2db2bc`, implement S3 within the same leased PostgreSQL
+worker. New jobs use parent-SHA graph traversal, not source dates. Persist
+enter/exit frames per branch and commit parent/ancestry coverage per source
+revision. A known commit stops traversal only when its ancestry is complete.
+Bound each cycle to50 frames and rotate branch priority. Refresh selected head
+documents on changed pinned heads while retaining archived snapshots and refs.
+
+Keep PR/issue/comment/review collection an explicit, separately stored selection,
+disabled for existing/new sources by default; never silently broaden a commit/doc
+subscription. Changing that selection fences current work, pauses scheduling,
+increments the configuration revision and clears its progress/success times.
+Retain old revision metadata and archive content. Branch/document editing remains
+outside this slice. Label existing jobs `backfill` in the migration so their
+frozen parser/config/bundle validation remains compatible; new ORM jobs default
+to incremental discovery.
+
+Use one rotating created-order issue inventory page plus an overlapping recent
+updated-order page per cycle; repository issue listings include PR roots, whose
+detail endpoint supplies the PR object ID. Revisit at most three oldest-checked/
+unchecked roots and three child-stream pages per root, reserving one slot for an
+older checked root while discovery has a backlog. Persist stream/page and
+PR membership state across jobs. Parent before/after checks detect some mutation;
+rotation also revisits children when their parent clock does not change. Do not
+claim atomic snapshots or use missing records/refs as deletion confirmation.
+
+Reuse existing sanitization/normalization and shared ingestion receipts. Combined
+incremental batches have explicit per-family counts and a frozen checkpoint in
+their manifest digest. Advance graph/thread/source progress only with successful
+batch finish under the current lease/revision/policy. Partial, blocked or failed
+observations preserve prior cursors. A successful bounded cycle may have pending
+history; Sources exposes graph/thread progress and check age separately. No new
+queue, dependency, AI enrollment, installed daemon or cloud resource is added.
+Limits and synthetic owner steps are in [the guide](docs/guides/PHASE41_COLLECTION.md);
+live source completeness, Mac behavior and overall4.1 acceptance remain open.

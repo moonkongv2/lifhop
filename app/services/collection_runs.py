@@ -34,7 +34,8 @@ def receipt(db: Session, run: CollectionRun, identity: str):
         import re
         if not re.fullmatch(re.escape(run.scope) + r":(?:commit:[a-f0-9]{40}|document:[a-f0-9]{40}:[a-f0-9]{64}|(?:pull_request|issue|issue_comment|review|review_comment):[1-9][0-9]{0,19})", identity):
             raise HTTPException(422, "Repository object identity does not match run")
-        if run.coverage.get("discussions") and identity.split(":")[2] not in run.coverage["discussions"]["records"]:
+        if (run.coverage.get("discussions") and not run.coverage.get("incremental") and
+                identity.split(":")[2] not in run.coverage["discussions"]["records"]):
             raise HTTPException(422, "Discussion run cannot contain commit/document records")
         if not run.coverage.get("discussions") and identity.split(":")[2] in {"pull_request", "issue", "issue_comment", "review", "review_comment"}:
             raise HTTPException(422, "Discussion evidence requires discussion coverage")
@@ -143,13 +144,15 @@ def finish_batch(db: Session, user_id: int, run_id: int, *, job_id=None):
     counts = run_response(db, run).counts
     if sum(counts.values()) != run.expected_items:
         raise HTTPException(409, "Some manifest items have no durable receipt; resume collection")
-    if run.provider == "github" and run.coverage.get("discussions"):
-        declared = run.coverage["discussions"]["records"]
+    if run.provider == "github" and (run.coverage.get("discussions") or run.coverage.get("incremental")):
+        declared = dict(run.coverage.get("discussions", {}).get("records", {}))
+        if run.coverage.get("incremental"):
+            declared.update(commit=run.coverage["commits"], document=run.coverage["documents"])
         kind = func.split_part(CollectionRunItem.external_id, ":", 3)
         actual = dict(db.execute(select(kind, func.count())
             .where(CollectionRunItem.run_id == run.id).group_by(kind)).all())
         if any(actual.get(kind, 0) != count for kind, count in declared.items()):
-            raise HTTPException(409, "Discussion receipt kinds differ from manifest counts")
+            raise HTTPException(409, "GitHub receipt kinds differ from manifest counts")
     success = sum(counts.get(key, 0) for key in ("new", "unchanged", "updated", "retained"))
     gaps = run.coverage["gaps"] or counts.get("failed") or counts.get("blocked") or (run.provider == "github" and run.coverage["lower_bound"])
     run.status = ("partial" if success else "failed") if gaps else ("completed" if success else "empty")

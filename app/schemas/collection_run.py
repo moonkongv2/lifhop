@@ -153,6 +153,15 @@ class GitHubDiscussionCoverage(BaseModel):
         return self
 
 
+class GitHubIncrementalCoverage(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    graph_pending: int = Field(ge=0)
+    discussion_scan_page: int = Field(ge=1)
+    discussion_roots_checked: int = Field(ge=0)
+    discussion_pages_read: int = Field(ge=0)
+    discussions_enabled: bool
+
+
 class GitHubCoverage(BaseModel):
     model_config = ConfigDict(extra="forbid")
     repository: str = Field(pattern=r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
@@ -164,12 +173,15 @@ class GitHubCoverage(BaseModel):
     gaps: list[GitHubGap] = Field(default_factory=list, max_length=100)
     head_documents: list[GitHubHeadDocument] = Field(default_factory=list, max_length=10000)
     discussions: GitHubDiscussionCoverage | None = None
+    incremental: GitHubIncrementalCoverage | None = None
 
     @model_serializer(mode="wrap")
     def compatible_metadata(self, handler):
         data = handler(self)
         if self.discussions is None:
             data.pop("discussions", None)
+        if self.incremental is None:
+            data.pop("incremental", None)
         return data
 
 
@@ -183,7 +195,11 @@ class GitHubRunCreate(RunCreate):
         if self.scope != f"repo:{self.coverage.repository_id}":
             raise ValueError("Repository scope differs from coverage")
         discussion = self.coverage.discussions
-        if discussion is not None and (sum(discussion.records.values()) != self.expected_items or
+        if self.coverage.incremental is not None:
+            count = self.coverage.commits + self.coverage.documents + (sum(discussion.records.values()) if discussion else 0)
+            if self.parser_version != "github-incremental-rest-v1" or count != self.expected_items:
+                raise ValueError("Incremental counts/parser differ from manifest")
+        elif discussion is not None and (sum(discussion.records.values()) != self.expected_items or
                 self.coverage.branches or self.coverage.commits or self.coverage.documents or self.coverage.head_documents):
             raise ValueError("Discussion-only run counts do not match manifest")
         return self

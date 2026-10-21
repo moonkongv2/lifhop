@@ -6,7 +6,7 @@ from app.auth import get_current_user
 from app.db import get_db
 from app.models.user import User
 from app.models.collection_job import CollectionSubscription
-from app.schemas.collection_job import SubscriptionCreate, SubscriptionResponse, CollectNow, JobResponse, ScheduleUpdate
+from app.schemas.collection_job import SubscriptionCreate, SubscriptionResponse, CollectNow, JobResponse, ScheduleUpdate, DiscussionSelection
 from app.services import collection_jobs as jobs
 from app.services.source_history import owner_lock, source_policy
 
@@ -67,3 +67,10 @@ def retry(subscription_id: int, db: DB, owner: Owner):
     job = jobs.retry_failed(db, owner.id, subscription_id)
     db.commit()
     return job
+
+
+@router.patch("/{subscription_id}/discussions", response_model=SubscriptionResponse)
+def discussions(subscription_id: int, data: DiscussionSelection, db: DB, owner: Owner):
+    sub = jobs.update_discussions(db, owner.id, subscription_id, data)
+    db.commit()
+    return jobs.response(db, sub)

@@ -14,6 +14,8 @@ class CollectionSubscription(Base):
     provider: Mapped[str] = mapped_column(String(50), default="github")
     scope: Mapped[str] = mapped_column(String(255))
     config: Mapped[dict] = mapped_column(JSONB)
+    discussion_selection: Mapped[dict] = mapped_column(JSONB, default=lambda: {"enabled": False, "exclude_numbers": []})
+    progress: Mapped[dict] = mapped_column(JSONB, default=dict)
     revision: Mapped[int] = mapped_column(Integer, default=1)
     schedule_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
     interval_seconds: Mapped[int] = mapped_column(Integer, default=900)
@@ -36,6 +38,7 @@ class CollectionJob(Base):
     request_id: Mapped[str] = mapped_column(String(36))
     revision: Mapped[int] = mapped_column(Integer)
     status: Mapped[str] = mapped_column(String(20), default="pending")
+    mode: Mapped[str] = mapped_column(String(20), default="incremental")
     generation: Mapped[int] = mapped_column(Integer, default=0)
     scheduled_for: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     attempts: Mapped[int] = mapped_column(Integer, default=0)
@@ -55,3 +58,26 @@ class CollectionRequest(Base):
     subscription_id: Mapped[int] = mapped_column(ForeignKey("collection_subscriptions.id", ondelete="CASCADE"))
     request_id: Mapped[str] = mapped_column(String(36))
     job_id: Mapped[int] = mapped_column(ForeignKey("collection_jobs.id", ondelete="CASCADE"))
+
+
+class GitHubCommitCursor(Base):
+    __tablename__ = "github_commit_cursors"
+    __table_args__ = (UniqueConstraint("subscription_id", "revision", "sha"),)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    subscription_id: Mapped[int] = mapped_column(ForeignKey("collection_subscriptions.id", ondelete="CASCADE"), index=True)
+    revision: Mapped[int] = mapped_column(Integer)
+    sha: Mapped[str] = mapped_column(String(40))
+    parents: Mapped[list] = mapped_column(JSONB)
+    ancestry_complete: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
+class GitHubThreadCursor(Base):
+    __tablename__ = "github_thread_cursors"
+    __table_args__ = (UniqueConstraint("subscription_id", "revision", "number"),)
+    id: Mapped[int] = mapped_column(primary_key=True)
+    subscription_id: Mapped[int] = mapped_column(ForeignKey("collection_subscriptions.id", ondelete="CASCADE"), index=True)
+    revision: Mapped[int] = mapped_column(Integer)
+    number: Mapped[str] = mapped_column(String(20))
+    kind: Mapped[str] = mapped_column(String(20))
+    progress: Mapped[dict] = mapped_column(JSONB, default=dict)
+    last_checked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

@@ -689,6 +689,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/collection-subscriptions/{subscription_id}/discussions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Discussions */
+        patch: operations["discussions_collection_subscriptions__subscription_id__discussions_patch"];
+        trace?: never;
+    };
     "/archive": {
         parameters: {
             query?: never;
@@ -1501,6 +1518,17 @@ export interface components {
              */
             client_secret?: string | null;
         };
+        /** BranchProgress */
+        BranchProgress: {
+            /** Observed Head */
+            observed_head: string | null;
+            /** Completed Head */
+            completed_head: string | null;
+            /** Documents Head */
+            documents_head: string | null;
+            /** Pending Steps */
+            pending_steps: number;
+        };
         /** CanonicalItem */
         CanonicalItem: {
             provider: components["schemas"]["SourceProvider"];
@@ -1812,6 +1840,16 @@ export interface components {
             };
             /** Turn Position */
             turn_position?: number | null;
+        };
+        /** DiscussionSelection */
+        DiscussionSelection: {
+            /**
+             * Enabled
+             * @default false
+             */
+            enabled: boolean;
+            /** Exclude Numbers */
+            exclude_numbers?: number[];
         };
         /** DocumentPayload */
         DocumentPayload: {
@@ -2165,6 +2203,7 @@ export interface components {
             /** Head Documents */
             head_documents?: components["schemas"]["GitHubHeadDocument"][];
             discussions?: components["schemas"]["GitHubDiscussionCoverage"] | null;
+            incremental?: components["schemas"]["GitHubIncrementalCoverage"] | null;
         };
         /** GitHubDiscussionCoverage */
         GitHubDiscussionCoverage: {
@@ -2344,6 +2383,19 @@ export interface components {
             path: string;
             /** External Id */
             external_id: string;
+        };
+        /** GitHubIncrementalCoverage */
+        GitHubIncrementalCoverage: {
+            /** Graph Pending */
+            graph_pending: number;
+            /** Discussion Scan Page */
+            discussion_scan_page: number;
+            /** Discussion Roots Checked */
+            discussion_roots_checked: number;
+            /** Discussion Pages Read */
+            discussion_pages_read: number;
+            /** Discussions Enabled */
+            discussions_enabled: boolean;
         };
         /** GitHubIssueCommentPayload */
         GitHubIssueCommentPayload: {
@@ -3008,6 +3060,25 @@ export interface components {
             /** Job Id */
             job_id: number;
             status: components["schemas"]["ImportJobStatus"];
+        };
+        /** IncrementalStatus */
+        IncrementalStatus: {
+            /** Branches */
+            branches: {
+                [key: string]: components["schemas"]["BranchProgress"];
+            };
+            /** Known Threads */
+            known_threads: number;
+            /** Unchecked Threads */
+            unchecked_threads: number;
+            /** Pending Threads */
+            pending_threads: number;
+            /** Oldest Thread Check */
+            oldest_thread_check: string | null;
+            /** Inventory Page */
+            inventory_page: number;
+            /** Inventory Completed At */
+            inventory_completed_at: string | null;
         };
         /** IndexingActivateRequest */
         IndexingActivateRequest: {
@@ -3860,6 +3931,8 @@ export interface components {
             /** Scope */
             scope: string;
             config: components["schemas"]["GitHubConfig"];
+            discussion_selection: components["schemas"]["DiscussionSelection"];
+            incremental: components["schemas"]["IncrementalStatus"];
             /** Revision */
             revision: number;
             /** Schedule Enabled */
@@ -5471,6 +5544,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["JobResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    discussions_collection_subscriptions__subscription_id__discussions_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                subscription_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DiscussionSelection"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubscriptionResponse"];
                 };
             };
             /** @description Validation Error */

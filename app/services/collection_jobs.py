@@ -3,8 +3,8 @@ from datetime import datetime, timedelta, timezone
 from random import uniform
 from uuid import uuid5, NAMESPACE_URL
 from fastapi import HTTPException
-from sqlalchemy import select
-from app.models.collection_job import CollectionSubscription, CollectionJob, CollectionRequest
+from sqlalchemy import select, func
+from app.models.collection_job import CollectionSubscription, CollectionJob, CollectionRequest, GitHubThreadCursor
 from app.models.collection_run import CollectionRun
 from app.schemas.collection_job import SubscriptionResponse, JobResponse
 from app.services.source_history import owner_lock, source_policy
@@ -26,9 +26,37 @@ def subscription(db, user_id, subscription_id):
 def response(db, sub):
     job = db.scalar(select(CollectionJob).where(CollectionJob.subscription_id == sub.id)
         .order_by(CollectionJob.id.desc()).limit(1))
+    threads = (GitHubThreadCursor.subscription_id == sub.id, GitHubThreadCursor.revision == sub.revision)
+    progress = sub.progress
+    status = dict(branches={name: dict(observed_head=value.get("observed_head"),
+        completed_head=value.get("completed_head"), documents_head=value.get("documents_head"),
+        pending_steps=len(value.get("stack", [])) or int(value.get("observed_head") != value.get("completed_head")))
+        for name, value in progress.get("branches", {}).items()},
+        known_threads=db.scalar(select(func.count()).select_from(GitHubThreadCursor).where(*threads)),
+        unchecked_threads=db.scalar(select(func.count()).select_from(GitHubThreadCursor).where(*threads,
+            GitHubThreadCursor.last_checked_at.is_(None))),
+        pending_threads=db.scalar(select(func.count()).select_from(GitHubThreadCursor).where(*threads,
+            GitHubThreadCursor.progress != {})),
+        oldest_thread_check=db.scalar(select(func.min(GitHubThreadCursor.last_checked_at)).where(*threads)),
+        inventory_page=progress.get("discussion_page", 1), inventory_completed_at=progress.get("inventory_completed_at"))
     return SubscriptionResponse(**{k: getattr(sub, k) for k in ("id", "provider", "scope", "config",
         "revision", "last_checked_at", "last_success_at", "schedule_enabled", "interval_seconds",
-        "next_due_at", "schedule_error")}, job=JobResponse.model_validate(job) if job else None)
+        "next_due_at", "schedule_error", "discussion_selection")}, incremental=status,
+        job=JobResponse.model_validate(job) if job else None)
+
+
+def update_discussions(db, user_id, sub_id, data):
+    owner_lock(db, user_id)
+    sub = subscription(db, user_id, sub_id)
+    selection = data.model_dump(mode="json")
+    if selection != sub.discussion_selection:
+        cancel_jobs(db, sub.id, "CONFIG_CHANGED")
+        pause_schedule(sub, "CONFIG_CHANGED")
+        sub.revision += 1
+        sub.discussion_selection, sub.progress = selection, {}
+        sub.last_checked_at, sub.last_success_at = None, None
+    db.flush()
+    return sub
 
 
 def assert_source_available(db, user_id, provider, scope, *, job_id=None):

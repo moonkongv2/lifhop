@@ -1,10 +1,12 @@
 # Phase 4.1 — Incremental Codex and GitHub collection
 
 Status: implementation authorized by the owner on2026-10-21. S1 collect-now and
-S2 scheduling/retry are implemented with synthetic verification. On2026-10-22
+S2 scheduling/retry and S3 incremental reconciliation are implemented with synthetic
+verification. On2026-10-22
 the owner deferred remaining S1 browser checks and requested S2 development;
 initial synthetic collection was confirmed, other owner checks remain pending.
-See [implementation/setup and remaining limits](../guides/PHASE41_COLLECTION.md). S3–S5
+The owner then authorized committing S1/S2 (`a2db2bc`) and proceeding with S3.
+See [implementation/setup and remaining limits](../guides/PHASE41_COLLECTION.md). S4–S5
 and live-source acceptance remain unimplemented/unverified;
 this is not overall Phase4.1 completion.
 
@@ -185,6 +187,17 @@ do not close them. S2 uses explicitly started source-selected polling (no daemon
 installation), paused-by-default schedules, four total attempts per job and
 seven-day expiry for nonrecoverable terminal caches. Failed/recoverable caches
 remain until operator action, bounded by the source-local spool quota.
+
+S3 keeps legacy jobs on their frozen backfill path; new jobs use persisted
+parent-SHA enter/exit frames and stop only at covered ancestry. Per cycle:50 graph
+steps with branch rotation, one rotating inventory page plus one recent page,
+at most three oldest/unchecked threads and three stream pages per thread. Reserve
+one slot for old-thread reconciliation even when new roots remain pending.
+Progress promotes only after successful durable receipts under the current lease.
+Discussion selection is separate and disabled by default; changes fence active
+work, pause scheduling and reset coverage/times under a new revision. Source
+identity and branch/document configuration remain immutable in this UI.
+Pending coverage/age is visible separately from a successful bounded cycle.
 
 ## Acceptance and verification
 

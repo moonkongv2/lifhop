@@ -4,6 +4,7 @@ import os
 import shutil
 import time
 from datetime import timedelta
+from functools import partial
 from pathlib import Path
 from uuid import uuid4
 from fastapi import HTTPException
@@ -52,6 +53,7 @@ def run_once(bind, subscription_id, spool, *, token=None, reader_factory=Reposit
             raise ProbeError("Unknown subscription")
         user_id, config = sub.user_id, sub.config
         result = jobs.claim(db, user_id, subscription_id, worker_id)
+        mode = db.get(CollectionJob, result[0]).mode if result else None
         db.commit()
     if result is None:
         return False
@@ -113,8 +115,17 @@ def run_once(bind, subscription_id, spool, *, token=None, reader_factory=Reposit
                 return result
 
             reader.get = bounded_get
+            from app.collectors import github_incremental
+            incremental = mode == "incremental"
+            validator = github_incremental.validate_bundle if incremental else validate_bundle
             if not (directory / "manifest.json").exists():
-                prep = Preparation(directory, cfg, reader)
+                if incremental:
+                    with Session(bind) as db:
+                        current, _ = guard(db)
+                        prep = github_incremental.Preparation(directory, cfg, reader, bind, current)
+                        db.commit()
+                else:
+                    prep = Preparation(directory, cfg, reader)
                 try:
                     prep.run()
                 except Paused as error:
@@ -123,7 +134,7 @@ def run_once(bind, subscription_id, spool, *, token=None, reader_factory=Reposit
                     raise
                 heartbeat()
                 prep.seal()
-            manifest = validate_bundle(directory, cfg)
+            manifest = validator(directory, cfg)
             fields = ("client_run_uuid", "provider", "scope", "manifest_digest", "parser_version",
                       "filter_version", "expected_items", "coverage")
             with Session(bind) as db:
@@ -152,6 +163,8 @@ def run_once(bind, subscription_id, spool, *, token=None, reader_factory=Reposit
                 job.error_code, job.retry_at = None, None
                 sub.last_checked_at = now()
                 if batch.status in {"completed", "empty"}:
+                    if incremental:
+                        github_incremental.advance(db, sub, manifest)
                     sub.last_success_at = now()
                 else:
                     jobs.pause_schedule(sub, "PARTIAL_COLLECTION")
@@ -182,9 +195,12 @@ def main():
     parser.add_argument("--subscription-id", type=int, required=True)
     parser.add_argument("--spool", type=Path, required=True)
     parser.add_argument("--synthetic", action="store_true", help="Use only the fixed fictional example/repo fixture; no GitHub requests")
+    parser.add_argument("--synthetic-revision", type=int, choices=(1, 2), help="Select fictional provider changes (requires --synthetic)")
     parser.add_argument("--poll-seconds", type=int, help="Poll this subscription every 1–60 seconds until stopped")
     parser.add_argument("--max-cycles", type=int, help="Stop polling after this many ticks (default: until Ctrl-C)")
     args = parser.parse_args()
+    if args.synthetic_revision is not None and not args.synthetic:
+        parser.error("--synthetic-revision requires --synthetic")
     if args.poll_seconds is not None and not 1 <= args.poll_seconds <= 60:
         parser.error("--poll-seconds must be between 1 and 60")
     if args.max_cycles is not None and (args.poll_seconds is None or args.max_cycles < 1):
@@ -197,7 +213,7 @@ def main():
             action = poll_once if args.poll_seconds else run_once
             action(engine, args.subscription_id, args.spool,
                 token=None if args.synthetic else os.environ.get("LIFHOP_GITHUB_TOKEN"),
-                reader_factory=SyntheticGitHubReader if args.synthetic else RepositoryReader)
+                reader_factory=partial(SyntheticGitHubReader, revision=args.synthetic_revision or 1) if args.synthetic else RepositoryReader)
             cycles += 1
             if not args.poll_seconds or (args.max_cycles and cycles >= args.max_cycles):
                 break

@@ -54,11 +54,16 @@ def register(collection):
     return r.json()['id']
 
 
-def enqueue(collection, sub, request_id=None):
+def enqueue(collection, sub, request_id=None, *, legacy=False):
     client, headers, *_ = collection
     r = client.post(f'/collection-subscriptions/{sub}/collect-now', headers=headers,
         json={'request_id': request_id or str(uuid4())})
     assert r.status_code == 200, r.text
+    if legacy:
+        # Jobs created before the S3 migration retain the original frozen backfill path.
+        with Session(collection[2]) as db:
+            db.get(CollectionJob, r.json()['id']).mode = 'backfill'
+            db.commit()
     return r.json()
 
 
@@ -82,7 +87,7 @@ def test_collect_now_repeat_receipts_and_no_external_ai(collection, tmp_path):
     assert run_once(bind, sub, tmp_path, reader_factory=SyntheticReader)
     state = client.get('/collection-subscriptions', headers=headers).json()[0]
     run = client.get(f"/collection-runs/{state['job']['run_id']}", headers=headers).json()
-    assert run['counts'] == {'unchanged': 2}
+    assert run['counts'] == {}  # Covered immutable history and unchanged HEAD need no payload replay.
     with Session(bind) as db:
         ids = select(Entry.id).where(Entry.user_id == owner)
         assert db.scalar(select(func.count()).select_from(Entry).where(Entry.user_id == owner)) == 2
@@ -232,10 +237,10 @@ def test_frozen_batch_survives_crash_after_first_receipt(collection, tmp_path, m
         assert db.scalar(select(func.count()).select_from(Entry).where(Entry.user_id == owner)) == 2
 
 
-def test_changed_observation_retains_history_and_suppression_wins(collection, tmp_path):
+def test_legacy_changed_observation_retains_history_and_suppression_wins(collection, tmp_path):
     client, headers, bind, owner = collection
     sub = register(collection)
-    enqueue(collection, sub)
+    enqueue(collection, sub, legacy=True)
     run_once(bind, sub, tmp_path, reader_factory=SyntheticReader)
     with Session(bind) as db:
         entry = db.scalar(select(Entry).where(Entry.user_id == owner, Entry.external_id == f'repo:123:commit:{SHA}'))
@@ -246,7 +251,7 @@ def test_changed_observation_retains_history_and_suppression_wins(collection, tm
             if '/commits/' in path:
                 body['commit']['message'] = 'Changed observed commit metadata'
             return body, headers
-    enqueue(collection, sub)
+    enqueue(collection, sub, legacy=True)
     run_once(bind, sub, tmp_path, reader_factory=ChangedReader)
     with Session(bind) as db:
         assert db.scalar(select(func.count()).select_from(EntryVersion).where(EntryVersion.entry_id == entry_id)) == 2
@@ -254,7 +259,7 @@ def test_changed_observation_retains_history_and_suppression_wins(collection, tm
         assert db.get(Entry, entry_id).current_version_id == original_version
         assert db.get(Entry, entry_id).review_required
     assert client.delete(f'/entries/{entry_id}', headers=headers).status_code == 204
-    enqueue(collection, sub)
+    enqueue(collection, sub, legacy=True)
     run_once(bind, sub, tmp_path, reader_factory=ChangedReader)
     state = client.get('/collection-subscriptions', headers=headers).json()[0]
     assert state['job']['status'] == 'partial'
@@ -322,7 +327,7 @@ def test_due_schedule_coalesces_missed_slots_and_concurrent_ticks(collection, tm
     assert second_id != job_id
     run_once(bind, sub, tmp_path, reader_factory=SyntheticReader)
     state = client.get('/collection-subscriptions', headers=headers).json()[0]
-    assert client.get(f"/collection-runs/{state['job']['run_id']}", headers=headers).json()['counts'] == {'unchanged': 2}
+    assert client.get(f"/collection-runs/{state['job']['run_id']}", headers=headers).json()['counts'] == {}
 
 
 def test_due_slot_merges_into_manual_job_without_burst(collection):
@@ -402,7 +407,7 @@ def test_worker_transient_retry_keeps_preparation_and_manual_retry_recovers_auth
         db.commit()
     from app.collectors.bundle import read_json
     preparation = read_json(tmp_path/f"job-{job['id']}"/'preparation.json', 32*1024*1024)
-    assert preparation['commits']
+    assert preparation['incremental']['progress']['branches']['main']['stack']
     class AuthReader(SyntheticReader):
         def get(self, path):
             raise Paused('AUTH_FAILED')
@@ -549,7 +554,7 @@ def test_deletion_during_retry_discovery_still_suppresses_ingestion(collection, 
             return super().get(path)
     run_once(bind, sub, tmp_path, reader_factory=DeleteReader)
     state = client.get('/collection-subscriptions', headers=headers).json()[0]
-    assert state['job']['status'] == 'partial' and not state['schedule_enabled']
-    assert state['schedule_error'] == 'PARTIAL_COLLECTION'
+    assert state['job']['status'] == 'empty' and state['schedule_enabled']
+    assert state['schedule_error'] is None  # Covered commits were not reimported after deletion.
     with Session(bind) as db:
         assert db.get(Entry, entry_id) is None

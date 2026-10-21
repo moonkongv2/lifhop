@@ -1,5 +1,6 @@
 from datetime import datetime
 from uuid import UUID
+from typing import Annotated
 from pydantic import BaseModel, ConfigDict, Field
 from app.collectors.github import GitHubConfig
 
@@ -18,6 +19,29 @@ class ScheduleUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
     enabled: bool
     interval_seconds: int = Field(default=900, ge=60, le=604800)
+
+
+class DiscussionSelection(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    enabled: bool = False
+    exclude_numbers: list[Annotated[int, Field(gt=0, lt=10**20)]] = Field(default_factory=list, max_length=1000)
+
+
+class BranchProgress(BaseModel):
+    observed_head: str | None
+    completed_head: str | None
+    documents_head: str | None
+    pending_steps: int
+
+
+class IncrementalStatus(BaseModel):
+    branches: dict[str, BranchProgress]
+    known_threads: int
+    unchecked_threads: int
+    pending_threads: int
+    oldest_thread_check: datetime | None
+    inventory_page: int
+    inventory_completed_at: datetime | None
 
 
 class JobResponse(BaseModel):
@@ -39,6 +63,8 @@ class SubscriptionResponse(BaseModel):
     provider: str
     scope: str
     config: GitHubConfig
+    discussion_selection: DiscussionSelection
+    incremental: IncrementalStatus
     revision: int
     schedule_enabled: bool
     interval_seconds: int
