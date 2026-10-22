@@ -9,6 +9,9 @@ from app.models.collection_job import CollectionSubscription
 from app.schemas.collection_job import SubscriptionCreate, SubscriptionResponse, CollectNow, JobResponse, ScheduleUpdate, DiscussionSelection
 from app.services import collection_jobs as jobs
 from app.services.source_history import owner_lock, source_policy
+from app.schemas.codex_agent import CodexSubscriptionResponse
+
+AnySubscriptionResponse = SubscriptionResponse | CodexSubscriptionResponse
 
 router = APIRouter(prefix="/collection-subscriptions", tags=["collection-subscriptions"])
 DB = Annotated[Session, Depends(get_db)]
@@ -18,7 +21,7 @@ Owner = Annotated[User, Depends(get_current_user)]
 @router.get("", response_model=list[SubscriptionResponse])
 def list_subscriptions(db: DB, owner: Owner):
     return [jobs.response(db, sub) for sub in db.scalars(select(CollectionSubscription)
-        .where(CollectionSubscription.user_id == owner.id).order_by(CollectionSubscription.id))]
+        .where(CollectionSubscription.user_id == owner.id, CollectionSubscription.provider == 'github').order_by(CollectionSubscription.id))]
 
 
 @router.post("", response_model=SubscriptionResponse)
@@ -46,7 +49,7 @@ def collect_now(subscription_id: int, data: CollectNow, db: DB, owner: Owner):
     return job
 
 
-@router.post("/{subscription_id}/cancel", response_model=SubscriptionResponse)
+@router.post("/{subscription_id}/cancel", response_model=AnySubscriptionResponse)
 def cancel(subscription_id: int, db: DB, owner: Owner):
     owner_lock(db, owner.id)
     sub = jobs.subscription(db, owner.id, subscription_id)
@@ -55,7 +58,7 @@ def cancel(subscription_id: int, db: DB, owner: Owner):
     return jobs.response(db, sub)
 
 
-@router.patch("/{subscription_id}/schedule", response_model=SubscriptionResponse)
+@router.patch("/{subscription_id}/schedule", response_model=AnySubscriptionResponse)
 def schedule(subscription_id: int, data: ScheduleUpdate, db: DB, owner: Owner):
     sub = jobs.update_schedule(db, owner.id, subscription_id, data)
     db.commit()

@@ -3,8 +3,8 @@
 Last revised: 2026-10-22
 
 Current checkpoint: **Phase3.3 conditionally closed by the owner on 2026-10-21;
-Phase4.1 S1–S3 GitHub collection/scheduling/incremental reconciliation implemented;
-remaining owner checks deferred, Codex pending.** The accepted
+Phase4.1 S1–S4 GitHub collection and explicit Codex agent/credentials implemented;
+remaining owner/live checks deferred, S5 acceptance pending.** The accepted
 [conditional scope and D01–D09](docs/evaluation/phase33/PHASE33_CONDITIONAL_EXIT_PLAN.md) preserve all
 failed/unverified results and ownership/source/deletion/budget protections.
 
@@ -396,7 +396,11 @@ failures and cannot be bypassed. See
 S1 collect-now, S2 scheduling/retry and S3 bounded parent-graph/document and optional
 thread reconciliation are implemented with synthetic verification, including a
 separate worker process/restart. Remaining S1–S3 owner browser checks are deferred;
-live selected-source acceptance and the Codex agent remain pending.
+live selected-source acceptance remains pending. S4 now implements exact Codex
+device selection, scoped/revocable credentials and an explicitly started local
+agent with bounded thread rotation, schedule/catch-up and leased receipt replay.
+S4 owner checks, actual Mac sleep/wake and S5 acceptance remain open; no startup
+service is installed. See [Codex setup](docs/guides/CODEX_AGENT.md).
 See [the collection plan](docs/plans/PHASE41_COLLECTION_PLAN.md) and
 [S1 setup and limits](docs/guides/PHASE41_COLLECTION.md). Overall4.1 is not complete.
 

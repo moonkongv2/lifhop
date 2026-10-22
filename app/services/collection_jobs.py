@@ -24,6 +24,9 @@ def subscription(db, user_id, subscription_id):
 
 
 def response(db, sub):
+    if sub.provider == 'codex':
+        from app.services.codex_agent import response as codex_response
+        return codex_response(db, sub)
     job = db.scalar(select(CollectionJob).where(CollectionJob.subscription_id == sub.id)
         .order_by(CollectionJob.id.desc()).limit(1))
     threads = (GitHubThreadCursor.subscription_id == sub.id, GitHubThreadCursor.revision == sub.revision)
@@ -48,6 +51,8 @@ def response(db, sub):
 def update_discussions(db, user_id, sub_id, data):
     owner_lock(db, user_id)
     sub = subscription(db, user_id, sub_id)
+    if sub.provider != 'github':
+        raise HTTPException(404, 'GitHub subscription not found')
     selection = data.model_dump(mode="json")
     if selection != sub.discussion_selection:
         cancel_jobs(db, sub.id, "CONFIG_CHANGED")
@@ -89,6 +94,7 @@ def enqueue(db, user_id, sub_id, request_id, *, scheduled_for=None):
         return existing
     assert_can_enqueue(db, sub)
     job = CollectionJob(subscription_id=sub.id, revision=sub.revision, request_id=str(request_id),
+        mode='codex' if sub.provider == 'codex' else 'incremental',
         scheduled_for=scheduled_for)
     db.add(job)
     db.flush()

@@ -6,8 +6,10 @@ verification. On2026-10-22
 the owner deferred remaining S1 browser checks and requested S2 development;
 initial synthetic collection was confirmed, other owner checks remain pending.
 The owner then authorized committing S1/S2 (`a2db2bc`) and proceeding with S3.
-See [implementation/setup and remaining limits](../guides/PHASE41_COLLECTION.md). S4–S5
-and live-source acceptance remain unimplemented/unverified;
+After S3 commit `4fad0e6`, the owner reviewed the deferral boundary and authorized
+S4. Source credentials and the explicitly started local Codex agent are now
+implemented with synthetic HTTP/process/reader verification. See [GitHub setup](../guides/PHASE41_COLLECTION.md)
+and [Codex agent setup](../guides/CODEX_AGENT.md). S5 and owner/live acceptance remain open;
 this is not overall Phase4.1 completion.
 
 ## Goal and boundaries
@@ -198,6 +200,17 @@ Discussion selection is separate and disabled by default; changes fence active
 work, pause scheduling and reset coverage/times under a new revision. Source
 identity and branch/document configuration remain immutable in this UI.
 Pending coverage/age is visible separately from a successful bounded cycle.
+
+S4 adds opaque owner/device/revision-bound credentials (hash-only,30-day default,
+90-day maximum) and a source-only HTTP claim/heartbeat/batch/item/finish/status
+surface. Rotation/revocation/expiry and selection changes fence active uploads.
+Owner login/manual APIs remain separate. The foreground agent has no DB/owner
+JWT/AWS secret; explicit local settings must match remote selection before reads.
+It uses the existing read-only snapshot adapter, bounded inventory/thread rotation
+and a source-bound private spool. Deferred-only rotation can continue without
+advancing last success; permanent/blocked failures pause and preserve the old
+offset. Missing/equal source clocks preserve the existing explicit-review rule.
+No automatic startup service is installed; real Mac/live acceptance stays open.
 
 ## Acceptance and verification
 

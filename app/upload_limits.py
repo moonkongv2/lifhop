@@ -10,11 +10,15 @@ class ImportUploadLimit:
         self.app = app
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        if scope["type"] != "http" or scope["method"] != "POST" or not scope["path"].startswith(("/imports/", "/collection-runs", "/answer-conversations")):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+        protected_write = scope["method"] == "POST" or (scope["method"] == "PATCH" and scope["path"].startswith('/codex-subscriptions'))
+        if not protected_write or not scope["path"].startswith(("/imports/", "/collection-runs", "/collector/", "/codex-subscriptions", "/answer-conversations")):
             await self.app(scope, receive, send)
             return
         file_limit = settings.import_max_zip_bytes if scope["path"].rstrip("/") == "/imports/chatgpt" else settings.import_max_upload_bytes
-        limit = 2 * 1024 * 1024 if scope["path"].startswith("/collection-runs") else file_limit + 64 * 1024
+        limit = 2 * 1024 * 1024 if scope["path"].startswith(("/collection-runs", "/collector/", "/codex-subscriptions")) else file_limit + 64 * 1024
         if scope["path"].startswith("/answer-conversations"):
             limit = 64 * 1024
         size = 0

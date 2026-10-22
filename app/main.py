@@ -24,6 +24,7 @@ from app.api.historical import router as historical_router
 from app.api.answer_conversations import router as conversations_router
 
 from app.api.collection_jobs import router as collection_jobs_router
+from app.api.codex_agent import router as collector_router, owner_router as codex_subscriptions_router
 
 app = FastAPI(title="Lifhop")
 app.add_middleware(ImportUploadLimit)
@@ -38,6 +39,8 @@ app.include_router(captures_router)
 app.include_router(sources_router)
 app.include_router(collection_runs_router)
 app.include_router(collection_jobs_router)
+app.include_router(collector_router)
+app.include_router(codex_subscriptions_router)
 app.include_router(codex_sessions_router)
 app.include_router(github_records_router)
 app.include_router(passages_router)

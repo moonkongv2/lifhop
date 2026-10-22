@@ -2075,3 +2075,52 @@ history; Sources exposes graph/thread progress and check age separately. No new
 queue, dependency, AI enrollment, installed daemon or cloud resource is added.
 Limits and synthetic owner steps are in [the guide](docs/guides/PHASE41_COLLECTION.md);
 live source completeness, Mac behavior and overall4.1 acceptance remain open.
+
+## 2026-10-22: Delegate Codex uploads to one device without an owner login token
+
+After S3 commit `4fad0e6`, the owner authorized S4 while keeping direct checks
+deferred. Extend PostgreSQL subscriptions/jobs rather than introducing a queue
+or cloud service. A stable Codex device UUID and explicit CWD/thread filters
+define one source. Schedules start paused at300 seconds. Selection changes cancel
+work, pause schedules, clear progress/times, increment revision and revoke tokens;
+local private approval must be updated explicitly before the agent reads again.
+
+Use256-bit opaque collector credentials, store only SHA-256 hashes, and bind them
+to owner/device/subscription/revision. Default expiry30 days, maximum90. Display
+the secret once with no-store response headers; keep it out of browser persistent
+storage/server-state caches, CLI arguments, bundles and logs. Keep the local token
+in a separate0600 file. Owner JWTs still manage accounts/archive/policies; scoped
+credentials cannot call those or AI/manual-ingestion routes. The collector HTTP
+surface rechecks expiry/revocation, scope, current policy and fenced lease on each
+write. Rotation/revoke fence current work. A presented active expired credential
+pauses only its own source; an already rotated token cannot affect its replacement.
+
+Run the agent explicitly on the selected Mac and reuse existing disposable
+read-only app-server snapshots/version/sanitization guards. No database/owner
+JWT/AWS credential is required there, and no background service is installed.
+Use HTTPS (loopback HTTP for local tests). CWD provenance/filtering is enforced
+by the trusted local agent; the server cannot attest local-file origins. Server
+checks restrict device/source and explicit-only thread scope, not arbitrary archive
+access. Treat the token as write authority for that one source.
+
+Persist a worker identity and frozen batch/checkpoint before upload; use the same
+UUID/manifest/receipts after an uncertain ACK. An idempotent same-worker claim can
+resume an unexpired lease; takeover increments generation and consumes the existing
+attempt budget. Read-only source-job status resolves an uncertain finish. The
+private spool has a process lock,512MiB guard and seven-day cleanup only for
+confirmed nonrecoverable terminal caches; retain failed/unconfirmed recovery data.
+
+Bound inventory to10000 metadata files/30 seconds and rotate five selected threads
+per cycle by default (1–10 configurable), revisiting old threads without relying
+on mtime. Keep selected source config under32KiB, default bundle64MiB/max128MiB,
+and bound agent HTTP requests to2MiB. Active/changing/transiently unavailable
+threads remain deferred. After durable deferred-only observations the rotation
+offset may move to avoid starving other threads, but last success does not advance
+and the offset never asserts completed coverage. Permanent/blocked failures retain
+the prior offset and pause scheduling. Equal/missing source timestamps still
+require owner review before selecting a complete retained candidate.
+
+Synthetic separate API/agent processes and fictional snapshot tests establish
+application behavior only. Actual Mac sleep/wake, personal sources, startup
+packaging/installation, abrupt-death snapshot cleanup and corpus capacity remain
+open. Setup and the deferred owner walkthrough: [CODEX_AGENT.md](docs/guides/CODEX_AGENT.md).

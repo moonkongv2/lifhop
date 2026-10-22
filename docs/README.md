@@ -7,7 +7,7 @@
 
 ## 현재 작업과 읽는 순서
 
-1. [S1 수집 가이드](guides/PHASE41_COLLECTION.md)와 [수집 계획](plans/PHASE41_COLLECTION_PLAN.md): 구현 후 사용자 검증 대기.
+1. [GitHub S1–S3 가이드](guides/PHASE41_COLLECTION.md), [Codex S4 가이드](guides/CODEX_AGENT.md)와 [수집 계획](plans/PHASE41_COLLECTION_PLAN.md): 합성 검증 후 직접 확인 보류, S5 통합 수용 남음.
 2. [효율·정리 계획](plans/EFFICIENCY_CLEANUP_PLAN.md): A 정리 진행 기록과 아직 시작하지 않은 B–E.
 3. [D01–D09 이월 기준](evaluation/phase33/PHASE33_CONDITIONAL_EXIT_PLAN.md)과 [운영 증거](evaluation/phase33/PHASE33_OPERATIONAL_EVIDENCE.md): 조건부 종료 후에도 남은 과제.
 4. [문서 배치 계획과 이전명 표](plans/DOCUMENTATION_LAYOUT_PLAN.md): 루트 52개 중 6개 유지, 46개 이동.
@@ -24,6 +24,7 @@ GitHub 기본 문서 패턴으로 이 저장소를 수집하면 이동한 46개�
 
 - [ACQUISITION.md](guides/ACQUISITION.md)
 - [CODEX_BACKFILL.md](guides/CODEX_BACKFILL.md)
+- [CODEX_AGENT.md](guides/CODEX_AGENT.md)
 - [GITHUB_BACKFILL.md](guides/GITHUB_BACKFILL.md)
 - [GITHUB_DISCUSSIONS.md](guides/GITHUB_DISCUSSIONS.md)
 - [HISTORY.md](guides/HISTORY.md)

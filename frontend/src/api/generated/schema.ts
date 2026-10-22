@@ -706,6 +706,228 @@ export interface paths {
         patch: operations["discussions_collection_subscriptions__subscription_id__discussions_patch"];
         trace?: never;
     };
+    "/collector/claim": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Claim */
+        post: operations["claim_collector_claim_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/collector/jobs/{job_id}/heartbeat": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Heartbeat */
+        post: operations["heartbeat_collector_jobs__job_id__heartbeat_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/collector/jobs/{job_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Status */
+        get: operations["status_collector_jobs__job_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/collector/jobs/{job_id}/batch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Batch */
+        post: operations["batch_collector_jobs__job_id__batch_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/collector/jobs/{job_id}/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Item */
+        post: operations["item_collector_jobs__job_id__items_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/collector/jobs/{job_id}/outcomes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Outcome */
+        post: operations["outcome_collector_jobs__job_id__outcomes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/collector/jobs/{job_id}/finish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Finish */
+        post: operations["finish_collector_jobs__job_id__finish_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/collector/jobs/{job_id}/failure": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Failure */
+        post: operations["failure_collector_jobs__job_id__failure_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/codex-subscriptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Subscriptions */
+        get: operations["subscriptions_codex_subscriptions_get"];
+        put?: never;
+        /** Register */
+        post: operations["register_codex_subscriptions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/codex-subscriptions/{sub_id}/selection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Selection */
+        patch: operations["selection_codex_subscriptions__sub_id__selection_patch"];
+        trace?: never;
+    };
+    "/codex-subscriptions/{sub_id}/credentials": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Issue */
+        post: operations["issue_codex_subscriptions__sub_id__credentials_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/codex-subscriptions/{sub_id}/disconnect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Disconnect */
+        post: operations["disconnect_codex_subscriptions__sub_id__disconnect_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/codex-subscriptions/{sub_id}/credentials/{credential_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Revoke */
+        delete: operations["revoke_codex_subscriptions__sub_id__credentials__credential_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/archive": {
         parameters: {
             query?: never;
@@ -1342,6 +1564,48 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AgentBatch */
+        AgentBatch: {
+            lease: components["schemas"]["Lease"];
+            manifest: components["schemas"]["RunCreate"];
+            checkpoint: components["schemas"]["AgentCheckpoint"];
+        };
+        /** AgentCheckpoint */
+        AgentCheckpoint: {
+            /** Next Offset */
+            next_offset: number;
+        };
+        /** AgentClaim */
+        AgentClaim: {
+            /** Subscription Id */
+            subscription_id: number;
+            /**
+             * Worker Id
+             * Format: uuid
+             */
+            worker_id: string;
+            /** Config Digest */
+            config_digest: string;
+        };
+        /** AgentFailure */
+        AgentFailure: {
+            lease: components["schemas"]["Lease"];
+            /**
+             * Code
+             * @enum {string}
+             */
+            code: "READ_FAILED" | "TIMEOUT" | "FORMAT_UNSUPPORTED" | "SPOOL_QUOTA" | "SOURCE_LIMIT" | "SOURCE_CONFLICT";
+        };
+        /** AgentItem */
+        AgentItem: {
+            lease: components["schemas"]["Lease"];
+            item: components["schemas"]["CollectorItem"];
+        };
+        /** AgentOutcome */
+        AgentOutcome: {
+            lease: components["schemas"]["Lease"];
+            outcome: components["schemas"]["OutcomeReport"];
+        };
         /** AnswerCitation */
         AnswerCitation: {
             /**
@@ -1662,12 +1926,132 @@ export interface components {
              */
             freshness: "current" | "updated";
         };
+        /** ClaimResponse */
+        ClaimResponse: {
+            job: components["schemas"]["JobResponse"] | null;
+            /** Generation */
+            generation: number | null;
+            /** Lease Until */
+            lease_until: string | null;
+            /** Revision */
+            revision: number;
+            /** Scope */
+            scope: string;
+            config: components["schemas"]["CodexSourceConfig"];
+            /** Rotation Offset */
+            rotation_offset: number;
+        };
         /** CodexSessionRef */
         CodexSessionRef: {
             /** Source Scope */
             source_scope: string;
             /** Thread Id */
             thread_id: string;
+        };
+        /** CodexSourceConfig */
+        CodexSourceConfig: {
+            /**
+             * Device Uuid
+             * Format: uuid
+             */
+            device_uuid: string;
+            /** Exclude Cwd */
+            exclude_cwd?: string[];
+            /** Exclude Thread */
+            exclude_thread?: string[];
+            /** Exclude Item Types */
+            exclude_item_types?: string[];
+            /** Date From */
+            date_from?: string | null;
+            /** Date To */
+            date_to?: string | null;
+            /**
+             * Field Bytes
+             * @default 65536
+             */
+            field_bytes: number;
+            /**
+             * Turn Bytes
+             * @default 1048576
+             */
+            turn_bytes: number;
+            /**
+             * Rollout Bytes
+             * @default 67108864
+             */
+            rollout_bytes: number;
+            /**
+             * Bundle Bytes
+             * @default 67108864
+             */
+            bundle_bytes: number;
+            /**
+             * Max Pages
+             * @default 1000
+             */
+            max_pages: number;
+            /**
+             * Run Seconds
+             * @default 120
+             */
+            run_seconds: number;
+            /** Include Cwd */
+            include_cwd?: string[];
+            /** Threads */
+            threads?: string[];
+            /**
+             * Threads Per Cycle
+             * @default 5
+             */
+            threads_per_cycle: number;
+        };
+        /** CodexSubscriptionCreate */
+        CodexSubscriptionCreate: {
+            config: components["schemas"]["CodexSourceConfig"];
+        };
+        /** CodexSubscriptionResponse */
+        CodexSubscriptionResponse: {
+            /** Id */
+            id: number;
+            /**
+             * Provider
+             * @default codex
+             * @constant
+             */
+            provider: "codex";
+            /** Scope */
+            scope: string;
+            config: components["schemas"]["CodexSourceConfig"];
+            /** Revision */
+            revision: number;
+            /** Schedule Enabled */
+            schedule_enabled: boolean;
+            /** Interval Seconds */
+            interval_seconds: number;
+            /** Next Due At */
+            next_due_at: string | null;
+            /** Schedule Error */
+            schedule_error: string | null;
+            /** Last Checked At */
+            last_checked_at: string | null;
+            /** Last Success At */
+            last_success_at: string | null;
+            /** Agent Seen At */
+            agent_seen_at: string | null;
+            /**
+             * Agent Status
+             * @enum {string}
+             */
+            agent_status: "offline" | "online";
+            /** Rotation Offset */
+            rotation_offset: number;
+            /** Deferred */
+            deferred: number;
+            /** Failed */
+            failed: number;
+            job: components["schemas"]["JobResponse"] | null;
+            /** Credentials */
+            credentials: components["schemas"]["CredentialResponse"][];
         };
         /** CollectNow */
         CollectNow: {
@@ -1799,6 +2183,41 @@ export interface components {
             deferred: number;
             /** Gaps */
             gaps?: ("UNREADABLE_METADATA" | "SOURCE_CONFLICT" | "SOURCE_CHANGED" | "SOURCE_LIMIT" | "FORMAT_UNSUPPORTED" | "READ_FAILED" | "TIMEOUT" | "PAGE_LIMIT" | "EMPTY_HISTORY" | "ACTIVE_SESSION" | "SNAPSHOT_DIVERGENCE" | "SNAPSHOT_CONSISTENCY_UNKNOWN" | "RUN_LIMIT" | "INVALID_ITEM" | "REIMPORT_BLOCKED" | "COLLECTION_DISABLED" | "DATE_UNAVAILABLE")[];
+        };
+        /** CredentialCreate */
+        CredentialCreate: {
+            /**
+             * Expires In Days
+             * @default 30
+             */
+            expires_in_days: number;
+        };
+        /** CredentialIssued */
+        CredentialIssued: {
+            credential: components["schemas"]["CredentialResponse"];
+            /** Token */
+            token: string;
+        };
+        /** CredentialResponse */
+        CredentialResponse: {
+            /** Id */
+            id: number;
+            /** Revision */
+            revision: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /** Revoked At */
+            revoked_at: string | null;
+            /** Last Used At */
+            last_used_at: string | null;
         };
         /** DevSessionPayload */
         DevSessionPayload: {
@@ -3289,6 +3708,16 @@ export interface components {
             created_at: string;
             /** Finished At */
             finished_at: string | null;
+        };
+        /** Lease */
+        Lease: {
+            /**
+             * Worker Id
+             * Format: uuid
+             */
+            worker_id: string;
+            /** Generation */
+            generation: number;
         };
         /** OutcomeReport */
         OutcomeReport: {
@@ -5477,7 +5906,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SubscriptionResponse"];
+                    "application/json": components["schemas"]["SubscriptionResponse"] | components["schemas"]["CodexSubscriptionResponse"];
                 };
             };
             /** @description Validation Error */
@@ -5512,7 +5941,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SubscriptionResponse"];
+                    "application/json": components["schemas"]["SubscriptionResponse"] | components["schemas"]["CodexSubscriptionResponse"];
                 };
             };
             /** @description Validation Error */
@@ -5580,6 +6009,464 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["SubscriptionResponse"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    claim_collector_claim_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AgentClaim"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ClaimResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    heartbeat_collector_jobs__job_id__heartbeat_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Lease"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    status_collector_jobs__job_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    batch_collector_jobs__job_id__batch_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AgentBatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    item_collector_jobs__job_id__items_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AgentItem"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Receipt"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    outcome_collector_jobs__job_id__outcomes_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AgentOutcome"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Receipt"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    finish_collector_jobs__job_id__finish_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Lease"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    failure_collector_jobs__job_id__failure_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AgentFailure"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    subscriptions_codex_subscriptions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CodexSubscriptionResponse"][];
+                };
+            };
+        };
+    };
+    register_codex_subscriptions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CodexSubscriptionCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CodexSubscriptionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    selection_codex_subscriptions__sub_id__selection_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sub_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CodexSubscriptionCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CodexSubscriptionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    issue_codex_subscriptions__sub_id__credentials_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sub_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CredentialCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CredentialIssued"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    disconnect_codex_subscriptions__sub_id__disconnect_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sub_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CodexSubscriptionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    revoke_codex_subscriptions__sub_id__credentials__credential_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                sub_id: number;
+                credential_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

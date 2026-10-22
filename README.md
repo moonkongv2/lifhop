@@ -255,14 +255,18 @@ The repository documentation is the source of truth. Read the current status bef
 
 ## Current Status
 
-Active work is **Phase 4.1 S3 GitHub incremental reconciliation; owner checks deferred**.
+Active work is **Phase 4.1 S4 explicit Codex agent/credentials; owner checks deferred**.
 Exact source registration, durable jobs, explicitly started source-selected polling,
 schedule/pause/collect/cancel/retry controls are implemented. Apply migrations
-through `k93c8d70b519`; follow [the synthetic walkthrough](docs/guides/PHASE41_COLLECTION.md).
+through `l04d9e81c620`; follow the [GitHub walkthrough](docs/guides/PHASE41_COLLECTION.md)
+and [Codex agent walkthrough](docs/guides/CODEX_AGENT.md).
 S3 persists parent-SHA graph progress and changed document snapshots, with optional
 rotating PR/issue/comment/review checks and visible pending work/age. Existing
 sources default to discussions disabled. Schedules default to paused; remaining
-S1–S3 browser and live acceptance are open. The Codex agent is not implemented.
+S1–S4 browser and live acceptance are open. The Codex agent uses explicitly
+selected device/CWD/thread scope, source credentials and leased HTTP ingestion;
+it revisits old threads and resumes frozen receipts after reconnect. It requires
+no owner login/database/AWS secret and installs no background service.
 Phase4.1 remains incomplete.
 On 2026-10-21 the owner accepted **conditional closure of Phase 3.3** for the
 personal alpha, carrying known quality defects and unverified behavior under
@@ -280,8 +284,8 @@ checks still show citation generation failures, omissions and missing selected
 evidence; personal-record follow-up quality, long-context behavior and some
 restart checks remain unverified. AI answers remain off by default; a failed sent
 request may still cost money. Ownership/source/deletion/budget/replay protections
-remain required. Next is S3 feedback with deferred owner checks, then the Codex
-agent; no new personal ingestion, AI calls or AWS resources are
+remain required. Next is S4 feedback and S5 integrated acceptance, with owner/live
+checks deferred; no new personal ingestion, AI calls or AWS resources are
 authorized by this milestone change. See [CURRENT.md](CURRENT.md), [usage/setup](docs/guides/UNIFIED_ANSWER.md),
 and [the accepted exit scope](docs/evaluation/phase33/PHASE33_CONDITIONAL_EXIT_PLAN.md).
 

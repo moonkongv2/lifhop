@@ -51,6 +51,8 @@ def run_once(bind, subscription_id, spool, *, token=None, reader_factory=Reposit
         sub = db.get(CollectionSubscription, subscription_id)
         if sub is None:
             raise ProbeError("Unknown subscription")
+        if sub.provider != 'github':
+            raise ProbeError('Use the source-bound Codex agent for this subscription')
         user_id, config = sub.user_id, sub.config
         result = jobs.claim(db, user_id, subscription_id, worker_id)
         mode = db.get(CollectionJob, result[0]).mode if result else None

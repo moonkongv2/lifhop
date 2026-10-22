@@ -22,13 +22,18 @@ SOURCE_KINDS = ["cli", "vscode", "exec", "appServer", "subAgent", "subAgentRevie
                 "subAgentCompact", "subAgentThreadSpawn", "subAgentOther", "unknown"]
 
 
-def inventory(home: Path) -> tuple[dict, list[dict]]:
+def inventory(home: Path, *, maximum_files: int | None = None, deadline: float | None = None) -> tuple[dict, list[dict]]:
     rows = []
     errors = Counter()
     totals = Counter()
+    examined = 0
     for directory in ("sessions", "archived_sessions"):
-        for path in sorted((home / directory).rglob("*.jsonl")):
-            if path.is_symlink():
+        paths = (home / directory).rglob("*.jsonl")
+        for path in sorted(paths) if maximum_files is None else paths:
+            examined += 1
+            if (maximum_files is not None and examined > maximum_files) or (deadline is not None and time.monotonic() >= deadline):
+                raise ProbeError('Codex inventory exceeds the configured agent budget')
+            if path.is_symlink() or not path.is_file():
                 errors["symlink_skipped"] += 1
                 continue
             totals[directory] += 1
@@ -42,6 +47,9 @@ def inventory(home: Path) -> tuple[dict, list[dict]]:
                 meta = record["payload"]
                 if record.get("type") != "session_meta" or not isinstance(meta.get("id"), str):
                     raise ValueError("unsupported metadata")
+                if maximum_files is not None and any(isinstance(meta.get(key), str) and len(meta[key]) > 4096
+                        for key in ('id', 'timestamp', 'cli_version', 'cwd', 'source', 'history_mode')):
+                    raise ValueError('oversized agent metadata')
                 rows.append({"path": path, "id": meta["id"], "date": meta.get("timestamp"),
                              "cli_version": meta.get("cli_version"), "cwd": meta.get("cwd"),
                              "source": meta.get("source"), "history_mode": meta.get("history_mode", "legacy"),

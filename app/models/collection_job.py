@@ -23,6 +23,7 @@ class CollectionSubscription(Base):
     schedule_error: Mapped[str | None] = mapped_column(String(60))
     last_checked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     last_success_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    agent_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class CollectionJob(Base):
@@ -45,6 +46,8 @@ class CollectionJob(Base):
     retry_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     lease_owner: Mapped[str | None] = mapped_column(String(36))
     lease_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    credential_id: Mapped[int | None] = mapped_column(ForeignKey("collector_credentials.id", ondelete="SET NULL"))
+    checkpoint: Mapped[dict | None] = mapped_column(JSONB)
     run_id: Mapped[int | None] = mapped_column(ForeignKey("collection_runs.id", ondelete="SET NULL"))
     error_code: Mapped[str | None] = mapped_column(String(60))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
@@ -58,6 +61,18 @@ class CollectionRequest(Base):
     subscription_id: Mapped[int] = mapped_column(ForeignKey("collection_subscriptions.id", ondelete="CASCADE"))
     request_id: Mapped[str] = mapped_column(String(36))
     job_id: Mapped[int] = mapped_column(ForeignKey("collection_jobs.id", ondelete="CASCADE"))
+
+
+class CollectorCredential(Base):
+    __tablename__ = "collector_credentials"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    subscription_id: Mapped[int] = mapped_column(ForeignKey("collection_subscriptions.id", ondelete="CASCADE"), index=True)
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    revision: Mapped[int] = mapped_column(Integer)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class GitHubCommitCursor(Base):

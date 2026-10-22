@@ -3,6 +3,7 @@ import { Navigate } from "react-router";
 import { historyRequest } from "../api/history";
 import type { Policy, Suppression } from "../api/history";
 import GitHubCollection from "../components/GitHubCollection";
+import CodexCollection from "../components/CodexCollection";
 import CollectionRuns from "../components/CollectionRuns";
 
 export default function SourcesPage() {
@@ -32,6 +33,7 @@ export default function SourcesPage() {
       </label>)}
     </article>)}
     <GitHubCollection policies={sources.data ?? []} />
+    <CodexCollection policies={sources.data ?? []} />
     <CollectionRuns />
     <h3>Blocked from reimport</h3>
     <p>Deleting in lifhop removes all versions and annotations. Only source identifiers remain. Allowing reimport does not restore deleted content.</p>

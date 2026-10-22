@@ -4,7 +4,7 @@ Last updated: 2026-10-22
 
 ## Current product slice
 
-**Phase4.1 S1–S3 GitHub collect-now, scheduling/retry and incremental reconciliation
+**Phase4.1 S1–S4 GitHub collection and explicit Codex agent/credentials
 are implemented with synthetic verification;
 remaining owner verification is deferred.**
 The owner confirmed the initial synthetic GitHub collection result in Sources
@@ -21,9 +21,15 @@ optionally rotates through PR/issue/comment/review pages. Sources shows observed
 completed/document SHA, pending graph/thread work and reconciliation age. Existing
 sources keep discussions disabled until explicitly selected. Selection changes
 fence work, pause scheduling and start a new revision with cleared coverage/times.
-Legacy pre-S3 jobs retain their original frozen backfill path. The Codex agent
-is not implemented. Overall Phase4.1 and live/A7 remain open.
+Legacy pre-S3 jobs retain their original frozen backfill path. After S3 commit
+`4fad0e6`, the owner authorized S4 while deferring direct checks. S4 adds exact
+Mac/CWD/thread selection, paused schedules/collect-now, source-scoped opaque
+credentials and a private local agent using leased HTTP receipts. The agent
+revisits old threads and catches up after reconnect without an owner JWT/DB/AWS
+secret. Revocation/expiry/selection changes fence uploads. No daemon is installed.
+Overall Phase4.1, S5 integration acceptance and live/A7 remain open.
 See [S1–S3 setup and owner walkthrough](docs/guides/PHASE41_COLLECTION.md) and
+[S4 agent setup](docs/guides/CODEX_AGENT.md), plus
 [the remaining collection plan](docs/plans/PHASE41_COLLECTION_PLAN.md).
 
 Maintenance scope: [efficiency/cleanup plan](docs/plans/EFFICIENCY_CLEANUP_PLAN.md), authorized
@@ -48,8 +54,8 @@ Existing failed/unverified judgments and closed paid approvals remain unchanged.
 - Canonical source ingestion with retained observations, freshness/completeness
   guards, current versions, deletion suppression and separate collection/AI policy.
   Missing/equal source clocks still require explicit current-version review.
-- Manual Codex/GitHub collectors and bounded GitHub S1–S3 collection/reconciliation.
-  Apply migrations through `k93c8d70b519`; use the documented setup before use.
+- Manual collectors, bounded GitHub S1–S3 collection/reconciliation and explicit
+  source-scoped S4 Codex agent. Apply migrations through `l04d9e81c620` before use.
   Collection does not enroll sources in external AI.
 - Private evaluation tooling; policy-bound pgvector storage, bounded indexing jobs
   and optional Semantic search. Old projection configurations require explicit local
@@ -63,12 +69,13 @@ Existing failed/unverified judgments and closed paid approvals remain unchanged.
 1. Review maintenance A's document/file changes; then continue B search and C saved
    conversation read improvements in independently verified slices. D/E are related
    follow-ups, not new prerequisites for all Phase4 development.
-2. When the owner has the environment available, perform remaining S1–S3
+2. When the owner has the environment available, perform remaining S1–S4
    browser checks using fictional sources in the
-   [walkthrough](docs/guides/PHASE41_COLLECTION.md). They are deferred, not passed.
-   Live selected-source acceptance remains open.
-3. Present S3 for feedback before starting S4 Codex agent/credentials and remaining
-   acceptance. Keep GitHub and Codex in scope, including Mac offline/wake behavior.
+   [GitHub](docs/guides/PHASE41_COLLECTION.md) and [Codex](docs/guides/CODEX_AGENT.md)
+   walkthroughs. They are deferred, not passed; live-source acceptance remains open.
+3. Present S4 for feedback, then S5 integrated checks and the remaining acceptance
+   matrix. Actual owner-observed Mac sleep/wake and selected live reads need a
+   fresh finite scope; no personal-data/background installation follows from S4.
 4. Revisit D01–D09 at Phase4 exit and explicitly agree remaining Phase5 use scope.
    Private deployment, backup/restore and daily-use acceptance remain later work.
 
@@ -104,6 +111,14 @@ Existing failed/unverified judgments and closed paid approvals remain unchanged.
   compatibility) and three mixed-batch receipt errors (fixed). No live source,
   inference/embedding or AWS request, application DB migration or owner browser
   acceptance was performed. Diff checks passed.
+- S4 source/agent tests **22 passed**, including independent local API/agent
+  processes, frozen replay/uncertain ACK, unchanged-mtime appends, active-session
+  deferral/complete candidates, token scope/expiry/rotation, private init and slow
+  snapshot pause fencing. Full frontend **215 passed**, ESLint/build passed
+  (existing about515KiB chunk warning). One UI test initially stringified an
+  absent GET body; its assertion was corrected. Final full backend **1017 passed**
+  (90.33s). Fresh-schema Alembic upgrade, AST/diff and local-link checks passed.
+  The application DB, real Codex home and startup services were not changed.
 - The independent audit passed frontend ESLint/type checks, Python AST parsing of
   287 files and diff checks. It did not run tests, migrations, live providers or
   performance measurements. Maintenance results belong in the
@@ -163,6 +178,14 @@ Existing failed/unverified judgments and closed paid approvals remain unchanged.
   per-run bounds; PR membership is limited to250 commits. Resource/partial/auth
   failures pause rather than falsely closing coverage. Old revision cursor
   metadata and archive versions remain; live completeness/capacity are unverified.
+- S4 uses explicit foreground operation and one private spool per source revision.
+  Inventory is limited to10000 files/30s; cycles rotate1–10 threads (default5).
+  Offsets are reconciliation positions, not completeness proof. Deferred-only
+  work stays eligible for later cycles; permanent/blocked failures pause. Equal/
+  missing source clocks retain complete candidates for explicit version review.
+  CWD selection/sanitization is enforced by the trusted local agent, not attested
+  by the server. Live sleep/wake, startup packaging/installation, corpus capacity
+  and abrupt-death temporary snapshot cleanup remain unverified/later work.
 - Prior local validation misdirected cleanup; restored originals and the remaining
   two unverified September artifact originals are documented in the preserved
   [incident](docs/history/CURRENT_HISTORY_20261021.md#local-validation-incident).

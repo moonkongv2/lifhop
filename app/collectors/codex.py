@@ -32,12 +32,13 @@ def bounded_payload(data: dict, maximum: int):
     return data
 
 
-def preview(home: Path, cfg: CollectorConfig, output: Path, *, cwd: list[str], threads: list[str], all_accessible=False):
+def preview(home: Path, cfg: CollectorConfig, output: Path, *, cwd: list[str], threads: list[str], all_accessible=False,
+            inventory_snapshot=None, on_progress=None):
     if not cwd and not threads and not all_accessible:
         raise ProbeError("Select --include-cwd, --thread or --all-accessible explicitly")
     cli = check_version()
     parser_version = CLI_PARSERS[cli]
-    summary, rows = inventory(home)
+    summary, rows = inventory_snapshot if inventory_snapshot is not None else inventory(home)
     discovered = sum(summary["files"].get(key, 0) for key in ("sessions", "archived_sessions"))
     def in_paths(value, roots):
         if not isinstance(value, str):
@@ -61,6 +62,8 @@ def preview(home: Path, cfg: CollectorConfig, output: Path, *, cwd: list[str], t
     total_bytes = 0
     seen = Counter(row["id"] for row in selected)
     for row in sorted(selected, key=lambda value: (value["date"] or "", value["id"])):
+        if on_progress:
+            on_progress()
         if seen[row["id"]] > 1:
             gaps.add("SOURCE_CONFLICT")
             coverage["failed"] += 1
@@ -72,6 +75,8 @@ def preview(home: Path, cfg: CollectorConfig, output: Path, *, cwd: list[str], t
             count = 0
             with stored_thread(home, row, cfg, deadline) as (thread, turns, check):
                 for turn in turns:
+                    if on_progress:
+                        on_progress()
                     if len(manifest["items"]) >= 100000:
                         raise ReadFailure("RUN_LIMIT")
                     count += 1
