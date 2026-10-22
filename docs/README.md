@@ -7,6 +7,10 @@
 
 ## 현재 작업과 읽는 순서
 
+직접 확인은 [Phase4 통합 절차·결과표](guides/PHASE4_OWNER_CHECK.md) 하나에서 시작한다.
+가짜 자료 화면 확인 / 선택 실제 소스 / 실제 운영 세 묶음이며 모두 지금은 보류 가능하다.
+아래 상세 가이드를 각자 별도의 필수 확인 목록으로 추가하지 않는다.
+
 현재 구현: [Phase4.2 수집 상태·복구 안내](guides/COLLECTION_RECOVERY.md).
 다음 단위인 [가져오기 알림 유실·멈춘 작업 복구](guides/IMPORT_RECOVERY.md)는
 합성 검증을 마쳤다. 실제 AWS·프로세스 감독·직접 확인은 남아 있다.
@@ -44,6 +48,7 @@ GitHub 기본 문서 패턴으로 이 저장소를 수집하면 이동한 46개�
 - [RETROSPECTIVES.md](guides/RETROSPECTIVES.md)
 - [HISTORICAL_QUESTIONS.md](guides/HISTORICAL_QUESTIONS.md)
 - [PHASE41_COLLECTION.md](guides/PHASE41_COLLECTION.md)
+- [PHASE4_OWNER_CHECK.md](guides/PHASE4_OWNER_CHECK.md)
 - [PHASE41_ACCEPTANCE.md](guides/PHASE41_ACCEPTANCE.md)
 - [COLLECTION_RECOVERY.md](guides/COLLECTION_RECOVERY.md)
 - [IMPORT_RECOVERY.md](guides/IMPORT_RECOVERY.md)

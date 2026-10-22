@@ -7,6 +7,9 @@ to the existing import/GitHub loops without installing a process supervisor.
 **Phase4 is not accepted/closed.** The owner authorized continued implementation
 while direct checks are deferred. This review is repository evidence, not owner
 acceptance, live-provider validation, startup installation or approval to deploy.
+Owner execution/results are consolidated in the [single walkthrough](../guides/PHASE4_OWNER_CHECK.md).
+The detailed checks below are evidence/reference, not additional manual tasks.
+This consolidation changes no acceptance status or D01–D09 disposition.
 
 ## Recovery gap addressed in this slice
 

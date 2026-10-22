@@ -1,5 +1,8 @@
 # Phase4.2 — Bounded database reconnects in existing workers
 
+직접 확인은 [Phase4 통합 절차](PHASE4_OWNER_CHECK.md)에서 시작한다.
+아래 DB 장애 재현은 자동 검증 증거이며 소유자가 다시 수행할 필수 확인이 아니다.
+
 This slice follows collection lease visibility commit `8287085`. A database
 connection error in import purge/receive or GitHub polling previously terminated
 the explicitly started worker immediately. Both loops now bound retries for

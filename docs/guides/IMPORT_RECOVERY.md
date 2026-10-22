@@ -1,5 +1,8 @@
 # Phase4.2 — Durable import notification and stale-work recovery
 
+직접 확인은 [Phase4 통합 절차](PHASE4_OWNER_CHECK.md)에서 시작한다.
+아래의 장애 테스트/상세 명령은 개발자 참고이며 소유자의 추가 필수 과제가 아니다.
+
 This slice follows Sources status/recovery commit `0d114ad`. It addresses the
 ChatGPT archive ImportJob queue. Codex/GitHub already use revision-fenced leases
 and durable receipts. Phase4.1 owner/browser/live/A7 acceptance remains deferred.

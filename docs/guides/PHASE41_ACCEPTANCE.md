@@ -1,5 +1,8 @@
 # Phase4.1 S5 — Integrated verification and deferred acceptance
 
+직접 확인과 결과 기록은 [Phase4 통합 절차](PHASE4_OWNER_CHECK.md) 한 곳에서 한다.
+아래 matrix는 당시 자동 검증 증거이며 모든 walkthrough를 중복 수행할 필요는 없다.
+
 S4 was committed as `233ae60` before owner-authorized S5 work on2026-10-22.
 The integrated checks use fictional sources and disposable PostgreSQL schemas.
 They do not close owner browser checks, real-provider compatibility/completeness
@@ -51,7 +54,7 @@ the hidden prompt. Keep AI disabled. Open <http://localhost:5173/sources>.
    .venv/bin/python -m app.workers.collection_worker \
      --subscription-id GITHUB_SUBSCRIPTION_ID \
      --spool .local/github-demo-spool --synthetic \
-     --synthetic-revision 1 --max-cycles 1
+     --synthetic-revision 1
    ```
 
    GitHub completes and adds fictional records; Codex remains pending. Queue

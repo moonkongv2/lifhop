@@ -1,5 +1,8 @@
 # Phase4.2 first slice — Collection status and recovery guidance
 
+직접 확인은 [Phase4 통합 절차](PHASE4_OWNER_CHECK.md)로 묶었다.
+아래는 상태 의미와 당시 검증 기록이며 장애를 추가로 직접 재현할 필요는 없다.
+
 Sources now shows a collection status and next action for each registered GitHub
 repository/Codex device. This first slice reuses existing jobs, source policy and
 indexing APIs. It does not change retry, queue, lease or credential behavior.

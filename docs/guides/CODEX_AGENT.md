@@ -1,5 +1,8 @@
 # Phase4.1 S4 — Explicit Codex Mac agent and source credentials
 
+직접 확인은 [Phase4 통합 절차](PHASE4_OWNER_CHECK.md)에서 시작한다.
+아래는 기기/토큰 설정과 상세 동작 참고이며 별도의 추가 확인 목록이 아니다.
+
 Implemented: exact device/CWD/thread registration, paused schedules, collect-now,
 source credentials, lease-checked HTTP ingestion, private local spool and bounded
 thread rotation. No daemon is installed. The server never opens Mac files and

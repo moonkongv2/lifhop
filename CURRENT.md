@@ -4,8 +4,8 @@ Last updated: 2026-10-22
 
 ## Current product slice
 
-**Phase4.2: Bounded import/GitHub worker DB reconnects, Sources recovery status and
-durable import reconciliation. Phase4 owner/browser/live/A7 gates stay open.**
+**Phase4 owner-check consolidation: one deferred walkthrough for the existing
+implementations. Phase4 owner/browser/live/A7 acceptance stays open.**
 The owner confirmed the initial synthetic GitHub collection result in Sources
 on2026-10-22. Repeat/unchanged, cancel and deletion-protection browser checks
 remain pending; this confirmation does not close all S1 checks. The owner requested
@@ -52,6 +52,12 @@ now reconnect after transient DB errors with1/2/4-second waits, stopping nonzero
 after four consecutive failures or a one-shot/finite limit. Healthy cycles reset
 the failure budget; configuration/schema errors stop without private exception
 text. Import adds `--once`/`--max-cycles`. No supervisor or daemon is installed.
+Worker reconnects are committed as `200dc83`. At the owner's request, deferred
+direct checks now have one [starting point/result table](docs/guides/PHASE4_OWNER_CHECK.md):
+fictional-source UI flows, separately scoped live sources and actual runtime/
+sleep-wake. Detailed provider/recovery guides are setup/evidence references,
+not accumulating mandatory walkthroughs. Automated faults need not be manually
+reproduced. No acceptance result was changed by this documentation consolidation.
 See [S1–S3 setup and owner walkthrough](docs/guides/PHASE41_COLLECTION.md) and
 [S4 agent setup](docs/guides/CODEX_AGENT.md),
 [S5 evidence and deferred walkthrough](docs/guides/PHASE41_ACCEPTANCE.md), plus
@@ -97,10 +103,10 @@ Existing failed/unverified judgments and closed paid approvals remain unchanged.
 1. Review maintenance A's document/file changes; then continue B search and C saved
    conversation read improvements in independently verified slices. D/E are related
    follow-ups, not new prerequisites for all Phase4 development.
-2. When the owner has the environment available, perform remaining S1–S4
-   browser checks using fictional sources in the
-   [GitHub](docs/guides/PHASE41_COLLECTION.md) and [Codex](docs/guides/CODEX_AGENT.md)
-   walkthroughs. They are deferred, not passed; live-source acceptance remains open.
+2. When the owner has the environment, use only the
+   [integrated owner walkthrough](docs/guides/PHASE4_OWNER_CHECK.md) as the checklist.
+   Record U1–U3/B/C there; do not repeat every detailed guide or fault-injection
+   test. Initial synthetic GitHub success remains confirmed; the rest is deferred.
 3. Review Sources/import/worker recovery and the Phase4 exit matrix, then select a finite
    remaining verification/operational slice. D01–D09 remain open; no AI-use or
    deployment transition is implied. Real queue/IAM/network/DLQ, worker supervision
@@ -184,6 +190,11 @@ Existing failed/unverified judgments and closed paid approvals remain unchanged.
   rerun because frontend code is unchanged. Synthetic exceptions/sleeps only;
   no actual DB shutdown, browser/live source, migration, paid AI, AWS or service
   installation. Real driver/network and persistent hang behavior remain unverified.
+- Owner-check consolidation is documentation-only: local links/anchors, shell
+  snippet syntax and diff checks passed. No application tests were rerun; the
+  backend1047/frontend227 counts above are the preceding implementation checks.
+  Corrected an old GitHub one-shot example that used polling-only `--max-cycles`.
+  No commands against application data, live sources or owner browser were run.
 - The independent audit passed frontend ESLint/type checks, Python AST parsing of
   287 files and diff checks. It did not run tests, migrations, live providers or
   performance measurements. Maintenance results belong in the

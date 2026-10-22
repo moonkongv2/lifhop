@@ -1,8 +1,12 @@
 # Phase 4.1 collection — S1–S3 GitHub collection
 
+직접 확인은 [Phase4 통합 절차](PHASE4_OWNER_CHECK.md)에서 시작한다.
+아래는 GitHub 설정/증거 참고이며 별도로 전부 반복할 확인 목록이 아니다.
+
 Implemented boundary: source registration, collect-now/scheduled jobs, explicitly
 started polling worker, pause/retry controls, bounded graph walks and optional
-rotating PR/issue/comment/review reconciliation. No Codex agent yet. This does not
+rotating PR/issue/comment/review reconciliation. The Codex agent has a separate
+[setup guide](CODEX_AGENT.md). This GitHub slice does not
 complete Phase4.1. The accepted Phase3.3 D01–D09 carryovers remain unchanged.
 
 ## Local setup and synthetic owner verification
@@ -14,7 +18,7 @@ The file must contain `DATABASE_URL`, `JWT_SECRET_KEY` and `AWS_REGION`.
 Use the same configuration as the local API rather than creating a separate
 worker database or secret. Run the commands below from the repository root so
 the relative spool path also stays consistent across restarts.
-Apply migrations through `k93c8d70b519` before starting the updated API:
+Apply migrations through `l04d9e81c620` before starting the updated API:
 
 ```bash
 .venv/bin/alembic upgrade head

@@ -256,6 +256,9 @@ The repository documentation is the source of truth. Read the current status bef
 ## Current Status
 
 Active work is **Phase4.2 Sources status and import recovery; Phase4.1 owner checks deferred**.
+Deferred owner checks start at [one integrated walkthrough](docs/guides/PHASE4_OWNER_CHECK.md).
+Provider/recovery guides below are detailed references, not separate mandatory
+checklists; automatically verified faults need not all be reproduced manually.
 Exact source registration, durable jobs, explicitly started source-selected polling,
 schedule/pause/collect/cancel/retry controls are implemented. Apply migrations
 through `l04d9e81c620`; follow the [GitHub walkthrough](docs/guides/PHASE41_COLLECTION.md)
