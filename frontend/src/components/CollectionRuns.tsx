@@ -17,15 +17,15 @@ export default function CollectionRuns() {
   const runs = useQuery({ queryKey: ["collection-runs", provider, offset],
     queryFn: () => historyRequest<Run[]>(`/collection-runs?provider=${provider}&limit=20&offset=${offset}`),
     enabled, refetchInterval: 5000 });
-  return <section aria-label={`${provider === "github" ? "GitHub" : "Codex"} historical backfills`}>
-    <h3>{provider === "github" ? "GitHub" : "Codex"} historical backfills</h3>
-    <label>Backfill source <select value={provider} onChange={event => { setProvider(event.target.value); setOffset(0); }}><option value="codex">Codex</option><option value="github">GitHub</option></select></label>
-    <p>Run the collector on your Mac to preview and apply selected history. Collection is manual; it stops when the command exits. Stored records stay searchable while your Mac is offline.</p>
+  return <section aria-label={`${provider === "github" ? "GitHub" : "Codex"} collection batches`}>
+    <h3>{provider === "github" ? "GitHub" : "Codex"} collection batches</h3>
+    <label>Collection source <select value={provider} onChange={event => { setProvider(event.target.value); setOffset(0); }}><option value="codex">Codex</option><option value="github">GitHub</option></select></label>
+    <p>These receipts include manual history imports and scheduled collection. Scheduling needs an explicitly running GitHub worker or selected Mac agent. Stored records stay searchable while your Mac is offline. Collection success does not imply AI indexing or answer quality.</p>
     {runs.isLoading && <p role="status">Loading collection results...</p>}
     {runs.error && <><p role="alert">{runs.error.message}</p><button onClick={() => void runs.refetch()}>Retry collection results</button></>}
-    {runs.data?.length === 0 && <p>No backfill runs on this page.</p>}
+    {runs.data?.length === 0 && <p>No collection batches on this page.</p>}
     {runs.data?.map(run => <article key={run.id}>
-      <h4>Backfill #{run.id} · {run.status === "empty" && run.provider === "github" ? run.coverage.discussions ? "No discussions found in selected scope" : "No selected records" : statusLabels[run.status] ?? run.status}</h4>
+      <h4>Batch #{run.id} · {run.status === "empty" && run.provider === "github" ? run.coverage.discussions ? "No discussions found in selected scope" : "No selected records" : statusLabels[run.status] ?? run.status}</h4>
       <p>Source: {run.scope}</p>
       <p>Started: {formatEntryDate(run.started_at)}<br />Last contact: {formatEntryDate(run.last_seen_at)}<br />Finished: {formatEntryDate(run.completed_at)}</p>
       {run.provider === "github" ? <>
@@ -44,8 +44,8 @@ export default function CollectionRuns() {
       <p>A completed run covers its selected snapshot. It does not establish that all source history is current or recover records missing from the source.</p>
     </article>)}
     <div className="actions">
-      <button disabled={offset === 0 || runs.isFetching} onClick={() => setOffset(Math.max(0, offset - 20))}>Previous backfills</button>
-      <button disabled={runs.data?.length !== 20 || runs.isFetching} onClick={() => setOffset(offset + 20)}>Next backfills</button>
+      <button disabled={offset === 0 || runs.isFetching} onClick={() => setOffset(Math.max(0, offset - 20))}>Previous batches</button>
+      <button disabled={runs.data?.length !== 20 || runs.isFetching} onClick={() => setOffset(offset + 20)}>Next batches</button>
     </div>
   </section>;
 }

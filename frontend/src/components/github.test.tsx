@@ -28,8 +28,8 @@ function mount(node: React.ReactNode) {
 }
 it("switches Sources provider and labels GitHub counts without session counts", async () => {
   mount(<CollectionRuns />);
-  await screen.findByText("No backfill runs on this page.");
-  fireEvent.change(screen.getByLabelText("Backfill source"), {target:{value:"github"}});
+  await screen.findByText("No collection batches on this page.");
+  fireEvent.change(screen.getByLabelText("Collection source"), {target:{value:"github"}});
   await screen.findByText("Repository: example/repo (ID 123)");
   expect(screen.getByText(/Prepared: 1 commits · 1 document snapshots/)).toBeTruthy();
   expect(screen.queryByText(/Sessions:/)).toBeNull();

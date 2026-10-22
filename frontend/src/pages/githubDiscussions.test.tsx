@@ -84,7 +84,7 @@ it("recovers a failed list and gives each search hit a thread focus link",async(
   expect(target).toContain("thread_id=100");expect(target).toContain("focus_entry_id=24");
 });
 it("shows successful empty discussion coverage in Sources",async()=>{
-  mount("/sources",<CollectionRuns/>);fireEvent.change(screen.getByLabelText("Backfill source"),{target:{value:"github"}});
+  mount("/sources",<CollectionRuns/>);fireEvent.change(screen.getByLabelText("Collection source"),{target:{value:"github"}});
   await screen.findByText(/No discussions found in selected scope/);
   expect(screen.getByText(/Snapshot collected over a time window/)).toBeTruthy();
 });

@@ -4,9 +4,8 @@ Last updated: 2026-10-22
 
 ## Current product slice
 
-**Phase4.1 S1–S4 GitHub collection and explicit Codex agent/credentials
-are implemented with synthetic verification;
-remaining owner verification is deferred.**
+**Phase4.1 S1–S4 implementation and S5 combined-provider synthetic verification
+are available; owner/browser and live/A7 acceptance remain deferred.**
 The owner confirmed the initial synthetic GitHub collection result in Sources
 on2026-10-22. Repeat/unchanged, cancel and deletion-protection browser checks
 remain pending; this confirmation does not close all S1 checks. The owner requested
@@ -27,9 +26,14 @@ Mac/CWD/thread selection, paused schedules/collect-now, source-scoped opaque
 credentials and a private local agent using leased HTTP receipts. The agent
 revisits old threads and catches up after reconnect without an owner JWT/DB/AWS
 secret. Revocation/expiry/selection changes fence uploads. No daemon is installed.
-Overall Phase4.1, S5 integration acceptance and live/A7 remain open.
+S4 was committed as `233ae60` before owner-authorized S5. Integrated tests verify
+GitHub process progress with the Codex agent stopped, reconnect/replay and source
+failure/revocation isolation. Sources now labels shared receipts as collection
+batches instead of describing scheduled work as manual-only historical backfills.
+Overall Phase4.1 and owner/live acceptance remain open.
 See [S1–S3 setup and owner walkthrough](docs/guides/PHASE41_COLLECTION.md) and
-[S4 agent setup](docs/guides/CODEX_AGENT.md), plus
+[S4 agent setup](docs/guides/CODEX_AGENT.md),
+[S5 evidence and deferred walkthrough](docs/guides/PHASE41_ACCEPTANCE.md), plus
 [the remaining collection plan](docs/plans/PHASE41_COLLECTION_PLAN.md).
 
 Maintenance scope: [efficiency/cleanup plan](docs/plans/EFFICIENCY_CLEANUP_PLAN.md), authorized
@@ -73,9 +77,10 @@ Existing failed/unverified judgments and closed paid approvals remain unchanged.
    browser checks using fictional sources in the
    [GitHub](docs/guides/PHASE41_COLLECTION.md) and [Codex](docs/guides/CODEX_AGENT.md)
    walkthroughs. They are deferred, not passed; live-source acceptance remains open.
-3. Present S4 for feedback, then S5 integrated checks and the remaining acceptance
-   matrix. Actual owner-observed Mac sleep/wake and selected live reads need a
-   fresh finite scope; no personal-data/background installation follows from S4.
+3. Review S5's evidence matrix and combined fictional-source walkthrough. Actual
+   owner-observed Mac sleep/wake and selected live reads need a fresh finite scope.
+   Phase4.2 recovery work is a separate next implementation slice; no personal-data
+   collection or background installation follows from these synthetic checks.
 4. Revisit D01–D09 at Phase4 exit and explicitly agree remaining Phase5 use scope.
    Private deployment, backup/restore and daily-use acceptance remain later work.
 
@@ -119,6 +124,15 @@ Existing failed/unverified judgments and closed paid approvals remain unchanged.
   absent GET body; its assertion was corrected. Final full backend **1017 passed**
   (90.33s). Fresh-schema Alembic upgrade, AST/diff and local-link checks passed.
   The application DB, real Codex home and startup services were not changed.
+- S5 integrated backend **3 passed**; final full backend **1020 passed** (94.52s).
+  Relevant frontend **17 passed**, full frontend **216 passed**; ESLint/build,
+  Python AST, documentation-link and diff checks passed (existing about515KiB
+  chunk warning). Initial new fixtures omitted a lease worker ID/due time and
+  GitHub incremental metadata; corrected before the final passing runs. The old
+  manual-only UI assertion was updated with the corrected product text. No
+  application DB migration, live provider, real browser, Mac sleep/wake or
+  startup service was exercised. Evidence/remaining gates are in the
+  [S5 acceptance guide](docs/guides/PHASE41_ACCEPTANCE.md).
 - The independent audit passed frontend ESLint/type checks, Python AST parsing of
   287 files and diff checks. It did not run tests, migrations, live providers or
   performance measurements. Maintenance results belong in the

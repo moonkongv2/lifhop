@@ -89,10 +89,10 @@ it("shows independent source controls, pending purge, and owner reimport action"
 
 it("shows Codex backfill coverage separately from collector freshness", async () => {
   mount("/sources");
-  await screen.findByText("Backfill #2 · Partially completed");
+  await screen.findByText("Batch #2 · Partially completed");
   expect(screen.getByText(/4 discovered · 3 selected · 1 excluded/)).toBeTruthy();
   expect(screen.getByText(/2 new · 0 unchanged/)).toBeTruthy();
-  expect(screen.getByText(/Collection is manual/)).toBeTruthy();
+  expect(screen.getByText(/These receipts include manual history imports and scheduled collection/)).toBeTruthy();
   expect(screen.getByText("active session")).toBeTruthy();
-  expect(screen.getByRole("button", { name: "Previous backfills" }).hasAttribute("disabled")).toBe(true);
+  expect(screen.getByRole("button", { name: "Previous batches" }).hasAttribute("disabled")).toBe(true);
 });

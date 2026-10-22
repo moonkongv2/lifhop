@@ -9,8 +9,10 @@ The owner then authorized committing S1/S2 (`a2db2bc`) and proceeding with S3.
 After S3 commit `4fad0e6`, the owner reviewed the deferral boundary and authorized
 S4. Source credentials and the explicitly started local Codex agent are now
 implemented with synthetic HTTP/process/reader verification. See [GitHub setup](../guides/PHASE41_COLLECTION.md)
-and [Codex agent setup](../guides/CODEX_AGENT.md). S5 and owner/live acceptance remain open;
-this is not overall Phase4.1 completion.
+and [Codex agent setup](../guides/CODEX_AGENT.md). S4 was committed as `233ae60`.
+S5 now adds combined-provider synthetic tests, accurate batch labels and an
+[acceptance matrix/owner walkthrough](../guides/PHASE41_ACCEPTANCE.md).
+Owner/browser and live/A7 acceptance remain open; this is not overall Phase4.1 completion.
 
 ## Goal and boundaries
 
