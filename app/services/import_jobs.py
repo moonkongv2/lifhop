@@ -32,6 +32,17 @@ def stale_before() -> datetime:
     return datetime.now(timezone.utc) - timedelta(seconds=settings.import_max_seconds + 60)
 
 
+def record_queue_failure(db: Session, job_id: int, submitted_attempts: int) -> None:
+    # A send exception may follow successful delivery. Never overwrite work
+    # already claimed/finished, or a later infrastructure retry of this job.
+    job = db.scalar(select(ImportJob).where(ImportJob.id == job_id)
+        .with_for_update(skip_locked=True).execution_options(populate_existing=True))
+    if job is not None and job.status == ImportJobStatus.PENDING and job.attempts == submitted_attempts:
+        job.status = ImportJobStatus.FAILED
+        job.error = "Queue submission failed; retry after checking the queue service"
+    db.commit()
+
+
 def result_entries(db: Session, job: ImportJob) -> list[Entry]:
     if not job.entry_ids:
         return []

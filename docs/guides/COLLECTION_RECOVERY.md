@@ -80,9 +80,9 @@ passing checks. Diff and local-document link checks passed. No actual browser,
 live source, paid AI request, application DB migration or startup installation
 was exercised.
 
-This slice changes frontend presentation only. Stuck-task detection and
-DB-commit/queue-send reconciliation still need fault-injection review and a
-separate implementation slice. Full index coverage and detailed indexing job
+This first slice changes frontend presentation only. The subsequent
+[import recovery slice](IMPORT_RECOVERY.md) adds fault-tested pending/stale import
+reconciliation and queue send/ACK race protection. Full index coverage and detailed indexing job
 management, process supervision, real browser/layout checks, live sources and
 actual Mac sleep/wake remain unverified. No daemon, queue system, dependency,
 paid AI or AWS resource is introduced.

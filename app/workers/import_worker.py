@@ -14,6 +14,16 @@ from app.sqs import (
 )
 
 
+def acknowledge(message: dict) -> None:
+    if message["ReceiptHandle"] is None:
+        return  # Reconciliation found a DB row, not an SQS delivery to acknowledge.
+    try:
+        delete_import_job_message(message["ReceiptHandle"])
+    except Exception:
+        # Durable terminal state makes a later delivery a no-op.
+        print("Queue acknowledgement unavailable; durable job state is preserved")
+
+
 def process_one_message() -> bool:
     message = receive_import_job_message()
 
@@ -41,7 +51,7 @@ def process_one_message() -> bool:
         return True
     except ImportValidationError:
         # Permanent archive failures were recorded durably; owner retry is explicit.
-        delete_import_job_message(message["ReceiptHandle"])
+        acknowledge(message)
         print("Import archive rejected; inspect the job result")
         return True
     except Exception:
@@ -51,9 +61,7 @@ def process_one_message() -> bool:
             time.sleep(1)
         return True
 
-    delete_import_job_message(
-        message["ReceiptHandle"]
-    )
+    acknowledge(message)
 
     print(
         f"Import job {job_id} completed"

@@ -15,6 +15,7 @@ from app.schemas.import_job import ImportJobResponse, ImportJobSubmissionRespons
 from app.sqs import enqueue_import_job
 
 from app.services.source_history import check_collection
+from app.services.import_jobs import record_queue_failure
 router = APIRouter(prefix="/import-jobs", tags=["import-jobs"])
 
 
@@ -88,11 +89,11 @@ def retry_import_job(
     job.status = ImportJobStatus.PENDING
     job.completed_at = None
     job.error = None
+    submitted_attempts = job.attempts
     db.commit()
     try:
         enqueue_import_job(job_id=job.id)
     except Exception:
-        job.status = ImportJobStatus.FAILED
-        job.error = "Queue submission failed; retry after checking the queue service"
-        db.commit()
+        record_queue_failure(db, job.id, submitted_attempts)
+        db.refresh(job)
     return ImportJobSubmissionResponse(job_id=job.id, status=job.status)

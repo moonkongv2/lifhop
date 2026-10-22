@@ -8,7 +8,8 @@
 ## 현재 작업과 읽는 순서
 
 현재 구현: [Phase4.2 수집 상태·복구 안내](guides/COLLECTION_RECOVERY.md).
-큐 전송 실패·멈춘 작업의 복구 보강은 다음 단위이며 아직 구현하지 않았다.
+다음 단위인 [가져오기 알림 유실·멈춘 작업 복구](guides/IMPORT_RECOVERY.md)는
+합성 검증을 마쳤다. 실제 AWS·프로세스 감독·직접 확인은 남아 있다.
 
 1. [GitHub S1–S3 가이드](guides/PHASE41_COLLECTION.md), [Codex S4 가이드](guides/CODEX_AGENT.md), [S5 통합 검증](guides/PHASE41_ACCEPTANCE.md)과 [수집 계획](plans/PHASE41_COLLECTION_PLAN.md): 통합 합성 검증 후 직접 확인·실제 소스/A7 수용 보류.
 2. [효율·정리 계획](plans/EFFICIENCY_CLEANUP_PLAN.md): A 정리 진행 기록과 아직 시작하지 않은 B–E.
@@ -41,6 +42,7 @@ GitHub 기본 문서 패턴으로 이 저장소를 수집하면 이동한 46개�
 - [PHASE41_COLLECTION.md](guides/PHASE41_COLLECTION.md)
 - [PHASE41_ACCEPTANCE.md](guides/PHASE41_ACCEPTANCE.md)
 - [COLLECTION_RECOVERY.md](guides/COLLECTION_RECOVERY.md)
+- [IMPORT_RECOVERY.md](guides/IMPORT_RECOVERY.md)
 
 ## 설계·정책
 

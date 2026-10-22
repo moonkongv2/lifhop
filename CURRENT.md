@@ -4,8 +4,8 @@ Last updated: 2026-10-22
 
 ## Current product slice
 
-**Phase4.2 first slice: Sources collection status/recovery guidance and read-only
-source indexing status. Phase4.1 owner/browser and live/A7 acceptance stay deferred.**
+**Phase4.2: Sources recovery/indexing status and durable import notification/
+stale-work reconciliation. Phase4.1 owner/browser/live/A7 acceptance stays deferred.**
 The owner confirmed the initial synthetic GitHub collection result in Sources
 on2026-10-22. Repeat/unchanged, cancel and deletion-protection browser checks
 remain pending; this confirmation does not close all S1 checks. The owner requested
@@ -35,12 +35,18 @@ S5 was committed as `01e7361`. The owner authorized the first Phase4.2 slice:
 Sources now distinguishes queued/retrying/failed/partial work, offline contact,
 paused schedules and unavailable/disabled collection policy, with next actions.
 AI indexing runs/counts are shown separately through an existing read-only API;
-viewing/reloading this status starts no AI work. No backend retry/queue changes.
+viewing/reloading this status starts no AI work. That UI slice is committed as
+`0d114ad`. The next authorized slice now reconciles durable pending/stale import
+jobs when SQS notification is missing, empty or unavailable, retaining live owner
+locks and bounded attempts. Send-response loss cannot overwrite progressed work;
+ACK loss leaves the worker alive and later terminal delivery is a no-op. Existing
+workers only; no new schema/queue/service or real AWS request.
 See [S1–S3 setup and owner walkthrough](docs/guides/PHASE41_COLLECTION.md) and
 [S4 agent setup](docs/guides/CODEX_AGENT.md),
 [S5 evidence and deferred walkthrough](docs/guides/PHASE41_ACCEPTANCE.md), plus
 [the remaining collection plan](docs/plans/PHASE41_COLLECTION_PLAN.md).
 Current setup/state meanings: [collection recovery](docs/guides/COLLECTION_RECOVERY.md).
+Import fault behavior and local verification: [import recovery](docs/guides/IMPORT_RECOVERY.md).
 
 Maintenance scope: [efficiency/cleanup plan](docs/plans/EFFICIENCY_CLEANUP_PLAN.md), authorized
 on 2026-10-21. Work A separates active guidance from history and removes unused
@@ -83,11 +89,11 @@ Existing failed/unverified judgments and closed paid approvals remain unchanged.
    browser checks using fictional sources in the
    [GitHub](docs/guides/PHASE41_COLLECTION.md) and [Codex](docs/guides/CODEX_AGENT.md)
    walkthroughs. They are deferred, not passed; live-source acceptance remains open.
-3. Review the first Phase4.2 Sources status/recovery slice when available. Next,
-   inspect stuck tasks and DB-commit/queue-send failures with synthetic fault
-   injection before choosing the smallest recovery mechanism. This first slice
-   changes presentation only. S5 evidence and owner-observed Mac sleep/wake/live
-   acceptance remain pending; no personal-data collection or background installation.
+3. Review Sources status/recovery and import reconciliation when available.
+   Then audit remaining Phase4 failure/recovery acceptance and D01–D09 carryovers
+   before selecting further work. Real queue/IAM/network/DLQ, worker supervision
+   and persistent live-lock recovery remain unverified. Owner Mac sleep/wake/live
+   acceptance stays pending; no personal collection or background installation.
 4. Revisit D01–D09 at Phase4 exit and explicitly agree remaining Phase5 use scope.
    Private deployment, backup/restore and daily-use acceptance remain later work.
 
@@ -148,6 +154,12 @@ Existing failed/unverified judgments and closed paid approvals remain unchanged.
   Checks and remaining limits are recorded in the
   [recovery guide](docs/guides/COLLECTION_RECOVERY.md). The backend is unchanged;
   the earlier full-backend result above was not rerun for this frontend slice.
+- Phase4.2 import recovery: focused queue/import suites **36 passed** before the
+  final infrastructure-retry regression was added. Final full backend **1032
+  passed** (95.82s), including all12 new recovery cases; full frontend **225
+  passed**. AST/local-link/diff checks passed. All SQS/storage faults are mocked;
+  no application DB migration, real AWS/personal source or browser verification.
+  The prior UI lint/build result is unchanged; frontend code was not edited here.
 - The independent audit passed frontend ESLint/type checks, Python AST parsing of
   287 files and diff checks. It did not run tests, migrations, live providers or
   performance measurements. Maintenance results belong in the
@@ -166,7 +178,14 @@ Existing failed/unverified judgments and closed paid approvals remain unchanged.
   provider/scope; it is not a full index-coverage audit. Completed runs may contain
   failed/blocked jobs. GitHub worker liveness and stale leases cannot be inferred
   from existing collection responses. Detailed indexing recovery and queue/stuck
-  job reconciliation remain later Phase4.2 work; direct browser checks are deferred.
+  job supervision remain later Phase4.2 work; direct browser checks are deferred.
+- Import reconciliation probes up to50 owners, one oldest eligible row per owner.
+  AWS pending grace is60s before receive; empty/failed receive has no grace.
+  RUNNING eligibility is start older than `import_max_seconds + 60` (default180s)
+  or absent start; a live import lock is never stolen. The existing worker and DB
+  must be healthy. More than50 blocked owners, real SQS/DLQ/IAM and a permanently
+  hung live process require further deployment/capacity work. Terminal jobs remain
+  explicit owner retry; this does not implement worker supervision.
 
 - Real answer quality is bounded and imperfect: exact quotes do not prove semantic
   support or complete coverage. Preserve rejected output and failed retrieval.

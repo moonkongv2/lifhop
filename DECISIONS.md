@@ -2124,3 +2124,31 @@ Synthetic separate API/agent processes and fictional snapshot tests establish
 application behavior only. Actual Mac sleep/wake, personal sources, startup
 packaging/installation, abrupt-death snapshot cleanup and corpus capacity remain
 open. Setup and the deferred owner walkthrough: [CODEX_AGENT.md](docs/guides/CODEX_AGENT.md).
+
+## 2026-10-22: Reconcile durable import rows when queue notifications are missing
+
+After Sources recovery/status commit `0d114ad`, the owner authorized the next
+Phase4.2 recovery slice. Fault-injection tests cover a committed PENDING import
+without an SQS notification, stale RUNNING work, and send/ACK response loss.
+Previously AWS notification loss could strand a row, and a send exception could
+overwrite work already completed by a worker with FAILED.
+
+Keep PostgreSQL ImportJob state authoritative and SQS as delivery notification.
+The existing worker probes eligible DB rows before AWS receive (60-second pending
+grace) and after empty/failed receive (no pending grace). Reuse the existing owner
+advisory lock, attempt limits, policy/deletion guards and atomic batch cursor.
+Probe one oldest eligible job per owner, up to50 owners; do not steal live locks.
+This is an intentional DB reconciliation fallback in AWS mode, not a new service.
+
+An outbox would persist another delivery state and still require a dispatcher;
+queue redrive alone cannot recover a notification never sent. Existing durable
+rows and idempotent processing satisfy the bounded personal-release flow without
+a schema, new dependency or queue change. Keep failed/partial terminal jobs under
+explicit owner retry; guard send-failure recording by status and attempt count.
+Catch ACK loss without stopping the worker or acknowledging before durable state.
+No receipt is invented for DB-reconciled deliveries.
+
+No real AWS/personal archive run or process supervision is included. Over50
+blocked owners, persistent live locks and deployment capacity remain limits;
+reconsider outbox/fairness based on measured needs. Details and the deferred local
+walkthrough: [IMPORT_RECOVERY.md](docs/guides/IMPORT_RECOVERY.md).

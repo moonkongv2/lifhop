@@ -23,6 +23,7 @@ from starlette.concurrency import run_in_threadpool
 from app.sqs import enqueue_import_job
 
 from app.services.external_entries import upsert_external_entry
+from app.services.import_jobs import record_queue_failure
 from app.services.source_history import check_collection, markdown_identity
 router = APIRouter(prefix="/imports", tags=["imports"])
 
@@ -117,11 +118,10 @@ async def import_chatgpt(
     db.add(job)
     db.commit()
     db.refresh(job)
+    submitted_attempts = job.attempts
     try:
         enqueue_import_job(job_id=job.id)
     except Exception:
-        # Preserve the uploaded artifact and expose a retryable submission failure.
-        job.status = ImportJobStatus.FAILED
-        job.error = "Queue submission failed; retry after checking the queue service"
-        db.commit()
+        record_queue_failure(db, job.id, submitted_attempts)
+        db.refresh(job)
     return ImportJobSubmissionResponse(job_id=job.id, status=job.status)

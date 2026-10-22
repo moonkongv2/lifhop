@@ -255,7 +255,7 @@ The repository documentation is the source of truth. Read the current status bef
 
 ## Current Status
 
-Active work is **Phase4.2 Sources status/recovery guidance; Phase4.1 owner checks deferred**.
+Active work is **Phase4.2 Sources status and import recovery; Phase4.1 owner checks deferred**.
 Exact source registration, durable jobs, explicitly started source-selected polling,
 schedule/pause/collect/cancel/retry controls are implemented. Apply migrations
 through `l04d9e81c620`; follow the [GitHub walkthrough](docs/guides/PHASE41_COLLECTION.md)
@@ -286,8 +286,10 @@ restart checks remain unverified. AI answers remain off by default; a failed sen
 request may still cost money. Ownership/source/deletion/budget/replay protections
 remain required. S5 integrated synthetic verification is committed as `01e7361`;
 the first Phase4.2 slice adds [collection recovery guidance](docs/guides/COLLECTION_RECOVERY.md)
-and read-only indexing status. Queue/stuck-job recovery improvements and owner/live
-checks remain pending; no new personal ingestion, AI calls or AWS resources are
+and read-only indexing status. [Import recovery](docs/guides/IMPORT_RECOVERY.md)
+now reconciles missing notifications/stale rows and guards send/ACK loss using
+existing workers. Real queue/deployment and owner/live checks remain pending;
+no new personal ingestion, AI calls or AWS resources are
 authorized by this milestone change. See [CURRENT.md](CURRENT.md), [usage/setup](docs/guides/UNIFIED_ANSWER.md),
 and [the accepted exit scope](docs/evaluation/phase33/PHASE33_CONDITIONAL_EXIT_PLAN.md).
 
