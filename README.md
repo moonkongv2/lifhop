@@ -255,7 +255,7 @@ The repository documentation is the source of truth. Read the current status bef
 
 ## Current Status
 
-Active work is **Phase 4.1 S4 explicit Codex agent/credentials; owner checks deferred**.
+Active work is **Phase4.2 Sources status/recovery guidance; Phase4.1 owner checks deferred**.
 Exact source registration, durable jobs, explicitly started source-selected polling,
 schedule/pause/collect/cancel/retry controls are implemented. Apply migrations
 through `l04d9e81c620`; follow the [GitHub walkthrough](docs/guides/PHASE41_COLLECTION.md)
@@ -284,8 +284,10 @@ checks still show citation generation failures, omissions and missing selected
 evidence; personal-record follow-up quality, long-context behavior and some
 restart checks remain unverified. AI answers remain off by default; a failed sent
 request may still cost money. Ownership/source/deletion/budget/replay protections
-remain required. Next is S4 feedback and S5 integrated acceptance, with owner/live
-checks deferred; no new personal ingestion, AI calls or AWS resources are
+remain required. S5 integrated synthetic verification is committed as `01e7361`;
+the first Phase4.2 slice adds [collection recovery guidance](docs/guides/COLLECTION_RECOVERY.md)
+and read-only indexing status. Queue/stuck-job recovery improvements and owner/live
+checks remain pending; no new personal ingestion, AI calls or AWS resources are
 authorized by this milestone change. See [CURRENT.md](CURRENT.md), [usage/setup](docs/guides/UNIFIED_ANSWER.md),
 and [the accepted exit scope](docs/evaluation/phase33/PHASE33_CONDITIONAL_EXIT_PLAN.md).
 

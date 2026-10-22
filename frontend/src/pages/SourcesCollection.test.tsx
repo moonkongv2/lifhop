@@ -34,6 +34,7 @@ it("keeps GitHub controls, offline Mac work and collection receipts distinct on 
       agent_status: "offline", agent_seen_at: null, rotation_offset: 3, deferred: 1, failed: 0, credentials: [],
       job: { id: 20, status: disconnected ? "cancelled" : "pending", attempts: 0 } }]);
     if (path.startsWith("/api/collection-runs?")) return Response.json([]);
+    if (path === "/api/indexing/runs") return Response.json([]);
     if (path === "/api/sources/suppressed/records") return Response.json([]);
     if (path === "/api/sources/purges/status") return Response.json({ pending: 0, failed_attempts: 0, errors: [] });
     return Response.json({ detail: "Unexpected read" }, { status: 404 });
@@ -45,6 +46,8 @@ it("keeps GitHub controls, offline Mac work and collection receipts distinct on 
   await github.findByText(/Job #10: failed/);
   await codex.findByText(/Job #20: pending/);
   expect(github.getAllByText(/AUTH_FAILED/, { selector: "p" }).length).toBeGreaterThan(0);
+  expect(github.getByText(/Next action: Check repository access/)).toBeTruthy();
+  expect(codex.getByText("Collection status: Queued.")).toBeTruthy();
   expect(codex.getByText(/Agent: offline/)).toBeTruthy();
   expect(codex.getByText(/Deferred threads: 1/)).toBeTruthy();
   expect(codex.getByRole("button", { name: "Collect device now" }).hasAttribute("disabled")).toBe(true);

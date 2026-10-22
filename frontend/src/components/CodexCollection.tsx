@@ -4,6 +4,7 @@ import { historyRequest } from "../api/history";
 import type { Policy } from "../api/history";
 import type { components } from "../api/generated/schema";
 import { formatEntryDate } from "../utils/entries";
+import CollectionRecovery from "./CollectionRecovery";
 
 type Source = components["schemas"]["CodexSubscriptionResponse"];
 const lines = (text: string) => text.split("\n").map(value => value.trim()).filter(Boolean);
@@ -25,7 +26,7 @@ function Selection({ source, disabled, save }: { source: Source; disabled: boole
   </form>;
 }
 
-function Device({ source, allowed, pending, change, download }: { source: Source; allowed: boolean; pending: boolean;
+function Device({ source, allowed, pending, change, download }: { source: Source; allowed: boolean | undefined; pending: boolean;
   change: (path: string, data: unknown, method?: "POST" | "PATCH" | "DELETE") => void; download: () => void }) {
   const [interval, setInterval] = useState(String(source.interval_seconds));
   const active = source.job && ["pending", "running"].includes(source.job.status);
@@ -35,6 +36,7 @@ function Device({ source, allowed, pending, change, download }: { source: Source
     <p>Subscription ID: {source.id}. Agent: {source.agent_status}. Last connection: {formatEntryDate(source.agent_seen_at)}.</p>
     <p>Schedule: {source.schedule_enabled ? "enabled" : "paused"}. Next check: {formatEntryDate(source.next_due_at)}. {source.schedule_error}</p>
     <p>Last check: {formatEntryDate(source.last_checked_at)}. Last success: {formatEntryDate(source.last_success_at)}.</p>
+    <CollectionRecovery source={source} allowed={allowed} />
     <p>Rotation offset: {source.rotation_offset}. Deferred threads: {source.deferred}. Failed threads: {source.failed}.</p>
     {source.job && <p>Job #{source.job.id}: {source.job.status}. Attempts: {source.job.attempts}. {source.job.error_code}
       {source.job.retry_at && ` Next retry: ${formatEntryDate(source.job.retry_at)}.`}</p>}
@@ -99,7 +101,7 @@ export default function CodexCollection({ policies }: { policies: Policy[] }) {
       <button onClick={() => setSecret(null)}>Hide collector token</button></div>}
     {query.isLoading && <p role="status">Loading Codex devices...</p>}
     {query.data?.map(source => <Device key={`${source.id}-${source.interval_seconds}`} source={source} pending={mutation.isPending}
-      allowed={Boolean(policies.find(policy => policy.provider === "codex" && policy.scope === source.scope)?.collection_enabled)}
+      allowed={policies.find(policy => policy.provider === "codex" && policy.scope === source.scope)?.collection_enabled}
       change={change} download={() => {
         const url = URL.createObjectURL(new Blob([JSON.stringify({ api_url: apiUrl, subscription_id: source.id, source: source.config }, null, 2)], { type: "application/json" }));
         const link = document.createElement("a"); link.href = url; link.download = `codex-device-${source.id}.json`; link.click(); URL.revokeObjectURL(url);

@@ -4,8 +4,8 @@ Last updated: 2026-10-22
 
 ## Current product slice
 
-**Phase4.1 S1–S4 implementation and S5 combined-provider synthetic verification
-are available; owner/browser and live/A7 acceptance remain deferred.**
+**Phase4.2 first slice: Sources collection status/recovery guidance and read-only
+source indexing status. Phase4.1 owner/browser and live/A7 acceptance stay deferred.**
 The owner confirmed the initial synthetic GitHub collection result in Sources
 on2026-10-22. Repeat/unchanged, cancel and deletion-protection browser checks
 remain pending; this confirmation does not close all S1 checks. The owner requested
@@ -31,10 +31,16 @@ GitHub process progress with the Codex agent stopped, reconnect/replay and sourc
 failure/revocation isolation. Sources now labels shared receipts as collection
 batches instead of describing scheduled work as manual-only historical backfills.
 Overall Phase4.1 and owner/live acceptance remain open.
+S5 was committed as `01e7361`. The owner authorized the first Phase4.2 slice:
+Sources now distinguishes queued/retrying/failed/partial work, offline contact,
+paused schedules and unavailable/disabled collection policy, with next actions.
+AI indexing runs/counts are shown separately through an existing read-only API;
+viewing/reloading this status starts no AI work. No backend retry/queue changes.
 See [S1–S3 setup and owner walkthrough](docs/guides/PHASE41_COLLECTION.md) and
 [S4 agent setup](docs/guides/CODEX_AGENT.md),
 [S5 evidence and deferred walkthrough](docs/guides/PHASE41_ACCEPTANCE.md), plus
 [the remaining collection plan](docs/plans/PHASE41_COLLECTION_PLAN.md).
+Current setup/state meanings: [collection recovery](docs/guides/COLLECTION_RECOVERY.md).
 
 Maintenance scope: [efficiency/cleanup plan](docs/plans/EFFICIENCY_CLEANUP_PLAN.md), authorized
 on 2026-10-21. Work A separates active guidance from history and removes unused
@@ -77,10 +83,11 @@ Existing failed/unverified judgments and closed paid approvals remain unchanged.
    browser checks using fictional sources in the
    [GitHub](docs/guides/PHASE41_COLLECTION.md) and [Codex](docs/guides/CODEX_AGENT.md)
    walkthroughs. They are deferred, not passed; live-source acceptance remains open.
-3. Review S5's evidence matrix and combined fictional-source walkthrough. Actual
-   owner-observed Mac sleep/wake and selected live reads need a fresh finite scope.
-   Phase4.2 recovery work is a separate next implementation slice; no personal-data
-   collection or background installation follows from these synthetic checks.
+3. Review the first Phase4.2 Sources status/recovery slice when available. Next,
+   inspect stuck tasks and DB-commit/queue-send failures with synthetic fault
+   injection before choosing the smallest recovery mechanism. This first slice
+   changes presentation only. S5 evidence and owner-observed Mac sleep/wake/live
+   acceptance remain pending; no personal-data collection or background installation.
 4. Revisit D01–D09 at Phase4 exit and explicitly agree remaining Phase5 use scope.
    Private deployment, backup/restore and daily-use acceptance remain later work.
 
@@ -133,6 +140,14 @@ Existing failed/unverified judgments and closed paid approvals remain unchanged.
   application DB migration, live provider, real browser, Mac sleep/wake or
   startup service was exercised. Evidence/remaining gates are in the
   [S5 acceptance guide](docs/guides/PHASE41_ACCEPTANCE.md).
+- Phase4.2 first slice: related backend collection/indexing suites **48 passed**
+  (8.07s); focused frontend **25 passed**, full frontend **225 passed**. ESLint
+  and TypeScript/Vite build passed (existing chunk warning, now about521KiB).
+  Initial build found a union-type property access, corrected with a property
+  guard before the final passing checks. Diff/local-document links passed.
+  Checks and remaining limits are recorded in the
+  [recovery guide](docs/guides/COLLECTION_RECOVERY.md). The backend is unchanged;
+  the earlier full-backend result above was not rerun for this frontend slice.
 - The independent audit passed frontend ESLint/type checks, Python AST parsing of
   287 files and diff checks. It did not run tests, migrations, live providers or
   performance measurements. Maintenance results belong in the
@@ -146,6 +161,12 @@ Existing failed/unverified judgments and closed paid approvals remain unchanged.
   Isolated synthetic verification is distinct from source/provider acceptance.
 
 ## Known limitations
+
+- Sources indexing status shows at most the latest50 owner runs, matched by exact
+  provider/scope; it is not a full index-coverage audit. Completed runs may contain
+  failed/blocked jobs. GitHub worker liveness and stale leases cannot be inferred
+  from existing collection responses. Detailed indexing recovery and queue/stuck
+  job reconciliation remain later Phase4.2 work; direct browser checks are deferred.
 
 - Real answer quality is bounded and imperfect: exact quotes do not prove semantic
   support or complete coverage. Preserve rejected output and failed retrieval.

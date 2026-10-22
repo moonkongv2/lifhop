@@ -7,6 +7,9 @@
 
 ## 현재 작업과 읽는 순서
 
+현재 구현: [Phase4.2 수집 상태·복구 안내](guides/COLLECTION_RECOVERY.md).
+큐 전송 실패·멈춘 작업의 복구 보강은 다음 단위이며 아직 구현하지 않았다.
+
 1. [GitHub S1–S3 가이드](guides/PHASE41_COLLECTION.md), [Codex S4 가이드](guides/CODEX_AGENT.md), [S5 통합 검증](guides/PHASE41_ACCEPTANCE.md)과 [수집 계획](plans/PHASE41_COLLECTION_PLAN.md): 통합 합성 검증 후 직접 확인·실제 소스/A7 수용 보류.
 2. [효율·정리 계획](plans/EFFICIENCY_CLEANUP_PLAN.md): A 정리 진행 기록과 아직 시작하지 않은 B–E.
 3. [D01–D09 이월 기준](evaluation/phase33/PHASE33_CONDITIONAL_EXIT_PLAN.md)과 [운영 증거](evaluation/phase33/PHASE33_OPERATIONAL_EVIDENCE.md): 조건부 종료 후에도 남은 과제.
@@ -37,6 +40,7 @@ GitHub 기본 문서 패턴으로 이 저장소를 수집하면 이동한 46개�
 - [HISTORICAL_QUESTIONS.md](guides/HISTORICAL_QUESTIONS.md)
 - [PHASE41_COLLECTION.md](guides/PHASE41_COLLECTION.md)
 - [PHASE41_ACCEPTANCE.md](guides/PHASE41_ACCEPTANCE.md)
+- [COLLECTION_RECOVERY.md](guides/COLLECTION_RECOVERY.md)
 
 ## 설계·정책
 

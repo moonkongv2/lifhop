@@ -4,6 +4,7 @@ import { historyRequest } from "../api/history";
 import type { Policy } from "../api/history";
 import type { components } from "../api/generated/schema";
 import { formatEntryDate } from "../utils/entries";
+import CollectionRecovery from "./CollectionRecovery";
 
 type Subscription = components["schemas"]["SubscriptionResponse"];
 
@@ -86,6 +87,7 @@ export default function GitHubCollection({ policies }: { policies: Policy[] }) {
           update={(enabled, interval) => change.mutate({ path: `/collection-subscriptions/${sub.id}/schedule`,
             method: "PATCH", data: { enabled, interval_seconds: interval } })} />
         <p>Last check: {formatEntryDate(sub.last_checked_at)} · Last success: {formatEntryDate(sub.last_success_at)}</p>
+        <CollectionRecovery source={sub} allowed={allowed} />
         {Object.entries(sub.incremental.branches).map(([name, branch]) => <p key={name}>
           {name}: observed {branch.observed_head?.slice(0, 10) ?? "unknown"}, graph completed {branch.completed_head?.slice(0, 10) ?? "pending"},
           documents checked {branch.documents_head?.slice(0, 10) ?? "pending"}, pending steps {branch.pending_steps}.

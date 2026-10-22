@@ -5,6 +5,7 @@ import type { Policy, Suppression } from "../api/history";
 import GitHubCollection from "../components/GitHubCollection";
 import CodexCollection from "../components/CodexCollection";
 import CollectionRuns from "../components/CollectionRuns";
+import SourceIndexingStatus from "../components/SourceIndexingStatus";
 
 export default function SourcesPage() {
   const cache = useQueryClient();
@@ -35,6 +36,7 @@ export default function SourcesPage() {
     <GitHubCollection policies={sources.data ?? []} />
     <CodexCollection policies={sources.data ?? []} />
     <CollectionRuns />
+    <SourceIndexingStatus policies={sources.data ?? []} />
     <h3>Blocked from reimport</h3>
     <p>Deleting in lifhop removes all versions and annotations. Only source identifiers remain. Allowing reimport does not restore deleted content.</p>
     {suppressed.isLoading && <p role="status">Loading deletion records...</p>}
