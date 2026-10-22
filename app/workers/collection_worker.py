@@ -9,6 +9,7 @@ from pathlib import Path
 from uuid import uuid4
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import OperationalError, InterfaceError
 from app.db import engine
 from app.acquisition.common import ProbeError
 from app.collectors.bundle import private_write, read_json
@@ -192,7 +193,7 @@ def poll_once(bind, subscription_id, spool, **kwargs):
     return run_once(bind, subscription_id, spool, **kwargs)
 
 
-def main():
+def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--subscription-id", type=int, required=True)
     parser.add_argument("--spool", type=Path, required=True)
@@ -200,7 +201,7 @@ def main():
     parser.add_argument("--synthetic-revision", type=int, choices=(1, 2), help="Select fictional provider changes (requires --synthetic)")
     parser.add_argument("--poll-seconds", type=int, help="Poll this subscription every 1–60 seconds until stopped")
     parser.add_argument("--max-cycles", type=int, help="Stop polling after this many ticks (default: until Ctrl-C)")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     if args.synthetic_revision is not None and not args.synthetic:
         parser.error("--synthetic-revision requires --synthetic")
     if args.poll_seconds is not None and not 1 <= args.poll_seconds <= 60:
@@ -209,20 +210,35 @@ def main():
         parser.error("--max-cycles requires polling and must be positive")
     # Runtime secret only: never a CLI argument, config file, DB field or log output.
     from app.collectors.github_fixture import SyntheticGitHubReader
-    cycles = 0
+    cycles = failures = 0
     try:
         while True:
-            action = poll_once if args.poll_seconds else run_once
-            action(engine, args.subscription_id, args.spool,
-                token=None if args.synthetic else os.environ.get("LIFHOP_GITHUB_TOKEN"),
-                reader_factory=partial(SyntheticGitHubReader, revision=args.synthetic_revision or 1) if args.synthetic else RepositoryReader)
             cycles += 1
+            try:
+                action = poll_once if args.poll_seconds else run_once
+                action(engine, args.subscription_id, args.spool,
+                    token=None if args.synthetic else os.environ.get("LIFHOP_GITHUB_TOKEN"),
+                    reader_factory=partial(SyntheticGitHubReader, revision=args.synthetic_revision or 1) if args.synthetic else RepositoryReader)
+                failures = 0
+            except (OperationalError, InterfaceError):
+                failures += 1
+                if not args.poll_seconds or failures >= 4 or (args.max_cycles and cycles >= args.max_cycles):
+                    print("Collection database unavailable; worker stopped. Restart the selected source with the same private spool.")
+                    return 1
+                delay = 2 ** (failures - 1)
+                print(f"Collection database unavailable; retrying in {delay}s. Existing leases and receipts are preserved.")
+                time.sleep(delay)
+                continue
+            except Exception:
+                print("Collection worker stopped; check source selection, database schema and private spool.")
+                return 1
             if not args.poll_seconds or (args.max_cycles and cycles >= args.max_cycles):
                 break
             time.sleep(args.poll_seconds)
     except KeyboardInterrupt:
         pass  # A running job's durable lease expires; restart with the same spool.
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

@@ -1,6 +1,9 @@
 # Phase4 exit review — implementation evidence and open gates
 
 Reviewed on2026-10-22 after import recovery commit `72992fb`.
+Lease visibility is committed as `8287085`; a subsequent
+[worker reconnect slice](../guides/WORKER_RECOVERY.md) adds bounded DB reconnects
+to the existing import/GitHub loops without installing a process supervisor.
 **Phase4 is not accepted/closed.** The owner authorized continued implementation
 while direct checks are deferred. This review is repository evidence, not owner
 acceptance, live-provider validation, startup installation or approval to deploy.
@@ -44,7 +47,7 @@ application DB migration or startup installation.
 | Both selected providers, collect-now and schedules | S1–S5 provider/integration suites; scoped devices/repos, paused defaults and duplicate-free replay | Deferred owner browser checks and selected live sources |
 | GitHub progresses while Codex is stopped | Separate synthetic GitHub worker processes, offline Codex pending job, later catch-up | Actual Mac sleep/wake and independent deployed GitHub runtime; A7 stays open |
 | Old history and mutable records | Parent graph/frontiers, head documents, old comments/reviews and old Codex turns with unchanged mtime | Live corpus completeness, permissions and format compatibility |
-| Interrupted/overlapping/stale work | Frozen receipt replay, takeover/generation fences, bounded attempts and lease-deadline visibility | Process supervision and persistent live-lock hangs; no automatic forced termination |
+| Interrupted/overlapping/stale work | Frozen receipt replay, takeover/generation fences, bounded attempts, lease visibility and fault-tested worker DB reconnects | Real network/driver behavior, process supervision and persistent live-lock hangs; no automatic forced termination |
 | Expired/revoked authorization, pause and deletion | Credential expiry/rotation/revoke, in-flight policy/deletion tests and provider isolation | Owner/live walkthrough; no permission expansion follows from tests |
 | DB commit before queue send, duplicate delivery | Import notification reconciliation, send-race guard and lost ACK replay with fake SQS/storage | Real SQS/IAM/network, retention/DLQ/redrive and deployed failure injection |
 | Status, coverage, indexing and next action | Sources status/recovery components, read-only exact-scope indexing runs, bounded progress/batch receipts | Browser/layout review; indexing list is latest50 runs, not full coverage |

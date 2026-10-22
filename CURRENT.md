@@ -4,8 +4,8 @@ Last updated: 2026-10-22
 
 ## Current product slice
 
-**Phase4.2: Sources lease-expiry visibility, recovery/indexing status and durable
-import reconciliation. Phase4 exit review preserves owner/browser/live/A7 gates.**
+**Phase4.2: Bounded import/GitHub worker DB reconnects, Sources recovery status and
+durable import reconciliation. Phase4 owner/browser/live/A7 gates stay open.**
 The owner confirmed the initial synthetic GitHub collection result in Sources
 on2026-10-22. Repeat/unchanged, cancel and deletion-protection browser checks
 remain pending; this confirmation does not close all S1 checks. The owner requested
@@ -47,12 +47,18 @@ reported RUNNING leases show check/restart guidance, clear on renewal and never
 auto-cancel or declare process death. The server still decides takeover. The
 [Phase4 exit review](docs/plans/PHASE4_EXIT_REVIEW.md) records evidence and unchanged
 D01–D09/open owner/live gates; Phase4 is not closed and Phase5 has not started.
+Lease visibility is committed as `8287085`. Existing import/GitHub worker loops
+now reconnect after transient DB errors with1/2/4-second waits, stopping nonzero
+after four consecutive failures or a one-shot/finite limit. Healthy cycles reset
+the failure budget; configuration/schema errors stop without private exception
+text. Import adds `--once`/`--max-cycles`. No supervisor or daemon is installed.
 See [S1–S3 setup and owner walkthrough](docs/guides/PHASE41_COLLECTION.md) and
 [S4 agent setup](docs/guides/CODEX_AGENT.md),
 [S5 evidence and deferred walkthrough](docs/guides/PHASE41_ACCEPTANCE.md), plus
 [the remaining collection plan](docs/plans/PHASE41_COLLECTION_PLAN.md).
 Current setup/state meanings: [collection recovery](docs/guides/COLLECTION_RECOVERY.md).
 Import fault behavior and local verification: [import recovery](docs/guides/IMPORT_RECOVERY.md).
+Process-loop behavior: [worker recovery](docs/guides/WORKER_RECOVERY.md).
 
 Maintenance scope: [efficiency/cleanup plan](docs/plans/EFFICIENCY_CLEANUP_PLAN.md), authorized
 on 2026-10-21. Work A separates active guidance from history and removes unused
@@ -95,7 +101,7 @@ Existing failed/unverified judgments and closed paid approvals remain unchanged.
    browser checks using fictional sources in the
    [GitHub](docs/guides/PHASE41_COLLECTION.md) and [Codex](docs/guides/CODEX_AGENT.md)
    walkthroughs. They are deferred, not passed; live-source acceptance remains open.
-3. Review Sources/import recovery and the Phase4 exit matrix, then select a finite
+3. Review Sources/import/worker recovery and the Phase4 exit matrix, then select a finite
    remaining verification/operational slice. D01–D09 remain open; no AI-use or
    deployment transition is implied. Real queue/IAM/network/DLQ, worker supervision
    and persistent live-lock recovery remain unverified. Owner Mac sleep/wake/live
@@ -172,6 +178,12 @@ Existing failed/unverified judgments and closed paid approvals remain unchanged.
   Generated API types, AST/local-link/diff checks passed. No migration, owner
   browser, live source, paid call or AWS request. The exit review leaves Phase4
   open; lease expiry is a last-response/browser-clock observation, not death proof.
+- Phase4.2 worker reconnect: related tests **39 passed** (5.41s); final full backend
+  **1047 passed** (94.23s), full frontend **227 passed**. Both CLI help commands,
+  AST/diff/local-link checks passed; no test failures. Frontend lint/build was not
+  rerun because frontend code is unchanged. Synthetic exceptions/sleeps only;
+  no actual DB shutdown, browser/live source, migration, paid AI, AWS or service
+  installation. Real driver/network and persistent hang behavior remain unverified.
 - The independent audit passed frontend ESLint/type checks, Python AST parsing of
   287 files and diff checks. It did not run tests, migrations, live providers or
   performance measurements. Maintenance results belong in the
@@ -199,6 +211,10 @@ Existing failed/unverified judgments and closed paid approvals remain unchanged.
   must be healthy. More than50 blocked owners, real SQS/DLQ/IAM and a permanently
   hung live process require further deployment/capacity work. Terminal jobs remain
   explicit owner retry; this does not implement worker supervision.
+- Worker DB reconnects bound consecutive retry waits, not query/connect/I/O time
+  or total process lifetime. Persistent faults exit1 and need explicit restart.
+  GitHub still waits for an expired lease before replay; import `--once` is one
+  purge/receive cycle, not one selected record or proof of import success.
 
 - Real answer quality is bounded and imperfect: exact quotes do not prove semantic
   support or complete coverage. Preserve rejected output and failed retrieval.

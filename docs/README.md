@@ -12,6 +12,8 @@
 합성 검증을 마쳤다. 실제 AWS·프로세스 감독·직접 확인은 남아 있다.
 이후 [Phase4 종료 점검](plans/PHASE4_EXIT_REVIEW.md)에서 임대 만료 표시를 보강하고
 종료 조건과 D01–D09 미해결 항목을 정리했다. Phase4 종료 수용은 아직 아니다.
+[워커 DB 재연결](guides/WORKER_RECOVERY.md)은 기존 가져오기·GitHub 반복 실행의
+일시적 연결 오류를 제한 재시도한다. 자동 서비스 설치나 무한 재시작은 포함하지 않는다.
 
 1. [GitHub S1–S3 가이드](guides/PHASE41_COLLECTION.md), [Codex S4 가이드](guides/CODEX_AGENT.md), [S5 통합 검증](guides/PHASE41_ACCEPTANCE.md)과 [수집 계획](plans/PHASE41_COLLECTION_PLAN.md): 통합 합성 검증 후 직접 확인·실제 소스/A7 수용 보류.
 2. [효율·정리 계획](plans/EFFICIENCY_CLEANUP_PLAN.md): A 정리 진행 기록과 아직 시작하지 않은 B–E.
@@ -45,6 +47,7 @@ GitHub 기본 문서 패턴으로 이 저장소를 수집하면 이동한 46개�
 - [PHASE41_ACCEPTANCE.md](guides/PHASE41_ACCEPTANCE.md)
 - [COLLECTION_RECOVERY.md](guides/COLLECTION_RECOVERY.md)
 - [IMPORT_RECOVERY.md](guides/IMPORT_RECOVERY.md)
+- [WORKER_RECOVERY.md](guides/WORKER_RECOVERY.md)
 
 ## 설계·정책
 

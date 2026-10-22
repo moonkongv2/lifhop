@@ -1,5 +1,8 @@
 import json
 import time
+import argparse
+
+from sqlalchemy.exc import OperationalError, InterfaceError
 
 from app.db import SessionLocal
 from app.services.import_jobs import (
@@ -70,16 +73,43 @@ def process_one_message() -> bool:
     return True
 
 
-def main() -> None:
+def main(argv=None) -> int:
+    parser = argparse.ArgumentParser(description="Import worker with bounded database reconnects; no installed service")
+    parser.add_argument("--once", action="store_true", help="Attempt one purge/receive cycle and exit")
+    parser.add_argument("--max-cycles", type=int, help="Stop after this many purge/receive cycles, including failed cycles")
+    args = parser.parse_args(argv)
+    if args.max_cycles is not None and args.max_cycles < 1:
+        parser.error("--max-cycles must be positive")
     print("Import worker started")
-
-    while True:
-        from app.services.source_history import process_purges
-        with SessionLocal() as db:
-            process_purges(db)
-        if not process_one_message():
-            time.sleep(1)
+    cycles = failures = 0
+    try:
+        while True:
+            cycles += 1
+            try:
+                from app.services.source_history import process_purges
+                with SessionLocal() as db:
+                    process_purges(db)
+                handled = process_one_message()
+                failures = 0
+            except (OperationalError, InterfaceError):
+                failures += 1
+                if args.once or failures >= 4 or (args.max_cycles and cycles >= args.max_cycles):
+                    print("Import database unavailable; worker stopped. Check PostgreSQL and restart with existing jobs preserved.")
+                    return 1
+                delay = 2 ** (failures - 1)
+                print(f"Import database unavailable; retrying in {delay}s. Durable jobs are preserved.")
+                time.sleep(delay)
+                continue
+            except Exception:
+                print("Import worker stopped; check configuration, database schema and job status.")
+                return 1
+            if args.once or (args.max_cycles and cycles >= args.max_cycles):
+                return 0
+            if not handled:
+                time.sleep(1)
+    except KeyboardInterrupt:
+        return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
