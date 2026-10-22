@@ -4,8 +4,8 @@ Last updated: 2026-10-22
 
 ## Current product slice
 
-**Phase4.2: Sources recovery/indexing status and durable import notification/
-stale-work reconciliation. Phase4.1 owner/browser/live/A7 acceptance stays deferred.**
+**Phase4.2: Sources lease-expiry visibility, recovery/indexing status and durable
+import reconciliation. Phase4 exit review preserves owner/browser/live/A7 gates.**
 The owner confirmed the initial synthetic GitHub collection result in Sources
 on2026-10-22. Repeat/unchanged, cancel and deletion-protection browser checks
 remain pending; this confirmation does not close all S1 checks. The owner requested
@@ -41,6 +41,12 @@ jobs when SQS notification is missing, empty or unavailable, retaining live owne
 locks and bounded attempts. Send-response loss cannot overwrite progressed work;
 ACK loss leaves the worker alive and later terminal delivery is a no-op. Existing
 workers only; no new schema/queue/service or real AWS request.
+Import recovery is committed as `72992fb`. The next slice exposes the existing
+collection lease deadline in owner-scoped job responses and Sources. Expired
+reported RUNNING leases show check/restart guidance, clear on renewal and never
+auto-cancel or declare process death. The server still decides takeover. The
+[Phase4 exit review](docs/plans/PHASE4_EXIT_REVIEW.md) records evidence and unchanged
+D01–D09/open owner/live gates; Phase4 is not closed and Phase5 has not started.
 See [S1–S3 setup and owner walkthrough](docs/guides/PHASE41_COLLECTION.md) and
 [S4 agent setup](docs/guides/CODEX_AGENT.md),
 [S5 evidence and deferred walkthrough](docs/guides/PHASE41_ACCEPTANCE.md), plus
@@ -89,9 +95,9 @@ Existing failed/unverified judgments and closed paid approvals remain unchanged.
    browser checks using fictional sources in the
    [GitHub](docs/guides/PHASE41_COLLECTION.md) and [Codex](docs/guides/CODEX_AGENT.md)
    walkthroughs. They are deferred, not passed; live-source acceptance remains open.
-3. Review Sources status/recovery and import reconciliation when available.
-   Then audit remaining Phase4 failure/recovery acceptance and D01–D09 carryovers
-   before selecting further work. Real queue/IAM/network/DLQ, worker supervision
+3. Review Sources/import recovery and the Phase4 exit matrix, then select a finite
+   remaining verification/operational slice. D01–D09 remain open; no AI-use or
+   deployment transition is implied. Real queue/IAM/network/DLQ, worker supervision
    and persistent live-lock recovery remain unverified. Owner Mac sleep/wake/live
    acceptance stays pending; no personal collection or background installation.
 4. Revisit D01–D09 at Phase4 exit and explicitly agree remaining Phase5 use scope.
@@ -160,6 +166,12 @@ Existing failed/unverified judgments and closed paid approvals remain unchanged.
   passed**. AST/local-link/diff checks passed. All SQS/storage faults are mocked;
   no application DB migration, real AWS/personal source or browser verification.
   The prior UI lint/build result is unchanged; frontend code was not edited here.
+- Phase4.2 lease visibility/exit review: related backend **50 passed**, full
+  backend **1034 passed** (94.46s); full frontend **227 passed**, final recovery
+  component **9 passed**. ESLint/build passed (existing about522KiB chunk warning).
+  Generated API types, AST/local-link/diff checks passed. No migration, owner
+  browser, live source, paid call or AWS request. The exit review leaves Phase4
+  open; lease expiry is a last-response/browser-clock observation, not death proof.
 - The independent audit passed frontend ESLint/type checks, Python AST parsing of
   287 files and diff checks. It did not run tests, migrations, live providers or
   performance measurements. Maintenance results belong in the
@@ -176,8 +188,9 @@ Existing failed/unverified judgments and closed paid approvals remain unchanged.
 
 - Sources indexing status shows at most the latest50 owner runs, matched by exact
   provider/scope; it is not a full index-coverage audit. Completed runs may contain
-  failed/blocked jobs. GitHub worker liveness and stale leases cannot be inferred
-  from existing collection responses. Detailed indexing recovery and queue/stuck
+  failed/blocked jobs. Sources shows the last reported lease deadline with a
+  browser-clock warning, not a process-liveness guarantee; cached data and clock
+  skew can mislead. Detailed indexing recovery and queue/stuck
   job supervision remain later Phase4.2 work; direct browser checks are deferred.
 - Import reconciliation probes up to50 owners, one oldest eligible row per owner.
   AWS pending grace is60s before receive; empty/failed receive has no grace.

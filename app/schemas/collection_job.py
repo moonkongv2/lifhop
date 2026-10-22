@@ -51,6 +51,7 @@ class JobResponse(BaseModel):
     revision: int
     attempts: int
     retry_at: datetime | None
+    lease_until: datetime | None
     scheduled_for: datetime | None
     run_id: int | None
     error_code: str | None

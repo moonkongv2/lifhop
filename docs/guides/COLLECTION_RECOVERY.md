@@ -13,7 +13,8 @@ Phase4.1 owner/browser and live/A7 checks remain deferred after S5 commit `01e73
 | Collection disabled | Allow collection is off. Enable it before new collection; AI permission remains separate. |
 | Queued | A manual or scheduled job awaits the selected worker/agent. A queued manual job can run while its schedule is paused. |
 | Retry scheduled | The pending job has a retry time. Keep its worker/agent running; this is an eligibility time, not a guarantee the process is alive. |
-| Collecting | The latest job is marked running. A stale process is not diagnosed from this response alone. |
+| Collecting | The latest job is marked running; its reported lease has not expired by the browser clock. This does not prove process liveness. |
+| Reported lease expired — check worker | A running job's last reported lease deadline has passed by the browser clock. Refresh status and check/restart the selected worker/agent with its existing private settings/spool; server guards decide takeover. |
 | Partially collected | Inspect batch gaps, blocked/failed receipts and the reason. Deferred active/changing threads may be revisited by later enabled cycles. |
 | Collection failed / Needs attention | Read the reason and next action. Expired/revoked tokens, unsupported formats, spool bounds and exhausted retries require different recovery. |
 | Scheduled / Schedule paused | No active job is shown. Scheduled work needs its explicitly running process. A cancelled job is never revived by enabling a schedule. |
@@ -22,6 +23,11 @@ The Codex offline label means no agent contact within the server's current
 120-second freshness window. Offline can coexist with queued/failed/paused work;
 it does not prove a collection failure. GitHub has no process-heartbeat field in
 this API, so the UI does not claim its worker is online or offline.
+Both providers now expose the existing lease deadline. Sources refreshes its local
+clock every5 seconds while showing a running lease; renewal clears the expired
+warning. Cached responses/clock skew can mislead, so this never proves a worker
+died or forces cancellation. Expired leases on cancelled jobs are not warnings.
+See the [Phase4 exit review](../plans/PHASE4_EXIT_REVIEW.md).
 
 Automatic attempts are bounded. A terminal timeout/read/rate-limit failure directs
 the owner to check the cause before retrying; it never promises another automatic

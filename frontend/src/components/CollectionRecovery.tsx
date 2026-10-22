@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import type { components } from "../api/generated/schema";
 import { formatEntryDate } from "../utils/entries";
 
@@ -24,12 +25,20 @@ const recovery: Record<string, string> = {
 
 export default function CollectionRecovery({ source, allowed }: { source: Source; allowed: boolean | undefined }) {
   const job = source.job;
+  const [clock, setClock] = useState(() => Date.now());
+  useEffect(() => {
+    if (job?.status !== "running" || !job.lease_until) return;
+    const timer = window.setInterval(() => setClock(Date.now()), 5000);
+    return () => window.clearInterval(timer);
+  }, [job?.status, job?.lease_until]);
+  const deadline = job?.lease_until ? Date.parse(job.lease_until) : Infinity;
+  const expired = job?.status === "running" && deadline <= clock;
   const active = job && ["pending", "running"].includes(job.status);
   const code = active ? job.error_code : source.schedule_error || job?.error_code;
   const status = allowed === undefined ? "Collection permission unavailable"
     : !allowed ? "Collection disabled"
     : job?.status === "pending" ? job.retry_at ? "Retry scheduled" : "Queued"
-    : job?.status === "running" ? "Collecting"
+    : job?.status === "running" ? expired ? "Reported lease expired — check worker" : "Collecting"
     : job?.status === "partial" ? "Partially collected"
     : job?.status === "failed" ? "Collection failed"
     : source.schedule_error ? "Needs attention"
@@ -37,6 +46,7 @@ export default function CollectionRecovery({ source, allowed }: { source: Source
   const worker = source.provider === "codex" ? "selected Mac agent" : "selected GitHub polling worker";
   let action = allowed === undefined ? "Wait for source policies to load, or retry loading policies if the request failed."
     : !allowed ? "Enable Allow collection for this source before collecting. AI permission is separate."
+    : expired ? `Check or restart the ${worker} with its existing private settings and spool. The next claim can recover this job within its attempt limit. Do not clear recovery data or create a duplicate job.`
     : code && recovery[code] ? recovery[code]
     : job?.status === "cancelled" ? "Cancelled work will not resume. Collect again for a new job, or explicitly enable the schedule."
     : job?.status === "partial" ? recovery.PARTIAL_COLLECTION
@@ -49,6 +59,8 @@ export default function CollectionRecovery({ source, allowed }: { source: Source
   }
   return <div aria-label={`Collection recovery for ${source.scope}`}>
     <p>Collection status: {status}.</p>
+    {job?.status === "running" && job.lease_until && <p>Worker lease until: {formatEntryDate(job.lease_until)}.
+      {expired && " The last reported lease has expired at this browser's clock. This does not prove the process has stopped; refresh source status and let the server decide whether another attempt can claim the job."}</p>}
     {"agent_status" in source && source.agent_status === "offline" &&
       <p>Device offline: no recent agent contact. Start the selected Mac agent with its existing private settings and spool. An offline device does not mean collection failed.</p>}
     {job?.retry_at && <p>Retry eligible from: {formatEntryDate(job.retry_at)}. A running worker or agent is required.</p>}

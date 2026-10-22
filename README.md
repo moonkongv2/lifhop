@@ -289,6 +289,8 @@ the first Phase4.2 slice adds [collection recovery guidance](docs/guides/COLLECT
 and read-only indexing status. [Import recovery](docs/guides/IMPORT_RECOVERY.md)
 now reconciles missing notifications/stale rows and guards send/ACK loss using
 existing workers. Real queue/deployment and owner/live checks remain pending;
+Sources also shows last-reported collection lease expiry and restart guidance.
+The [Phase4 exit review](docs/plans/PHASE4_EXIT_REVIEW.md) preserves open gates;
 no new personal ingestion, AI calls or AWS resources are
 authorized by this milestone change. See [CURRENT.md](CURRENT.md), [usage/setup](docs/guides/UNIFIED_ANSWER.md),
 and [the accepted exit scope](docs/evaluation/phase33/PHASE33_CONDITIONAL_EXIT_PLAN.md).

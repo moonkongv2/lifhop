@@ -13,10 +13,11 @@ from app.collectors.client import APIError
 from app.collectors.codex_agent import tick
 from app.collectors.github_fixture import SyntheticGitHubReader
 from app.collectors.github_reader import Paused
-from app.models.collection_job import CollectionSubscription
+from app.models.collection_job import CollectionSubscription, CollectionJob
 from app.models.entry import Entry
 from app.models.history import EntryVersion, SourcePolicy
 from app.services.collection_runs import now
+from app.services import collection_jobs as jobs
 from app.workers.collection_worker import poll_once, run_once
 from test_collection_jobs import collection, register, enqueue, set_schedule
 from test_codex_agent import device, claim, state
@@ -138,3 +139,38 @@ def test_github_failure_and_disabled_policy_leave_codex_schedule_working(collect
     assert state(collection)['schedule_enabled'] and state(collection)['last_success_at']
     assert github_state(collection)['job']['id'] == failed['job']['id']
     assert counts(collection)[0] == {'codex': 1}
+
+
+@pytest.mark.parametrize('provider', ['github', 'codex'])
+def test_owner_can_observe_expired_lease_without_mutating_or_bypassing_fencing(collection, device, provider):
+    client, headers, bind, owner = collection
+    sub = register(collection) if provider == 'github' else device[0].subscription_id
+    job = enqueue(collection, sub)
+    path = '/collection-subscriptions' if provider == 'github' else '/codex-subscriptions'
+
+    def current():
+        return client.get(path, headers=headers).json()[0]['job']
+
+    assert current()['lease_until'] is None
+    with Session(bind) as db:
+        claimed = jobs.claim(db, owner, sub, 'original-worker')
+        db.commit()
+    live = current()
+    assert live['lease_until'] is not None and live['status'] == 'running'
+    assert 'lease_owner' not in live and 'credential_id' not in live
+    with Session(bind) as db:
+        db.get(CollectionJob, job['id']).lease_until = now()-timedelta(seconds=1)
+        db.commit()
+    stale = current()
+    assert stale['status'] == 'running' and stale['lease_until'] < live['lease_until']
+    assert stale['attempts'] == 1  # Merely reading an expired lease never reclaims it.
+    with Session(bind) as db:
+        from fastapi import HTTPException
+        with pytest.raises(HTTPException) as rejected:
+            jobs.leased(db, owner, sub, job['id'], 'original-worker', claimed[1])
+        assert rejected.value.status_code == 409
+        db.rollback()
+        recovered = jobs.claim(db, owner, sub, 'replacement-worker')
+        db.commit()
+    assert recovered == (job['id'], claimed[1]+1)
+    assert current()['attempts'] == 2 and current()['lease_until'] > stale['lease_until']

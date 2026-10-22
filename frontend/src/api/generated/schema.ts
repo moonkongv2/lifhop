@@ -3695,6 +3695,8 @@ export interface components {
             attempts: number;
             /** Retry At */
             retry_at: string | null;
+            /** Lease Until */
+            lease_until: string | null;
             /** Scheduled For */
             scheduled_for: string | null;
             /** Run Id */
